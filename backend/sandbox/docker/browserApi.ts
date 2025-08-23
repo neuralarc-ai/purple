@@ -14,22 +14,38 @@ interface BrowserActionResult {
     action?: string;
 }
 
+interface BrowserState {
+    url: string;
+    title: string;
+    screenshot_base64: string;
+    timestamp: number;
+    takeover_mode: boolean;
+}
+
 class BrowserAutomation {
     public router: express.Router;
 
     private stagehand: Stagehand | null;
     public browserInitialized: boolean;
     private page: Page | null;
+    private takeoverMode: boolean;
+    private lastBrowserState: BrowserState | null;
+    
     constructor() {
         this.router = express.Router();
         this.browserInitialized = false;
         this.stagehand = null;
         this.page = null;
+        this.takeoverMode = false;
+        this.lastBrowserState = null;
 
         this.router.post('/navigate', this.navigate.bind(this));
         this.router.post('/screenshot', this.screenshot.bind(this));
         this.router.post('/act', this.act.bind(this));
         this.router.post('/extract', this.extract.bind(this));
+        this.router.post('/takeover', this.enableTakeover.bind(this));
+        this.router.post('/release', this.releaseTakeover.bind(this));
+        this.router.get('/state', this.getBrowserState.bind(this));
 
     }
 
@@ -285,6 +301,99 @@ class BrowserAutomation {
                 screenshot_base64: page_info.screenshot_base64,
                 error
             })
+        }
+    }
+
+    async enableTakeover(req: express.Request, res: express.Response): Promise<void> {
+        try {
+            console.log("Enabling browser takeover mode");
+            this.takeoverMode = true;
+            
+            // Capture current browser state for seamless resume
+            if (this.page && this.browserInitialized) {
+                const page_info = await this.get_stagehand_state();
+                this.lastBrowserState = {
+                    url: page_info.url,
+                    title: page_info.title,
+                    screenshot_base64: page_info.screenshot_base64,
+                    timestamp: Date.now(),
+                    takeover_mode: true
+                };
+            }
+            
+            res.json({
+                success: true,
+                message: "Browser takeover mode enabled",
+                takeover_mode: true,
+                state: this.lastBrowserState
+            });
+        } catch (error) {
+            console.error("Error enabling takeover:", error);
+            res.status(500).json({
+                success: false,
+                message: "Failed to enable takeover mode",
+                error
+            });
+        }
+    }
+
+    async releaseTakeover(req: express.Request, res: express.Response): Promise<void> {
+        try {
+            console.log("Releasing browser takeover mode");
+            this.takeoverMode = false;
+            
+            // Capture final state before releasing control
+            if (this.page && this.browserInitialized) {
+                const page_info = await this.get_stagehand_state();
+                this.lastBrowserState = {
+                    url: page_info.url,
+                    title: page_info.title,
+                    screenshot_base64: page_info.screenshot_base64,
+                    timestamp: Date.now(),
+                    takeover_mode: false
+                };
+            }
+            
+            res.json({
+                success: true,
+                message: "Browser takeover mode released",
+                takeover_mode: false,
+                state: this.lastBrowserState
+            });
+        } catch (error) {
+            console.error("Error releasing takeover:", error);
+            res.status(500).json({
+                success: false,
+                message: "Failed to release takeover mode",
+                error
+            });
+        }
+    }
+
+    async getBrowserState(req: express.Request, res: express.Response): Promise<void> {
+        try {
+            const page_info = await this.get_stagehand_state();
+            const currentState: BrowserState = {
+                url: page_info.url,
+                title: page_info.title,
+                screenshot_base64: page_info.screenshot_base64,
+                timestamp: Date.now(),
+                takeover_mode: this.takeoverMode
+            };
+            
+            res.json({
+                success: true,
+                state: currentState,
+                last_state: this.lastBrowserState,
+                browser_initialized: this.browserInitialized
+            });
+        } catch (error) {
+            console.error("Error getting browser state:", error);
+            res.status(500).json({
+                success: false,
+                message: "Failed to get browser state",
+                error
+            });
         }
     }
 

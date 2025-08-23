@@ -26,7 +26,10 @@ interface ThreadLayoutProps {
   toolCalls: ToolCallInput[];
   messages: ApiMessageType[];
   externalNavIndex?: number;
-  agentStatus: 'idle' | 'running' | 'connecting' | 'error';
+  agentStatus: 'idle' | 'running' | 'connecting' | 'paused' | 'error';
+  paused: boolean;
+  inTakeover: boolean;
+  onHeaderTakeoverToggle: () => void;
   currentToolIndex: number;
   onSidePanelNavigate: (index: number) => void;
   onSidePanelClose: () => void;
@@ -62,6 +65,9 @@ export function ThreadLayout({
   messages,
   externalNavIndex,
   agentStatus,
+  paused,
+  inTakeover,
+  onHeaderTakeoverToggle,
   currentToolIndex,
   onSidePanelNavigate,
   onSidePanelClose,
@@ -102,6 +108,9 @@ export function ThreadLayout({
           onProjectRenamed={onProjectRenamed}
           isMobileView={isMobile}
           debugMode={debugMode}
+          paused={paused}
+          inTakeover={inTakeover}
+          onTakeoverToggle={onHeaderTakeoverToggle}
         />
 
         {children}

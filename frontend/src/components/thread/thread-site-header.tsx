@@ -1,7 +1,8 @@
 'use client';
 
 import { Button } from "@/components/ui/button"
-import { FolderOpen, Share2, Monitor } from "lucide-react"
+import { FolderOpen, Share2, Monitor, Hand } from "lucide-react"
+
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 import {
@@ -37,6 +38,9 @@ interface ThreadSiteHeaderProps {
   onProjectRenamed?: (newName: string) => void;
   isMobileView?: boolean;
   debugMode?: boolean;
+  paused?: boolean;
+  inTakeover?: boolean;
+  onTakeoverToggle?: () => void;
 }
 
 export function SiteHeader({
@@ -48,7 +52,11 @@ export function SiteHeader({
   onProjectRenamed,
   isMobileView,
   debugMode,
+  paused,
+  inTakeover,
+  onTakeoverToggle,
 }: ThreadSiteHeaderProps) {
+
   const pathname = usePathname()
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(projectName)
@@ -185,6 +193,22 @@ export function SiteHeader({
               </TooltipTrigger>
               <TooltipContent side={isMobile ? "bottom" : "bottom"}>
                 <p>View Files in Task</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={inTakeover ? "secondary" : "ghost"}
+                  size="icon"
+                  onClick={onTakeoverToggle}
+                  className="h-9 w-9 cursor-pointer"
+                >
+                  <Hand className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side={isMobile ? "bottom" : "bottom"}>
+                <p>{inTakeover ? 'Release Takeover (T)' : 'Takeover (T)'}</p>
               </TooltipContent>
             </Tooltip>
 

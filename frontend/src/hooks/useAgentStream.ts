@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+
 import { useQueryClient } from '@tanstack/react-query';
 import {
   streamAgent,
@@ -6,7 +7,13 @@ import {
   stopAgent,
   AgentRun,
   getMessages,
+  pauseAgentRun,
+  resumeAgentRun,
+  takeoverAgentRun,
+  releaseAgentRun,
+  logManualEvent,
 } from '@/lib/api';
+
 import { toast } from 'sonner';
 import {
   UnifiedMessage,
@@ -39,12 +46,19 @@ interface ApiMessageType {
 // Define the structure returned by the hook
 export interface UseAgentStreamResult {
   status: string;
+  paused: boolean;
+  inTakeover: boolean;
   textContent: string;
   toolCall: ParsedContent | null;
   error: string | null;
   agentRunId: string | null; // Expose the currently managed agentRunId
   startStreaming: (runId: string) => void;
   stopStreaming: () => Promise<void>;
+  pause: () => Promise<void>;
+  resume: () => Promise<void>;
+  takeover: () => Promise<void>;
+  release: () => Promise<void>;
+  logManual: (payload: { event_type: string; data?: Record<string, any>; description?: string }) => Promise<void>;
 }
 
 // Define the callbacks the hook consumer can provide
@@ -87,6 +101,8 @@ export function useAgentStream(
   const queryClient = useQueryClient();
   
   const [status, setStatus] = useState<string>('idle');
+  const [paused, setPaused] = useState<boolean>(false);
+  const [inTakeover, setInTakeover] = useState<boolean>(false);
   const [textContent, setTextContent] = useState<
     { content: string; sequence?: number }[]
   >([]);
@@ -110,6 +126,8 @@ export function useAgentStream(
   const statusRef = useRef(status);
   const agentRunIdRef = useRef(agentRunId);
   const textContentRef = useRef(textContent);
+  const pausedRef = useRef(paused);
+  const takeoverRef = useRef(inTakeover);
   
   // Update refs whenever state changes
   useEffect(() => {
@@ -123,6 +141,14 @@ export function useAgentStream(
   useEffect(() => {
     textContentRef.current = textContent;
   }, [textContent]);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
+
+  useEffect(() => {
+    takeoverRef.current = inTakeover;
+  }, [inTakeover]);
 
   // On thread change, ensure any existing stream is cleaned up to avoid stale subscriptions
   useEffect(() => {
@@ -204,6 +230,8 @@ export function useAgentStream(
       updateStatus(finalStatus);
       setAgentRunId(null);
       currentRunIdRef.current = null;
+      setPaused(false);
+      setInTakeover(false);
       
       // Invalidate relevant queries to refresh data after agent run completes
       if (agentId) {
@@ -339,12 +367,32 @@ export function useAgentStream(
                 tool_index: parsedContent.tool_index,
               });
               break;
-            case 'tool_completed':
             case 'tool_failed':
             case 'tool_error':
               if (toolCall?.tool_index === parsedContent.tool_index) {
                 setToolCall(null);
               }
+              break;
+            case 'paused':
+            case 'pause':
+              setPaused(true);
+              updateStatus('paused');
+              break;
+            case 'resumed':
+            case 'resume':
+              setPaused(false);
+              // do not force streaming if we aren't receiving assistant chunks yet
+              break;
+            case 'takeover':
+              setInTakeover(true);
+              break;
+            case 'release':
+            case 'released':
+              setInTakeover(false);
+              break;
+            case 'manual_event':
+              // forward manual events into the message list for unified logging
+              if (message.message_id) callbacks.onMessage(message);
               break;
             case 'thread_run_end':
               break;
@@ -415,6 +463,44 @@ export function useAgentStream(
         return;
       }
 
+      // Immediately check the agent status when the stream closes unexpectedly
+      // This covers cases where the agent finished but the final message wasn't received,
+      // or if the agent errored out on the backend.
+      getAgentStatus(runId)
+        .then((agentStatus) => {
+          if (!isMountedRef.current) return; // Check mount status again
+
+          if (agentStatus.status === 'running') {
+            setError('Stream closed unexpectedly while agent was running.');
+            finalizeStream('error', runId); // Finalize as error for now
+            toast.warning('Stream disconnected. Agent might still be running.');
+          } else {
+            // Map backend terminal status to hook terminal status
+            const finalStatus = mapAgentStatus(agentStatus.status);
+            finalizeStream(finalStatus, runId);
+          }
+        })
+        .catch((err) => {
+          if (!isMountedRef.current) return;
+
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          console.error(
+            `[useAgentStream] Error checking agent status for ${runId} after stream close: ${errorMessage}`,
+          );
+
+          const isNotFoundError =
+            errorMessage.includes('not found') ||
+            errorMessage.includes('404') ||
+            errorMessage.includes('does not exist');
+
+          if (isNotFoundError) {
+            // Revert to agent_not_running for this specific case
+            finalizeStream('agent_not_running', runId);
+          } else {
+            // For other errors checking status, finalize with generic error
+            finalizeStream('error', runId);
+          }
+        });
     },
     [finalizeStream],
   );
@@ -613,13 +699,81 @@ export function useAgentStream(
     }
   }, [agentRunId, finalizeStream]); // Add dependencies
 
+  // Control functions
+  const pause = useCallback(async () => {
+    const runId = agentRunIdRef.current;
+    if (!runId) return;
+    try {
+      await pauseAgentRun(runId);
+      setPaused(true);
+      updateStatus('paused');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to pause: ${msg}`);
+    }
+  }, [updateStatus]);
+
+  const resume = useCallback(async () => {
+    const runId = agentRunIdRef.current;
+    if (!runId) return;
+    try {
+      await resumeAgentRun(runId);
+      setPaused(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to resume: ${msg}`);
+    }
+  }, []);
+
+  const takeover = useCallback(async () => {
+    const runId = agentRunIdRef.current;
+    if (!runId) return;
+    try {
+      await takeoverAgentRun(runId);
+      setInTakeover(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to take over: ${msg}`);
+    }
+  }, []);
+
+  const release = useCallback(async () => {
+    const runId = agentRunIdRef.current;
+    if (!runId) return;
+    try {
+      await releaseAgentRun(runId);
+      setInTakeover(false);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to release: ${msg}`);
+    }
+  }, []);
+
+  const logManual = useCallback(async (payload: { event_type: string; data?: Record<string, any>; description?: string }) => {
+    const runId = agentRunIdRef.current;
+    if (!runId) return;
+    try {
+      await logManualEvent(runId, payload);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to log manual event: ${msg}`);
+    }
+  }, []);
+
   return {
     status,
+    paused,
+    inTakeover,
     textContent: orderedTextContent,
     toolCall,
     error,
     agentRunId,
     startStreaming,
     stopStreaming,
+    pause,
+    resume,
+    takeover,
+    release,
+    logManual,
   };
 }
