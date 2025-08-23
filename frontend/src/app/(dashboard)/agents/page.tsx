@@ -144,8 +144,8 @@ export default function AgentsPage() {
   const agents = agentsResponse?.agents || [];
   const agentsPagination = agentsResponse?.pagination;
 
-  const { kortixTeamItems, communityItems, mineItems } = useMemo(() => {
-    const kortixItems: MarketplaceTemplate[] = [];
+      const { he2TeamItems, communityItems, mineItems } = useMemo(() => {
+            const he2Items: MarketplaceTemplate[] = [];
     const communityItems: MarketplaceTemplate[] = [];
     const mineItems: MarketplaceTemplate[] = [];
 
@@ -163,7 +163,7 @@ export default function AgentsPage() {
           marketplace_published_at: template.marketplace_published_at,
           profile_image_url: template.profile_image_url,
           template_id: template.template_id,
-          is_kortix_team: template.is_kortix_team,
+          is_he2_team: template.is_he2_team,
           mcp_requirements: template.mcp_requirements,
           metadata: template.metadata,
         };
@@ -182,8 +182,8 @@ export default function AgentsPage() {
           mineItems.push(item);
         }
         
-        if (template.is_kortix_team === true) {
-          kortixItems.push(item);
+        if (template.is_he2_team === true) {
+                      he2Items.push(item);
         } else {
           communityItems.push(item);
         }
@@ -207,7 +207,7 @@ export default function AgentsPage() {
       });
 
     return {
-      kortixTeamItems: sortItems(kortixItems),
+              he2TeamItems: sortItems(he2Items),
       communityItems: sortItems(communityItems),
       mineItems: sortItems(mineItems)
     };
@@ -215,14 +215,14 @@ export default function AgentsPage() {
 
   const allMarketplaceItems = useMemo(() => {
     if (marketplaceFilter === 'helium') {
-      return kortixTeamItems;
+              return he2TeamItems;
     } else if (marketplaceFilter === 'community') {
       return communityItems;
     } else if (marketplaceFilter === 'mine') {
       return mineItems;
     }
-    return [...kortixTeamItems, ...communityItems];
-  }, [kortixTeamItems, communityItems, mineItems, marketplaceFilter]);
+    return [...he2TeamItems, ...communityItems];
+  }, [he2TeamItems, communityItems, mineItems, marketplaceFilter]);
 
   const handleTabChange = (newTab: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -612,7 +612,7 @@ export default function AgentsPage() {
               setMarketplaceFilter={setMarketplaceFilter}
               marketplaceLoading={marketplaceLoading}
               allMarketplaceItems={allMarketplaceItems}
-              kortixTeamItems={kortixTeamItems}
+                              he2TeamItems={he2TeamItems}
               communityItems={communityItems}
               mineItems={mineItems}
               installingItemId={installingItemId}

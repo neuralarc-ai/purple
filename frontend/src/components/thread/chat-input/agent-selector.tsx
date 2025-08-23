@@ -27,7 +27,7 @@ interface AgentSelectorProps {
   selectedAgentId?: string;
   onAgentSelect?: (agentId: string | undefined) => void;
   disabled?: boolean;
-  isSunaAgent?: boolean;
+  isHeliumAgent?: boolean;
   compact?: boolean;
 }
 
@@ -35,7 +35,7 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
   selectedAgentId,
   onAgentSelect,
   disabled = false,
-  isSunaAgent,
+      isHeliumAgent,
   compact = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -93,10 +93,10 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
   const getAgentDisplay = () => {
     const selectedAgent = allAgents.find(agent => agent.id === selectedAgentId);
     if (selectedAgent) {
-      const isSelectedAgentSuna = selectedAgent.metadata?.is_suna_default || false;
+      const isSelectedAgentHelium = selectedAgent.metadata?.is_helium_default || false;
       return {
         name: selectedAgent.name,
-        icon: isSelectedAgentSuna ? <KortixLogo size={16} /> : selectedAgent.icon
+        icon: isSelectedAgentHelium ? <KortixLogo size={16} /> : selectedAgent.icon
       };
     }
     
@@ -104,10 +104,10 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
     }
     
     const defaultAgent = allAgents[0];
-    const isDefaultAgentSuna = defaultAgent?.metadata?.is_suna_default || false;
+    const isDefaultAgentHelium = defaultAgent?.metadata?.is_helium_default || false;
     return {
-      name: defaultAgent?.name || 'Suna',
-      icon: isDefaultAgentSuna ? <KortixLogo size={16} /> : (defaultAgent?.icon || <KortixLogo size={16} />)
+              name: defaultAgent?.name || 'Helium',
+              icon: isDefaultAgentHelium ? <KortixLogo size={16} /> : (defaultAgent?.icon || <KortixLogo size={16} />)
     };
   };
 
@@ -157,7 +157,7 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
     const isSelected = agent.id === selectedAgentId;
     const isHighlighted = index === highlightedIndex;
     const hasSettings = agent.type === 'custom' && agent.id;
-    const isThisAgentSuna = agent.metadata?.is_suna_default || false;
+    const isThisAgentHelium = agent.metadata?.is_helium_default || false;
 
     return (
       <TooltipProvider key={agent.id || 'default'}>
@@ -172,7 +172,7 @@ export const AgentSelector: React.FC<AgentSelectorProps> = ({
               onMouseEnter={() => setHighlightedIndex(index)}
             >
               <div className="flex-shrink-0">
-                {isThisAgentSuna ? (
+                {isThisAgentHelium ? (
                   <KortixLogo size={16} />
                 ) : (
                   agent.icon

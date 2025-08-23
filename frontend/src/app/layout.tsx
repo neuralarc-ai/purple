@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     'research',
     'data analysis',
   ],
-  authors: [{ name: 'Helium Team', url: 'https://he2.ai' }],
+          authors: [{ name: 'Neural Arc Team', url: 'https://neuralarc.ai' }],
   creator:
     'Helium Team',
   publisher:

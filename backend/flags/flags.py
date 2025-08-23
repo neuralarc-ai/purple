@@ -174,8 +174,8 @@ pipedream = True
 # Credentials API feature flag
 credentials_api = True
 
-# Suna default agent feature flag
-suna_default_agent = True
+# Helium default agent feature flag
+helium_default_agent = True
 
 
 

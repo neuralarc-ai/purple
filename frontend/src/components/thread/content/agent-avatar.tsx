@@ -16,7 +16,7 @@ export const AgentAvatar: React.FC<AgentAvatarProps> = ({
   agentId, 
   size = 16, 
   className = "", 
-  fallbackName = "Suna" 
+      fallbackName = "Helium" 
 }) => {
   const { data: agent, isLoading } = useAgent(agentId || '');
 
@@ -33,8 +33,8 @@ export const AgentAvatar: React.FC<AgentAvatarProps> = ({
     return <KortixLogo size={size} />;
   }
 
-  const isSuna = agent?.metadata?.is_suna_default;
-  if (isSuna) {
+  const isHelium = agent?.metadata?.is_helium_default;
+  if (isHelium) {
     return <KortixLogo size={size} />;
   }
 
@@ -60,7 +60,7 @@ interface AgentNameProps {
 
 export const AgentName: React.FC<AgentNameProps> = ({ 
   agentId, 
-  fallback = "Suna" 
+          fallback = "Helium" 
 }) => {
   const { data: agent, isLoading } = useAgent(agentId || '');
 
