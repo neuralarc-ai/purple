@@ -2,44 +2,50 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // Generate mock company profile for development/testing
 function generateMockProfile(companyName: string, websiteUrl: string) {
-  const companyLower = companyName.toLowerCase();
+  // Extract domain from website URL to prioritize URL-based data
+  const domain = websiteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0].toLowerCase();
   
-  // Company-specific mock data with more comprehensive services and products
+  // Domain-specific mock data with more comprehensive services and products
   const mockData = {
-    microsoft: {
+    'microsoft.com': {
       description: "Microsoft Corporation is an American multinational technology corporation that produces computer software, consumer electronics, personal computers, and related services. Microsoft is known for Windows operating systems, Microsoft Office suite, and Azure cloud computing services.",
       services: ["Cloud Computing (Azure)", "Software Development", "Enterprise Solutions", "AI and Machine Learning", "Cybersecurity Services", "Digital Transformation", "Data Analytics", "Business Intelligence"],
       products: ["Windows OS", "Microsoft Office", "Azure Cloud Platform", "Xbox Gaming", "Surface Devices", "Microsoft Teams", "Power BI", "Visual Studio"]
     },
-    apple: {
+    'neuralarc.ai': {
+      description: "NeuralArc is an AI-powered technology company that specializes in artificial intelligence solutions, machine learning platforms, and intelligent automation systems. The company focuses on delivering cutting-edge AI technologies for businesses and enterprises.",
+      services: ["AI Development", "Machine Learning Solutions", "Intelligent Automation", "Data Analytics", "AI Consulting", "Neural Network Design", "AI Model Training", "Predictive Analytics"],
+      products: ["Helium AI", "Drift AI", "Micro SaaS Tools", "AI-Powered Business Intelligence", "Enterprise AI Solutions", "CRM Enhancement System"]
+    },
+    'apple.com': {
       description: "Apple Inc. is an American multinational technology company that specializes in consumer electronics, software, and online services. Apple is known for innovative products like iPhone, iPad, Mac computers, and services like the App Store.",
       services: ["Device Manufacturing", "Software Development", "Digital Services", "Cloud Storage (iCloud)", "Technical Support", "App Store Services", "Payment Processing", "Content Distribution"],
       products: ["iPhone", "iPad", "Mac Computers", "Apple Watch", "AirPods", "Apple TV", "HomePod", "Apple Pay"]
     },
-    google: {
+    'google.com': {
       description: "Google LLC is an American multinational technology company that specializes in Internet-related services and products, including online advertising technologies, a search engine, cloud computing, software, and hardware.",
       services: ["Search Engine", "Online Advertising", "Cloud Computing (GCP)", "AI and Machine Learning", "Mobile OS Development", "Web Analytics", "Digital Marketing", "Enterprise Solutions"],
       products: ["Google Search", "Android OS", "Google Cloud Platform", "YouTube", "Google Workspace", "Chrome Browser", "Google Maps", "Gmail"]
     },
-    tesla: {
+    'tesla.com': {
       description: "Tesla, Inc. is an American electric vehicle and clean energy company. Tesla designs and manufactures electric cars, battery energy storage systems, solar panels and solar roof tiles, and related products and services.",
       services: ["Electric Vehicle Manufacturing", "Energy Storage Solutions", "Solar Energy Systems", "Autonomous Driving Technology", "Charging Infrastructure", "Vehicle Maintenance", "Energy Consulting", "Software Updates"],
       products: ["Model S", "Model 3", "Model X", "Model Y", "Powerwall", "Solar Roof", "Supercharger", "Cybertruck"]
     },
-    netflix: {
+    'netflix.com': {
       description: "Netflix is an American subscription streaming service and production company that offers a library of films and television series through distribution deals as well as its own productions.",
       services: ["Video Streaming", "Content Production", "Content Distribution", "Personalization Technology", "Global Content Delivery", "Original Programming", "Multi-language Support", "Cross-platform Streaming"],
       products: ["Netflix Platform", "Netflix Originals", "Mobile Apps", "Smart TV Apps", "Recommendation Engine", "Download Feature", "Netflix Games", "Interactive Content"]
     },
-    amazon: {
+    'amazon.com': {
       description: "Amazon.com, Inc. is an American multinational technology company focusing on e-commerce, cloud computing, digital streaming, and artificial intelligence.",
       services: ["E-commerce Platform", "Cloud Computing (AWS)", "Digital Streaming", "Logistics and Delivery", "AI and Machine Learning", "Web Services", "Digital Advertising", "Voice Technology"],
       products: ["Amazon Marketplace", "AWS Cloud Services", "Prime Video", "Alexa", "Echo Devices", "Kindle", "Fire TV", "Amazon Pay"]
     }
   };
 
-  // Get company-specific data or use generic
-  const specificData = mockData[companyLower as keyof typeof mockData];
+  // Get domain-specific data or use generic
+  const specificData = mockData[domain as keyof typeof mockData];
   
   if (specificData) {
     return {
@@ -53,12 +59,12 @@ function generateMockProfile(companyName: string, websiteUrl: string) {
     };
   }
 
-  // Generate dynamic mock data based on company name and domain
-  const domain = websiteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
-  const isEcommerce = domain.includes('shop') || domain.includes('store') || domain.includes('buy');
-  const isTech = domain.includes('tech') || domain.includes('dev') || domain.includes('ai') || domain.includes('software');
-  const isFinance = domain.includes('bank') || domain.includes('finance') || domain.includes('pay') || domain.includes('invest');
-  const isHealth = domain.includes('health') || domain.includes('medical') || domain.includes('care') || domain.includes('pharma');
+  // Generate dynamic mock data based on website URL domain
+  const urlDomain = websiteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+  const isEcommerce = urlDomain.includes('shop') || urlDomain.includes('store') || urlDomain.includes('buy');
+  const isTech = urlDomain.includes('tech') || urlDomain.includes('dev') || urlDomain.includes('ai') || urlDomain.includes('software');
+  const isFinance = urlDomain.includes('bank') || urlDomain.includes('finance') || urlDomain.includes('pay') || urlDomain.includes('invest');
+  const isHealth = urlDomain.includes('health') || urlDomain.includes('medical') || urlDomain.includes('care') || urlDomain.includes('pharma');
   
   let services, products;
   
@@ -111,19 +117,20 @@ export async function POST(request: NextRequest) {
     if (!hasTavilyKey) {
       console.warn('TAVILY_API_KEY not found, using mock data for development');
       
-      // Return mock company data based on company name
+      // Return mock company data based on website URL (prioritized over company name)
       const mockProfile = generateMockProfile(companyName, websiteUrl);
       return NextResponse.json({ companyProfile: mockProfile });
     }
 
     // Call Tavily API to get company information with multiple targeted queries
+    // Prioritize website URL over company name for accurate results
     const domain = websiteUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
     const queries = [
-      `${companyName} company overview what they do services products`,
-      `"${companyName}" about company business description`,
-      `${companyName} ${domain} company profile business`,
-      `site:${domain} about company overview`,
-      `${companyName} business model services offerings products industry`
+      `site:${domain} about company overview what they do services products`,
+      `site:${domain} company profile business description`,
+      `"${domain}" company overview services products business model`,
+      `${domain} about us company information services offerings`,
+      `site:${domain} company mission vision services products industry`
     ];
 
     let tavlyData = null;
@@ -241,7 +248,10 @@ export async function POST(request: NextRequest) {
         /(?:built|developed|created|launched)\s+([^.]{15,80}(?:platform|tool|software|system|app|product))/gi,
         /(?:suite|dashboard|api|system|platform|application)\s+([^.]{10,60})/gi,
         /(?:flagship|main|core|primary)\s+(?:product|platform|solution)\s+([^.]{15,80})/gi,
-        /(?:portfolio|lineup)\s+(?:includes?|features?)\s+([^.]{15,80})/gi
+        /(?:portfolio|lineup)\s+(?:includes?|features?)\s+([^.]{15,80})/gi,
+        /([A-Z][a-zA-Z]+\s+AI|[A-Z][a-zA-Z]+\s+Platform|[A-Z][a-zA-Z]+\s+System|[A-Z][a-zA-Z]+\s+Tools?)/gi,
+        /\b([A-Z][a-zA-Z]{2,}(?:\s+[A-Z][a-zA-Z]{2,})*)\s*(?:AI|Platform|System|Tool|Suite|Dashboard|Engine|Framework|SDK|API)\b/gi,
+        /\b(Helium|Drift|Micro\s+SaaS|Intelligence|Enterprise)\s*(?:AI|Platform|System|Tools?|Suite|Solutions?)\b/gi
       ];
 
       // Extract services using patterns
