@@ -7,6 +7,7 @@ import { Project } from '@/lib/api';
 import { ApiMessageType, BillingData } from '../_types';
 import { ToolCallInput } from '@/components/thread/tool-call-side-panel';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { logManualEvent } from '@/lib/api';
 
 interface ThreadLayoutProps {
   children: React.ReactNode;
@@ -30,6 +31,7 @@ interface ThreadLayoutProps {
   paused: boolean;
   inTakeover: boolean;
   onHeaderTakeoverToggle: () => void;
+  onLogManual?: (payload: { event_type: string; data?: Record<string, any>; description?: string }) => Promise<void>;
   currentToolIndex: number;
   onSidePanelNavigate: (index: number) => void;
   onSidePanelClose: () => void;
@@ -68,6 +70,7 @@ export function ThreadLayout({
   paused,
   inTakeover,
   onHeaderTakeoverToggle,
+  onLogManual,
   currentToolIndex,
   onSidePanelNavigate,
   onSidePanelClose,
@@ -142,6 +145,12 @@ export function ThreadLayout({
           initialFilePath={fileToView}
           project={project || undefined}
           filePathList={filePathList}
+          editable={inTakeover}
+          onFileEdited={async ({ path, bytes }) => {
+            try {
+              await onLogManual?.({ event_type: 'file_edit', data: { path, bytes } });
+            } catch {}
+          }}
         />
       )}
 

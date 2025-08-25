@@ -957,9 +957,14 @@ export const releaseAgentRun = async (agentRunId: string): Promise<void> => {
 };
 
 export type ManualEventPayload = {
-  event_type: string;
+  event_type: string; // preferred client-side field
   data?: Record<string, any>;
   description?: string;
+  // Accept legacy/alternate shape just in case callers pass `type`
+  // This keeps the function resilient without changing callers.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  type?: string;
 };
 
 export const logManualEvent = async (
@@ -984,7 +989,14 @@ export const logManualEvent = async (
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify(event),
+      // Backend expects { type: string, data: object }
+      body: JSON.stringify({
+        type: (event as any).type ?? event.event_type,
+        data: {
+          ...(event.data || {}),
+          ...(event.description ? { description: event.description } : {}),
+        },
+      }),
       cache: 'no-store',
     });
 

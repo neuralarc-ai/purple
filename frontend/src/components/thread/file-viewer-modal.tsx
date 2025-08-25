@@ -60,6 +60,9 @@ interface FileViewerModalProps {
   initialFilePath?: string | null;
   project?: Project;
   filePathList?: string[];
+  // Enable inline editing when in takeover
+  editable?: boolean;
+  onFileEdited?: (info: { path: string; bytes: number }) => void;
 }
 
 export function FileViewerModal({
@@ -69,6 +72,8 @@ export function FileViewerModal({
   initialFilePath,
   project,
   filePathList,
+  editable = false,
+  onFileEdited,
 }: FileViewerModalProps) {
   // Safely handle initialFilePath to ensure it's a string or null
   const safeInitialFilePath = typeof initialFilePath === 'string' ? initialFilePath : null;
@@ -109,6 +114,8 @@ export function FileViewerModal({
     null,
   );
   const [contentError, setContentError] = useState<string | null>(null);
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Use the React Query hook for the selected file instead of useCachedFile
   const {
@@ -1437,6 +1444,35 @@ export function FileViewerModal({
                         }
                         onDownload={handleDownload}
                         isDownloading={isDownloading}
+                        editable={editable && !isBinaryFile}
+                        onEdit={(val) => {
+                          if (!selectedFilePath) return;
+                          setTextContentForRenderer(val);
+                          if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                          saveTimerRef.current = setTimeout(async () => {
+                            try {
+                              setIsSaving(true);
+                              // Save via JSON endpoint for reliability
+                              await fetch(`${API_URL}/sandboxes/${sandboxId}/files/json`, {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                                },
+                                body: JSON.stringify({
+                                  path: selectedFilePath,
+                                  content: val,
+                                }),
+                              });
+                              onFileEdited?.({ path: selectedFilePath, bytes: val.length });
+                            } catch (e) {
+                              // Surface a lightweight indicator; toast would be noisy on debounce
+                              console.error('Autosave failed', e);
+                            } finally {
+                              setIsSaving(false);
+                            }
+                          }, 500);
+                        }}
                       />
                     );
                   })()}

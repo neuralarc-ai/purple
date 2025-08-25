@@ -746,6 +746,11 @@ export default function ThreadPage({
         initialLoadCompleted={initialLoadCompleted}
         agentName={agent && agent.name}
         disableInitialAnimation={!initialLoadCompleted && toolCalls.length > 0}
+        onLogManual={async (payload) => {
+          try {
+            await logManual(payload);
+          } catch {}
+        }}
       >
         {/* {workflowId && (
           <div className="px-4 pt-4">
