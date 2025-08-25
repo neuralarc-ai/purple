@@ -20,6 +20,10 @@ import {
   Moon,
   KeyRound,
   Plug,
+  UserCog,
+  BookOpen,
+  Building2,
+  ChevronRight,
 } from 'lucide-react';
 import { useAccounts } from '@/hooks/use-accounts';
 import NewTeamForm from '@/components/basejump/new-team-form';
@@ -34,6 +38,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
   SidebarMenu,
@@ -234,6 +241,14 @@ export function NavUserWithTeams({
                     </div>
                     {personalAccount.name}
                     <DropdownMenuShortcut>⌘1</DropdownMenuShortcut>
+                  </DropdownMenuItem>
+                  
+                  {/* Personalization Section */}
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="gap-2 p-2">
+                      <UserCog className="h-4 w-4" />
+                      Personalization
+                    </Link>
                   </DropdownMenuItem>
                 </>
               )}
