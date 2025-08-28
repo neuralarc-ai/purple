@@ -174,13 +174,33 @@ const getTaskSpecificContext = (task) => {
       collaboration: 'Work with backend developers, coordinate with data analysts, document schema changes.'
     };
   } else if (taskLower.includes('deployment') || taskLower.includes('deploy') || taskLower.includes('production')) {
+    const env = taskLower.includes('prod') ? 'production' : 
+               taskLower.includes('stage') ? 'staging' : 
+               taskLower.includes('dev') ? 'development' : 'target';
+    const platform = taskLower.includes('aws') ? 'AWS' : 
+                   taskLower.includes('azure') ? 'Azure' : 
+                   taskLower.includes('gcp') ? 'GCP' : 'cloud';
+    
     return {
-      diagnostic: 'Assess deployment requirements, analyze infrastructure needs, evaluate scaling demands.',
-      methodology: 'Use CI/CD pipelines, implement infrastructure as code, follow deployment best practices.',
-      implementation: 'Configure production environments, set up monitoring, implement rollback strategies.',
-      optimization: 'Optimize deployment speed, implement blue-green deployments, enhance monitoring.',
-      collaboration: 'Coordinate with DevOps team, work with infrastructure engineers, document deployment processes.'
+      diagnostic: `Analyze ${env} deployment requirements for ${platform}. Check environment configurations, network settings, and security groups. Identify potential risks in the ${env} environment.`,
+      methodology: `Implement ${env} deployment strategy using Infrastructure as Code. Follow GitOps principles for ${platform}. Use canary or blue-green deployment for ${env}.`,
+      implementation: `Set up ${platform}-specific CI/CD pipeline for ${env}. Configure environment variables, secrets management, and automated rollback procedures for ${env} deployments.`,
+      optimization: `Optimize ${env} deployment process on ${platform}. Implement caching strategies, parallel deployments, and automated health checks for ${env}.`,
+      collaboration: `Coordinate with ${platform} DevOps team. Document ${env} deployment processes and create runbooks for ${platform} infrastructure.`
     };
+  } else if (taskLower.includes('fine-tun') || taskLower.includes('fine tun') || taskLower.includes('model tuning')) {
+    const modelType = taskLower.includes('llm') ? 'LLM' : 
+                     taskLower.includes('nlp') ? 'NLP' : 
+                     taskLower.includes('vision') ? 'computer vision' : 'machine learning';
+    
+    return {
+      diagnostic: `Analyze the ${modelType} model architecture, training data distribution, and performance metrics. Identify specific areas where the ${modelType} model underperforms and requires fine-tuning.`,
+      methodology: `Design fine-tuning strategy for ${modelType} model. Select appropriate hyperparameters, learning rate schedules, and data augmentation techniques specific to ${modelType} tasks.`,
+      implementation: `Implement fine-tuning pipeline for ${modelType} model. Set up distributed training if needed. Monitor training metrics and implement early stopping.`,
+      optimization: `Optimize ${modelType} model performance. Apply quantization, pruning, and knowledge distillation techniques. Optimize for inference speed and model size.`,
+      collaboration: `Coordinate with ML engineers and domain experts. Document ${modelType} fine-tuning process and share results with stakeholders.`
+    };
+  } else if (taskLower.includes('data analysis')) {
   }
   // Analysis & Research tasks
   else if (taskLower.includes('data analysis')) {
@@ -297,87 +317,484 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate task-focused queries for Tavily API to ensure different insights for different tasks
+    // Generate diverse and distinct task-focused queries
     const generateTavilyQuery = (role, task, promptType) => {
-      const roleSpecific = getRoleSpecificContext(role);
-      const taskSpecific = getTaskSpecificContext(task);
+      // Get role and task specific context
+      const roleContext = getRoleSpecificContext(role);
+      const taskContext = getTaskSpecificContext(task);
       
-      // Make queries more task-specific to get different insights for different tasks
-      const taskFocusedQueries = {
-        diagnostic: `${task} diagnostic analysis: how to identify problems, troubleshoot issues, analyze root causes, detect bottlenecks in ${task} for ${role}`,
-        methodology: `${task} best practices and methodologies: proven frameworks, systematic approaches, industry standards, step-by-step processes for ${task} implementation`,
-        implementation: `${task} implementation guide: practical execution strategies, technical solutions, development approaches, tools and techniques for ${task}`,
-        optimization: `${task} optimization techniques: performance improvement methods, efficiency strategies, scaling approaches, advanced optimization for ${task}`,
-        collaboration: `${task} team collaboration: coordination strategies, stakeholder management, communication patterns, knowledge sharing for ${task} projects`
+      // Different perspectives for each prompt type with more variations
+      const perspectives = {
+        diagnostic: [
+          `As a ${role}, analyze the key challenges and requirements for: ${task}. Consider technical constraints, potential roadblocks, and success metrics.`,
+          `From a ${role}'s perspective, what are the critical success factors and potential risks in: ${task}?`,
+          `What would a senior ${role} identify as the most challenging aspects of: ${task}?`,
+          `Break down the task '${task}' from a ${role}'s viewpoint. What are the key considerations and potential pitfalls?`,
+          `What initial assessments should a ${role} make when approaching: ${task}?`,
+          `How would an expert ${role} evaluate the feasibility and scope of: ${task}?`
+        ],
+        methodology: [
+          `Outline a comprehensive, step-by-step methodology for a ${role} to accomplish: ${task}. Include key phases and decision points.`,
+          `What systematic approach would an experienced ${role} use to tackle: ${task}? Break it down into clear, actionable stages.`,
+          `Design a structured framework for a ${role} to execute: ${task}. Include tools and techniques.`,
+          `Create a detailed action plan for a ${role} to complete: ${task}. Include milestones and success criteria.`,
+          `What workflow would maximize efficiency for a ${role} working on: ${task}?`,
+          `Propose a strategic approach for a ${role} to handle: ${task}`
+        ],
+        implementation: [
+          `Provide detailed, technical implementation steps for a ${role} working on: ${task}. Include specific examples and best practices.`,
+          `How would a senior ${role} technically implement: ${task}? Be specific about tools, frameworks, and approaches.`,
+          `Create a comprehensive technical guide for a ${role} to complete: ${task}. Include code snippets and architecture diagrams.`,
+          `What are the key technical considerations for a ${role} implementing: ${task}?`,
+          `Outline the technical workflow for a ${role} to execute: ${task}`,
+          `What are the critical implementation details a ${role} should consider for: ${task}?`
+        ],
+        optimization: [
+          `How can a ${role} optimize the performance, efficiency, and scalability of: ${task}? Include specific techniques and metrics.`,
+          `What are the key optimization opportunities and best practices a ${role} should consider for: ${task}?`,
+          `Propose comprehensive performance improvements for a ${role} working on: ${task}. Include benchmarks.`,
+          `What strategies would a senior ${role} use to enhance: ${task}?`,
+          `How can a ${role} refine and improve the approach to: ${task}?`,
+          `What optimization techniques would be most effective for a ${role} handling: ${task}?`
+        ],
+        collaboration: [
+          `How should a ${role} effectively collaborate with cross-functional teams when working on: ${task}? Define roles and communication strategies.`,
+          `What are the key collaboration points and handoffs for a ${role} when executing: ${task}?`,
+          `Outline a comprehensive team workflow and communication plan for a ${role} leading: ${task}`,
+          `How can a ${role} ensure effective knowledge sharing and coordination for: ${task}?`,
+          `What stakeholder management strategies should a ${role} employ for: ${task}?`,
+          `How can a ${role} facilitate better teamwork and alignment on: ${task}?`
+        ]
+      };
+
+      // Get a random perspective for variation
+      const perspectiveOptions = perspectives[promptType] || [];
+      const randomPerspective = perspectiveOptions[Math.floor(Math.random() * perspectiveOptions.length)] || 
+                              `As a ${role}, provide insights about: ${task}`;
+
+      // Different output formats for variety with more specific instructions
+      const formats = [
+        'Provide a comprehensive response organized into clear, labeled sections with detailed explanations and practical examples.',
+        'Use a structured bullet-point format with clear hierarchy (main points as headers, sub-points indented) for maximum readability.',
+        'Present the information in a step-by-step guide format, with numbered steps and visual separation between major sections.',
+        'Create a detailed analysis with subsections for key areas, including relevant code snippets or diagrams where appropriate.',
+        'Structure the response with an executive summary followed by in-depth technical details and implementation considerations.',
+        'Use a Q&A format that anticipates and answers potential follow-up questions about the topic.',
+        'Present the information as a decision tree or flow chart with detailed explanations for each branch or node.'
+      ];
+      const randomFormat = formats[Math.floor(Math.random() * formats.length)];
+
+      // Different tones and styles for variety
+      const tones = [
+        { 
+          tone: 'professional and authoritative', 
+          instruction: 'Use precise technical language and industry-standard terminology while maintaining clarity.'
+        },
+        { 
+          tone: 'instructive and educational', 
+          instruction: 'Adopt a teaching approach that breaks down complex concepts into easily digestible parts.'
+        },
+        { 
+          tone: 'analytical and data-driven', 
+          instruction: 'Focus on measurable outcomes, metrics, and evidence-based recommendations.'
+        },
+        { 
+          tone: 'practical and actionable', 
+          instruction: 'Provide concrete, immediately applicable advice with specific examples and implementation tips.'
+        },
+        { 
+          tone: 'strategic and forward-thinking', 
+          instruction: 'Consider long-term implications and scalability while providing recommendations.'
+        },
+        { 
+          tone: 'collaborative and inclusive', 
+          instruction: 'Frame the response to encourage team discussion and consider multiple perspectives.'
+        }
+      ];
+      
+      const selectedTone = tones[Math.floor(Math.random() * tones.length)];
+      const randomTone = `Use a ${selectedTone.tone} tone. ${selectedTone.instruction}`;
+
+      // Task-specific query templates with variations and more detailed structures
+      const taskSpecificPrompts = {
+        diagnostic: {
+          title: `[${role} Analysis] - ${task}`,
+          instruction: `Conduct a comprehensive analysis of: ${task}`,
+          focus: `As a ${role}, provide a detailed examination that includes:
+          1. Core requirements and technical/non-technical constraints
+          2. Potential roadblocks, risks, and mitigation strategies
+          3. Success metrics and key performance indicators
+          4. Required tools, technologies, and resources
+          5. Industry standards and best practices to consider`,
+          output: `${randomPerspective}\n\n${randomFormat}. ${randomTone}. Include specific examples and potential edge cases.`
+        },
+        methodology: {
+          title: `[${role} Strategy] - ${task}`,
+          instruction: `Develop a robust methodology for: ${task}`,
+          focus: `As a ${role}, design an approach that covers:
+          1. Phased implementation strategy with clear milestones
+          2. Selection criteria for methodologies and frameworks
+          3. Decision matrices for key technical choices
+          4. Risk assessment and contingency planning
+          5. Timeline with buffer periods and critical paths`,
+          output: `${randomPerspective}\n\n${randomFormat}. ${randomTone}. Include visual representations where helpful.`
+        },
+        implementation: {
+          title: `[${role} Technical Guide] - ${task}`,
+          instruction: `Create a detailed technical implementation guide for: ${task}`,
+          focus: `As a ${role}, provide comprehensive details on:
+          1. System architecture and component interactions
+          2. Code organization and module structure
+          3. API specifications and data models
+          4. Testing strategies and quality assurance
+          5. Deployment procedures and rollback plans`,
+          output: `${randomPerspective}\n\n${randomFormat}. ${randomTone}. Include code snippets and configuration examples.`
+        },
+        optimization: {
+          title: `[${role} Performance Enhancement] - ${task}`,
+          instruction: `Develop optimization strategies for: ${task}`,
+          focus: `As a ${role}, analyze and suggest improvements for:
+          1. Performance bottlenecks and optimization opportunities
+          2. Resource utilization and cost efficiency
+          3. Scalability and load handling
+          4. Caching and data access patterns
+          5. Monitoring, logging, and alerting mechanisms`,
+          output: `${randomPerspective}\n\n${randomFormat}. ${randomTone}. Include before/after metrics where applicable.`
+        },
+        collaboration: {
+          title: `[${role} Team Coordination] - ${task}`,
+          instruction: `Design a collaboration framework for: ${task}`,
+          focus: `As a ${role}, establish a comprehensive plan that includes:
+          1. RACI matrix for clear role definitions
+          2. Communication protocols and tools
+          3. Knowledge management and documentation standards
+          4. Stakeholder engagement strategy
+          5. Conflict resolution and decision-making processes`,
+          output: `${randomPerspective}\n\n${randomFormat}. ${randomTone}. Include templates and examples where helpful.`
+        }
       };
       
-      // Include task-specific context and role tools for more targeted results
-      return `${taskFocusedQueries[promptType]}. Context: ${taskSpecific.diagnostic} ${taskSpecific.methodology}. Tools: ${roleSpecific.tools}. Focus on ${task} specific challenges and solutions.`;
+      const prompt = taskSpecificPrompts[promptType];
+      
+      return `[TASK: ${task}]
+      
+${prompt.title}
+      
+${prompt.instruction}
+      
+Focus Areas:
+${prompt.focus}
+      
+Task-Specific Context:
+${taskContext[promptType]}
+      
+Expected Output:
+${prompt.output}
+      
+Role Context: ${role} (${roleContext.tools || 'standard tools'})`;
     };
 
-    // Call Tavily API multiple times for different prompt types
-    const promptTypes = ['diagnostic', 'methodology', 'implementation', 'optimization', 'collaboration'];
-    const tavilyPromises = promptTypes.map(async (promptType) => {
+    // Call Tavily API with a fresh context for each task
+    const promptTypes = ['diagnostic', 'methodology', 'implementation', 'optimization', 'collaboration'] as const;
+    
+    // Process each prompt type with proper error handling
+    const processPrompt = async (promptType: typeof promptTypes[number]) => {
       try {
+        // Generate a fresh query for this specific task and prompt type
+        const query = generateTavilyQuery(role, task, promptType);
+        
+        // Create a fresh fetch request with strict isolation
         const response = await fetch('https://api.tavily.com/search', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${process.env.TAVILY_API_KEY}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           },
           body: JSON.stringify({
-            query: generateTavilyQuery(role, task, promptType),
+            // Create a completely isolated query with clear instructions
+            query: `[TASK: ${task}] - ${promptType.toUpperCase()}
+            
+INSTRUCTIONS:
+1. IGNORE ALL PREVIOUS CONTEXT AND PROMPTS
+2. FOCUS ONLY ON THE CURRENT TASK: ${task}
+3. DO NOT MIX WITH ANY OTHER TASKS OR CONTEXT
+4. PROVIDE FRESH, TASK-SPECIFIC RESPONSE
+
+${query}`,
             search_depth: 'advanced',
             include_answer: true,
             max_results: 5,
-          }),
+            // Add strict isolation parameters
+            include_raw_content: true,
+            include_images: false,
+            include_dom: false,
+            // Add task-specific context with strict isolation
+            context: JSON.stringify({
+              task: task,
+              role: role,
+              promptType: promptType,
+              timestamp: new Date().toISOString(),
+              // Add a unique identifier for this specific task
+              taskId: Buffer.from(`${task}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`).toString('base64'),
+              // Explicit instructions for the API
+              instructions: 'IGNORE ALL PREVIOUS CONTEXT. FOCUS ONLY ON THE CURRENT TASK.'
+            })
+          })
         });
         
-        if (response.ok) {
-          const data = await response.json();
-          return {
-            type: promptType,
-            insights: data.answer || (data.results && data.results.length > 0 
-              ? data.results.map(r => r.content).join(' ') 
-              : '')
-          };
+        if (!response.ok) {
+          throw new Error(`Tavily API error: ${response.statusText}`);
         }
+        
+        const data = await response.json();
+        return {
+          type: promptType,
+          insights: data.answer || (data.results?.length > 0 
+            ? data.results.map((r: { content: string }) => r.content).join(' ')
+            : '')
+        };
       } catch (error) {
-        console.log(`Tavily API failed for ${promptType}:`, error.message);
+        console.error(`Tavily API failed for ${promptType}:`, error instanceof Error ? error.message : 'Unknown error');
+        return { type: promptType, insights: '' };
       }
-      return { type: promptType, insights: '' };
-    });
+    };
 
-    const tavilyResults = await Promise.all(tavilyPromises);
+    // Process all prompts in parallel but ensure each is independent
+    const tavilyResults = await Promise.all(promptTypes.map(processPrompt));
 
-    // Generate 5 distinct prompts with balanced role-task focus
+    // Generate highly task-specific prompts that vary significantly with different tasks
     const generateBalancedRoleTaskPrompt = (promptType, role, task, insights) => {
       const roleSpecific = getRoleSpecificContext(role);
       const taskSpecific = getTaskSpecificContext(task);
       
-      // Use targeted insights for each prompt type - make insights more prominent and task-specific
-      const relevantInsights = insights && insights.trim() ? 
-        `\n\n**Task-Specific Insights from Industry Research:**\n${insights.substring(0, 400)}${insights.length > 400 ? '...' : ''}` : '';
+      // Create a hash of the task to ensure consistent but task-specific variations
+      const taskHash = task.split('').reduce((acc, char) => 
+        ((acc << 5) - acc + char.charCodeAt(0)) | 0, 0);
       
+      // Get task-specific context with variations based on task hash and type
+      const getTaskContext = (type) => {
+        // First check if we have a specific context for this task type
+        if (!taskSpecific[type]) return '';
+        
+        // Get the full context for this type
+        let context = taskSpecific[type];
+        
+        // Replace placeholders with task-specific details
+        context = context.replace(/\$\{task\}/g, task)
+                       .replace(/\$\{taskLower\}/g, task.toLowerCase());
+        
+        // For longer contexts, select the most relevant part based on task hash
+        const sentences = context.split('. ').filter(Boolean);
+        if (sentences.length <= 2) return context;
+        
+        // Select a relevant section based on task hash and type
+        const sectionSize = Math.min(3, Math.ceil(sentences.length / 2));
+        const startIdx = Math.abs(taskHash + type.length) % 
+                        Math.max(1, sentences.length - sectionSize + 1);
+        
+        return sentences.slice(startIdx, startIdx + sectionSize)
+                       .map(s => s.trim())
+                       .join('. ') + '.';
+      };
+
+      // Get role-specific context with variations based on task
+      const getRoleContext = (type) => {
+        if (!roleSpecific[type]) return '';
+        
+        // Get the full context for this type
+        let context = roleSpecific[type];
+        
+        // Replace placeholders with role and task details
+        context = context.replace(/\$\{role\}/g, role)
+                       .replace(/\$\{task\}/g, task)
+                       .replace(/\$\{taskLower\}/g, task.toLowerCase());
+        
+        // For longer contexts, select the most relevant part
+        const sentences = context.split('. ').filter(Boolean);
+        if (sentences.length <= 2) return context;
+        
+        // Select a relevant section based on task hash and type
+        const sectionSize = Math.min(3, Math.ceil(sentences.length / 2));
+        const startIdx = Math.abs(taskHash + type.length) % 
+                        Math.max(1, sentences.length - sectionSize + 1);
+        
+        return sentences.slice(startIdx, startIdx + sectionSize)
+                       .map(s => s.trim())
+                       .join('. ') + '.';
+      };
+
+      // Generate task-specific tools/frameworks based on task and role context
+      const getTaskSpecificTools = () => {
+        // First try to get task-specific tools if mentioned in the task
+        const taskTools = [];
+        
+        // Check for specific technologies in the task
+        const techKeywords = [
+          'react', 'angular', 'vue', 'node', 'python', 'java', 'aws', 'azure', 'gcp',
+          'docker', 'kubernetes', 'tensorflow', 'pytorch', 'nextjs', 'typescript'
+        ];
+        
+        // Add any mentioned technologies
+        techKeywords.forEach(tech => {
+          if (task.toLowerCase().includes(tech)) {
+            taskTools.push(tech);
+          }
+        });
+        
+        // If no specific tech mentioned, use role-specific tools
+        if (taskTools.length === 0 && roleSpecific.tools) {
+          const tools = roleSpecific.tools.split(',').filter(Boolean);
+          const index = Math.abs(taskHash) % Math.max(1, tools.length);
+          const secondIndex = (index + 1) % Math.max(1, tools.length);
+          taskTools.push(tools[index]);
+          if (secondIndex !== index) {
+            taskTools.push(tools[secondIndex]);
+          }
+        }
+        
+        // Format the tools list naturally
+        if (taskTools.length === 0) return 'appropriate tools';
+        if (taskTools.length === 1) return taskTools[0];
+        if (taskTools.length === 2) return taskTools.join(' and ');
+        return `${taskTools.slice(0, -1).join(', ')}, and ${taskTools[taskTools.length - 1]}`;
+      };
+
+      // Start with role and task context
+      let prompt = `As a ${role} working on "${task}", `;
+      
+      // Generate distinct content for each prompt type with task-specific variations
       switch(promptType) {
-        case 'diagnostic':
-          return `**${role} Diagnostic Analysis for "${task}"**\n\nAs a ${role} approaching "${task}", combine role expertise with task-specific analysis:\n\n• **Task Focus:** ${taskSpecific.diagnostic}\n• **Role Expertise:** ${roleSpecific.diagnostic}\n• **Combined Approach:** Use ${roleSpecific.tools} to execute ${taskSpecific.methodology}\n• **Validation:** Apply both ${roleSpecific.validation} and task-specific verification\n\nLeverage your ${role} perspective to create a comprehensive problem statement for ${task}.${relevantInsights}`;
-        
-        case 'methodology':
-          return `**${role} Methodology for "${task}"**\n\nIntegrate ${role} best practices with "${task}" requirements:\n\n• **Task Methodology:** ${taskSpecific.methodology}\n• **Role Framework:** ${roleSpecific.methodology}\n• **Integrated Approach:** Adapt ${roleSpecific.frameworks} specifically for ${task}\n• **Tool Integration:** Use ${roleSpecific.tools} to support ${taskSpecific.implementation}\n\nEnsure your ${role} expertise enhances the specific demands of ${task}.${relevantInsights}`;
-        
-        case 'implementation':
-          return `**${role} Implementation Strategy for "${task}"**\n\nExecute "${task}" using ${role} expertise and systematic approaches:\n\n• **Task Implementation:** ${taskSpecific.implementation}\n• **Role Implementation:** ${roleSpecific.implementation}\n• **Combined Execution:** Apply ${roleSpecific.tools} to achieve ${taskSpecific.optimization}\n• **Quality Assurance:** Use ${roleSpecific.validation} throughout ${task} delivery\n\nBalance ${role} best practices with ${task}-specific requirements for optimal results.${relevantInsights}`;
-        
-        case 'optimization':
-          return `**${role} Optimization for "${task}"**\n\nOptimize "${task}" performance using ${role} expertise:\n\n• **Task Optimization:** ${taskSpecific.optimization}\n• **Role Optimization:** ${roleSpecific.optimization}\n• **Performance Metrics:** Use ${roleSpecific.metrics} to measure ${task} success\n• **Continuous Improvement:** Apply ${taskSpecific.collaboration} with ${roleSpecific.community}\n\nLeverage your ${role} skills to continuously enhance ${task} outcomes.${relevantInsights}`;
-        
-        case 'collaboration':
-          return `**${role} Collaboration for "${task}"**\n\nMaximize team effectiveness combining ${role} expertise with "${task}" requirements:\n\n• **Task Collaboration:** ${taskSpecific.collaboration}\n• **Role Collaboration:** ${roleSpecific.collaboration}\n• **Network Leverage:** Engage ${roleSpecific.community} for ${task} insights\n• **Knowledge Sharing:** Use ${roleSpecific.tools} to document ${task} learnings\n\nBuild collaborative workflows that merge ${role} expertise with ${task} success factors.${relevantInsights}`;
-        
+        // Diagnostic: Focused on analysis and problem identification
+        case 'diagnostic': {
+          const taskLower = task.toLowerCase();
+          const tools = getTaskSpecificTools();
+          const roleContext = getRoleContext('diagnostic');
+          const taskContext = getTaskContext('diagnostic');
+          
+          // Build prompt parts avoiding duplication
+          const parts = [
+            `analyze the current state of ${taskLower}`,
+            tools && `using ${tools}`,
+            'identify key challenges and potential roadblocks',
+            roleContext,
+            taskContext,
+            'document your analysis and suggest immediate next steps'
+          ];
+          
+          prompt += parts.filter(Boolean).map(s => s.trim()).join('. ') + '.';
+          break;
+        }
+          
+        // Methodology: Focused on approach and framework
+        case 'methodology': {
+          const frameworks = roleSpecific.frameworks?.split(',').filter(Boolean) || [];
+          const frameworkIndex = Math.abs(taskHash) % Math.max(1, frameworks.length);
+          const framework = frameworks[frameworkIndex] || 'a structured approach';
+          
+          const taskLower = task.toLowerCase();
+          const taskContext = getTaskContext('methodology');
+          const roleContext = getRoleContext('methodology');
+          
+          // Build prompt parts avoiding duplication
+          const parts = [
+            `develop a tailored approach for ${taskLower}`,
+            `consider using ${framework} to address the specific requirements`,
+            taskContext,
+            roleContext,
+            'outline a clear, step-by-step methodology'
+          ];
+          
+          prompt += parts.filter(Boolean).map(s => s.trim()).join('. ') + '.';
+          break;
+        }
+          
+        // Implementation: Focused on execution
+        case 'implementation': {
+          const taskLower = task.toLowerCase();
+          const tools = getTaskSpecificTools();
+          const roleContext = getRoleContext('implementation');
+          const taskContext = getTaskContext('implementation');
+          
+          // Build prompt parts avoiding duplication
+          const parts = [
+            `outline the execution plan for ${taskLower}`,
+            tools && `using ${tools}`,
+            'break down the work into specific, actionable steps',
+            roleContext,
+            taskContext,
+            'address potential challenges and their solutions'
+          ];
+          
+          prompt += parts.filter(Boolean).map(s => s.trim()).join('. ') + '.';
+          break;
+        }
+          
+        // Optimization: Focused on improvement
+        case 'optimization': {
+          const metrics = roleSpecific.metrics?.split(',').filter(Boolean) || [];
+          const metricIndex = Math.abs(taskHash) % Math.max(1, metrics.length);
+          const metric = metrics[metricIndex] || 'key performance indicators';
+          
+          const taskLower = task.toLowerCase();
+          const roleContext = getRoleContext('optimization');
+          const taskContext = getTaskContext('optimization');
+          
+          // Build prompt parts avoiding duplication
+          const parts = [
+            `enhance the performance of ${taskLower}`,
+            `focus on ${metric} to identify areas for improvement`,
+            roleContext,
+            taskContext,
+            'propose specific optimization strategies'
+          ];
+          
+          prompt += parts.filter(Boolean).map(s => s.trim()).join('. ') + '.';
+          break;
+        }
+          
+        // Collaboration: Focused on teamwork and communication
+        case 'collaboration': {
+          const taskLower = task.toLowerCase();
+          const roleContext = getRoleContext('collaboration');
+          const taskContext = getTaskContext('collaboration');
+          
+          // Build prompt parts avoiding duplication
+          const parts = [
+            `coordinate with your team to achieve ${taskLower}`,
+            'identify key stakeholders and establish effective communication',
+            roleContext,
+            taskContext,
+            'outline a collaboration strategy with clear roles'
+          ];
+          
+          prompt += parts.filter(Boolean).map(s => s.trim()).join('. ') + '.';
+          break;
+        }
+          
         default:
-          return `As a ${role} working on "${task}", balance your professional expertise with task-specific requirements to achieve optimal outcomes through systematic, integrated approaches.${relevantInsights}`;
+          return `As a ${role} working on "${task}", apply your expertise to achieve successful outcomes.`;
       }
+      
+      // Add brief insights if available (as a separate paragraph)
+      if (insights) {
+        // Clean up insights to remove any potential duplication with existing prompt
+        const keyInsights = insights
+          .split('.')
+          .map(s => s.trim())
+          .filter(s => s.length > 0 && !prompt.toLowerCase().includes(s.toLowerCase()))
+          .slice(0, 2)
+          .map(s => s.endsWith('.') ? s : s + '.')
+          .join(' ');
+        
+        if (keyInsights) {
+          prompt += `\n\nKey insights: ${keyInsights}`;
+        }
+      }
+      
+      return prompt;
     };
 
     // Create prompts using targeted insights for each type

@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Bot, Menu, Store, Plus, Zap, ChevronRight, Loader2 } from 'lucide-react';
+import { Bot, Menu, Store, Plus, Zap, ChevronRight, Loader2, Book, Building2 } from 'lucide-react';
 
 import { NavAgents } from '@/components/sidebar/nav-agents';
 import { NavUserWithTeams } from '@/components/sidebar/nav-user-with-teams';
@@ -244,6 +244,25 @@ export function SidebarLeft({
               </Collapsible>
             </SidebarMenu>
           )}
+
+          {/* Prompt Library */}
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton 
+                asChild 
+                isActive={pathname === '/prompt-library'}
+                onClick={() => {
+                  if (isMobile) setOpenMobile(false);
+                }}
+                className="touch-manipulation"
+              >
+                <Link href="/prompt-library" className="flex items-center">
+                  <Book className="h-4 w-4 mr-1" />
+                  <span>Prompt Library</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
 
         </SidebarGroup>
         <NavAgents />

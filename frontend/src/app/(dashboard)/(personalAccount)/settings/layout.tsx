@@ -18,7 +18,7 @@ export default function PersonalAccountSettingsPage({
     { name: 'Usage Logs', href: '/settings/usage-logs' },
     ...(isLocalMode() ? [{ name: 'Local .Env Manager', href: '/settings/env-manager' }] : []),
     { name: 'Company Profile', href: '/settings/company-profile' },
-    { name: 'Prompt Library', href: '/settings/prompt-library' },
+    // { name: 'Prompt Library', href: '/settings/prompt-library' },
   ];
   return (
     <>
