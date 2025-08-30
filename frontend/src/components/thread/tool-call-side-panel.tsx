@@ -805,7 +805,7 @@ export function ToolCallSidePanel({
                         {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
                         Helium's Core
                       </h2>
-                                          {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
+                        {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
                       <div className={cn(
                         "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
                         agentStatus === 'running' 
@@ -1168,7 +1168,7 @@ export function ToolCallSidePanel({
             }
           }}
           className={cn(
-            'fixed top-3 right-2 bottom-4 shadow-[0px_12px_32px_0px_rgba(0,0,0,0.02)] dark:shadow-[0px_8px_8px_0px_rgba(255,255,255,0.02)] border rounded-[22px] flex flex-col z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
+            'fixed top-3 right-2 bottom-4 shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border rounded-[22px] flex flex-col z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
             widthClass,
           )}  
           style={{
