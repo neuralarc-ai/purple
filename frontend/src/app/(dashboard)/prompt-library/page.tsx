@@ -1,165 +1,166 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Copy, CheckCircle, Book } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Copy, CheckCircle, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
 interface GeneratedPrompt {
   id: number;
   content: string;
+  type: string;
+  industry: string;
+  industryType: string;
 }
 
 export default function PromptLibraryPage() {
-  const [role, setRole] = useState('');
-  const [task, setTask] = useState('');
   const [prompts, setPrompts] = useState<GeneratedPrompt[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [industryType, setIndustryType] = useState('');
 
-  const generatePrompts = async () => {
-    if (!role.trim() || !task.trim()) {
-      toast.error('Please fill in both role and task fields');
-      return;
-    }
+  useEffect(() => {
+    const fetchAllPrompts = async () => {
+      try {
+        setIsLoading(true);
+        const industries = [
+          'Technology','Healthcare','Finance','Education','Retail',
+          'Manufacturing','Hospitality','Real Estate','Marketing','E-commerce'
+        ];
+        const allPrompts: GeneratedPrompt[] = [];
 
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/generate-prompts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ role, task }),
-      });
+        for (const industry of industries) {
+          const response = await fetch('/api/generate-prompts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ industry }),
+          });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate prompts');
+          if (!response.ok) continue;
+          const data = await response.json();
+
+          if (Array.isArray(data.prompts)) {
+            allPrompts.push(...data.prompts.map((p: any) => ({
+              ...p,
+              industryType: industry,
+            })));
+          }
+        }
+        setPrompts(allPrompts.sort(() => 0.5 - Math.random()));
+      } catch (error) {
+        console.error('Error fetching prompts:', error);
+        toast.error('Failed to load prompts');
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      const data = await response.json();
-      setPrompts(data.prompts);
-      toast.success('Prompts generated successfully!');
-    } catch (error) {
-      console.error('Error generating prompts:', error);
-      toast.error('Failed to generate prompts. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    fetchAllPrompts();
+  }, []);
+
+  const industryTypes = React.useMemo(() => {
+    const types = new Set<string>();
+    prompts.forEach((p) => {
+      if (p.industry) types.add(p.industry);
+      if (p.industryType) types.add(p.industryType);
+    });
+    return ['All', ...Array.from(types).sort()];
+  }, [prompts]);
+
+  const filteredPrompts = React.useMemo(() => {
+    if (!searchQuery.trim() && (!industryType || industryType === 'All')) return prompts;
+    const query = searchQuery.trim().toLowerCase();
+    return prompts.filter((p) => {
+      const matchesType =
+        !industryType || industryType === 'All' || p.industry === industryType || p.industryType === industryType;
+      const matchesSearch =
+        p.industry.toLowerCase().includes(query) ||
+        (p.industryType && p.industryType.toLowerCase().includes(query)) ||
+        p.content.toLowerCase().includes(query) ||
+        p.type.toLowerCase().includes(query);
+      return matchesType && matchesSearch;
+    });
+  }, [prompts, searchQuery, industryType]);
 
   const copyToClipboard = (text: string, id: number) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    toast.success('Prompt copied to clipboard!');
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const resetForm = () => {
-    setRole('');
-    setTask('');
-    setPrompts([]);
-  };
-
   return (
-    <div className="container mx-auto py-8 px-4 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-          <Book className="h-8 w-8" />
-          Prompt Library
-        </h1>
-        <p className="text-muted-foreground">
-          Generate and manage your AI prompts for different roles and tasks.
-        </p>
+    <div className="p-6 w-full">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900">Prompt Library</h1>
       </div>
 
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Generate New Prompts</CardTitle>
-          <CardDescription>
-            Enter a role and task to generate AI prompts.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Input
-              id="role"
-              placeholder="e.g., Marketing Specialist, Software Developer"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              disabled={isLoading}
-            />
+      {/* Search and Filter */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        <div className="relative flex-1 max-w-md">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-gray-400" />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="task">Task</Label>
-            <Textarea
-              id="task"
-              placeholder="e.g., Write a social media post about our new product"
-              value={task}
-              onChange={(e) => setTask(e.target.value)}
-              disabled={isLoading}
-              className="min-h-[100px]"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              onClick={generatePrompts} 
-              disabled={isLoading || !role.trim() || !task.trim()}
-              className="flex-1 md:flex-none"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate Prompts'
-              )}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={resetForm}
-              disabled={isLoading}
-            >
-              Reset
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {prompts.length > 0 && (
-        <div className="space-y-6">
-          <h2 className="text-2xl font-semibold">Generated Prompts</h2>
-          <div className="space-y-4">
-            {prompts.map((prompt) => (
-              <Card key={prompt.id}>
-                <CardContent className="pt-6">
-                  <div className="flex justify-between items-start">
-                    <div className="prose max-w-none">
-                      <pre className="whitespace-pre-wrap font-sans">{prompt.content}</pre>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => copyToClipboard(prompt.content, prompt.id)}
-                      className="shrink-0"
-                    >
-                      {copiedId === prompt.id ? (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+          <Input
+            type="text"
+            className="pl-10 w-full"
+            placeholder="Search prompts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <Select value={industryType} onValueChange={setIndustryType}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All Industries" />
+          </SelectTrigger>
+          <SelectContent>
+            {industryTypes.map((type) => (
+              <SelectItem key={type} value={type}>
+                {type}
+              </SelectItem>
             ))}
-          </div>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Prompts Grid */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        {filteredPrompts.map((prompt) => (
+          <Card key={prompt.id} className="p-4 h-36 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-medium text-gray-900 text-sm">{prompt.type}</h3>
+                <p className="text-xs text-gray-500">
+                  {prompt.industry}
+                  {prompt.industryType && ` • ${prompt.industryType}`}
+                </p>
+              </div>
+              <button
+                onClick={() => copyToClipboard(prompt.content, prompt.id)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                {copiedId === prompt.id ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-gray-600 line-clamp-3">
+              {prompt.content}
+            </p>
+          </Card>
+        ))}
+      </div>
+
+      {filteredPrompts.length === 0 && (
+        <div className="text-center py-12 border rounded-lg mt-6">
+          <p className="text-gray-500">
+            {isLoading ? 'Loading prompts...' : 'No prompts found'}
+          </p>
         </div>
       )}
     </div>
