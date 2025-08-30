@@ -3,8 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Copy, CheckCircle, Search } from 'lucide-react';
+import { Copy, CheckCircle, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 interface GeneratedPrompt {
@@ -21,6 +22,8 @@ export default function PromptLibraryPage() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [industryType, setIndustryType] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   useEffect(() => {
     const fetchAllPrompts = async () => {
@@ -85,6 +88,16 @@ export default function PromptLibraryPage() {
     });
   }, [prompts, searchQuery, industryType]);
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredPrompts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedPrompts = filteredPrompts.slice(startIndex, startIndex + itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const copyToClipboard = (text: string, id: number) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -127,8 +140,8 @@ export default function PromptLibraryPage() {
       </div>
 
       {/* Prompts Grid */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {filteredPrompts.map((prompt) => (
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {paginatedPrompts.map((prompt) => (
           <Card key={prompt.id} className="p-4 h-36 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start">
               <div>
@@ -156,11 +169,58 @@ export default function PromptLibraryPage() {
         ))}
       </div>
 
-      {filteredPrompts.length === 0 && (
+      {filteredPrompts.length === 0 ? (
         <div className="text-center py-12 border rounded-lg mt-6">
           <p className="text-gray-500">
             {isLoading ? 'Loading prompts...' : 'No prompts found'}
           </p>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between px-2 mt-6">
+          <div className="text-sm text-gray-500">
+            Showing {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredPrompts.length)} of {filteredPrompts.length} prompts
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="text-sm">
+              Page {currentPage} of {totalPages}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
     </div>
