@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from 'next-themes';
 import {
   Tooltip,
   TooltipContent,
@@ -19,6 +20,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     onTranscription,
     disabled = false,
 }) => {
+    const { theme } = useTheme();
     const [isListening, setIsListening] = useState(false);
     const lastTranscriptRef = useRef<string>('');
     const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -181,22 +183,13 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             return <Square className="h-4 w-4" />;
         }
         return (
-            <>
-                <Image
-                    src="/icons/mic-light.svg"
-                    alt="mic Light Logo"
-                    width={20}
-                    height={20}
-                    className="block dark:hidden mb-0"
-                />
-                <Image
-                    src="/icons/mic-dark.svg"
-                    alt="mic Dark Logo"
-                    width={20}
-                    height={20}
-                    className="hidden dark:block mb-0"
-                />
-            </>
+            <Image
+                src={theme === 'dark' ? '/icons/mic-dark.svg' : '/icons/mic-light.svg'}
+                alt="Microphone"
+                width={18}
+                height={18}
+                className="mb-0"
+            />
         );
     };
 
@@ -209,7 +202,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                         variant="outline"
                         onClick={handleClick}
                         disabled={disabled}
-                        className={`h-8 px-2 py-2 bg-transparent border-0 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent/50 flex items-center gap-2 transition-colors ${getButtonClass()}`}
+                        className={`h-8 aspect-square shadow-none object-contain p-1.5 bg-transparent border dark:border-muted-foreground/30 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50! flex items-center gap-2 transition-all ${getButtonClass()}`}
                     >
                         {getIcon()}
                     </Button>

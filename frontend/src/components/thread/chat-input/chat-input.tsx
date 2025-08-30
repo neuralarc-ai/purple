@@ -365,7 +365,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
             </button>
           )}
           <Card
-            className={`-mb-2 shadow-none w-full max-w-5xl mx-auto bg-transparent border-none overflow-visible ${enableAdvancedConfig && selectedAgentId ? '' : 'rounded-3xl'} relative z-10`}
+            className={`shadow-none p-0 mt-4 w-full max-w-5xl mx-auto bg-transparent border-none overflow-visible ${enableAdvancedConfig && selectedAgentId ? '' : 'rounded-3xl'} relative z-10`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={(e) => {
@@ -387,9 +387,9 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
             }}
           >
             <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
-              <CardContent className={`w-full p-2 pt-0 pb-3 bg-white dark:bg-sidebar-accent rounded-3xl relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar/50`}>
-                <div className="absolute inset-0 rounded-[inherit] overflow-hidden border">
-                  {/* <BorderBeam 
+              <CardContent className={`w-full p-2 pt-0 pb-3 border-black/10 dark:border-muted bg-white dark:bg-sidebar-accent rounded-3xl relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border`}>
+                {/* <div className="absolute inset-0 rounded-[inherit] overflow-hidden border">
+                  <BorderBeam 
                     duration={6}
                     borderWidth={1}
                     size={220}
@@ -401,8 +401,8 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                     delay={3}
                     size={220}
                     className="from-transparent via-helium-green to-transparent"
-                  /> */}
-                </div>
+                  />
+                </div> */}
                 <AttachmentGroup
                   files={uploadedFiles || []}
                   sandboxId={sandboxId}
