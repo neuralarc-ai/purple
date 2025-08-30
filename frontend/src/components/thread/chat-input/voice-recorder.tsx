@@ -186,8 +186,8 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             <Image
                 src={theme === 'dark' ? '/icons/mic-dark.svg' : '/icons/mic-light.svg'}
                 alt="Microphone"
-                width={20}
-                height={20}
+                width={18}
+                height={18}
                 className="mb-0"
             />
         );
@@ -202,7 +202,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                         variant="outline"
                         onClick={handleClick}
                         disabled={disabled}
-                        className={`h-8 aspect-square shadow-none object-contain p-1.5 bg-transparent border rounded-full text-muted-foreground hover:text-foreground hover:bg-accent/50 flex items-center gap-2 transition-all ${getButtonClass()}`}
+                        className={`h-8 aspect-square shadow-none object-contain p-1.5 bg-transparent border dark:border-muted-foreground/30 rounded-full text-muted-foreground hover:text-foreground hover:bg-background/50! flex items-center gap-2 transition-all ${getButtonClass()}`}
                     >
                         {getIcon()}
                     </Button>
