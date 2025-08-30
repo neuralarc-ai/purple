@@ -124,28 +124,28 @@ export default function PromptLibraryPage() {
   };
 
   return (
-    <div className="p-6 w-full">
+    <div className="p-6 pt-4 w-full max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Prompt Library</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Prompt Library</h1>
       </div>
 
       {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row gap-4 mb-8 w-full justify-between">
         <div className="relative flex-1 max-w-md">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
             <Search className="h-4 w-4 text-gray-400" />
           </div>
           <Input
             type="text"
-            className="pl-10 w-full"
+            className="pl-10 h-12 w-full rounded-3xl border-2 shadow-none"
             placeholder="Search prompts..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <Select value={industryType} onValueChange={setIndustryType}>
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-fit rounded-3xl data-[size=default]:h-12 px-4">
             <SelectValue placeholder="All Industries" />
           </SelectTrigger>
           <SelectContent>
@@ -163,7 +163,7 @@ export default function PromptLibraryPage() {
         {paginatedPrompts.map((prompt) => (
           <Card 
             key={prompt.id} 
-            className="p-4 h-48 hover:shadow-md transition-all duration-200 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+            className="rounded-3xl p-4 h-48 hover:shadow-md transition-all duration-200 cursor-pointer hover-bg-muted"
             onClick={() => handleCardClick(prompt)}
           >
             <div className="flex justify-between items-start">
@@ -197,7 +197,7 @@ export default function PromptLibraryPage() {
 
       {/* Preview Dialog */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto rounded-3xl">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-lg font-semibold">
@@ -222,7 +222,7 @@ export default function PromptLibraryPage() {
             </p>
           </DialogHeader>
           <div className="mt-4">
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-sidebar rounded-xl p-4">
               <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
                 {previewPrompt?.content}
               </p>

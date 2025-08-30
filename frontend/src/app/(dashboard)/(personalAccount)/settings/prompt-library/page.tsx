@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +18,7 @@ interface GeneratedPrompt {
 
 
 export default function PromptLibraryPage() {
+  const { theme } = useTheme();
   const [role, setRole] = useState('');
   const [task, setTask] = useState('');
   const [prompts, setPrompts] = useState<GeneratedPrompt[]>([]);
@@ -67,7 +70,15 @@ export default function PromptLibraryPage() {
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Prompt Library</h1>
+        <div className="flex items-center gap-3 mb-2">
+          <Image
+            src={theme === 'dark' ? 'icons/prompt-dark.svg' : 'icons/prompt-light.svg'}
+            alt="Prompt Library"
+            width={32}
+            height={32}
+          />
+          <h1 className="text-3xl font-bold text-foreground!">Prompt Library</h1>
+        </div>
         <p className="text-muted-foreground">
           Generate customized prompts based on your role and specific tasks using AI.
         </p>
