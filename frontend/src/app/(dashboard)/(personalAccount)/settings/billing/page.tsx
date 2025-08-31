@@ -70,13 +70,13 @@ export default function PersonalAccountBillingPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <BillingModal 
-        open={showBillingModal} 
+    <div className="space-y-6 pt-4 md:pt-0">
+      <BillingModal
+        open={showBillingModal}
         onOpenChange={setShowBillingModal}
         returnUrl={`${returnUrl}/settings/billing`}
       />
-      
+
       {/* Billing Status Card */}
       <div className="rounded-xl border shadow-sm bg-card p-6">
         <h2 className="text-xl font-semibold mb-4">Billing Status</h2>
@@ -106,15 +106,17 @@ export default function PersonalAccountBillingPage() {
             {subscriptionData && (
               <div className="mb-6">
                 <div className="rounded-lg border bg-background p-4">
-                  <div className="flex justify-between items-center gap-4">
-                    <span className="text-sm font-medium text-foreground/90">
-                      Agent Usage This Month
-                    </span>
-                    <span className="text-sm font-medium">
-                      {Math.round((subscriptionData.current_usage || 0) * 100)} credits /{' '}
-                      {Math.round((subscriptionData.cost_limit || 0) * 100)} credits
-                    </span>
-                    <Button variant='outline' asChild className='text-sm'>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm font-medium text-foreground/90">
+                        Agent Usage This Month
+                      </span>
+                      <span className="text-sm font-medium">
+                        {Math.round((subscriptionData.current_usage || 0) * 100)} credits /{' '}
+                        {Math.round((subscriptionData.cost_limit || 0) * 100)} credits
+                      </span>
+                    </div>
+                    <Button variant='outline' asChild className='text-sm flex-shrink-0'>
                       <Link href="/settings/usage-logs">
                         Usage logs
                       </Link>
@@ -127,7 +129,7 @@ export default function PersonalAccountBillingPage() {
             {/* Credit Balance Display - Only show for users who can purchase credits */}
             {subscriptionData?.can_purchase_credits && (
               <div className="mb-6">
-                <CreditBalanceDisplay 
+                <CreditBalanceDisplay
                   balance={subscriptionData.credit_balance_credits || Math.round((subscriptionData.credit_balance || 0) * 100)}
                   canPurchase={subscriptionData.can_purchase_credits}
                   onPurchaseClick={() => setShowCreditPurchaseModal(true)}
@@ -146,7 +148,7 @@ export default function PersonalAccountBillingPage() {
           </>
         )}
       </div>
-      
+
       {/* Credit Purchase Modal */}
       <CreditPurchaseModal
         open={showCreditPurchaseModal}
