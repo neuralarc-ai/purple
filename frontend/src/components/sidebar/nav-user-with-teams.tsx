@@ -473,17 +473,17 @@ export function NavUserWithTeams({
               <DropdownMenuGroup>                
                 {!flagLoading && customAgentsEnabled && (
                   <DropdownMenuItem asChild className="rounded-full cursor-pointer">
-                    <Link href="/settings/credentials">
-                      {/* <DynamicIcon
+                    {/* <Link href="/settings/credentials">
+                      <DynamicIcon
                         lightPath="/icons/integrations.svg"
                         darkPath="/icons/integration-dark.svg"
                         alt="integration"
                         width={17}
                         height={17}
                         className="mb-0"
-                      /> */}
+                      />
                       Integrations
-                    </Link>
+                    </Link> */}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenu>
