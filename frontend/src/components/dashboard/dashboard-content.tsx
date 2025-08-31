@@ -58,7 +58,7 @@ export function DashboardContent() {
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  // Fixed welcome message - use useMemo to prevent regeneration on every render
+  // Welcome messages that change on refresh
   const welcomeMessages = [
     "What do we tackle first, {name}?",
     "Let's lock in - what's the focus, {name}?",
@@ -69,17 +69,10 @@ export function DashboardContent() {
   ];
   
   const welcomeMessage = useMemo(() => {
-    // Get cached message or generate new one
-    const cachedMessage = localStorage.getItem('cached_welcome_message');
-    if (cachedMessage) {
-      return cachedMessage;
-    }
-    
-    // Generate new random message and cache it
+    // Generate a new random message on each component mount (refresh)
     const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-    localStorage.setItem('cached_welcome_message', randomMessage);
     return randomMessage;
-  }, []); // Empty dependency array - only runs once
+  }, []); // Empty dependency array - generates new message on each mount
 
   const [currentWelcomeMessage, setCurrentWelcomeMessage] = useState('');
 

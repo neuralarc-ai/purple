@@ -855,7 +855,7 @@ export default function ThreadPage({
         {/* Disclaimer text at bottom */}
         <div
           className={cn(
-            'fixed bottom-0 z-30 px-4 py-2 text-center',
+            'fixed bottom-0 z-10 px-4 pt-4 text-center',
             'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
             leftSidebarState === 'expanded'
               ? 'left-[72px] md:left-[256px]'
@@ -870,7 +870,7 @@ export default function ThreadPage({
             isMobile ? 'left-0 right-0' : '',
           )}
         >
-          <p className="text-xs text-muted-foreground bg-background/80 backdrop-blur-sm rounded px-2">
+          <p className="text-xs text-muted-foreground bg-background backdrop-blur-sm rounded px-2 pt-4">
             Helium can make mistakes. Check important info. See Cookie Preferences.
           </p>
         </div>
