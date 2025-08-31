@@ -40,7 +40,7 @@ export const TabsNavigation = ({ activeTab, onTabChange, onCreateAgent }: TabsNa
       <div className="flex-shrink-0">
         <Button 
           onClick={onCreateAgent}
-          className="flex items-center gap-1 rounded-full px-4 py-2 font-bold"
+          className="flex items-center gap-1 rounded-4xl px-4 h-12 font-bold"
         >
           <Plus className="h-4 w-4" />
           Create
