@@ -278,8 +278,8 @@ export function SidebarLeft({
               <Image
                 src={
                   theme === 'dark'
-                    ? 'icons/plus-dark.svg'
-                    : 'icons/plus-light.svg'
+                    ? '/icons/plus-dark.svg'
+                    : '/icons/plus-light.svg'
                 }
                 alt="plus Light Logo"
                 width={20}
