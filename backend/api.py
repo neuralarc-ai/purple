@@ -187,6 +187,7 @@ from admin import api as admin_api
 api_router.include_router(admin_api.router)
 
 from composio_integration import api as composio_api
+api_router.include_router(composio_api.router)
 
 # Add prompt generation API
 from prompt_generation import api as prompt_generation_api
