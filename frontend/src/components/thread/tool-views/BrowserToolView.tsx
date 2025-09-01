@@ -377,8 +377,9 @@ export function BrowserToolView({
               </span>
             </Button>
             
-<!--             {!isRunning && (
-              <Badge -->
+            {/* Browser Status Badges - Commented out for now */}
+            {/* {!isRunning && (
+              <Badge */}
           {/* {!isRunning && (
             <Badge
 
@@ -404,6 +405,7 @@ export function BrowserToolView({
               Executing browser action
             </Badge>
           )} */}
+        </div>
         </div>
       </CardHeader>
 

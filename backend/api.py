@@ -186,6 +186,9 @@ api_router.include_router(pipedream_api.router)
 from admin import api as admin_api
 api_router.include_router(admin_api.router)
 
+from user_profiles import api as user_profiles_api
+api_router.include_router(user_profiles_api.router, prefix="/user-profiles")
+
 from composio_integration import api as composio_api
 api_router.include_router(composio_api.router)
 

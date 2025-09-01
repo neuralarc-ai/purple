@@ -13,8 +13,10 @@ import {
   SquarePen,
 } from 'lucide-react';
 import { useAccounts } from '@/hooks/use-accounts';
+import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
 import NewTeamForm from '@/components/basejump/new-team-form';
 import { agentApi } from '@/lib/api-enhanced';
+import BoringAvatar from 'boring-avatars';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -90,9 +92,17 @@ export function NavUserWithTeams({
   const router = useRouter();
   const { isMobile } = useSidebar();
   const { data: accounts } = useAccounts();
+  const { profile, preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
   const [showEditNameDialog, setShowEditNameDialog] = React.useState(false);
   const [editName, setEditName] = React.useState(user.name);
+  
+  // Update editName when preferredName changes
+  React.useEffect(() => {
+    if (preferredName && !profileLoading) {
+      setEditName(preferredName);
+    }
+  }, [preferredName, profileLoading]);
   const [editLoading, setEditLoading] = React.useState(false);
   const [tokenUsage, setTokenUsage] = React.useState(0);
   const [totalTokens, setTotalTokens] = React.useState(500);
@@ -220,13 +230,9 @@ export function NavUserWithTeams({
 
   // Handle name editing
   const handleEditName = async () => {
-    if (!editName.trim() || editName === user.name) {
+    const currentName = preferredName || user.name;
+    if (!editName.trim() || editName === currentName) {
       setShowEditNameDialog(false);
-      return;
-    }
-    
-    if (!personalAccount?.account_id) {
-      toast.error('Unable to update account name. Please try again.');
       return;
     }
     
@@ -234,34 +240,32 @@ export function NavUserWithTeams({
     try {
       const supabase = createClient();
       
-      // Update both auth user data and account data
-      const [authResult, accountResult] = await Promise.all([
-        // Update auth user data
-        supabase.auth.updateUser({
-          data: { name: editName.trim() },
+      // Update the user profile with the new preferred name
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user-profiles/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          preferred_name: editName.trim(),
         }),
-        // Update account name in basejump.accounts table
-        supabase.rpc('update_account', {
-          account_id: personalAccount.account_id,
-          name: editName.trim(),
-        })
-      ]);
+      });
       
-      if (authResult.error) throw authResult.error;
-      if (accountResult.error) throw accountResult.error;
+      if (!response.ok) {
+        throw new Error(`Failed to update profile: ${response.statusText}`);
+      }
       
-      // Clear cached names so dashboard will pick up the new name
-      localStorage.removeItem('cached_user_name');
-      localStorage.removeItem('cached_capitalized_name');
-      localStorage.removeItem('cached_welcome_message');
-      
-      toast.success('Name updated successfully!');
+      // Invalidate the user profile query to refresh the data
+      // This will trigger a refetch and update the UI
+      toast.success('Preferred name updated successfully!');
       setShowEditNameDialog(false);
-      // Refresh the page to update the sidebar name and clear cache
+      
+      // Force a refetch of the user profile
       window.location.reload();
     } catch (err) {
-      console.error('Error updating name:', err);
-      toast.error('Failed to update name. Please try again.');
+      console.error('Error updating preferred name:', err);
+      toast.error('Failed to update preferred name. Please try again.');
     } finally {
       setEditLoading(false);
     }
@@ -283,18 +287,35 @@ export function NavUserWithTeams({
               >
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:text-center group-data-[collapsible=icon]:ml-0 ml-2">
                   <span className="truncate font-medium group-data-[collapsible=icon]:hidden">
-                    Settings
+                    {profileLoading ? 'Loading...' : 'Settings'}
                   </span>
                 </div>
                 {/* Show user avatar in collapsed state, more icon in expanded state */}
                 <div className="ml-auto group-data-[collapsible=icon]:mr-2">
                   <div className="group-data-[collapsible=icon]:block hidden">
+                                      {profile?.avatar ? (
+                    <div className="h-6 w-6 rounded-lg overflow-hidden">
+                      <BoringAvatar
+                        name={preferredName || user.name}
+                        colors={JSON.parse(profile.avatar).colors}
+                        variant="beam"
+                        size={24}
+                      />
+                    </div>
+                  ) : user.avatar ? (
                     <Avatar className="h-6 w-6 rounded-lg">
-                      <AvatarImage src={user.avatar} alt={user.name} />
+                      <AvatarImage src={user.avatar} alt={preferredName || user.name} />
                       <AvatarFallback className="rounded-lg text-xs">
-                        {getInitials(user.name)}
+                        {getInitials(preferredName || user.name)}
                       </AvatarFallback>
                     </Avatar>
+                  ) : (
+                    <Avatar className="h-6 w-6 rounded-lg">
+                      <AvatarFallback className="rounded-lg text-xs">
+                        {getInitials(preferredName || user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                   </div>
                   <div className="group-data-[collapsible=icon]:hidden">
                     <DynamicIcon
@@ -317,20 +338,43 @@ export function NavUserWithTeams({
             >
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1.5 py-1.5 text-left text-sm">
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={user.avatar} alt={user.name} />
-                    <AvatarFallback className="rounded-lg">
-                      {getInitials(user.name)}
-                    </AvatarFallback>
-                  </Avatar>
+                  {profile?.avatar ? (
+                    <div className="h-8 w-8 rounded-lg overflow-hidden">
+                      <BoringAvatar
+                        name={preferredName || user.name}
+                        colors={JSON.parse(profile.avatar).colors}
+                        variant="beam"
+                        size={32}
+                      />
+                    </div>
+                  ) : user.avatar ? (
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarImage src={user.avatar} alt={preferredName || user.name} />
+                      <AvatarFallback className="rounded-lg">
+                        {getInitials(preferredName || user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ) : (
+                    <Avatar className="h-8 w-8 rounded-lg">
+                      <AvatarFallback className="rounded-lg">
+                        {getInitials(preferredName || user.name)}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <div className="flex items-center gap-2 group">
-                      <span className="truncate font-medium">{user.name}</span>
+                      <span className="truncate font-medium">
+                        {profileLoading ? (
+                          <span className="text-muted-foreground">Loading...</span>
+                        ) : (
+                          preferredName || user.name
+                        )}
+                      </span>
                       <button
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          setEditName(user.name);
+                          setEditName(preferredName || user.name);
                           setShowEditNameDialog(true);
                         }}
                         className="text-muted-foreground hover:text-foreground transition-colors duration-200"
@@ -471,7 +515,7 @@ export function NavUserWithTeams({
                 <DropdownMenuItem asChild className="rounded-full cursor-pointer">
                   <Link href="/settings/billing">
                     {/* <CreditCard className="h-4 w-4 mb-0" /> */}
-                    Billing
+                    Settings
                   </Link>
                 </DropdownMenuItem>
                 {!flagLoading && customAgentsEnabled && (
@@ -557,14 +601,16 @@ export function NavUserWithTeams({
       {/* Edit Name Dialog */}
       <Dialog open={showEditNameDialog} onOpenChange={setShowEditNameDialog}>
         <DialogContent className="sm:max-w-[400px] bg-background border border-border rounded-lg shadow-lg p-0">
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <h3 className="text-lg font-semibold text-foreground">Edit Name</h3>
-          </div>
+          <DialogHeader className="p-4 border-b border-border">
+            <DialogTitle className="text-lg font-semibold text-foreground">
+              Edit Preferred Name
+            </DialogTitle>
+          </DialogHeader>
           <div className="p-4">
             <Input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              placeholder="Enter your name"
+              placeholder="Enter your preferred name"
               disabled={editLoading}
               autoFocus
               className="mb-4"
@@ -572,7 +618,7 @@ export function NavUserWithTeams({
             <div className="flex justify-end">
               <Button 
                 onClick={handleEditName} 
-                disabled={editLoading || !editName.trim() || editName === user.name}
+                disabled={editLoading || !editName.trim() || editName === (preferredName || user.name)}
                 size="sm"
               >
                 {editLoading ? 'Saving...' : 'Save'}
