@@ -14,6 +14,8 @@ interface CodeRendererProps {
   content: string;
   language?: string;
   className?: string;
+  editable?: boolean;
+  onChange?: (value: string) => void;
 }
 
 // Map of language aliases to CodeMirror language support
@@ -48,6 +50,8 @@ export function CodeRenderer({
   content,
   language = '',
   className,
+  editable = false,
+  onChange,
 }: CodeRendererProps) {
   // Get current theme
   const { resolvedTheme } = useTheme();
@@ -81,7 +85,8 @@ export function CodeRenderer({
             highlightActiveLineGutter: false,
             foldGutter: false,
           }}
-          editable={false}
+          editable={editable}
+          onChange={editable && onChange ? (val) => onChange(val) : undefined}
           className="text-sm w-full min-h-full"
           style={{ maxWidth: '100%' }}
           height="auto"

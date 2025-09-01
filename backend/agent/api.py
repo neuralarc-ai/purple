@@ -529,6 +529,99 @@ async def stop_agent(agent_run_id: str, user_id: str = Depends(get_current_user_
     await stop_agent_run(agent_run_id)
     return {"status": "stopped"}
 
+async def _publish_control_signal(agent_run_id: str, signal: str):
+    """Publish a control signal to the agent run control channels."""
+    global_control_channel = f"agent_run:{agent_run_id}:control"
+    try:
+        await redis.publish(global_control_channel, signal)
+        logger.debug(f"Published {signal} to {global_control_channel}")
+    except Exception as e:
+        logger.error(f"Failed to publish {signal} to {global_control_channel}: {str(e)}")
+    # Also broadcast to instance-specific channels for immediate delivery
+    try:
+        instance_keys = await redis.keys(f"active_run:*:{agent_run_id}")
+        for key in instance_keys:
+            parts = key.split(":")
+            if len(parts) == 3:
+                instance_id_from_key = parts[1]
+                instance_control_channel = f"agent_run:{agent_run_id}:control:{instance_id_from_key}"
+                try:
+                    await redis.publish(instance_control_channel, signal)
+                except Exception as e:
+                    logger.warning(f"Failed to publish {signal} to {instance_control_channel}: {str(e)}")
+    except Exception as e:
+        logger.warning(f"Failed to enumerate instance keys for {agent_run_id}: {str(e)}")
+
+@router.post("/agent-run/{agent_run_id}/pause")
+async def pause_agent(agent_run_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
+    """Cooperatively pause a running agent."""
+    structlog.contextvars.bind_contextvars(agent_run_id=agent_run_id)
+    client = await db.client
+    await get_agent_run_with_access_check(client, agent_run_id, user_id)
+    await _publish_control_signal(agent_run_id, "PAUSE")
+    return {"status": "pausing"}
+
+@router.post("/agent-run/{agent_run_id}/resume")
+async def resume_agent(agent_run_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
+    """Resume a paused agent."""
+    structlog.contextvars.bind_contextvars(agent_run_id=agent_run_id)
+    client = await db.client
+    await get_agent_run_with_access_check(client, agent_run_id, user_id)
+    await _publish_control_signal(agent_run_id, "RESUME")
+    return {"status": "resuming"}
+
+@router.post("/agent-run/{agent_run_id}/takeover")
+async def takeover_agent(agent_run_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
+    """Signal UI manual takeover; pauses run and switches control mode."""
+    structlog.contextvars.bind_contextvars(agent_run_id=agent_run_id)
+    client = await db.client
+    await get_agent_run_with_access_check(client, agent_run_id, user_id)
+    await _publish_control_signal(agent_run_id, "TAKEOVER")
+    return {"status": "takeover"}
+
+@router.post("/agent-run/{agent_run_id}/release")
+async def release_agent(agent_run_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
+    """Release manual takeover and allow automation to continue."""
+    structlog.contextvars.bind_contextvars(agent_run_id=agent_run_id)
+    client = await db.client
+    await get_agent_run_with_access_check(client, agent_run_id, user_id)
+    await _publish_control_signal(agent_run_id, "RELEASE")
+    return {"status": "released"}
+
+class ManualEvent(BaseModel):
+    type: str
+    data: Dict[str, Any]
+
+@router.post("/agent-run/{agent_run_id}/manual-event")
+async def log_manual_event(
+    agent_run_id: str,
+    event: ManualEvent,
+    user_id: str = Depends(get_current_user_id_from_jwt)
+):
+    """Append a manual event to the unified event stream for this run."""
+    structlog.contextvars.bind_contextvars(agent_run_id=agent_run_id)
+    client = await db.client
+    await get_agent_run_with_access_check(client, agent_run_id, user_id)
+
+    response_list_key = f"agent_run:{agent_run_id}:responses"
+    response_channel = f"agent_run:{agent_run_id}:new_response"
+
+    payload = {
+        "type": "manual_event",
+        "event_type": event.type,
+        "data": event.data,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "source": "manual",
+        "user_id": user_id,
+    }
+    try:
+        await redis.rpush(response_list_key, json.dumps(payload))
+        await redis.publish(response_channel, "new")
+    except Exception as e:
+        logger.error(f"Failed to append manual event for {agent_run_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to record manual event")
+    return {"status": "ok"}
+
 @router.get("/thread/{thread_id}/agent-runs")
 async def get_agent_runs(thread_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
     """Get all agent runs for a thread."""

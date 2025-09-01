@@ -430,3 +430,69 @@ class BrowserTool(SandboxToolsBase):
         """Take a screenshot using Stagehand."""
         logger.debug(f"Browser taking screenshot: {name}")
         return await self._execute_stagehand_api("screenshot", {"name": name})
+    
+    @openapi_schema({
+        "type": "function",
+        "function": {
+            "name": "browser_enable_takeover",
+            "description": "Enable browser takeover mode to pause automation and allow manual control",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
+        }
+    })
+    @usage_example('''
+        <function_calls>
+        <invoke name="browser_enable_takeover">
+        </invoke>
+        </function_calls>
+        ''')
+    async def browser_enable_takeover(self) -> ToolResult:
+        """Enable browser takeover mode."""
+        logger.debug("Enabling browser takeover mode")
+        return await self._execute_stagehand_api("takeover", {})
+    
+    @openapi_schema({
+        "type": "function",
+        "function": {
+            "name": "browser_release_takeover",
+            "description": "Release browser takeover mode and resume automation from current state",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
+        }
+    })
+    @usage_example('''
+        <function_calls>
+        <invoke name="browser_release_takeover">
+        </invoke>
+        </function_calls>
+        ''')
+    async def browser_release_takeover(self) -> ToolResult:
+        """Release browser takeover mode."""
+        logger.debug("Releasing browser takeover mode")
+        return await self._execute_stagehand_api("release", {})
+    
+    @openapi_schema({
+        "type": "function",
+        "function": {
+            "name": "browser_get_state",
+            "description": "Get current browser state including URL, title, and takeover status",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
+        }
+    })
+    @usage_example('''
+        <function_calls>
+        <invoke name="browser_get_state">
+        </invoke>
+        </function_calls>
+        ''')
+    async def browser_get_state(self) -> ToolResult:
+        """Get current browser state."""
+        logger.debug("Getting browser state")
+        return await self._execute_stagehand_api("state", {}, method="GET")
