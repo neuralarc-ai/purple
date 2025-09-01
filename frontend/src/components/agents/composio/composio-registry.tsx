@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Zap, X, Settings, ChevronDown, ChevronUp, Loader2, Server } from 'lucide-react';
+import { Search, Zap, X, Settings, ChevronDown, ChevronUp, Loader2, Server, Trash2 } from 'lucide-react';
 import { useComposioCategories, useComposioToolkitsInfinite } from '@/hooks/react-query/composio/use-composio';
 import { useComposioProfiles } from '@/hooks/react-query/composio/use-composio-profiles';
 import { useAgent, useUpdateAgent } from '@/hooks/react-query/agents/use-agents';
@@ -17,6 +17,19 @@ import { useQueryClient } from '@tanstack/react-query';
 // import { AgentSelector } from '../../thread/chat-input/agent-selector';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CustomMCPDialog } from '../mcp/custom-mcp-dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDeleteProfile } from '@/hooks/react-query/composio/use-composio-mutations';
+// import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const CATEGORY_EMOJIS: Record<string, string> = {
   'popular': '🔥',
@@ -27,6 +40,7 @@ const CATEGORY_EMOJIS: Record<string, string> = {
   'communication': '💬',
   'project-management': '📋',
   'scheduling': '📅',
+  'Design & creative tools': '🎨',
 };
 
 interface ConnectedApp {
@@ -55,18 +69,54 @@ const getAgentConnectedApps = (
   profiles: ComposioProfile[],
   toolkits: ComposioToolkit[]
 ): ConnectedApp[] => {
-  if (!agent?.custom_mcps || !profiles?.length || !toolkits?.length) return [];
+  if (!agent?.custom_mcps || !toolkits?.length) return [];
 
   const connectedApps: ConnectedApp[] = [];
   
   agent.custom_mcps.forEach((mcpConfig: any) => {
+    // Handle MCP configs with profile_id (Composio apps)
     if (mcpConfig.config?.profile_id) {
-      const profile = profiles.find(p => p.profile_id === mcpConfig.config.profile_id);
+      const profile = profiles?.find(p => p.profile_id === mcpConfig.config.profile_id);
       const toolkit = toolkits.find(t => t.slug === profile?.toolkit_slug);
       if (profile && toolkit) {
         connectedApps.push({
           toolkit,
           profile,
+          mcpConfig
+        });
+      }
+    } 
+    // Handle MCP configs without profile_id (custom HTTP apps)
+    else if (mcpConfig.name && mcpConfig.type === 'http') {
+      // Always use the exact name from MCP config for HTTP type apps
+      const toolkit: ComposioToolkit = {
+        slug: mcpConfig.name.toLowerCase().replace(/\s+/g, '-'),
+        name: mcpConfig.name, // Use the exact name from MCP config
+        description: `Custom integration with ${mcpConfig.name}`,
+        logo: '',
+        tags: ['custom', 'http'],
+        categories: ['custom'],
+        auth_schemes: [] // Required by ComposioToolkit interface
+      };
+      
+      // Only include the toolkit if it's not already in the list
+      if (!connectedApps.some(app => app.toolkit.name.toLowerCase() === toolkit.name.toLowerCase())) {
+      
+        const now = new Date().toISOString();
+        connectedApps.push({
+          toolkit,
+          profile: {
+            profile_id: `custom-${toolkit.slug}-${Date.now()}`,
+            profile_name: mcpConfig.name,
+            display_name: mcpConfig.name,
+            toolkit_slug: toolkit.slug,
+            toolkit_name: toolkit.name,
+            mcp_url: '',
+            is_connected: true,
+            is_default: false,
+            created_at: now,
+            config: {}
+          },
           mcpConfig
         });
       }
@@ -133,14 +183,33 @@ const ConnectedAppCard = ({
   onToggleTools, 
   onConfigure,
   onManageTools,
-  isUpdating 
+  onDelete,
+  isUpdating
 }: {
   connectedApp: ConnectedApp;
   onToggleTools: (profileId: string, enabled: boolean) => void;
   onConfigure: (app: ComposioToolkit, profile: ComposioProfile) => void;
   onManageTools: (connectedApp: ConnectedApp) => void;
+  onDelete: (profileId: string) => Promise<void>;
   isUpdating: boolean;
 }) => {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await onDelete(connectedApp.profile.profile_id);
+      setShowDeleteDialog(false);
+      toast.success('Profile deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete profile:', error);
+      toast.error('Failed to delete profile');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const { toolkit, profile, mcpConfig } = connectedApp;
   const hasEnabledTools = mcpConfig.enabledTools && mcpConfig.enabledTools.length > 0;
 
@@ -157,36 +226,92 @@ const ConnectedAppCard = ({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-sm leading-tight truncate mb-1">{toolkit.name}</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="font-medium text-sm leading-tight truncate">{toolkit.name}</h3>
+            {mcpConfig.type === 'http' && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs text-muted-foreground">
+                      <Server className="h-3 w-3" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Custom MCP Integration</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
             Connected as "{profile.profile_name}"
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onManageTools(connectedApp)}
-            disabled={isUpdating}
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onManageTools(connectedApp)}
+          disabled={isUpdating}
+          className="h-8 w-8 p-0"
+        >
+          <Settings className="h-4 w-4" />
+        </Button>
       </div>
       
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            {hasEnabledTools ? `${mcpConfig.enabledTools.length} tools enabled` : 'Connected (no tools)'}
-          </div>
+      <div className="flex justify-between items-center mt-2 pt-2 border-t">
+        <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+          <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          {hasEnabledTools ? `${mcpConfig.enabledTools.length} tools enabled` : 'Connected (no tools)'}
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowDeleteDialog(true);
+          }}
+          disabled={isUpdating || isDeleting}
+          className="h-6 px-2 text-xs text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+        >
+          <Trash2 className="h-3 w-3 mr-1" />
+          Remove
+        </Button>
       </div>
+      {showDeleteDialog && (
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Profile</AlertDialogTitle>
+            </AlertDialogHeader>
+            <AlertDialogDescription>
+              Are you sure you want to delete the profile for {toolkit.name}?
+            </AlertDialogDescription>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
+                {isDeleting ? (
+                  <Loader2 className="animate-spin h-4 w-4" />
+                ) : (
+                  'Delete'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 };
 
-const AppCard = ({ app, profiles, onConnect, onConfigure, isConnectedToAgent, currentAgentId, mode }: {
+const AppCard = ({ 
+  app, 
+  profiles, 
+  onConnect, 
+  onConfigure, 
+  isConnectedToAgent, 
+  currentAgentId, 
+  mode 
+}: {
   app: ComposioToolkit; 
   profiles: ComposioProfile[];
   onConnect: () => void;
@@ -312,6 +437,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
   const currentAgentId = selectedAgentId ?? internalSelectedAgentId;
   const { data: agent, isLoading: isLoadingAgent } = useAgent(currentAgentId || '');
   const { mutate: updateAgent, isPending: isUpdatingAgent } = useUpdateAgent();
+  const deleteProfile = useDeleteProfile();
 
   const handleAgentSelect = (agentId: string | undefined) => {
     if (onAgentChange) {
@@ -364,7 +490,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
     setShowConnector(true);
   };
 
-    const handleToggleTools = (profileId: string, enabled: boolean) => {
+  const handleToggleTools = (profileId: string, enabled: boolean) => {
     if (!currentAgentId || !agent) return;
 
     const updatedCustomMcps = agent.custom_mcps?.map((mcpConfig: any) => {
@@ -511,7 +637,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                 <p className="text-sm text-muted-foreground">
                   {mode === 'profile-only' 
                     ? 'Create a connection profile for your favorite apps'
-                    : `Connect your favorite apps with ${currentAgentId ? 'this agent' : 'your agent'}`
+                    : `Connect your favorite apps with ${currentAgentId && agent?.name ? agent.name : 'your agent'} Agent`
                   }
                 </p>
               </div>
@@ -521,7 +647,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                     <AgentSelector
                       selectedAgentId={currentAgentId}
                       onAgentSelect={handleAgentSelect}
-                      isSunaAgent={agent?.metadata?.is_suna_default}
+                      isHeliumAgent={agent?.metadata?.is_helium_default}
                     />
                   )} */}
                 </div>
@@ -577,7 +703,9 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                     <CollapsibleTrigger asChild>
                       <div className="w-full hover:underline flex items-center justify-between p-0 h-auto">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-medium">Connected to this agent</h3>
+                          <h3 className="text-lg font-medium">
+                            Connected to {currentAgentId && agent?.name ? agent.name : 'this agent'} Agent
+                          </h3>
                           {isLoadingConnectedApps ? (
                             <Skeleton className="w-6 h-5 rounded ml-2" />
                           ) : connectedApps.length > 0 && (
@@ -617,6 +745,13 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                               onToggleTools={handleToggleTools}
                               onConfigure={handleConfigure}
                               onManageTools={handleManageTools}
+                              onDelete={async (profileId) => {
+                                await deleteProfile.mutateAsync(profileId);
+                                // Refresh the agent data after deletion
+                                if (selectedAgentId) {
+                                  await queryClient.invalidateQueries({ queryKey: ['agent', selectedAgentId] });
+                                }
+                              }}
                               isUpdating={isUpdatingAgent}
                             />
                           ))}

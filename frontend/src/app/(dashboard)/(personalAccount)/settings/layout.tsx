@@ -17,13 +17,14 @@ export default function PersonalAccountSettingsPage({
     { name: 'Billing', href: '/settings/billing' },
     { name: 'Usage Logs', href: '/settings/usage-logs' },
     ...(isLocalMode() ? [{ name: 'Local .Env Manager', href: '/settings/env-manager' }] : []),
+    // { name: 'Prompt Library', href: '/settings/prompt-library' },
   ];
   return (
     <>
       <div className="space-y-6 w-full">
         <Separator className="border-subtle dark:border-white/10" />
         <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0 w-full max-w-7xl mx-auto px-4">
-          <aside className="lg:w-1/4 p-1">
+          <aside className="lg:w-1/4 p-1 mt-16 md:mt-0">
             <nav className="flex flex-col space-y-1">
               {items.map((item) => (
                 <Link

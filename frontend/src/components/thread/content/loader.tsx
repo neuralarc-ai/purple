@@ -1,54 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
 import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
 
-const items = [
-    { id: 1, content: "Initializing neural pathways..." },
-    { id: 2, content: "Analyzing query complexity..." },
-    { id: 3, content: "Assembling cognitive framework..." },
-    { id: 4, content: "Orchestrating thought processes..." },
-    { id: 5, content: "Synthesizing contextual understanding..." },
-    { id: 6, content: "Calibrating response parameters..." },
-    { id: 7, content: "Engaging reasoning algorithms..." },
-    { id: 8, content: "Processing semantic structures..." },
-    { id: 9, content: "Formulating strategic approach..." },
-    { id: 10, content: "Optimizing solution pathways..." },
-    { id: 11, content: "Harmonizing data streams..." },
-    { id: 12, content: "Architecting intelligent response..." },
-    { id: 13, content: "Fine-tuning cognitive models..." },
-    { id: 14, content: "Weaving narrative threads..." },
-    { id: 15, content: "Crystallizing insights..." },
-    { id: 16, content: "Preparing comprehensive analysis..." }
-  ];
+interface AgentLoaderProps {
+  className?: string;
+}
 
-export const AgentLoader = () => {
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => {
-      setIndex((state) => {
-        if (state >= items.length - 1) return 0;
-        return state + 1;
-      });
-    }, 1500);
-    return () => clearInterval(id);
-  }, []);
-
+export const AgentLoader: React.FC<AgentLoaderProps> = ({ className = '' }) => {
   return (
-    <div className="flex py-2 items-center w-full">
-      <div>✨</div>
-      <AnimatePresence>
-      <motion.div
-          key={items[index].id}
-          initial={{ y: 20, opacity: 0, filter: "blur(8px)" }}
-          animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-          exit={{ y: -20, opacity: 0, filter: "blur(8px)" }}
-          transition={{ ease: "easeInOut" }}
-          style={{ position: "absolute" }}
-          className='ml-7'
-      >
-          <AnimatedShinyText className='text-xs'>{items[index].content}</AnimatedShinyText>
-      </motion.div>
-      </AnimatePresence>
+    <div className={`flex items-center gap-3 ${className}`}>
+      <div className="relative w-[12px] h-[12px] scale-75">
+        <div 
+          className="absolute bg-black dark:bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-[rotateClockwise_3s_infinite_cubic-bezier(0.4,0,0.2,1)]"
+          style={{
+            animationDelay: '0s',
+            top: '0%',
+            left: '0%',
+            width: '8px',
+            height: '8px'
+          }}
+        />
+        <div 
+          className="absolute bg-black dark:bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-[rotateClockwise_3s_infinite_cubic-bezier(0.4,0,0.2,1)]"
+          style={{
+            animationDelay: '-0.75s',
+            top: '0%',
+            left: '100%',
+            width: '11px',
+            height: '11px'
+          }}
+        />
+        <div 
+          className="absolute bg-black dark:bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-[rotateClockwise_3s_infinite_cubic-bezier(0.4,0,0.2,1)]"
+          style={{
+            animationDelay: '-1.5s',
+            top: '100%',
+            left: '100%',
+            width: '8px',
+            height: '8px'
+          }}
+        />
+        <div 
+          className="absolute bg-black dark:bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-[rotateClockwise_3s_infinite_cubic-bezier(0.4,0,0.2,1)]"
+          style={{
+            animationDelay: '-2.25s',
+            top: '100%',
+            left: '0%',
+            width: '11px',
+            height: '11px'
+          }}
+        />
+        
+        <style jsx>{`
+          @keyframes rotateClockwise {
+            0%   { top: 0%; left: 0%; width: 8px; height: 8px; }
+            20%  { top: 0%; left: 100%; width: 11px; height: 11px; }
+            25%  { top: 0%; left: 100%; width: 11px; height: 11px; }
+            45%  { top: 100%; left: 100%; width: 8px; height: 8px; }
+            50%  { top: 100%; left: 100%; width: 8px; height: 8px; }
+            70%  { top: 100%; left: 0%; width: 11px; height: 11px; }
+            75%  { top: 100%; left: 0%; width: 11px; height: 11px; }
+            95%  { top: 0%; left: 0%; width: 8px; height: 8px; }
+            100% { top: 0%; left: 0%; width: 8px; height: 8px; }
+          }
+        `}</style>
+      </div>
+      
+      <AnimatedShinyText shimmerWidth={50} className="text-base font-semibold -ml-1">Helium is thinking...</AnimatedShinyText>
     </div>
   );
 };

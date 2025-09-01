@@ -34,7 +34,7 @@ const TabButton = ({ value, isActive, onClick, children }: TabButtonProps) => {
     <button
       onClick={onClick}
       className={cn(
-        "relative flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-300 ease-out cursor-pointer",
+        "relative flex items-center justify-center gap-2 rounded-4xl px-4 h-10 text-sm font-medium transition-all duration-300 ease-out cursor-pointer",
         !isActive && (isDark ? "hover:bg-white/8" : "hover:bg-muted/60"),
         isActive 
           ? isDark ? "text-white bg-sidebar/70" : "text-foreground bg-sidebar border border-border/50"
@@ -53,7 +53,7 @@ export const FancyTabs = ({ tabs, activeTab, onTabChange, className }: FancyTabs
   return (
     <div 
       className={cn(
-        "overflow-hidden grid w-full max-w-lg rounded-full p-1.5 gap-1.5",
+        "overflow-hidden grid w-full max-w-lg rounded-4xl h-12 p-1 gap-1",
         isDark ? "border-white/5" : "border-border/20 bg-muted",
         className
       )}

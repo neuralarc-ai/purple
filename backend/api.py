@@ -130,7 +130,7 @@ async def log_requests_middleware(request: Request, call_next):
         raise
 
 # Define allowed origins based on environment
-allowed_origins = ["https://www.suna.so", "https://suna.so"]
+allowed_origins = ["https://www.he2.ai", "https://he2.ai", "http://localhost:3000"]
 allow_origin_regex = None
 
 # Add staging-specific origins
@@ -183,13 +183,15 @@ api_router.include_router(pipedream_api.router)
 
 # MFA functionality moved to frontend
 
-
-
 from admin import api as admin_api
 api_router.include_router(admin_api.router)
 
 from composio_integration import api as composio_api
 api_router.include_router(composio_api.router)
+
+# Add prompt generation API
+from prompt_generation import api as prompt_generation_api
+api_router.include_router(prompt_generation_api.router)
 
 @api_router.get("/health")
 async def health_check():

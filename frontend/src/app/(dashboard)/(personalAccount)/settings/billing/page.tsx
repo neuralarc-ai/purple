@@ -70,13 +70,13 @@ export default function PersonalAccountBillingPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <BillingModal 
-        open={showBillingModal} 
+    <div className="space-y-6 pt-4 md:pt-0">
+      <BillingModal
+        open={showBillingModal}
         onOpenChange={setShowBillingModal}
         returnUrl={`${returnUrl}/settings/billing`}
       />
-      
+
       {/* Billing Status Card */}
       <div className="rounded-xl border shadow-sm bg-card p-6">
         <h2 className="text-xl font-semibold mb-4">Billing Status</h2>
@@ -106,15 +106,17 @@ export default function PersonalAccountBillingPage() {
             {subscriptionData && (
               <div className="mb-6">
                 <div className="rounded-lg border bg-background p-4">
-                  <div className="flex justify-between items-center gap-4">
-                    <span className="text-sm font-medium text-foreground/90">
-                      Agent Usage This Month
-                    </span>
-                    <span className="text-sm font-medium">
-                      ${subscriptionData.current_usage?.toFixed(2) || '0'} /{' '}
-                      ${subscriptionData.cost_limit || '0'}
-                    </span>
-                    <Button variant='outline' asChild className='text-sm'>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm font-medium text-foreground/90">
+                        Agent Usage This Month
+                      </span>
+                      <span className="text-sm font-medium">
+                        {Math.round((subscriptionData.current_usage || 0) * 100)} credits /{' '}
+                        {Math.round((subscriptionData.cost_limit || 0) * 100)} credits
+                      </span>
+                    </div>
+                    <Button variant='outline' asChild className='text-sm flex-shrink-0'>
                       <Link href="/settings/usage-logs">
                         Usage logs
                       </Link>
@@ -127,8 +129,8 @@ export default function PersonalAccountBillingPage() {
             {/* Credit Balance Display - Only show for users who can purchase credits */}
             {subscriptionData?.can_purchase_credits && (
               <div className="mb-6">
-                <CreditBalanceDisplay 
-                  balance={subscriptionData.credit_balance || 0}
+                <CreditBalanceDisplay
+                  balance={subscriptionData.credit_balance_credits || Math.round((subscriptionData.credit_balance || 0) * 100)}
                   canPurchase={subscriptionData.can_purchase_credits}
                   onPurchaseClick={() => setShowCreditPurchaseModal(true)}
                 />
@@ -136,15 +138,6 @@ export default function PersonalAccountBillingPage() {
             )}
 
             <div className='flex justify-center items-center gap-4'>
-              <Button
-                variant="outline"
-                className="border-border hover:bg-muted/50 shadow-sm hover:shadow-md transition-all whitespace-nowrap flex items-center"
-                asChild
-              >
-                <Link href="/model-pricing">
-                  View Model Pricing
-                </Link>
-              </Button>
               <Button
                 onClick={() => setShowBillingModal(true)}
                 className="bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"
@@ -155,12 +148,12 @@ export default function PersonalAccountBillingPage() {
           </>
         )}
       </div>
-      
+
       {/* Credit Purchase Modal */}
       <CreditPurchaseModal
         open={showCreditPurchaseModal}
         onOpenChange={setShowCreditPurchaseModal}
-        currentBalance={subscriptionData?.credit_balance || 0}
+        currentBalance={subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)}
         canPurchase={subscriptionData?.can_purchase_credits || false}
         onPurchaseComplete={() => {
           // Optionally refresh subscription data here
