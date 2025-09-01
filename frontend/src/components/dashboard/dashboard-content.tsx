@@ -28,13 +28,20 @@ import { useFeatureFlag } from '@/lib/feature-flags';
 import { CustomAgentsSection } from './custom-agents-section';
 import { toast } from 'sonner';
 import { ReleaseBadge } from '../auth/release-badge';
+import { UseCaseCategories } from '../chat/use-case-categories';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
 export function DashboardContent() {
+  const searchParams = useSearchParams();
   const [inputValue, setInputValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [autoSubmit, setAutoSubmit] = useState(false);
+  const chatInputRef = useRef<ChatInputHandles>(null);
+  const router = useRouter();
+  const isMobile = useIsMobile();
+  const { data: accounts } = useAccounts();
+  const personalAccount = accounts?.find((account) => account.personal_account);
   const { 
     selectedAgentId, 
     setSelectedAgent, 
@@ -42,22 +49,27 @@ export function DashboardContent() {
     getCurrentAgent
   } = useAgentSelection();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
-  const { billingError, handleBillingError, clearBillingError } =
-    useBillingError();
+  const { billingError, handleBillingError, clearBillingError } = useBillingError();
   const [showAgentLimitDialog, setShowAgentLimitDialog] = useState(false);
   const [agentLimitData, setAgentLimitData] = useState<{
     runningCount: number;
     runningThreadIds: string[];
   } | null>(null);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isMobile = useIsMobile();
-  const { data: accounts } = useAccounts();
-  const personalAccount = accounts?.find((account) => account.personal_account);
-  const chatInputRef = useRef<ChatInputHandles>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
+  // Handle prompt from URL
+  useEffect(() => {
+    const promptParam = searchParams?.get('prompt');
+    if (promptParam) {
+      const decodedPrompt = decodeURIComponent(promptParam);
+      setInputValue(decodedPrompt);
+      // Focus the input after a small delay to ensure it's rendered
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 100);
+    }
+  }, [searchParams]);
   // Welcome messages that change on refresh
   const welcomeMessages = [
     "What do we tackle first, {name}?",
@@ -304,6 +316,17 @@ export function DashboardContent() {
                     enableAdvancedConfig={true}
                     onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
                   />
+                  <div className="mt-4 w-full">
+                    <UseCaseCategories 
+                      onUseCaseSelect={(prompt) => {
+                        setInputValue(prompt);
+                        // Optional: Auto-focus the input after selection
+                        setTimeout(() => {
+                          document.querySelector('textarea')?.focus();
+                        }, 0);
+                      }} 
+                    />
+                  </div>
                 </div>
               </div>
             </div>
