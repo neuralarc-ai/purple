@@ -855,24 +855,17 @@ export default function ThreadPage({
         {/* Disclaimer text at bottom */}
         <div
           className={cn(
-            'fixed bottom-0 z-10 px-4 pt-4 text-center',
+            'fixed bottom-0 z-10 w-full px-2 sm:px-4 pt-4 text-center',
             'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
-            leftSidebarState === 'expanded'
-              ? 'left-[72px] md:left-[256px]'
-              : isSidePanelOpen
-                ? 'left-[53px]'
-                : 'left-[50px]',
-            isSidePanelOpen
-              ? leftSidebarState === 'expanded'
-                ? 'right-[45vw] 2xl:right-[40.5vw] xl:right-[40.5vw] lg:right-[43vw]'
-                : 'right-[46vw]'
-              : 'right-0',
             isMobile ? 'left-0 right-0' : '',
           )}
         >
-          <p className="text-xs text-muted-foreground bg-background backdrop-blur-sm rounded px-2 pt-4">
-            Helium can make mistakes. Check important info. See Cookie Preferences.
-          </p>
+          <div className="max-w-[100vw] overflow-x-auto whitespace-nowrap">
+            <p className="text-xs text-muted-foreground bg-background/90 backdrop-blur-sm rounded-lg px-3 py-1 inline-block wrap-bottom-text">
+              Helium can make mistakes. 
+              Check important info. See Cookie Preferences.
+            </p>
+          </div>
         </div>
       </ThreadLayout>
 
