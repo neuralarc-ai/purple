@@ -58,8 +58,8 @@ interface MessageInputProps {
   enableAdvancedConfig?: boolean;
   hideAgentSelection?: boolean;
   isSunaAgent?: boolean;
-  selectedMode: 'normal' | 'agent' | 'sandbox';
-  onModeChange: (mode: 'normal' | 'agent' | 'sandbox') => void;
+  selectedMode: 'default' | 'agent';
+  onModeChange: (mode: 'default' | 'agent') => void;
   // New props for integrations
   onOpenIntegrations?: () => void;
   onOpenInstructions?: () => void;
@@ -154,7 +154,15 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           !loading &&
           (!disabled || isAgentRunning)
         ) {
-          onSubmit(e as unknown as React.FormEvent);
+          // Pre-emptive loading state for Enter key submissions
+          const textarea = e.currentTarget;
+          textarea.disabled = true;
+          textarea.style.opacity = '0.5';
+          
+          // Call onSubmit after a minimal delay to ensure loading state renders
+          setTimeout(() => {
+            onSubmit(e as unknown as React.FormEvent);
+          }, 10);
         }
       }
     };
@@ -261,37 +269,44 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
         <div className="flex items-center justify-between mt-0 mb-1 px-2">
           <div className="flex items-center gap-3">
-            {/* Mode Selection */}
+            {/* Mode Toggle */}
             <div className="flex items-center gap-2">
-              <label htmlFor="mode-select" className="text-xs text-muted-foreground font-medium">
+              <label className="text-xs text-muted-foreground font-medium">
                 Mode:
               </label>
-              <select
-                id="mode-select"
-                value={selectedMode}
-                onChange={(e) => onModeChange(e.target.value as 'normal' | 'agent' | 'sandbox')}
-                className={cn(
-                  "text-xs bg-background border rounded-md px-2 py-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer transition-colors",
-                  uploadedFiles.length > 0 && selectedMode !== 'sandbox' 
-                    ? "border-orange-500 bg-orange-50 dark:bg-orange-950/20" 
-                    : "border-border hover:border-border/60"
-                )}
-                disabled={loading || (disabled && !isAgentRunning)}
-                title={
-                  uploadedFiles.length > 0 && selectedMode !== 'sandbox'
-                    ? '⚠️ Sandbox mode required for file processing' :
-                    selectedMode === 'normal' ? 'Basic chat without advanced features' :
-                    selectedMode === 'agent' ? 'Enhanced AI agent with context management' :
-                    'Full AI agent with sandbox environment for file processing and code execution'
-                }
-              >
-                <option value="normal" disabled={uploadedFiles.length > 0}>💬 Normal Chat</option>
-                <option value="agent" disabled={uploadedFiles.length > 0}>🤖 Agent Mode</option>
-                <option value="sandbox">🖥️ Agent + Sandbox</option>
-              </select>
-              {uploadedFiles.length > 0 && selectedMode !== 'sandbox' && (
+              <div className="flex items-center bg-muted rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => onModeChange('default')}
+                  className={cn(
+                    "text-xs px-3 py-1 rounded-md transition-all duration-200 font-medium",
+                    selectedMode === 'default'
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                                     disabled={loading || (disabled && !isAgentRunning)}
+                   title="Ultra-fast chat mode with tools and search - optimized for immediate response display"
+                 >
+                   💬 Chat
+                 </button>
+                 <button
+                   type="button"
+                   onClick={() => onModeChange('agent')}
+                   className={cn(
+                     "text-xs px-3 py-1 rounded-md transition-all duration-200 font-medium",
+                     selectedMode === 'agent'
+                       ? "bg-background text-foreground shadow-sm"
+                       : "text-muted-foreground hover:text-foreground"
+                   )}
+                   disabled={loading || (disabled && !isAgentRunning)}
+                   title="Full AI agent with context management, file processing, tools, and enhanced capabilities"
+                 >
+                   🤖 Agent
+                </button>
+              </div>
+              {uploadedFiles.length > 0 && selectedMode !== 'agent' && (
                 <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                  Files require sandbox
+                  Files require agent mode
                 </span>
               )}
             </div>
@@ -401,7 +416,23 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
             <Button
               type="submit"
-              onClick={isAgentRunning && onStopAgent ? onStopAgent : onSubmit}
+              onClick={(e) => {
+                // Pre-emptive loading state - show loading immediately
+                if (isAgentRunning && onStopAgent) {
+                  onStopAgent();
+                } else {
+                  // Set loading state immediately for better UX
+                  const button = e.currentTarget;
+                  const originalContent = button.innerHTML;
+                  button.innerHTML = '<div class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"></div>';
+                  button.disabled = true;
+                  
+                  // Call onSubmit after a minimal delay to ensure loading state renders
+                  setTimeout(() => {
+                    onSubmit(e);
+                  }, 10);
+                }
+              }}
               size="icon"
               className={cn(
                 'w-8 h-8 flex-shrink-0 rounded-full cursor-pointer',

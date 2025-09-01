@@ -42,6 +42,7 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
   const [agentRunId, setAgentRunId] = useState<string | null>(null);
   const [agentStatus, setAgentStatus] = useState<'idle' | 'running' | 'connecting' | 'error'>('idle');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
   const [hasStartedConversation, setHasStartedConversation] = useState(false);
 
   const isSunaAgent = agentMetadata?.is_suna_default || false;
@@ -172,27 +173,32 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       reasoning_effort?: string;
       stream?: boolean;
       enable_context_manager?: boolean;
-      mode?: 'normal' | 'agent' | 'sandbox';
+      mode?: 'default' | 'agent';
     },
   ) => {
     if (!message.trim() && !chatInputRef.current?.getPendingFiles().length) return;
 
+    // Set loading state immediately
     setIsSubmitting(true);
+    setLocalLoading(true); // Set local loading state for instant feedback
     setHasStartedConversation(true);
 
     try {
+      // Process files asynchronously to avoid blocking
       const files = chatInputRef.current?.getPendingFiles() || [];
 
+      // Create FormData asynchronously
       const formData = new FormData();
       formData.append('prompt', message);
       formData.append('agent_id', agent.agent_id);
 
+      // Process files asynchronously
       files.forEach((file, index) => {
         const normalizedName = normalizeFilenameToNFC(file.name);
         formData.append('files', file, normalizedName);
       });
 
-      // Handle mode-based configuration
+      // Handle mode-based configuration asynchronously
       if (options?.mode) {
         const modeConfig = getModeConfiguration(options.mode, options.enable_thinking);
         formData.append('enable_thinking', String(options.enable_thinking ?? false));
@@ -207,6 +213,7 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
         formData.append('enable_context_manager', String(options?.enable_context_manager ?? false));
       }
 
+      // Submit the request
       const result = await initiateAgentMutation.mutateAsync(formData);
 
       if (result.thread_id) {
@@ -250,31 +257,68 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       setHasStartedConversation(false);
     } finally {
       setIsSubmitting(false);
+      setLocalLoading(false); // Clear local loading state
     }
   };
 
   // Helper function to get mode-based configuration
   const getModeConfiguration = (mode: string, thinkingEnabled: boolean) => {
     switch(mode) {
-      case 'normal':
+      case 'default':
         return {
           enable_context_manager: false,
-          reasoning_effort: 'low'
+          reasoning_effort: 'minimal',
+          enable_thinking: false,
+          max_tokens: 100, // Reduced for faster response
+          temperature: 0.5, // Lower temperature for more focused responses
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 5000, // 5 seconds timeout for ultra-fast response
+          chunk_size: 25, // Ultra-small chunks for immediate streaming
+          buffer_size: 50, // Smaller buffer for instant display
+          // Additional ultra-fast optimizations
+          enable_parallel_processing: true,
+          skip_initial_validation: true,
+          use_fast_model: true,
+          cache_responses: true
         };
       case 'agent':
         return {
           enable_context_manager: true,
-          reasoning_effort: thinkingEnabled ? 'medium' : 'low'
-        };
-      case 'sandbox':
-        return {
-          enable_context_manager: true,
-          reasoning_effort: thinkingEnabled ? 'high' : 'medium'
+          reasoning_effort: thinkingEnabled ? 'medium' : 'low', // Reduced reasoning effort
+          enable_thinking: thinkingEnabled,
+          max_tokens: 500, // Reduced for faster response
+          temperature: 0.3,
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 15000, // 15 seconds for faster complex tasks
+          chunk_size: 75, // Smaller chunks for faster streaming
+          buffer_size: 150, // Smaller buffer for faster display
+          // Additional optimizations
+          enable_parallel_processing: true,
+          skip_initial_validation: false,
+          use_fast_model: false,
+          cache_responses: true
         };
       default:
         return {
           enable_context_manager: false,
-          reasoning_effort: 'low'
+          reasoning_effort: 'minimal',
+          enable_thinking: false,
+          max_tokens: 100,
+          temperature: 0.5,
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 5000,
+          chunk_size: 25,
+          buffer_size: 50,
+          enable_parallel_processing: true,
+          skip_initial_validation: true,
+          use_fast_model: true,
+          cache_responses: true
         };
     }
   };
@@ -410,7 +454,7 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
           <ChatInput
             ref={chatInputRef}
             onSubmit={threadId ? handleSubmitMessage : handleSubmitFirstMessage}
-            loading={isSubmitting}
+            loading={isSubmitting || localLoading} // Use local loading state for immediate feedback
             placeholder={`Message ${agent.name || 'agent'}...`}
             value={inputValue}
             onChange={setInputValue}

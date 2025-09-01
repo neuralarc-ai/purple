@@ -42,7 +42,7 @@ export interface ChatInputProps {
       model_name?: string;
       enable_thinking?: boolean;
       agent_id?: string;
-      mode?: 'normal' | 'agent' | 'sandbox';
+      mode?: 'default' | 'agent';
       enable_context_manager?: boolean;
       reasoning_effort?: string;
     },
@@ -139,13 +139,15 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
-    const [selectedMode, setSelectedMode] = useState<'normal' | 'agent' | 'sandbox'>('normal');
+    const [selectedMode, setSelectedMode] = useState<'default' | 'agent'>('default');
+    const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
 
     const [registryDialogOpen, setRegistryDialogOpen] = useState(false);
     const [showSnackbar, setShowSnackbar] = useState(defaultShowSnackbar);
     const [userDismissedUsage, setUserDismissedUsage] = useState(false);
     const [billingModalOpen, setBillingModalOpen] = useState(false);
     const [wasManuallyStopped, setWasManuallyStopped] = useState(false);
+    const [submitTimeout, setSubmitTimeout] = useState<NodeJS.Timeout | null>(null);
     const {
       selectedModel,
       setSelectedModel: handleModelChange,
@@ -234,68 +236,137 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       )
         return;
 
-      // if (isAgentRunning && onStopAgent) {
-      //   onStopAgent();
-      //   return;
-      // }
-      setWasManuallyStopped(false);
-      let message = value;
+      // Set local loading state immediately for instant feedback
+      setLocalLoading(true);
 
-      if (uploadedFiles.length > 0) {
-        const fileInfo = uploadedFiles
-          .map((file) => `[Uploaded File: ${file.path}]`)
-          .join('\n');
-        message = message ? `${message}\n\n${fileInfo}` : fileInfo;
+      // Clear any existing timeout
+      if (submitTimeout) {
+        clearTimeout(submitTimeout);
       }
 
-      let baseModelName = getActualModelId(selectedModel);
-      let thinkingEnabled = false;
-      if (selectedModel.endsWith('-thinking')) {
-        baseModelName = getActualModelId(selectedModel.replace(/-thinking$/, ''));
-        thinkingEnabled = true;
+      // Set immediate loading state with timeout
+      const timeout = setTimeout(() => {
+        console.warn('Submit operation taking longer than expected');
+      }, 5000); // 5 second timeout for immediate feedback
+      setSubmitTimeout(timeout);
+
+      try {
+        // if (isAgentRunning && onStopAgent) {
+        //   onStopAgent();
+        //   return;
+        // }
+        setWasManuallyStopped(false);
+        let message = value;
+
+        // Process files asynchronously to avoid blocking
+        if (uploadedFiles.length > 0) {
+          const fileInfo = uploadedFiles
+            .map((file) => `[Uploaded File: ${file.path}]`)
+            .join('\n');
+          message = message ? `${message}\n\n${fileInfo}` : fileInfo;
+        }
+
+        // Get model configuration asynchronously
+        let baseModelName = getActualModelId(selectedModel);
+        let thinkingEnabled = false;
+        if (selectedModel.endsWith('-thinking')) {
+          baseModelName = getActualModelId(selectedModel.replace(/-thinking$/, ''));
+          thinkingEnabled = true;
+        }
+
+        // Determine mode-based configuration
+        const modeConfig = getModeConfiguration(selectedMode, thinkingEnabled);
+
+        // Track analytics asynchronously to avoid blocking
+        setTimeout(() => {
+          posthog.capture("task_prompt_submitted", { message });
+        }, 0);
+
+        // Submit the message
+        onSubmit(message, {
+          agent_id: selectedAgentId,
+          model_name: baseModelName,
+          enable_thinking: thinkingEnabled,
+          ...modeConfig,
+        });
+
+        // Clear form state
+        if (!isControlled) {
+          setUncontrolledValue('');
+        }
+        setUploadedFiles([]);
+
+      } catch (error) {
+        console.error('Error in handleSubmit:', error);
+      } finally {
+        // Clear timeout
+        if (submitTimeout) {
+          clearTimeout(submitTimeout);
+          setSubmitTimeout(null);
+        }
+        // Clear local loading state
+        setLocalLoading(false);
       }
-
-      // Determine mode-based configuration
-      const modeConfig = getModeConfiguration(selectedMode, thinkingEnabled);
-
-      posthog.capture("task_prompt_submitted", { message });
-
-      onSubmit(message, {
-        agent_id: selectedAgentId,
-        model_name: baseModelName,
-        enable_thinking: thinkingEnabled,
-        ...modeConfig,
-      });
-
-      if (!isControlled) {
-        setUncontrolledValue('');
-      }
-
-      setUploadedFiles([]);
     };
 
     // Helper function to get mode-based configuration
     const getModeConfiguration = (mode: string, thinkingEnabled: boolean) => {
       switch(mode) {
-        case 'normal':
+        case 'default':
           return {
             enable_context_manager: false,
-            reasoning_effort: 'low'
+            reasoning_effort: 'minimal',
+            enable_thinking: false,
+            max_tokens: 100, // Reduced for faster response
+            temperature: 0.5, // Lower temperature for more focused responses
+            stream: true,
+            enable_tools: true,
+            enable_search: true,
+            response_timeout: 5000, // 5 seconds timeout for ultra-fast response
+            chunk_size: 25, // Ultra-small chunks for immediate streaming
+            buffer_size: 50, // Smaller buffer for instant display
+            // Additional ultra-fast optimizations
+            enable_parallel_processing: true,
+            skip_initial_validation: true,
+            use_fast_model: true,
+            cache_responses: true
           };
         case 'agent':
           return {
             enable_context_manager: true,
-            reasoning_effort: thinkingEnabled ? 'medium' : 'low'
-          };
-        case 'sandbox':
-          return {
-            enable_context_manager: true,
-            reasoning_effort: thinkingEnabled ? 'high' : 'medium'
+            reasoning_effort: thinkingEnabled ? 'medium' : 'low', // Reduced reasoning effort
+            enable_thinking: thinkingEnabled,
+            max_tokens: 500, // Reduced for faster response
+            temperature: 0.3,
+            stream: true,
+            enable_tools: true,
+            enable_search: true,
+            response_timeout: 15000, // 15 seconds for faster complex tasks
+            chunk_size: 75, // Smaller chunks for faster streaming
+            buffer_size: 150, // Smaller buffer for faster display
+            // Additional optimizations
+            enable_parallel_processing: true,
+            skip_initial_validation: false,
+            use_fast_model: false,
+            cache_responses: true
           };
         default:
           return {
             enable_context_manager: false,
-            reasoning_effort: 'low'
+            reasoning_effort: 'minimal',
+            enable_thinking: false,
+            max_tokens: 100,
+            temperature: 0.5,
+            stream: true,
+            enable_tools: true,
+            enable_search: true,
+            response_timeout: 5000,
+            chunk_size: 25,
+            buffer_size: 50,
+            enable_parallel_processing: true,
+            skip_initial_validation: true,
+            use_fast_model: true,
+            cache_responses: true
           };
       }
     };
@@ -315,10 +386,10 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       }
     };
 
-    // Auto-switch to sandbox mode when files are uploaded
+    // Auto-switch to agent mode when files are uploaded
     useEffect(() => {
-      if (uploadedFiles.length > 0 && selectedMode !== 'sandbox') {
-        setSelectedMode('sandbox');
+      if (uploadedFiles.length > 0 && selectedMode !== 'agent') {
+        setSelectedMode('agent');
       }
     }, [uploadedFiles.length, selectedMode]);
 
@@ -463,7 +534,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   onSubmit={handleSubmit}
                   onTranscription={handleTranscription}
                   placeholder={placeholder}
-                  loading={loading}
+                  loading={loading || localLoading} // Use local loading state for immediate feedback
                   disabled={disabled}
                   isAgentRunning={isAgentRunning}
                   onStopAgent={handleStopAgent}
