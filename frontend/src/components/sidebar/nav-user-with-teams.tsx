@@ -5,25 +5,11 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  BadgeCheck,
-  Bell,
   ChevronDown,
-  ChevronsUpDown,
-  Command,
-  CreditCard,
-  Key,
-  Plus,
-  Settings,
-  User,
+  Command,  
   AudioWaveform,
   Sun,
   Moon,
-  KeyRound,
-  Plug,
-  BookOpen,
-  Building2,
-  ChevronRight,
-  EllipsisIcon,
   SquarePen,
 } from 'lucide-react';
 import { useAccounts } from '@/hooks/use-accounts';
@@ -38,11 +24,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
   SidebarMenu,
@@ -56,39 +38,15 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { createClient } from '@/lib/supabase/client';
 import { useTheme } from 'next-themes';
-import { isLocalMode } from '@/lib/config';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useSubscriptionData } from '@/contexts/SubscriptionContext';
 
-// Custom Logout Icon component using the logout.svg
-const LogoutIcon = ({ className }: { className?: string }) => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 43 42"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={className}
-  >
-    <path
-      d="M2 21L1.21913 20.3753L0.719375 21L1.21913 21.6247L2 21ZM20 22C20.5523 22 21 21.5523 21 21C21 20.4477 20.5523 20 20 20V21V22ZM10 11L9.21913 10.3753L1.21913 20.3753L2 21L2.78087 21.6247L10.7809 11.6247L10 11ZM2 21L1.21913 21.6247L9.21913 31.6247L10 31L10.7809 30.3753L2.78087 20.3753L2 21ZM2 21V22H20V21V20H2V21Z"
-      fill="currentColor"
-    />
-    <path
-      d="M18 13.2639V8.38851C18 6.77017 18 5.961 18.474 5.4015C18.9479 4.84201 19.7461 4.70899 21.3424 4.44293L35.0136 2.1644C38.2567 1.62388 39.8782 1.35363 40.9391 2.25232C42 3.15102 42 4.79493 42 8.08276V33.9172C42 37.2051 42 38.849 40.9391 39.7477C39.8782 40.6464 38.2567 40.3761 35.0136 39.8356L21.3424 37.5571C19.7461 37.291 18.9479 37.158 18.474 36.5985C18 36.039 18 35.2298 18 33.6115V29.1319"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
 
 // Dynamic icon component that changes path based on theme
 const DynamicIcon = ({
@@ -543,12 +501,12 @@ export function NavUserWithTeams({
                   <DropdownMenuContent 
                     side="right" 
                     align="start" 
-                    className="w-32 p-3 space-y-1"
+                    className="w-32 p-2 space-y-1 rounded-2xl"
                     sideOffset={12}
                   >
                     <DropdownMenuItem
                       onClick={() => setTheme('light')}
-                      className="cursor-pointer rounded-md"
+                      className="cursor-pointer rounded-lg"
                     >
                       <Sun className="h-4 w-4 mr-2" />
                       Light
