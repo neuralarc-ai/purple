@@ -1,21 +1,23 @@
 import React, { forwardRef, useEffect, useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Square, Loader2, ArrowUp, Settings, Plus } from 'lucide-react';
+import {
+  Loader2,
+  ArrowUp,
+  Plus,
+  Wand2,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import { UploadedFile } from './chat-input';
-import { FileUploadHandler } from './file-upload-handler';
 import { VoiceRecorder } from './voice-recorder';
 import { UnifiedConfigMenu } from './unified-config-menu';
 import { canAccessModel, SubscriptionStatus } from './_use-model-selection';
-import { isLocalMode } from '@/lib/config';
 import { useFeatureFlag } from '@/lib/feature-flags';
-import { TooltipContent } from '@/components/ui/tooltip';
-import { Tooltip } from '@/components/ui/tooltip';
-import { TooltipProvider, TooltipTrigger } from '@radix-ui/react-tooltip';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { handleFiles } from './file-upload-handler';
+import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
+import { improvePromptWithOpenRouter } from '@/lib/prompt-improvement-api';
 import Image from 'next/image';
 import {
   DropdownMenu,
@@ -104,16 +106,14 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       hideAgentSelection = false,
       isHeliumAgent,
       onOpenIntegrations,
-      onOpenInstructions,
-      onOpenKnowledge,
-      onOpenTriggers,
-      onOpenWorkflows,
     },
     ref,
   ) => {
     const [billingModalOpen, setBillingModalOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+    const [isImprovingPrompt, setIsImprovingPrompt] = useState(false);
     const { enabled: customAgentsEnabled, loading: flagsLoading } =
       useFeatureFlag('custom_agents');
     const { resolvedTheme } = useTheme();
@@ -184,6 +184,28 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         fileInputRef.current.click();
       }
     };
+
+    const handleImprovePrompt = async () => {
+      if (!value.trim() || isImprovingPrompt) return;
+      
+      setIsImprovingPrompt(true);
+      
+      try {
+        const result = await improvePromptWithOpenRouter(value);
+        
+        if (result.success && result.improvedPrompt !== value) {
+          // Apply the improved prompt
+          const syntheticEvent = {
+            target: { value: result.improvedPrompt },
+          } as React.ChangeEvent<HTMLTextAreaElement>;
+          onChange(syntheticEvent);
+        }
+      } catch (error) {
+        console.error('Failed to improve prompt:', error);
+      } finally {
+        setIsImprovingPrompt(false);
+      }
+    };    
 
     const processFileUpload = async (
       event: React.ChangeEvent<HTMLInputElement>,
@@ -260,17 +282,20 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           <div className="flex items-center gap-3">
             {!hideAttachments && (
               <>
-                <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+                <DropdownMenu
+                  open={isDropdownOpen}
+                  onOpenChange={setIsDropdownOpen}
+                >
                   <DropdownMenuTrigger asChild>
                     <Button
                       type="button"
                       size="icon"
                       variant="outline"
                       className={cn(
-                        "w-8 h-8 flex-shrink-0 bg-transparent dark:border-muted-foreground/30 shadow-none rounded-full transition-all duration-200",
-                        isDropdownOpen 
-                          ? "bg-background/50!" 
-                          : "bg-white dark:bg-sidebar-accent hover:bg-background/50!"
+                        'w-8 h-8 flex-shrink-0 bg-transparent dark:border-muted-foreground/30 shadow-none rounded-full transition-all duration-200',
+                        isDropdownOpen
+                          ? 'bg-background/50!'
+                          : 'bg-white dark:bg-sidebar-accent hover:bg-background/50!',
                       )}
                       disabled={
                         !isLoggedIn ||
@@ -279,11 +304,11 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                         isUploading
                       }
                     >
-                      <Plus 
+                      <Plus
                         className={cn(
-                          "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                          isDropdownOpen && "rotate-45"
-                        )} 
+                          'h-4 w-4 text-muted-foreground transition-transform duration-200',
+                          isDropdownOpen && 'rotate-45',
+                        )}
                       />
                     </Button>
                   </DropdownMenuTrigger>
@@ -329,6 +354,40 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleImprovePrompt}
+                  className={cn(
+                    'h-8 px-3 bg-transparent hover:bg-background/50 transition-all duration-200 text-sm',
+                    'border border-muted-foreground/20 rounded-full',
+                  )}
+                  disabled={
+                    !isLoggedIn ||
+                    loading ||
+                    (disabled && !isAgentRunning) ||
+                    !value.trim() ||
+                    isImprovingPrompt
+                  }
+                  title="Improve Prompt with AI"
+                >
+                  {isImprovingPrompt ? (
+                    <>
+                      <Wand2 className="h-3 w-3 mr-1.5 text-muted-foreground" />
+                      <AnimatedShinyText className="text-xs">
+                        Improving prompt
+                      </AnimatedShinyText>
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-3 w-3 mr-1.5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                        Improve Prompt
+                      </span>
+                    </>
+                  )}
+                </Button>
 
                 <input
                   type="file"
@@ -403,7 +462,9 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
               ) : (
                 <div
                   className={
-                    mounted && resolvedTheme === 'light' ? 'text-white' : 'text-white'
+                    mounted && resolvedTheme === 'light'
+                      ? 'text-white'
+                      : 'text-white'
                   }
                 >
                   <ArrowUp className="h-5 w-5 text" />
@@ -419,6 +480,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             </p>
           </div>
         } */}
+
+
       </div>
     );
   },

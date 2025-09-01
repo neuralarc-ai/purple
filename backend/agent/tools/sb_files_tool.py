@@ -342,7 +342,7 @@ class SandboxFilesTool(SandboxToolsBase):
 
     async def _call_qwen_api(self, file_content: str, code_edit: str, instructions: str, file_path: str) -> tuple[Optional[str], Optional[str]]:
         """
-        Call Qwen3-Coder API via OpenRouter to apply edits to file content.
+        Call qwen/qwen3-coder:free API via OpenRouter to apply edits to file content.
         Returns a tuple (new_content, error_message).
         On success, error_message is None.
         On failure, new_content is None.
@@ -360,9 +360,9 @@ class SandboxFilesTool(SandboxToolsBase):
                 "content": f"<instruction>{instructions}</instruction>\n<code>{file_content}</code>\n<update>{code_edit}</update>"
             }]
 
-            logger.debug("Using Qwen3-Coder via OpenRouter for file editing.")
+            logger.debug("Using qwen/qwen3-coder:free via OpenRouter for file editing.")
             response = await litellm.acompletion(
-                model="openrouter/qwen/qwen3-coder:free",
+                model="qwen/qwen3-coder:free",
                 messages=messages,
                 api_key=openrouter_key,
                 api_base="https://openrouter.ai/api/v1",
@@ -381,7 +381,7 @@ class SandboxFilesTool(SandboxToolsBase):
                 
                 return content, None
             else:
-                error_msg = f"Invalid response from Qwen3-Coder API: {response}"
+                error_msg = f"Invalid response from Qwen2.5-72B-Instruct API: {response}"
                 logger.error(error_msg)
                 return None, error_msg
                 
@@ -392,7 +392,7 @@ class SandboxFilesTool(SandboxToolsBase):
                 error_message += f"\n\nAPI Response Body:\n{e.response.text}"
             elif hasattr(e, 'body'): # litellm sometimes puts it in body
                 error_message += f"\n\nAPI Response Body:\n{e.body}"
-            logger.error(f"Error calling Qwen3-Coder API: {error_message}", exc_info=True)
+            logger.error(f"Error calling qwen/qwen3-coder:free API: {error_message}", exc_info=True)
             return None, error_message
 
     @openapi_schema({
@@ -480,13 +480,13 @@ def authenticate_user(username, password):
             # Read current content
             original_content = (await self.sandbox.fs.download_file(full_path)).decode()
             
-            # Try Qwen3-Coder AI editing first
+            # Try Qwen2.5-72B-Instruct AI editing first
             logger.debug(f"Attempting AI-powered edit for file '{target_file}' with instructions: {instructions[:100]}...")
             new_content, error_message = await self._call_qwen_api(original_content, code_edit, instructions, target_file)
 
             if error_message:
                 return ToolResult(success=False, output=json.dumps({
-                    "message": f"Qwen3-Coder AI editing failed: {error_message}",
+                    "message": f"qwen/qwen3-coder:free AI editing failed: {error_message}",
                     "file_path": target_file,
                     "original_content": original_content,
                     "updated_content": None

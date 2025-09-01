@@ -387,7 +387,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
             }}
           >
             <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
-              <CardContent className={`w-full p-2 pt-0 pb-3 border-black/15 dark:border-muted bg-white dark:bg-sidebar-accent rounded-3xl relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border`}>
+              <CardContent className={`w-full p-2 pt-0 pb-3 border-black/15 dark:border-muted bg-white dark:bg-sidebar-accent rounded-[28px] relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border`}>
                 {/* <div className="absolute inset-0 rounded-[inherit] overflow-hidden border">
                   <BorderBeam 
                     duration={6}
