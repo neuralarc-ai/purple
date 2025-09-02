@@ -37,7 +37,37 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${baseUrl}/auth?error=${encodeURIComponent(error.message)}`)
       }
 
-      // URL to redirect to after sign in process completes
+      // Check if user has completed onboarding
+      if (data.user) {
+        try {
+          // Check if user has a profile (indicating they've completed onboarding)
+          const { data: profileData, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('user_id', data.user.id)
+            .single()
+
+          if (profileError && profileError.code === 'PGRST116') {
+            // No profile found - user needs onboarding
+            console.log('🆕 New user detected, redirecting to onboarding')
+            return NextResponse.redirect(`${baseUrl}/onboarding`)
+          } else if (profileError) {
+            console.error('❌ Error checking user profile:', profileError)
+            // On error, redirect to dashboard as fallback
+            return NextResponse.redirect(`${baseUrl}${next}`)
+          } else if (profileData) {
+            // User has profile - redirect to dashboard
+            console.log('✅ Existing user detected, redirecting to dashboard')
+            return NextResponse.redirect(`${baseUrl}${next}`)
+          }
+        } catch (profileCheckError) {
+          console.error('❌ Error checking user profile:', profileCheckError)
+          // On error, redirect to dashboard as fallback
+          return NextResponse.redirect(`${baseUrl}${next}`)
+        }
+      }
+
+      // Fallback redirect
       return NextResponse.redirect(`${baseUrl}${next}`)
     } catch (error) {
       console.error('❌ Unexpected error in auth callback:', error)

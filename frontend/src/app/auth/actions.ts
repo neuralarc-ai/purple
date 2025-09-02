@@ -5,19 +5,10 @@ import { redirect } from 'next/navigation';
 
 async function sendWelcomeEmail(email: string, name?: string) {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const adminApiKey = process.env.KORTIX_ADMIN_API_KEY;
-    
-    if (!adminApiKey) {
-      console.error('KORTIX_ADMIN_API_KEY not configured');
-      return;
-    }
-    
-    const response = await fetch(`${backendUrl}/api/send-welcome-email`, {
+    const response = await fetch(`${process.env.BACKEND_URL || 'http://localhost:8000'}/send-welcome-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Admin-Api-Key': adminApiKey,
       },
       body: JSON.stringify({
         email,
@@ -26,6 +17,7 @@ async function sendWelcomeEmail(email: string, name?: string) {
     });
 
     if (response.ok) {
+      console.log(`✅ Welcome email queued for ${email}`);
     } else {
       const errorData = await response.json().catch(() => ({}));
       console.error(`Failed to queue welcome email for ${email}:`, errorData);
@@ -33,6 +25,30 @@ async function sendWelcomeEmail(email: string, name?: string) {
   } catch (error) {
     console.error('Error sending welcome email:', error);
   }
+}
+
+async function checkUserOnboardingStatus(userId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: profileData, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError && profileError.code === 'PGRST116') {
+      // No profile found - user needs onboarding
+      return '/onboarding';
+    } else if (profileData) {
+      // User has profile - redirect to dashboard
+      return '/dashboard';
+    }
+  } catch (error) {
+    console.error('Error checking user onboarding status:', error);
+  }
+  
+  // Fallback to dashboard
+  return '/dashboard';
 }
 
 export async function signIn(prevState: any, formData: FormData) {
@@ -50,7 +66,7 @@ export async function signIn(prevState: any, formData: FormData) {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -59,8 +75,11 @@ export async function signIn(prevState: any, formData: FormData) {
     return { message: error.message || 'Could not authenticate user' };
   }
 
+  // Check if user needs onboarding
+  const redirectTo = await checkUserOnboardingStatus(data.user.id);
+  
   // Use client-side navigation instead of server-side redirect
-  return { success: true, redirectTo: returnUrl || '/dashboard' };
+  return { success: true, redirectTo: returnUrl || redirectTo };
 }
 
 export async function signUp(prevState: any, formData: FormData) {
@@ -84,11 +103,11 @@ export async function signUp(prevState: any, formData: FormData) {
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?returnUrl=${returnUrl}`,
+      emailRedirectTo: `${origin}/auth/callback`,
     },
   });
 
@@ -96,26 +115,26 @@ export async function signUp(prevState: any, formData: FormData) {
     return { message: error.message || 'Could not create account' };
   }
 
-  const userName = email.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-  const { error: signInError, data: signInData } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (signInData && signInData.user) {
-    sendWelcomeEmail(email, userName);
-  }
-
-  if (signInError) {
-    return {
-      message:
-        'Account created! Check your email to confirm your registration.',
+  if (data.user && !data.user.email_confirmed_at) {
+    // Email confirmation required
+    await sendWelcomeEmail(email);
+    return { 
+      success: true, 
+      message: 'Check your email to confirm your account',
+      redirectTo: '/auth?message=Check your email to confirm your account'
     };
   }
 
-  // Use client-side navigation instead of server-side redirect
-  return { success: true, redirectTo: returnUrl || '/dashboard' };
+  if (data.user) {
+    // User is confirmed (e.g., from OAuth or email confirmation)
+    // New users should go to onboarding
+    return { 
+      success: true, 
+      redirectTo: '/onboarding'
+    };
+  }
+
+  return { message: 'Something went wrong' };
 }
 
 export async function forgotPassword(prevState: any, formData: FormData) {

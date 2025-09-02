@@ -22,6 +22,18 @@ class UserProfileUpdate(BaseModel):
     personal_references: Optional[str] = None
     avatar: Optional[str] = None
 
+class OnboardingData(BaseModel):
+    terms_accepted: bool
+    privacy_accepted: bool
+    display_name: str
+    role: str
+    referral_source: str
+
+class OnboardingResponse(BaseModel):
+    success: bool
+    message: str
+    profile_id: Optional[str] = None
+
 class UserProfileResponse(BaseModel):
     id: str
     user_id: str
@@ -30,6 +42,9 @@ class UserProfileResponse(BaseModel):
     work_description: str
     personal_references: Optional[str] = None
     avatar: Optional[str] = None
+    referral_source: Optional[str] = None
+    consent_given: Optional[bool] = None
+    consent_date: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -222,10 +237,93 @@ async def delete_user_profile(
         logger.error(f"Error deleting user profile: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete user profile")
 
+@router.post("/onboarding", response_model=OnboardingResponse)
+async def complete_onboarding(
+    onboarding_data: OnboardingData,
+    user_id: str = Depends(get_current_user_id_from_jwt),
+    db: DBConnection = Depends(lambda: DBConnection())
+):
+    """Complete the onboarding process and create user profile."""
+    try:
+        logger.info(f"Completing onboarding for user {user_id}")
+        
+        # Validate required fields
+        if not onboarding_data.terms_accepted or not onboarding_data.privacy_accepted:
+            raise HTTPException(status_code=400, detail="Terms and Privacy Policy must be accepted")
+        
+        if not onboarding_data.display_name.strip():
+            raise HTTPException(status_code=400, detail="Display name is required")
+        
+        if not onboarding_data.role:
+            raise HTTPException(status_code=400, detail="Role is required")
+        
+        if not onboarding_data.referral_source:
+            raise HTTPException(status_code=400, detail="Referral source is required")
+        
+        client = await db.client
+        
+        # Check if profile already exists
+        existing = await client.table('user_profiles').select('id').eq('user_id', user_id).execute()
+        if existing.data and len(existing.data) > 0:
+            # Update existing profile with onboarding data
+            profile_record = {
+                'preferred_name': onboarding_data.display_name.strip(),
+                'work_description': onboarding_data.role,
+                'referral_source': onboarding_data.referral_source,
+                'consent_given': True,
+                'consent_date': datetime.utcnow().isoformat(),
+                'updated_at': datetime.utcnow().isoformat()
+            }
+            
+            update_result = await client.table('user_profiles').update(profile_record).eq('user_id', user_id).execute()
+            
+            if not update_result.data or len(update_result.data) == 0:
+                raise HTTPException(status_code=500, detail="Failed to update user profile")
+            
+            profile_id = update_result.data[0]['id']
+            logger.info(f"Updated existing profile {profile_id} with onboarding data")
+            
+        else:
+            # Create new profile with onboarding data
+            profile_record = {
+                'user_id': user_id,
+                'full_name': onboarding_data.display_name.strip(),  # Use display name as full name initially
+                'preferred_name': onboarding_data.display_name.strip(),
+                'work_description': onboarding_data.role,
+                'referral_source': onboarding_data.referral_source,
+                'consent_given': True,
+                'consent_date': datetime.utcnow().isoformat()
+            }
+            
+            insert_result = await client.table('user_profiles').insert(profile_record).execute()
+            
+            if not insert_result.data or len(insert_result.data) == 0:
+                raise HTTPException(status_code=500, detail="Failed to create user profile")
+            
+            profile_id = insert_result.data[0]['id']
+            logger.info(f"Created new profile {profile_id} with onboarding data")
+        
+        return OnboardingResponse(
+            success=True,
+            message="Onboarding completed successfully",
+            profile_id=profile_id
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error completing onboarding: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to complete onboarding: {str(e)}")
+
 @router.get("/test")
 async def test_endpoint():
-    """Test endpoint to verify the router is working."""
-    return {"message": "User profiles API is working!"}
+    """Test endpoint to verify the API is working."""
+    return {"message": "User profiles API is working", "status": "ok"}
+
+@router.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "healthy", "service": "user_profiles"}
 
 @router.get("/test-auth")
 async def test_auth(user_id: str = Depends(get_current_user_id_from_jwt)):
