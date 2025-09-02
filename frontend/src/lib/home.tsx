@@ -1,7 +1,4 @@
-import { FirstBentoAnimation } from '@/components/home/first-bento-animation';
-import { FourthBentoAnimation } from '@/components/home/fourth-bento-animation';
-import { SecondBentoAnimation } from '@/components/home/second-bento-animation';
-import { ThirdBentoAnimation } from '@/components/home/third-bento-animation';
+// Removed unused bento animation imports
 import { FlickeringGrid } from '@/components/home/ui/flickering-grid';
 import { Globe } from '@/components/home/ui/globe';
 import { cn } from '@/lib/utils';

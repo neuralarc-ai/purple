@@ -152,6 +152,20 @@ def _apply_anthropic_caching(messages: List[Dict[str, Any]]) -> None:
                     item["cache_control"] = {"type": "ephemeral"}
                     cache_control_count += 1
 
+def _apply_vertex_claude_caching(messages: List[Dict[str, Any]]) -> None:
+    """Apply Vertex AI Claude caching to the messages (same as Anthropic)."""
+    # Vertex AI Claude uses the same caching mechanism as Anthropic
+    _apply_anthropic_caching(messages)
+
+def _apply_gemini_caching(params: Dict[str, Any]) -> None:
+    """Apply Gemini caching parameters."""
+    # Gemini 2.5+ supports implicit caching by default
+    # We can enable explicit caching for better control
+    if "gemini" in params.get("model", "").lower():
+        # Enable caching for Gemini models
+        params["cache"] = True
+        logger.debug("Enabled Gemini caching")
+
 def _configure_anthopic(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
     """Configure Anthropic-specific parameters."""
     if not ("claude" in model_name.lower() or "anthropic" in model_name.lower()):
@@ -161,7 +175,7 @@ def _configure_anthopic(params: Dict[str, Any], model_name: str, messages: List[
         "anthropic-beta": "output-128k-2025-02-19"
     }
     logger.debug("Added Anthropic-specific headers")
-    _apply_anthropic_caching(messages)
+    # Caching is now handled centrally in _configure_caching
 
 def _configure_openrouter(params: Dict[str, Any], model_name: str) -> None:
     """Configure OpenRouter-specific parameters."""
@@ -344,6 +358,25 @@ def _add_tools_config(params: Dict[str, Any], tools: Optional[List[Dict[str, Any
     })
     logger.debug(f"Added {len(tools)} tools to API parameters")
 
+def _configure_caching(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
+    """Configure caching for supported models."""
+    is_anthropic = "anthropic" in model_name.lower() or "claude" in model_name.lower()
+    is_vertex_claude = (model_name.startswith("vertex_ai/") or model_name.startswith("vertex/")) and "claude" in model_name.lower()
+    is_gemini = "gemini" in model_name.lower()
+    
+    if is_anthropic and not is_vertex_claude:
+        # Standard Anthropic models
+        _apply_anthropic_caching(messages)
+        logger.debug("Applied Anthropic caching")
+    elif is_vertex_claude:
+        # Vertex AI Claude models
+        _apply_vertex_claude_caching(messages)
+        logger.debug("Applied Vertex AI Claude caching")
+    elif is_gemini:
+        # Gemini models
+        _apply_gemini_caching(params)
+        logger.debug("Applied Gemini caching")
+
 def prepare_params(
     messages: List[Dict[str, Any]],
     model_name: str,
@@ -383,13 +416,13 @@ def prepare_params(
     # Add tools if provided
     _add_tools_config(params, tools, tool_choice)
     # Add Anthropic-specific parameters
-    _configure_anthopic(params, model_name, params["messages"])
+    # _configure_anthopic(params, model_name, params["messages"])
     # Add OpenRouter-specific parameters
     _configure_openrouter(params, model_name)
     # Add Bedrock-specific parameters
-    _configure_bedrock(params, model_name, model_id)
+    # _configure_bedrock(params, model_name, model_id)
     
-    _add_fallback_model(params, model_name, messages)
+    # _add_fallback_model(params, model_name, messages)
     # Add OpenAI GPT-5 specific parameters
     # _configure_openai_gpt5(params, model_name)
     # Add Kimi K2-specific parameters
@@ -397,6 +430,7 @@ def prepare_params(
     # Add Vertex/Gemini-specific parameters
     _configure_vertex_ai(params, model_name)
     _configure_thinking(params, model_name, enable_thinking, reasoning_effort)
+    _configure_caching(params, model_name, messages)
 
     return params
 
