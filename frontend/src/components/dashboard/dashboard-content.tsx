@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useBillingError } from '@/hooks/useBillingError';
 import { BillingErrorAlert } from '@/components/billing/usage-limit-alert';
 import { useAccounts } from '@/hooks/use-accounts';
+import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
 import { config, isLocalMode, isStagingMode } from '@/lib/config';
 import { useInitiateAgentWithInvalidation } from '@/hooks/react-query/dashboard/use-initiate-agent';
 
@@ -54,6 +55,7 @@ export function DashboardContent() {
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   const { data: accounts } = useAccounts();
+  const { preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
   const personalAccount = accounts?.find((account) => account.personal_account);
   const chatInputRef = useRef<ChatInputHandles>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
@@ -77,8 +79,13 @@ export function DashboardContent() {
 
   const [currentWelcomeMessage, setCurrentWelcomeMessage] = useState('');
 
-  // Cache user's name to avoid repeated processing
+  // Get user's preferred name or fallback to account name
   const cachedUserName = useMemo(() => {
+    // If we have a preferred name from the profile, use it
+    if (preferredName && !profileLoading) {
+      return preferredName;
+    }
+    
     // Check localStorage first for cached name
     const cachedName = localStorage.getItem('cached_user_name');
     
@@ -100,7 +107,7 @@ export function DashboardContent() {
     }
     
     return 'there';
-  }, [personalAccount?.name]);
+  }, [preferredName, profileLoading, personalAccount?.name]);
 
   // Set welcome message with cached user's name - only when dependencies change
   useEffect(() => {
@@ -359,17 +366,21 @@ export function DashboardContent() {
               <div className="w-full max-w-[800px] flex flex-col items-center justify-center space-y-1 md:space-y-2">
                 <div className="flex flex-col items-center text-center w-full">
                   <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground/80 libre-baskerville-regular">
-                    {currentWelcomeMessage.split('{name}').map((part, index, array) => {
-                      if (index === array.length - 1) {
-                        return part;
-                      }
-                      return (
-                        <span key={index}>
-                          {part}
-                          <span>{cachedUserName}</span>
-                        </span>
-                      );
-                    })}
+                    {profileLoading ? (
+                      <span>Loading...</span>
+                    ) : (
+                      currentWelcomeMessage.split('{name}').map((part, index, array) => {
+                        if (index === array.length - 1) {
+                          return part;
+                        }
+                        return (
+                          <span key={index}>
+                            {part}
+                            <span>{cachedUserName}</span>
+                          </span>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
                 <div className="w-full">

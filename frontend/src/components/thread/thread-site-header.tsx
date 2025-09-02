@@ -47,6 +47,9 @@ interface ThreadSiteHeaderProps {
   isMobileView?: boolean;
   debugMode?: boolean;
   isSidePanelOpen?: boolean;
+  paused?: boolean;
+  inTakeover?: boolean;
+  onTakeoverToggle?: () => void;
 }
 
 export function SiteHeader({
@@ -60,6 +63,9 @@ export function SiteHeader({
   isMobileView,
   debugMode,
   isSidePanelOpen,
+  paused,
+  inTakeover,
+  onTakeoverToggle,
 }: ThreadSiteHeaderProps) {
   const pathname = usePathname()
   const [isEditing, setIsEditing] = useState(false)
@@ -175,14 +181,24 @@ export function SiteHeader({
           ) : !projectName || projectName === 'Project' ? (
             <Skeleton className="h-5 w-32" />
           ) : (
-            <div
-              className="text-base font-medium text-muted-foreground hover:text-foreground cursor-pointer flex items-center font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]"
-              onClick={startEditing}
-              title="Click to rename project"
-            >
-              {projectName}
+            <div className="relative">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div 
+                    className="text-base px-10 md:px-0 font-medium text-muted-foreground hover:text-foreground cursor-pointer flex items-center font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] project-ellipsis"
+                    onClick={startEditing}
+                     title="Click to rename project"
+                  >
+                    {projectName}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="md:hidden">
+                  {projectName}
+                </TooltipContent>
+              </Tooltip>
             </div>
           )}
+           
         </div>
 
         <div className="flex items-center gap-1 pr-4">
@@ -301,7 +317,7 @@ export function SiteHeader({
                 <p>Share Chat</p>
               </TooltipContent>
             </Tooltip>
-
+{!isMobile && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -317,6 +333,7 @@ export function SiteHeader({
                 <p>Toggle Computer Preview (CMD+I)</p>
               </TooltipContent>
             </Tooltip>
+)}
           </TooltipProvider>
         </div>
       </header>

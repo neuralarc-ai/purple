@@ -33,9 +33,36 @@ MODELS = {
             "input_cost_per_million_tokens": 0.00,
             "output_cost_per_million_tokens": 0.00
         },
-        "context_window": 128_000,  # 128k tokens
+        "context_window": 32_768,  # 32k tokens
         "tier_availability": ["free"]
-    },    
+    },
+    "openrouter/mistralai/mistral-small-3.2-24b-instruct:free": {
+        "aliases": ["mistralai/mistral-small-3.2-24b-instruct:free"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.00,
+            "output_cost_per_million_tokens": 0.00
+        },
+        "context_window": 32_768,  # 32k tokens
+        "tier_availability": ["free"]
+    },
+    "openrouter/deepseek/deepseek-chat-v3.1:free": {
+        "aliases": ["deepseek/deepseek-chat-v3.1:free"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.00,
+            "output_cost_per_million_tokens": 0.00
+        },
+        "context_window": 32_768,  # 32k tokens
+        "tier_availability": ["free"]
+    },
+    "openrouter/deepseek/deepseek-r1-0528:free": {
+        "aliases": ["deepseek/deepseek-r1-0528:free"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.00,
+            "output_cost_per_million_tokens": 0.00
+        },
+        "context_window": 32_768,  # 32k tokens
+        "tier_availability": ["free"]
+    },
     
     # All models available for all tiers
     "gemini/gemini-2.5-pro": {

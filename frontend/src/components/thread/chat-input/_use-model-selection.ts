@@ -100,7 +100,7 @@ export const MODELS = {
     recommended: false,
     lowQuality: false
   },
-  'qwen3': { 
+  'qwen/qwen-2.5-72b-instruct:free': { 
     tier: 'free', 
     priority: 90,
     recommended: false,

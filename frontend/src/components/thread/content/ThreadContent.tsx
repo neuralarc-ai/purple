@@ -449,7 +449,7 @@ export interface ThreadContentProps {
   messages: UnifiedMessage[];
   streamingTextContent?: string;
   streamingToolCall?: any;
-  agentStatus: 'idle' | 'running' | 'connecting' | 'error';
+  agentStatus: 'idle' | 'running' | 'connecting' | 'paused' | 'error';
   handleToolClick: (
     assistantMessageId: string | null,
     toolName: string,
