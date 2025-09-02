@@ -260,13 +260,3 @@ def get_model_context_window(model_name: str, default: int = 31_000) -> int:
         return 128_000  # DeepSeek models
     
     return default
-
-def get_random_production_model() -> str:
-    import random
-    
-    production_models = [
-        "vertex_ai/claude-sonnet-4@20250514",  # Sonnet 4
-        "vertex_ai/gemini-2.5-pro",            # Gemini 2.5 Pro
-    ]
-    
-    return random.choice(production_models)
