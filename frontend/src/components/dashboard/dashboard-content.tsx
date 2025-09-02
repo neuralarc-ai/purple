@@ -84,21 +84,19 @@ export function DashboardContent() {
       }, 100);
     }
   }, [searchParams]);
-  // Welcome messages that change on refresh
-  const welcomeMessages = [
-    "What do we tackle first, {name}?",
-    "Let's lock in - what's the focus, {name}?",
-    "What's the game plan, {name}?",
-    "Time to go higher, {name} — what's the move?",
-    "Ready to lift off, {name}?",
-    "Let's rise above the noise, {name}."
-  ];
-  
+  // Welcome message - cached and persistent
   const welcomeMessage = useMemo(() => {
-    // Generate a new random message on each component mount (refresh)
-    const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-    return randomMessage;
-  }, []); // Empty dependency array - generates new message on each mount
+    // Check if we have a cached welcome message
+    const cachedMessage = localStorage.getItem('cached_welcome_message');
+    if (cachedMessage) {
+      return cachedMessage;
+    }
+    
+    // Use the specific message and cache it
+    const message = "Let's rise above the noise, {name}.";
+    localStorage.setItem('cached_welcome_message', message);
+    return message;
+  }, []); // Empty dependency array - uses cached message
 
   const [currentWelcomeMessage, setCurrentWelcomeMessage] = useState('');
 

@@ -315,6 +315,13 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
         <div className="flex items-center justify-between mt-0 mb-1 px-2">
           <div className="flex items-center gap-2">
+            {/* Mode Toggle */}
+            <ModeToggle
+              selectedMode={selectedMode}
+              onModeChange={onModeChange}
+              disabled={loading || (disabled && !isAgentRunning)}
+            />
+            
             {!hideAttachments && (
               <>
                 <DropdownMenu
@@ -397,10 +404,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                   className={cn(
                     'h-8 w-8 bg-transparent dark:border-muted-foreground/30 shadow-none group transition-all duration-200 text-sm relative overflow-hidden',
                     'border border-muted-foreground/20 rounded-full bg-white dark:bg-sidebar hover:bg-background/50! ',
-                    (!isLoggedIn ||
-                      loading ||
-                      (disabled && !isAgentRunning) ||
-                      !value.trim()) && 'opacity-50',
+                    'disabled:opacity-100',
                     isImprovingPrompt && 'cursor-not-allowed border-none'
                   )}
                   disabled={
@@ -420,7 +424,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       className="from-helium-blue via-helium-green to-helium-yellow"
                     />
                   )}
-                  <Wand2 className="h-3.5! w-3.5! text-muted-foreground" strokeWidth={1.5} />
+                  <Wand2 className="h-4! w-4! text-muted-foreground" strokeWidth={1.5} />
                 </Button>
 
                 <input
@@ -432,13 +436,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                 />
               </>
             )}
-
-            {/* Mode Toggle */}
-            <ModeToggle
-              selectedMode={selectedMode}
-              onModeChange={onModeChange}
-              disabled={loading || (disabled && !isAgentRunning)}
-            />
+            
             {uploadedFiles.length > 0 && selectedMode !== 'agent' && (
               <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
                 Files require agent mode
