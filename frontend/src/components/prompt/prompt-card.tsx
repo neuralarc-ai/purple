@@ -11,7 +11,6 @@ interface PromptCardProps {
   prompt: {
     id: number;
     content: string;
-    industry: string;
     description: string;
   };
   isFavorite: boolean;
@@ -69,7 +68,6 @@ export function PromptCard({ prompt, isFavorite, onCopy, onToggleFavorite, onCar
         onClick={handleCardClick}
       >
         <div className="flex justify-between items-start mb-3">
-          <h3 className="font-medium text-sm text-muted-foreground line-clamp-1">{prompt.industry}</h3>
           <div className="flex items-center gap-1">
             {!hideCopyButton && (
               <button

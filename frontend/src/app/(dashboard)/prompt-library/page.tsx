@@ -14,7 +14,6 @@ import { FancyTabs, TabConfig } from '@/components/ui/fancy-tabs';
 interface GeneratedPrompt {
   id: number;
   content: string;
-  industry: string;
   description: string;
 }
 
@@ -52,10 +51,23 @@ export default function PromptLibraryPage() {
     // Load from localStorage on initial render
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('recentlyUsedPrompts');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          // Ensure we only keep valid prompts (without industry field)
+          return parsed.map((p: any) => ({
+            id: p.id,
+            description: p.description,
+            content: p.content
+          }));
+        } catch (e) {
+          console.error('Error parsing recently used prompts:', e);
+        }
+      }
     }
     return [];
   });
+
   const [explorePrompts, setExplorePrompts] = useState<GeneratedPrompt[]>([]);
 
   // Function to remove a prompt from recently used
@@ -73,63 +85,53 @@ export default function PromptLibraryPage() {
   const allPrompts: GeneratedPrompt[] = [
     {
       id: 1,
-      industry: 'Industry Analysis',
       description: 'Market Trends Analysis',
-      content: 'Analyze the current market trends in the {{industry}} sector over the last 12 months. Include consumer behavior shifts, regulatory changes, digital adoption, and competitor activities. Provide data-backed insights with KPIs such as revenue growth rates, churn ratios, or foot traffic patterns.'
+      content: 'Analyze the current market trends over the last 12 months. Include consumer behavior shifts, regulatory changes, digital adoption, and competitor activities. Provide data-backed insights with KPIs such as revenue growth rates, churn ratios, or foot traffic patterns.'
     },
     {
       id: 2,
-      industry: 'Operations',
       description: 'Operational Workflow Evaluation',
-      content: 'Evaluate operational workflows in {{industry}} to identify bottlenecks and automation opportunities. Include metrics like production cycle time for manufacturing, call resolution rates for telecom, or claims processing time for healthcare. Suggest scalable improvements for cost savings and efficiency gains.'
+      content: 'Evaluate operational workflows to identify bottlenecks and automation opportunities. Include metrics like production cycle time, call resolution rates, or claims processing time. Suggest scalable improvements for cost savings and efficiency gains.'
     },
     {
       id: 3,
-      industry: 'Marketing',
       description: 'Customer Segmentation Strategy',
-      content: 'Develop a customer segmentation strategy for a {{industry}} company using historical data and behavioral trends. Include profiles based on key factors such as spending habits in retail, ARPU in telecom, or risk scores in banking, and recommend targeted campaigns for better engagement.'
+      content: 'Develop a customer segmentation strategy using historical data and behavioral trends. Include profiles based on key factors such as spending habits, ARPU, or risk scores, and recommend targeted campaigns for better engagement.'
     },
     {
       id: 4,
-      industry: 'Compliance',
       description: 'Compliance & Risk Assessment',
-      content: 'Conduct a compliance and risk assessment tailored to the {{industry}} sector. Highlight regulatory obligations (HIPAA for healthcare, PCI DSS for banking, GDPR for all industries), identify operational and security risks, and propose actionable mitigation strategies.'
+      content: 'Conduct a compliance and risk assessment. Highlight regulatory obligations (like HIPAA, PCI DSS, GDPR), identify operational and security risks, and propose actionable mitigation strategies.'
     },
     {
       id: 5,
-      industry: 'Sales',
       description: 'Sales & Demand Forecast',
-      content: 'Build a sales and demand forecast for a {{industry}} business for the next 4 quarters. Leverage historical performance, seasonality, and external economic factors to project revenue, volume, and margins. Include KPIs such as sales velocity, revenue per customer, or service adoption rates.'
+      content: 'Build a sales and demand forecast for the next 4 quarters. Leverage historical performance, seasonality, and external economic factors to project revenue, volume, and margins. Include KPIs such as sales velocity, revenue per customer, or service adoption rates.'
     },
     {
       id: 6,
-      industry: 'Technology',
       description: 'Digital Transformation Plan',
-      content: 'Design a digital transformation plan for a {{industry}} organization. Recommend suitable technologies like AI analytics for finance, IoT for manufacturing, or telemedicine platforms for healthcare. Define success metrics, integration challenges, and potential ROI.'
+      content: 'Design a digital transformation plan. Recommend suitable technologies like AI analytics, IoT, or telemedicine platforms. Define success metrics, integration challenges, and potential ROI.'
     },
     {
       id: 7,
-      industry: 'Competitive Analysis',
       description: 'Competitive Benchmarking',
-      content: 'Perform a competitive benchmarking analysis for a {{industry}} firm. Compare KPIs such as net promoter score, operational costs, market share, or innovation index with top competitors. Suggest clear strategies to close gaps and gain market advantage.'
+      content: 'Perform a competitive benchmarking analysis. Compare KPIs such as net promoter score, operational costs, market share, or innovation index with top competitors. Suggest clear strategies to close gaps and gain market advantage.'
     },
     {
       id: 8,
-      industry: 'Supply Chain',
       description: 'Supply Chain Performance',
-      content: 'Assess the supply chain performance of a {{industry}} organization. For manufacturing, examine raw material lead times; for retail, analyze inventory turnover; for healthcare, evaluate supplier reliability. Recommend data-driven improvements for resilience and cost efficiency.'
+      content: 'Assess the supply chain performance. Examine raw material lead times, analyze inventory turnover, and evaluate supplier reliability. Recommend data-driven improvements for resilience and cost efficiency.'
     },
     {
       id: 9,
-      industry: 'HR',
       description: 'Workforce Productivity Analysis',
-      content: 'Analyze workforce productivity and engagement trends in a {{industry}} business. Include KPIs like employee satisfaction scores, output per hour, or attrition rates. Recommend tools, training, or cultural initiatives to boost retention and operational performance.'
+      content: 'Analyze workforce productivity and engagement trends. Include KPIs like employee satisfaction scores, output per hour, or attrition rates. Recommend tools, training, or cultural initiatives to boost retention and operational performance.'
     },
     {
       id: 10,
-      industry: 'Finance',
       description: 'Financial Performance Review',
-      content: 'Review the financial performance of a {{industry}} company. Break down revenue streams, operating margins, and expense drivers. Suggest actionable strategies to improve cash flow, profitability, and scalability while mitigating financial risks.'
+      content: 'Review the financial performance. Break down revenue streams, operating margins, and expense drivers. Suggest actionable strategies to improve cash flow, profitability, and scalability while mitigating financial risks.'
     }
   ];
 
@@ -148,27 +150,18 @@ export default function PromptLibraryPage() {
     setExplorePrompts(shuffleArray(allPrompts));
   }, []);
 
-  // Get filtered prompts based on search query, with industry matches first
+  // Get filtered prompts based on search query
   const getFilteredPrompts = (prompts: GeneratedPrompt[]) => {
     if (!searchQuery.trim()) return prompts;
     
     const query = searchQuery.toLowerCase().trim();
-    const industryMatches: GeneratedPrompt[] = [];
-    const otherMatches: GeneratedPrompt[] = [];
     
-    prompts.forEach(prompt => {
-      const lowerIndustry = prompt.industry.toLowerCase();
+    return prompts.filter(prompt => {
       const lowerDesc = prompt.description.toLowerCase();
       const lowerContent = prompt.content.toLowerCase();
       
-      if (lowerIndustry.includes(query)) {
-        industryMatches.push(prompt);
-      } else if (lowerDesc.includes(query) || lowerContent.includes(query)) {
-        otherMatches.push(prompt);
-      }
+      return lowerDesc.includes(query) || lowerContent.includes(query);
     });
-    
-    return [...industryMatches, ...otherMatches];
   };
   
   // Get filtered prompts for recent and explore sections
@@ -433,7 +426,7 @@ export default function PromptLibraryPage() {
           <DialogHeader>
             <div className="flex items-center gap-6">
               <DialogTitle className="text-lg font-semibold">
-                {previewPrompt?.industry} - {previewPrompt?.description}
+                {previewPrompt?.description}
               </DialogTitle>
               <Button
                 variant="ghost"
