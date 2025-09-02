@@ -2036,9 +2036,14 @@ async def create_agent(
         
         try:
             version_service = await _get_version_service()
-            from agent.helium_config import HELIUM_CONFIG
             from agent.config_helper import _get_default_agentpress_tools
-            system_prompt = HELIUM_CONFIG["system_prompt"]
+            
+            # Use user-provided system prompt or basic default, not Helium's prompt
+            if agent_data.system_prompt:
+                system_prompt = agent_data.system_prompt
+            else:
+                # Basic default prompt for new agents
+                system_prompt = "You are a helpful AI assistant. You can help users with various tasks including answering questions, providing information, and assisting with problem-solving."
             
             # Use default tools if none specified, ensuring builder tools are included
             agentpress_tools = agent_data.agentpress_tools if agent_data.agentpress_tools else _get_default_agentpress_tools()
