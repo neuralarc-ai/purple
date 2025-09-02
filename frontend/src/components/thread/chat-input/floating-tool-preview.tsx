@@ -220,31 +220,19 @@ export const FloatingToolPreview: React.FC<FloatingToolPreviewProps> = ({
   return (
     <AnimatePresence>
       {isVisible && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 cursor-pointer"
-            onClick={() => {
-              // Optional: Add logic to close the popup when backdrop is clicked
-              // For now, just prevent event bubbling
-            }}
-          />
-          <motion.div
-            layoutId={FLOATING_LAYOUT_ID}
-            layout
-            transition={{
-              layout: {
-                type: "spring",
-                stiffness: 300,
-                damping: 30
-              }
-            }}
-            className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-80 max-w-[90vw]"
-            style={{ pointerEvents: 'auto' }}
-          >
+        <motion.div
+          layoutId={FLOATING_LAYOUT_ID}
+          layout
+          transition={{
+            layout: {
+              type: "spring",
+              stiffness: 300,
+              damping: 30
+            }
+          }}
+          className="-mb-2 w-full"
+          style={{ pointerEvents: 'auto' }}
+        >
           <motion.div
             layoutId={CONTENT_LAYOUT_ID}
             className="bg-white dark:bg-sidebar border border-gray-200 dark:border-ring/50 rounded-xl shadow-[0px_12px_32px_0px_rgba(0,0,0,0.05)] p-3 w-full cursor-pointer group transition-colors"
@@ -293,7 +281,6 @@ export const FloatingToolPreview: React.FC<FloatingToolPreviewProps> = ({
             </div>
           </motion.div>
         </motion.div>
-        </>
       )}
     </AnimatePresence>
   );

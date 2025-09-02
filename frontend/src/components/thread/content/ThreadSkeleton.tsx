@@ -17,9 +17,7 @@ export function ThreadSkeleton({
     return (
         <div className="flex h-screen">
             <div
-                className={`flex flex-col flex-1 overflow-hidden transition-all duration-200 ease-in-out ${
-                    isSidePanelOpen ? 'mr-[45vw]' : ''
-                }`}
+                className="flex flex-col w-[55vw] overflow-hidden transition-all duration-200 ease-in-out"
             >
                 {/* Skeleton Header */}
                 {showHeader && (
@@ -137,7 +135,7 @@ export function ThreadSkeleton({
                 {/* ChatInput - Positioned at bottom with exact same styling as actual layout */}
                 <div
                     className={cn(
-                        "fixed bottom-6 mx-6 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6",
+                        "fixed bottom-6 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6",
                         "transition-[left,right] duration-200 ease-in-out will-change-[left,right]",
                         "left-[53px] right-[45vw]"
                     )}
@@ -163,8 +161,8 @@ export function ThreadSkeleton({
             </div>
 
             {/* Side Panel - Always visible in skeleton with 45% width */}
-            <div className="hidden sm:block">
-                <div className="h-screen w-[45vw] border-l">
+            <div className="w-[45vw] border-l">
+                <div className="h-screen w-full">
                     <div className="p-4">
                         <Skeleton className="h-8 w-32 mb-4" />
                         <Skeleton className="h-20 w-full rounded-md mb-4" />
