@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button"
-import { FolderOpen, Share2, Monitor, Info } from "lucide-react"
+import { Info } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 import {
@@ -18,15 +18,8 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { ShareModal } from "@/components/sidebar/share-modal"
 import { useQueryClient } from "@tanstack/react-query";
-import { projectKeys } from "@/hooks/react-query/sidebar/keys";
 import { threadKeys } from "@/hooks/react-query/threads/keys";
 import Image from 'next/image';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useThreadTokenUsage } from "@/hooks/react-query/threads/use-thread-token-usage";
 import { useUsageRealtime } from "@/hooks/useUsageRealtime";
@@ -37,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Star } from "lucide-react";
+import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler";
 
 interface ThreadSiteHeaderProps {
   threadId: string;
@@ -61,15 +55,11 @@ export function SiteHeader({
   projectName,
   createdAt,
   onViewFiles,
-  onToggleSidePanel,
   onProjectRenamed,
   isMobileView,
   debugMode,
   isSidePanelOpen,
-  agentStatus,
-  paused,
-  inTakeover,
-  onTakeoverToggle,
+  agentStatus,  
 }: ThreadSiteHeaderProps) {
   const pathname = usePathname()
   const [isEditing, setIsEditing] = useState(false)
@@ -378,7 +368,6 @@ export function SiteHeader({
             )}
 
             {/* <Tooltip>
-
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
@@ -392,8 +381,7 @@ export function SiteHeader({
               <TooltipContent side={isMobile ? "bottom" : "bottom"}>
                 <p>Toggle Computer Preview (CMD+I)</p>
               </TooltipContent>
-            </Tooltip>
-)}
+            </Tooltip> */}
           </TooltipProvider>
         </div>
       </header>
