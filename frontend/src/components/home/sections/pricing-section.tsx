@@ -14,7 +14,7 @@ import {
   CreateCheckoutSessionResponse,
 } from '@/lib/api';
 import { toast } from 'sonner';
-import { isLocalMode, isYearlyCommitmentDowngrade, isPlanChangeAllowed, getPlanInfo } from '@/lib/config';
+import { isLocalMode, isPlanChangeAllowed, getPlanInfo } from '@/lib/config';
 import { useSubscription, useSubscriptionCommitment } from '@/hooks/react-query';
 import posthog from 'posthog-js';
 
