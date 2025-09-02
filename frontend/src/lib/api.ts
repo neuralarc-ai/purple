@@ -1755,7 +1755,7 @@ export interface CreateCheckoutSessionRequest {
   success_url: string;
   cancel_url: string;
   referral_id?: string;
-  commitment_type?: 'monthly' | 'yearly' | 'yearly_commitment';
+  commitment_type?: 'monthly' | 'yearly';
 }
 
 export interface CreatePortalSessionRequest {

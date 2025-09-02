@@ -5,12 +5,10 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  ChevronDown,
   Command,  
   AudioWaveform,
-  Sun,
-  Moon,
   SquarePen,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { useAccounts } from '@/hooks/use-accounts';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
@@ -50,6 +48,7 @@ import { toast } from 'sonner';
 import { useSubscriptionData } from '@/contexts/SubscriptionContext';
 import { useUsageRealtime } from '@/hooks/useUsageRealtime';
 import { useAuth } from '@/components/AuthProvider';
+import { BillingModal } from '@/components/billing/billing-modal';
 
 
 // Dynamic icon component that changes path based on theme
@@ -97,6 +96,7 @@ export function NavUserWithTeams({
   const { profile, preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
   const [showEditNameDialog, setShowEditNameDialog] = React.useState(false);
+  const [showBillingModal, setShowBillingModal] = React.useState(false);
   const [editName, setEditName] = React.useState(user.name);
   
   // Update editName when preferredName changes
@@ -285,16 +285,22 @@ export function NavUserWithTeams({
     <>
       <SidebarMenu>
         <SidebarMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:text-center group-data-[collapsible=icon]:ml-0 ml-2">
-                  <span className="truncate font-medium group-data-[collapsible=icon]:hidden">
-                    {profileLoading ? 'Loading...' : 'Settings'}
-                  </span>
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarFallback className="rounded-lg">
+                    {getInitials(user.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-lg font-bold">{user.name}</span>
+                  <span className="truncate text-sm">{user.email}</span>
                 </div>
                 {/* Show user avatar in collapsed state, more icon in expanded state */}
                 <div className="ml-auto group-data-[collapsible=icon]:mr-2">
@@ -541,6 +547,12 @@ export function NavUserWithTeams({
                     Settings
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="rounded-full cursor-pointer"
+                  onClick={() => setShowBillingModal(true)}
+                >
+                  Manage Subscription
+                </DropdownMenuItem>
                 {!flagLoading && customAgentsEnabled && (
                   <DropdownMenuItem asChild className="rounded-full cursor-pointer">
                     {/* <Link href="/settings/credentials">
@@ -556,43 +568,7 @@ export function NavUserWithTeams({
                     </Link> */}
                   </DropdownMenuItem>
                 )}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <DropdownMenuItem className="rounded-full cursor-pointer">
-                      <div className="flex items-center gap-2 w-full">
-                        <span>Theme</span>
-                        <ChevronDown className="h-4 w-4 ml-auto rotate-[-90deg]" />
-                      </div>
-                    </DropdownMenuItem>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    side="right" 
-                    align="start" 
-                    className="w-32 p-2 space-y-1 rounded-2xl"
-                    sideOffset={12}
-                  >
-                    <DropdownMenuItem
-                      onClick={() => setTheme('light')}
-                      className="cursor-pointer rounded-lg"
-                    >
-                      <Sun className="h-4 w-4 mr-2" />
-                      Light
-                      {theme === 'light' && (
-                        <span className="ml-auto w-2 h-2 bg-foreground rounded-full" />
-                      )}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setTheme('dark')}
-                      className="cursor-pointer rounded-md"
-                    >
-                      <Moon className="h-4 w-4 mr-2" />
-                      Dark
-                      {theme === 'dark' && (
-                        <span className="ml-auto w-2 h-2 bg-foreground rounded-full" />
-                      )}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -650,6 +626,13 @@ export function NavUserWithTeams({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Billing Modal */}
+      <BillingModal 
+        open={showBillingModal} 
+        onOpenChange={setShowBillingModal}
+        returnUrl={typeof window !== 'undefined' ? window.location.href : '/'}
+      />
     </>
   );
 }

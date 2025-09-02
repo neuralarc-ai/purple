@@ -30,13 +30,32 @@ import { CustomAgentsSection } from './custom-agents-section';
 import { toast } from 'sonner';
 import { ReleaseBadge } from '../auth/release-badge';
 
+import { AnimatedThemeToggler } from '@/components/magicui/animated-theme-toggler';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+import { UseCases } from './use-cases';
+
+
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
 export function DashboardContent() {
+  const searchParams = useSearchParams();
   const [inputValue, setInputValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
   const [autoSubmit, setAutoSubmit] = useState(false);
+  const chatInputRef = useRef<ChatInputHandles>(null);
+  const router = useRouter();
+  const isMobile = useIsMobile();
+  const { data: accounts } = useAccounts();
+  const { preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
+  const personalAccount = accounts?.find((account) => account.personal_account);
   const { 
     selectedAgentId, 
     setSelectedAgent, 
@@ -44,23 +63,27 @@ export function DashboardContent() {
     getCurrentAgent
   } = useAgentSelection();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
-  const { billingError, handleBillingError, clearBillingError } =
-    useBillingError();
+  const { billingError, handleBillingError, clearBillingError } = useBillingError();
   const [showAgentLimitDialog, setShowAgentLimitDialog] = useState(false);
   const [agentLimitData, setAgentLimitData] = useState<{
     runningCount: number;
     runningThreadIds: string[];
   } | null>(null);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isMobile = useIsMobile();
-  const { data: accounts } = useAccounts();
-  const { preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
-  const personalAccount = accounts?.find((account) => account.personal_account);
-  const chatInputRef = useRef<ChatInputHandles>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
+  // Handle prompt from URL
+  useEffect(() => {
+    const promptParam = searchParams?.get('prompt');
+    if (promptParam) {
+      const decodedPrompt = decodeURIComponent(promptParam);
+      setInputValue(decodedPrompt);
+      // Focus the input after a small delay to ensure it's rendered
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 100);
+    }
+  }, [searchParams]);
   // Welcome messages that change on refresh
   const welcomeMessages = [
     "What do we tackle first, {name}?",
@@ -355,6 +378,22 @@ export function DashboardContent() {
         showUsageLimitAlert={true}
       />
       <div className="flex flex-col h-screen w-full overflow-hidden">
+        {/* Theme Toggle Button - Top Right */}
+        <div className="absolute py-4 right-12 z-10">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="h-8 w-8 flex items-center justify-center rounded-full bg-black dark:bg-white p-1.5">
+                  <AnimatedThemeToggler className="h-4 w-4 cursor-pointer" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle theme</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
         <div className="flex-1 overflow-y-auto">
           <div className="min-h-full flex flex-col">
             {/* {customAgentsEnabled && (
@@ -396,6 +435,21 @@ export function DashboardContent() {
                     onAgentSelect={setSelectedAgent}
                     enableAdvancedConfig={true}
                     onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
+                  />
+                  <UseCases 
+                    onUseCaseSelect={(prompt) => {
+                      setInputValue(prompt);
+                      // Focus the input after a short delay to ensure it's rendered
+                      setTimeout(() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          textarea.focus();
+                          // Move cursor to the end of the text
+                          const length = prompt.length;
+                          textarea.setSelectionRange(length, length);
+                        }
+                      }, 0);
+                    }} 
                   />
                 </div>
               </div>

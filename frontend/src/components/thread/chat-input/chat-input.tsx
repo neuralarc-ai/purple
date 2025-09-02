@@ -15,6 +15,7 @@ import { handleFiles } from './file-upload-handler';
 import { MessageInput } from './message-input';
 import { AttachmentGroup } from '../attachment-group';
 import { useModelSelection } from './_use-model-selection';
+import { useModeSelection } from './_use-mode-selection';
 import { useFileDelete } from '@/hooks/react-query/files';
 import { useQueryClient } from '@tanstack/react-query';
 import { ToolCallInput } from './floating-tool-preview';
@@ -33,6 +34,7 @@ import { BorderBeam } from '@/components/magicui/border-beam';
 export interface ChatInputHandles {
   getPendingFiles: () => File[];
   clearPendingFiles: () => void;
+  focus: () => void;
 }
 
 export interface ChatInputProps {
@@ -139,7 +141,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
-    const [selectedMode, setSelectedMode] = useState<'default' | 'agent'>('default');
     const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
 
     const [registryDialogOpen, setRegistryDialogOpen] = useState(false);
@@ -157,6 +158,12 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       getActualModelId,
       refreshCustomModels,
     } = useModelSelection();
+
+    const {
+      selectedMode,
+      setSelectedMode: handleModeChange,
+      hasInitialized: modeInitialized,
+    } = useModeSelection();
 
     const { data: subscriptionData } = useSubscriptionData();
     const deleteFileMutation = useFileDelete();
@@ -211,6 +218,11 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     useImperativeHandle(ref, () => ({
       getPendingFiles: () => pendingFiles,
       clearPendingFiles: () => setPendingFiles([]),
+      focus: () => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      },
     }));
 
     useEffect(() => {
@@ -389,9 +401,9 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     // Auto-switch to agent mode when files are uploaded
     useEffect(() => {
       if (uploadedFiles.length > 0 && selectedMode !== 'agent') {
-        setSelectedMode('agent');
+        handleModeChange('agent');
       }
-    }, [uploadedFiles.length, selectedMode]);
+    }, [uploadedFiles.length, selectedMode, handleModeChange]);
 
     const handleTranscription = (transcribedText: string) => {
       // Replace the entire input value with the transcribed text
@@ -500,7 +512,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
             }}
           >
             <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
-              <CardContent className={`w-full p-2 pb-3 border-black/15 dark:border-muted bg-white dark:bg-sidebar-accent rounded-[28px] relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border`}>
+              <CardContent className={`w-full p-2 pb-3 border-black/15 dark:border-muted bg-white dark:bg-sidebar rounded-[28px] relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/50 border`}>
                 {/* <div className="absolute inset-0 rounded-[inherit] overflow-hidden border">
                   <BorderBeam 
                     duration={6}
@@ -559,7 +571,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   onAgentSelect={onAgentSelect}
                   hideAgentSelection={hideAgentSelection}
                   selectedMode={selectedMode}
-                  onModeChange={setSelectedMode}
+                  onModeChange={handleModeChange}
                   onOpenIntegrations={() => setRegistryDialogOpen(true)}
                   onOpenInstructions={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=instructions`)}
                   onOpenKnowledge={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=knowledge`)}

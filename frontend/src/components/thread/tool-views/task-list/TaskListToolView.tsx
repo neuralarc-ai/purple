@@ -143,9 +143,7 @@ export const TaskListToolView: React.FC<ToolViewProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="p-0 h-full flex-1 overflow-hidden relative bg-background">
-        {/* Top fade overlay */}
-        <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white dark:from-zinc-950 to-transparent pointer-events-none z-10" />
+      <CardContent className="p-0 h-full flex-1 overflow-hidden relative bg-background">        
         {isStreaming && !hasData ? (
           <div className="flex flex-col items-center justify-center h-full py-12 px-6 bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-zinc-900">
             <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-gradient-to-b from-green-100 to-green-50 shadow-inner dark:from-green-800/40 dark:to-green-900/60">
@@ -179,9 +177,7 @@ export const TaskListToolView: React.FC<ToolViewProps> = ({
             </p>
           </div>
         )}
-
-        {/* Bottom fade overlay */}
-        <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-neutral-100 dark:from-zinc-950 to-transparent pointer-events-none z-10" />
+        
       </CardContent>
       <div className="px-4 py-2 h-fit bg-white dark:bg-zinc-900 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
         <div className="h-full flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">

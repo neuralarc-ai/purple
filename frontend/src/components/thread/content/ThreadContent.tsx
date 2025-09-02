@@ -1126,7 +1126,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                         )}
 
                         <div className="flex justify-end">
-                          <div className="flex max-w-[85%] rounded-2xl rounded-br-sm bg-sidebar dark:bg-sidebar-accent border px-4 py-3 pb-2 break-words overflow-hidden">
+                          <div className="flex max-w-[85%] rounded-2xl rounded-br-sm bg-sidebar dark:bg-sidebar border px-4 py-3 pb-2 break-words overflow-hidden">
                             <div className="space-y-3 min-w-0 flex-1">
                               {cleanContent && (
                                 <ComposioUrlDetector

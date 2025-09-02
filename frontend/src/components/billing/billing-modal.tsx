@@ -143,16 +143,14 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                             </div>
                         )}
 
-                        {/* Credit Balance Display - Only show for users who can purchase credits */}
-                        {subscriptionData?.can_purchase_credits && (
-                            <div className="mb-6">
-                                <CreditBalanceDisplay 
-                                    balance={subscriptionData.credit_balance || 0}
-                                    canPurchase={subscriptionData.can_purchase_credits}
-                                    onPurchaseClick={() => setShowCreditPurchaseModal(true)}
-                                />
-                            </div>
-                        )}
+                        {/* Credit Balance Display - Temporarily show for all users for testing */}
+                        <div className="mb-6">
+                            <CreditBalanceDisplay 
+                                balance={subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)}
+                                canPurchase={true} // Temporarily enable for all users for testing
+                                onPurchaseClick={() => setShowCreditPurchaseModal(true)}
+                            />
+                        </div>
 
                         <PricingSection returnUrl={returnUrl} showTitleAndTabs={false} />
 
@@ -174,7 +172,7 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                 open={showCreditPurchaseModal}
                 onOpenChange={setShowCreditPurchaseModal}
                 currentBalance={subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)}
-                canPurchase={subscriptionData?.can_purchase_credits || false}
+                canPurchase={true} // Temporarily enable for all users for testing
                 onPurchaseComplete={() => {
                     // Refresh subscription data
                     getSubscription().then(setSubscriptionData);
