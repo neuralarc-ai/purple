@@ -188,5 +188,21 @@ export const isPlanChangeAllowed = (currentPriceId: string, newPriceId: string):
   return { allowed: true };
 };
 
+// Get API base URL based on environment
+export function getApiBaseUrl(): string {
+  if (typeof window === 'undefined') {
+    // Server-side rendering
+    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  }
+  
+  // Client-side
+  if (isLocalMode()) {
+    return 'http://localhost:3000';
+  } else if (isStagingMode()) {
+    return 'https://staging.yourdomain.com';
+  }
+  return 'https://api.yourdomain.com';
+}
+
 // Export subscription tier type for typing elsewhere
-export type SubscriptionTier = keyof typeof PROD_TIERS;
+export type SubscriptionTier = keyof typeof config.SUBSCRIPTION_TIERS;

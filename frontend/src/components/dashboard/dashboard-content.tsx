@@ -75,6 +75,19 @@ export function DashboardContent() {
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
+  // Handle prompt from URL
+  useEffect(() => {
+    const promptParam = searchParams?.get('prompt');
+    if (promptParam) {
+      // Decode but don't set the input value
+      const decodedPrompt = decodeURIComponent(promptParam);
+      // Just focus the input without setting the value
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 100);
+    }
+  }, [searchParams]);
+  
   // Security interception hook
   const {
     showPopup: showSecurityPopup,
@@ -84,7 +97,6 @@ export function DashboardContent() {
     closePopup: closeSecurityPopup,
     shouldProceedWithRequest,
   } = useSecurityInterception();
-
   
   const welcomeMessage = useMemo(() => {
     // Check if we have a cached welcome message
@@ -351,12 +363,8 @@ export function DashboardContent() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const pendingPrompt = localStorage.getItem(PENDING_PROMPT_KEY);
-
-      if (pendingPrompt) {
-        setInputValue(pendingPrompt);
-        setAutoSubmit(true);
-      }
+      // Clear any pending prompts from localStorage without setting them
+      localStorage.removeItem(PENDING_PROMPT_KEY);
     }, 200);
 
     return () => clearTimeout(timer);
@@ -445,9 +453,10 @@ export function DashboardContent() {
                     onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
                   />
                   <UseCases 
+                    router={router}
                     onUseCaseSelect={(prompt) => {
                       setInputValue(prompt);
-                      // Focus the input after a short delay to ensure it's rendered
+                      // Focus the input and set cursor to the end
                       setTimeout(() => {
                         const textarea = document.querySelector('textarea');
                         if (textarea) {

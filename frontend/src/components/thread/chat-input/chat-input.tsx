@@ -244,13 +244,135 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       }
     }, [agents, onAgentSelect, initializeFromAgents]);
 
-
+    useEffect(() => {
+      const setPromptValue = (prompt: string) => {
+        if (!prompt) return;
+        
+        if (isControlled && controlledOnChange) {
+          controlledOnChange(prompt);
+        } else {
+          setUncontrolledValue(prompt);
+        }
+        
+        // Focus the input after a short delay and set cursor to end
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            const length = prompt.length;
+            textareaRef.current.setSelectionRange(length, length);
+          }
+        }, 100);
+      };
+      
+      // Check for prompt in URL search params
+      const checkUrlForPrompt = () => {
+        if (typeof window === 'undefined') return false;
+        
+        // Check URL search params first (newer approach)
+        const urlParams = new URLSearchParams(window.location.search);
+        const promptFromSearch = urlParams.get('prompt');
+        
+        if (promptFromSearch) {
+          const prompt = decodeURIComponent(promptFromSearch);
+          setPromptValue(prompt);
+          
+          // Clean up the URL
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('prompt');
+          window.history.replaceState({}, '', newUrl.toString());
+          return true;
+        }
+        
+        // Check URL hash (legacy approach)
+        const hash = window.location.hash;
+        if (hash.startsWith('#prompt=')) {
+          const prompt = decodeURIComponent(hash.replace('#prompt=', ''));
+          setPromptValue(prompt);
+          
+          // Clean up the URL
+          const newUrl = new URL(window.location.href);
+          newUrl.hash = '';
+          window.history.replaceState({}, '', newUrl.toString());
+          return true;
+        }
+        
+        return false;
+      };
+      
+      // Handle messages from prompt library
+      const handleMessage = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data?.type === 'PROMPT_SELECTED' && event.data.content) {
+          setPromptValue(event.data.content);
+        }
+      };
+      
+      // Check for prompt in localStorage
+      const checkLocalStorageForPrompt = () => {
+        const selectedPrompt = localStorage.getItem('selectedPrompt');
+        if (selectedPrompt) {
+          try {
+            // Try to parse as JSON first
+            const promptData = JSON.parse(selectedPrompt);
+            // If it has a content field, use that, otherwise use the whole string
+            const promptContent = typeof promptData === 'object' && promptData !== null && 'content' in promptData
+              ? promptData.content
+              : selectedPrompt;
+            setPromptValue(promptContent);
+          } catch (e) {
+            // If not valid JSON, use as is
+            setPromptValue(selectedPrompt);
+          }
+          localStorage.removeItem('selectedPrompt');
+          return true;
+        }
+        return false;
+      };
+      
+      // Try to get prompt from different sources in order
+      let promptFound = checkUrlForPrompt();
+      if (!promptFound) {
+        promptFound = checkLocalStorageForPrompt();
+      }
+      
+      // Set up event listeners
+      window.addEventListener('message', handleMessage);
+      window.addEventListener('focus', checkLocalStorageForPrompt);
+      
+      // Cleanup
+      return () => {
+        window.removeEventListener('message', handleMessage);
+        window.removeEventListener('focus', checkLocalStorageForPrompt);
+      };
+    }, [isControlled, controlledOnChange]);
 
     useEffect(() => {
-      if (autoFocus && textareaRef.current) {
-        textareaRef.current.focus();
+      if (autoFocus) {
+        textareaRef.current?.focus();
       }
-    }, [autoFocus]);
+    }, [autoFocus, messages]);
+
+    useEffect(() => {
+      const handlePromptSelected = (event: Event) => {
+        const customEvent = event as CustomEvent<{ content: string }>;
+        const promptContent = customEvent.detail?.content;
+        if (promptContent) {
+          if (isControlled && controlledOnChange) {
+            controlledOnChange(promptContent);
+          } else {
+            setUncontrolledValue(promptContent);
+          }
+          // Focus the input after setting the prompt
+          textareaRef.current?.focus();
+        }
+      };
+
+      window.addEventListener('promptSelected', handlePromptSelected as EventListener);
+      return () => {
+        window.removeEventListener('promptSelected', handlePromptSelected as EventListener);
+      };
+    }, [isControlled, controlledOnChange]);
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
