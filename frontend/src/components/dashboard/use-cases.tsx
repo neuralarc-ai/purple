@@ -49,8 +49,8 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router }) =
   ];
 
   // Split use cases into two rows of 3 items each
-  const firstRow = useCases.slice(0, 3);
-  const secondRow = useCases.slice(3);
+  const firstRow = useCases.slice(0, 4);
+  const secondRow = useCases.slice(4, 6);
 
   const renderUseCaseRow = (rowItems: typeof useCases) => (
     <div className="flex justify-center gap-2 w-full">
