@@ -245,11 +245,9 @@ async def improve_prompt(request: Request):
         if hasattr(response, 'choices') and len(response.choices) > 0:
             improved_prompt = response.choices[0].message.content.strip()
             
-            # Remove quotes from the beginning and end if they exist
-            if improved_prompt.startswith('"') and improved_prompt.endswith('"'):
-                improved_prompt = improved_prompt[1:-1].strip()
-            elif improved_prompt.startswith("'") and improved_prompt.endswith("'"):
-                improved_prompt = improved_prompt[1:-1].strip()
+            # Ensure we don't return empty content
+            if not improved_prompt.strip():
+                improved_prompt = prompt
         else:
             logger.error(f"Unexpected response format: {response}")
             raise Exception("Invalid response format from LLM")

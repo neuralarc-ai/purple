@@ -1,4 +1,4 @@
-import React, { forwardRef, useEffect, useState } from 'react';
+import React, { forwardRef, useEffect, useState, useRef } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +25,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ModeToggle } from './mode-toggle';
+import { BorderBeam } from '@/components/magicui/border-beam';
 
 interface MessageInputProps {
   value: string;
@@ -121,9 +123,15 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     const { enabled: customAgentsEnabled, loading: flagsLoading } =
       useFeatureFlag('custom_agents');
     const { resolvedTheme } = useTheme();
+    const isMountedRef = useRef(true);
 
     useEffect(() => {
       setMounted(true);
+      isMountedRef.current = true;
+      
+      return () => {
+        isMountedRef.current = false;
+      };
     }, []);
 
     useEffect(() => {
@@ -198,24 +206,32 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
     };
 
     const handleImprovePrompt = async () => {
-      if (!value.trim() || isImprovingPrompt) return;
+      if (!value.trim() || isImprovingPrompt || !isMountedRef.current) return;
       
       setIsImprovingPrompt(true);
       
       try {
         const result = await improvePromptWithOpenRouter(value);
         
-        if (result.success && result.improvedPrompt !== value) {
-          // Apply the improved prompt
-          const syntheticEvent = {
-            target: { value: result.improvedPrompt },
-          } as React.ChangeEvent<HTMLTextAreaElement>;
-          onChange(syntheticEvent);
+        // Check if component is still mounted before updating state
+        if (isMountedRef.current && result.success && result.improvedPrompt !== value) {
+          // Apply the improved prompt with proper error handling
+          try {
+            const syntheticEvent = {
+              target: { value: result.improvedPrompt },
+            } as React.ChangeEvent<HTMLTextAreaElement>;
+            onChange(syntheticEvent);
+          } catch (error) {
+            console.error('Error applying improved prompt:', error);
+          }
         }
       } catch (error) {
         console.error('Failed to improve prompt:', error);
       } finally {
-        setIsImprovingPrompt(false);
+        // Only update state if component is still mounted
+        if (isMountedRef.current) {
+          setIsImprovingPrompt(false);
+        }
       }
     };    
 
@@ -273,7 +289,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
     return (
       <div className="relative flex flex-col w-full h-full gap-2 justify-between">
-        <div className="flex flex-col gap-1 px-2">
+        <div className="flex flex-col gap-1 px-2 relative">
           <Textarea
             ref={ref}
             value={value}
@@ -282,58 +298,18 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             onPaste={handlePaste}
             placeholder={placeholder}
             className={cn(
-              "w-full bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-4 min-h-[86px] max-h-[240px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]",
+              "w-full bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-2 min-h-[100px] max-h-[200px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]",
               isDraggingOver ? 'opacity-40' : '',
             )}
             disabled={loading || (disabled && !isAgentRunning)}
             rows={1}
           />
+          {/* Subtle gradient overlay at the bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-bg-white dark:from-bg-sidebar-accent to-transparent pointer-events-none" />
         </div>
 
         <div className="flex items-center justify-between mt-0 mb-1 px-2">
           <div className="flex items-center gap-2">
-            {/* Mode Toggle */}
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-muted-foreground font-medium">
-                Mode:
-              </label>
-              <div className="flex items-center bg-muted rounded-lg p-1">
-                <button
-                  type="button"
-                  onClick={() => onModeChange('default')}
-                  className={cn(
-                    "text-xs px-3 py-1 rounded-md transition-all duration-200 font-medium",
-                    selectedMode === 'default'
-                      ? "bg-background text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                                     disabled={loading || (disabled && !isAgentRunning)}
-                   title="Ultra-fast chat mode with tools and search - optimized for immediate response display"
-                 >
-                   💬 Chat
-                 </button>
-                 <button
-                   type="button"
-                   onClick={() => onModeChange('agent')}
-                   className={cn(
-                     "text-xs px-3 py-1 rounded-md transition-all duration-200 font-medium",
-                     selectedMode === 'agent'
-                       ? "bg-background text-foreground shadow-sm"
-                       : "text-muted-foreground hover:text-foreground"
-                   )}
-                   disabled={loading || (disabled && !isAgentRunning)}
-                   title="Full AI agent with context management, file processing, tools, and enhanced capabilities"
-                 >
-                   🤖 Agent
-                </button>
-              </div>
-              {uploadedFiles.length > 0 && selectedMode !== 'agent' && (
-                <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                  Files require agent mode
-                </span>
-              )}
-            </div>
-
             {!hideAttachments && (
               <>
                 <DropdownMenu
@@ -411,11 +387,16 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="ghost"                  
                   onClick={handleImprovePrompt}
                   className={cn(
-                    'h-8 px-3 bg-transparent dark:border-muted-foreground/30 shadow-none group transition-all duration-200 text-sm',
-                    'border border-muted-foreground/20 rounded-xl bg-white dark:bg-sidebar-accent hover:bg-background/50! ',
+                    'h-8 w-8 bg-transparent dark:border-muted-foreground/30 shadow-none group transition-all duration-200 text-sm relative overflow-hidden',
+                    'border border-muted-foreground/20 rounded-full bg-white dark:bg-sidebar-accent hover:bg-background/50! ',
+                    (!isLoggedIn ||
+                      loading ||
+                      (disabled && !isAgentRunning) ||
+                      !value.trim()) && 'opacity-50',
+                    isImprovingPrompt && 'cursor-not-allowed border-none'
                   )}
                   disabled={
                     !isLoggedIn ||
@@ -426,21 +407,15 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                   }
                   title="Improve Prompt with AI"
                 >
-                  {isImprovingPrompt ? (
-                    <>
-                      <Wand2 className="h-3 w-3 text-muted-foreground stroke-[1.5]" />
-                      <AnimatedShinyText className="text-xs">
-                        Improving prompt
-                      </AnimatedShinyText>
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="h-3 w-3 text-muted-foreground stroke-[1.5]" />
-                      <span className="text-xs text-muted-foreground group-hover:text-foreground transition-all">
-                        Improve Prompt
-                      </span>
-                    </>
+                  {isImprovingPrompt && (
+                    <BorderBeam 
+                      duration={2}
+                      borderWidth={1.5}
+                      size={40}
+                      className="from-helium-blue via-helium-green to-helium-yellow"
+                    />
                   )}
+                  <Wand2 className="h-3.5! w-3.5! text-muted-foreground" strokeWidth={1.5} />
                 </Button>
 
                 <input
@@ -451,6 +426,18 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                   multiple
                 />
               </>
+            )}
+
+            {/* Mode Toggle */}
+            <ModeToggle
+              selectedMode={selectedMode}
+              onModeChange={onModeChange}
+              disabled={loading || (disabled && !isAgentRunning)}
+            />
+            {uploadedFiles.length > 0 && selectedMode !== 'agent' && (
+              <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                Files require agent mode
+              </span>
             )}
           </div>
 
@@ -487,19 +474,20 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             <Button
               type="submit"
               onClick={(e) => {
+                // Check if component is still mounted before proceeding
+                if (!mounted) return;
+                
                 // Pre-emptive loading state - show loading immediately
                 if (isAgentRunning && onStopAgent) {
                   onStopAgent();
                 } else {
-                  // Set loading state immediately for better UX
-                  const button = e.currentTarget;
-                  const originalContent = button.innerHTML;
-                  button.innerHTML = '<div class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"></div>';
-                  button.disabled = true;
-                  
+                  // Use React state instead of direct DOM manipulation
+                  // The loading state will be handled by the parent component
                   // Call onSubmit after a minimal delay to ensure loading state renders
                   setTimeout(() => {
-                    onSubmit(e);
+                    if (mounted) {
+                      onSubmit(e);
+                    }
                   }, 10);
                 }
               }}
