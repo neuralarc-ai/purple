@@ -41,6 +41,35 @@ const workOptions = [
   'Other',
 ];
 
+// Mapping from role IDs to display names for backward compatibility
+const roleIdToName: Record<string, string> = {
+  'product-management': 'Product Management',
+  'engineering': 'Engineering',
+  'hr': 'Human Resources',
+  'finance': 'Finance',
+  'marketing': 'Marketing',
+  'sales': 'Sales',
+  'operations': 'Operations',
+  'data-science': 'Data Science',
+  'design': 'Design',
+  'legal': 'Legal',
+  'other': 'Other',
+};
+
+// Helper function to normalize work description
+const normalizeWorkDescription = (workDesc: string): string => {
+  // If it's already a display name, return as is
+  if (workOptions.includes(workDesc)) {
+    return workDesc;
+  }
+  // If it's an ID, convert to display name
+  if (roleIdToName[workDesc]) {
+    return roleIdToName[workDesc];
+  }
+  // If it's neither, return as is (fallback)
+  return workDesc;
+};
+
 // Generate avatar options with different color combinations
 const generateAvatarOptions = () => {
   const colorPalettes = [
@@ -86,6 +115,10 @@ export default function ProfilePage() {
   const [hasProfile, setHasProfile] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  
+  // Add state for custom role input
+  const [showCustomRoleInput, setShowCustomRoleInput] = useState(false);
+  const [customRole, setCustomRole] = useState('');
 
   // Helper function to get initials from name
   const getInitials = (name: string) => {
@@ -118,13 +151,36 @@ export default function ProfilePage() {
     try {
       const userProfile = await userProfilesApi.getProfile();
       setProfile(userProfile);
-      setFormData({
-        fullName: userProfile.full_name,
-        preferredName: userProfile.preferred_name,
-        workDescription: userProfile.work_description,
-        personalReferences: userProfile.personal_references || '',
-        avatar: userProfile.avatar || '',
-      });
+      
+      // Handle custom role display
+      const workDesc = userProfile.work_description;
+      
+      // Check if the work description is a custom role (not in predefined options)
+      if (workDesc && !workOptions.includes(workDesc)) {
+        // It's a custom role, show "Other" in dropdown and the custom text in input
+        setFormData({
+          fullName: userProfile.full_name,
+          preferredName: userProfile.preferred_name,
+          workDescription: 'Other',
+          personalReferences: '', // Don't load any existing personal references
+          avatar: userProfile.avatar,
+        });
+        setShowCustomRoleInput(true);
+        setCustomRole(workDesc);
+      } else {
+        // It's a predefined role, show it normally
+        const normalizedWorkDesc = normalizeWorkDescription(workDesc);
+        setFormData({
+          fullName: userProfile.full_name,
+          preferredName: userProfile.preferred_name,
+          workDescription: normalizedWorkDesc,
+          personalReferences: '', // Don't load any existing personal references
+          avatar: userProfile.avatar,
+        });
+        setShowCustomRoleInput(false);
+        setCustomRole('');
+      }
+      
       setHasProfile(true);
     } catch (error) {
       if (error instanceof Error && error.message === 'Profile not found') {
@@ -143,7 +199,7 @@ export default function ProfilePage() {
     
     // Validate required fields
     if (!formData.fullName.trim() || !formData.preferredName.trim() || !formData.workDescription || !formData.avatar) {
-      toast.error('Please fill in all required fields including selecting an avatar');
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -153,7 +209,7 @@ export default function ProfilePage() {
       const profileData = {
         full_name: formData.fullName.trim(),
         preferred_name: formData.preferredName.trim(),
-        work_description: formData.workDescription,
+        work_description: formData.workDescription === 'Other' ? customRole.trim() : normalizeWorkDescription(formData.workDescription),
         personal_references: formData.personalReferences.trim() || undefined,
         avatar: formData.avatar,
       };
@@ -174,10 +230,19 @@ export default function ProfilePage() {
       setFormData({
         fullName: userProfile.full_name,
         preferredName: userProfile.preferred_name,
-        workDescription: userProfile.work_description,
-        personalReferences: userProfile.personal_references || '',
-        avatar: userProfile.avatar || '',
+        workDescription: userProfile.work_description && !workOptions.includes(userProfile.work_description) ? 'Other' : normalizeWorkDescription(userProfile.work_description),
+        personalReferences: '', // Keep personal references empty
+        avatar: userProfile.avatar,
       });
+      
+      // Handle custom role display
+      if (userProfile.work_description && !workOptions.includes(userProfile.work_description)) {
+        setShowCustomRoleInput(true);
+        setCustomRole(userProfile.work_description);
+      } else {
+        setShowCustomRoleInput(false);
+        setCustomRole('');
+      }
       
       setHasProfile(true);
       setIsSubmitted(true);
@@ -196,7 +261,7 @@ export default function ProfilePage() {
     }
   };
 
-  const isFormValid = formData.fullName.trim() && formData.preferredName.trim() && formData.workDescription && formData.avatar;
+  const isFormValid = formData.fullName.trim() && formData.preferredName.trim() && formData.workDescription && formData.avatar && (formData.workDescription !== 'Other' || customRole.trim());
 
   if (isLoading) {
     return (
@@ -259,12 +324,6 @@ export default function ProfilePage() {
                       </AvatarFallback>
                     </UIAvatar>
                   )}
-                  <div 
-                    className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center cursor-pointer hover:bg-primary/90 transition-colors"
-                    title="Click to select avatar"
-                  >
-                    <Camera className="w-3 h-3 text-white" />
-                  </div>
                 </button>
               </div>
               <div className="flex-1">
@@ -298,9 +357,6 @@ export default function ProfilePage() {
               />
             </div>
 
-            {/* Avatar Selection Info */}
-           
-
             {/* Preferred Name */}
             <div className="space-y-2">
               <Label htmlFor="preferredName" className="text-sm font-medium">
@@ -324,7 +380,16 @@ export default function ProfilePage() {
               </Label>
               <Select
                 value={formData.workDescription}
-                onValueChange={(value) => handleInputChange('workDescription', value)}
+                onValueChange={(value) => {
+                  handleInputChange('workDescription', value);
+                  if (value === 'Other') {
+                    setShowCustomRoleInput(true);
+                    setCustomRole('');
+                  } else {
+                    setShowCustomRoleInput(false);
+                    setCustomRole('');
+                  }
+                }}
                 required
               >
                 <SelectTrigger className="transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary">
@@ -338,17 +403,34 @@ export default function ProfilePage() {
                   ))}
                 </SelectContent>
               </Select>
+              
+              {/* Custom role input when "Other" is selected */}
+              {showCustomRoleInput && (
+                <div className="space-y-2 mt-4">
+                  <Label htmlFor="customRole" className="text-sm font-medium">
+                    Please specify your role <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="customRole"
+                    placeholder="Enter your role or job title"
+                    value={customRole}
+                    onChange={(e) => setCustomRole(e.target.value)}
+                    className="transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                    required
+                  />
+                </div>
+              )}
             </div>
 
             {/* Personal References */}
             <div className="space-y-2">
               <Label htmlFor="personalReferences" className="text-sm font-medium">
-                What personal references should Helium consider in responses?
+                Description (e.g., about company, your role)
                 <span className="text-muted-foreground text-xs ml-2">(Optional)</span>
               </Label>
               <Textarea
                 id="personalReferences"
-                placeholder="Tell us about your interests, background, or any specific context that would help Helium provide more personalized responses..."
+                placeholder="Tell us about your company, role, or any context that would help Helium provide more personalized responses..."
                 value={formData.personalReferences}
                 onChange={(e) => handleInputChange('personalReferences', e.target.value)}
                 rows={4}
@@ -414,6 +496,12 @@ export default function ProfilePage() {
                   type="button"
                   onClick={() => {
                     handleInputChange('avatar', avatarOption.value);
+                    // Update the profile state immediately for real-time display
+                    if (profile) {
+                      setProfile({ ...profile, avatar: avatarOption.value });
+                    }
+                    // Also update form data to ensure immediate display
+                    setFormData(prev => ({ ...prev, avatar: avatarOption.value }));
                     setShowAvatarModal(false);
                   }}
                   className={`
@@ -476,7 +564,7 @@ export default function ProfilePage() {
         <Card className="max-w-2xl border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
           <CardContent className="pt-6">
             <div className="flex items-center space-x-3 text-green-700 dark:text-green-300">
-              <CheckCircle className="h-5 w-5" />
+              <CheckCircle className="h-5 h-5" />
               <div>
                 <p className="font-medium">Profile updated successfully!</p>
                 <p className="text-sm text-green-600 dark:text-green-400">

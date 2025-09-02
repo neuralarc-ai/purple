@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { FcGoogle } from 'react-icons/fc';
+import { Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
-import { FcGoogle } from "react-icons/fc";
-import { Loader2 } from 'lucide-react';
 
 interface GoogleSignInProps {
   returnUrl?: string;

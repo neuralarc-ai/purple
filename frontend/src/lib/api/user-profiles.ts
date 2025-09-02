@@ -28,7 +28,7 @@ export interface UserProfileUpdate {
   avatar?: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
 
 export const userProfilesApi = {
   async getProfile(): Promise<UserProfile> {
@@ -102,11 +102,11 @@ export const userProfilesApi = {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        full_name: profileData.full_name?.trim(),
-        preferred_name: profileData.preferred_name?.trim(),
-        work_description: profileData.work_description,
-        personal_references: profileData.personal_references?.trim() || null,
-        avatar: profileData.avatar,
+        full_name: profileData.full_name?.trim() || undefined,
+        preferred_name: profileData.preferred_name?.trim() || undefined,
+        work_description: profileData.work_description || undefined,
+        personal_references: profileData.personal_references?.trim() || undefined,
+        avatar: profileData.avatar || undefined,
       }),
     });
 

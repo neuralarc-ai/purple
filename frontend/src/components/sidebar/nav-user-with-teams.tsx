@@ -346,12 +346,21 @@ export function NavUserWithTeams({
                 <div className="flex items-center gap-2 px-1.5 py-1.5 text-left text-sm">
                   {profile?.avatar ? (
                     <div className="h-8 w-8 rounded-lg overflow-hidden">
-                      <BoringAvatar
-                        name={preferredName || user.name}
-                        colors={JSON.parse(profile.avatar).colors}
-                        variant="beam"
-                        size={32}
-                      />
+                      {profile.avatar.startsWith('{') ? (
+                        <BoringAvatar
+                          name={preferredName || user.name}
+                          colors={JSON.parse(profile.avatar).colors}
+                          variant="beam"
+                          size={32}
+                        />
+                      ) : (
+                        <Avatar className="h-8 w-8 rounded-lg">
+                          <AvatarImage src={profile.avatar} alt={preferredName || user.name} />
+                          <AvatarFallback className="rounded-lg">
+                            {getInitials(preferredName || user.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                     </div>
                   ) : user.avatar ? (
                     <Avatar className="h-8 w-8 rounded-lg">
