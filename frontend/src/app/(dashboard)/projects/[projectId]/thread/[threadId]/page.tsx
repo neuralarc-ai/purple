@@ -10,6 +10,7 @@ import React, {
 import { useSearchParams } from 'next/navigation';
 import { BillingError, AgentRunLimitError } from '@/lib/api';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { ChatInput } from '@/components/thread/chat-input/chat-input';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAgentStream } from '@/hooks/useAgentStream';
@@ -49,6 +50,8 @@ import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { threadKeys } from '@/hooks/react-query/threads/keys';
 import { useProjectRealtime } from '@/hooks/useProjectRealtime';
+import { useUsageRealtime } from '@/hooks/useUsageRealtime';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function ThreadPage({
   params,
@@ -63,6 +66,10 @@ export default function ThreadPage({
   const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Enable real-time updates for usage data
+  useUsageRealtime(user?.id);
 
   // State
   const [newMessage, setNewMessage] = useState('');
@@ -310,6 +317,13 @@ export default function ThreadPage({
     agentRunId: currentHookRunId,
     startStreaming,
     stopStreaming,
+    paused,
+    inTakeover,
+    pause,
+    resume,
+    takeover,
+    release,
+    logManual,
   } = useAgentStream(
     {
       onMessage: handleNewMessageFromStream,
@@ -321,6 +335,65 @@ export default function ThreadPage({
     setMessages,
     threadAgentData?.agent?.agent_id,
   );
+
+  const handleTogglePauseResume = useCallback(async () => {
+    try {
+      if (paused) {
+        await resume();
+        await logManual({ event_type: 'resume', description: 'User resumed automation via control' });
+      } else if (agentStatus === 'running' || agentStatus === 'connecting') {
+        await pause();
+        await logManual({ event_type: 'pause', description: 'User paused automation via control' });
+      }
+    } catch (e) {
+      // errors already toasted in hook; no-op
+    }
+  }, [paused, agentStatus, pause, resume, logManual]);
+
+  const handleToggleTakeoverRelease = useCallback(async () => {
+    try {
+      if (inTakeover) {
+        await release();
+        await logManual({ event_type: 'release', description: 'User released manual takeover via control' });
+      } else if (agentStatus === 'running' || agentStatus === 'connecting' || paused) {
+        await takeover();
+        await logManual({ event_type: 'takeover', description: 'User took manual control via control' });
+      }
+    } catch (e) {
+      // errors already toasted
+    }
+  }, [inTakeover, agentStatus, paused, takeover, release, logManual]);
+
+  // Hotkeys: Space/P to pause/resume, T to takeover/release
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // ignore when typing in inputs/textareas/contenteditable
+      const target = e.target as HTMLElement | null;
+      if (target) {
+        const tag = target.tagName?.toLowerCase();
+        const isTyping = tag === 'input' || tag === 'textarea' || target.isContentEditable;
+        if (isTyping) return;
+      }
+
+      // Space or KeyP => toggle pause/resume when applicable
+      if ((e.code === 'Space' || e.code === 'KeyP')) {
+        e.preventDefault();
+        if (agentStatus === 'running' || agentStatus === 'connecting' || paused) {
+          handleTogglePauseResume();
+        }
+      }
+      // KeyT => toggle takeover/release
+      if (e.code === 'KeyT') {
+        e.preventDefault();
+        if (agentStatus === 'running' || agentStatus === 'connecting' || paused || inTakeover) {
+          handleToggleTakeoverRelease();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [agentStatus, paused, inTakeover, handleTogglePauseResume, handleToggleTakeoverRelease]);
 
   const handleSubmitMessage = useCallback(
     async (
@@ -711,6 +784,9 @@ export default function ThreadPage({
         sandboxId={sandboxId}
         isSidePanelOpen={isSidePanelOpen}
         onToggleSidePanel={toggleSidePanel}
+        paused={paused}
+        inTakeover={inTakeover}
+        onHeaderTakeoverToggle={handleToggleTakeoverRelease}
         onViewFiles={handleOpenFileViewer}
         fileViewerOpen={fileViewerOpen}
         setFileViewerOpen={setFileViewerOpen}
@@ -753,6 +829,9 @@ export default function ThreadPage({
         sandboxId={sandboxId}
         isSidePanelOpen={isSidePanelOpen}
         onToggleSidePanel={toggleSidePanel}
+        paused={paused}
+        inTakeover={inTakeover}
+        onHeaderTakeoverToggle={handleToggleTakeoverRelease}
         onProjectRenamed={handleProjectRenamed}
         onViewFiles={handleOpenFileViewer}
         fileViewerOpen={fileViewerOpen}
@@ -781,6 +860,11 @@ export default function ThreadPage({
         initialLoadCompleted={initialLoadCompleted}
         agentName={agent && agent.name}
         disableInitialAnimation={!initialLoadCompleted && toolCalls.length > 0}
+        onLogManual={async (payload) => {
+          try {
+            await logManual(payload);
+          } catch {}
+        }}
       >
         {/* {workflowId && (
           <div className="px-4 pt-4">
@@ -809,9 +893,51 @@ export default function ThreadPage({
           onSubmit={handleSubmitMessage}
         />
 
+        {/* Disclaimer text between content and chat input */}
         <div
           className={cn(
-            'fixed bottom-5 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6',
+            'px-4 text-center',
+            'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
+          )}
+        >
+          <div className="max-w-[100vw] overflow-x-auto whitespace-nowrap">
+            <p className="text-xs text-muted-foreground bg-background backdrop-blur-sm rounded-lg px-3 inline-block">
+              Helium can make mistakes. 
+              Check important info. See Cookie Preferences.
+            </p>
+          </div>
+        </div>
+
+        {/* Automation control banners */}
+        {(paused || inTakeover) && (
+          <div className="fixed top-16 left-1/2 -translate-x-1/2 z-20">
+            <div className="flex items-center gap-2 rounded-full border bg-background/95 backdrop-blur px-3 py-1.5 shadow">
+              <span className="text-xs text-muted-foreground">
+                {inTakeover ? 'Manual takeover active' : 'Automation paused'}
+              </span>
+              <div className="flex items-center gap-1">
+                {paused && (
+                  <Button size="sm" variant="secondary" onClick={handleTogglePauseResume} className="h-7">
+                    Resume (Space/P)
+                  </Button>
+                )}
+                {inTakeover ? (
+                  <Button size="sm" variant="secondary" onClick={handleToggleTakeoverRelease} className="h-7">
+                    Release (T)
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="secondary" onClick={handleToggleTakeoverRelease} className="h-7">
+                    Takeover (T)
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div
+          className={cn(
+            'fixed bottom-6 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6',
             'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
             leftSidebarState === 'expanded'
               ? 'left-[72px] md:left-[256px]'
@@ -873,29 +999,6 @@ export default function ThreadPage({
               />
             </div>
           </div>
-        </div>
-
-        {/* Disclaimer text at bottom */}
-        <div
-          className={cn(
-            'fixed bottom-0 z-10 px-4 pt-4 text-center',
-            'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
-            leftSidebarState === 'expanded'
-              ? 'left-[72px] md:left-[256px]'
-              : isSidePanelOpen
-                ? 'left-[53px]'
-                : 'left-[50px]',
-            isSidePanelOpen
-              ? leftSidebarState === 'expanded'
-                ? 'right-[45vw] 2xl:right-[40.5vw] xl:right-[40.5vw] lg:right-[43vw]'
-                : 'right-[46vw]'
-              : 'right-0',
-            isMobile ? 'left-0 right-0' : '',
-          )}
-        >
-          <p className="text-xs text-muted-foreground bg-background backdrop-blur-sm rounded px-2 pt-4">
-            Helium can make mistakes. Check important info. See Cookie Preferences.
-          </p>
         </div>
       </ThreadLayout>
 

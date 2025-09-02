@@ -37,71 +37,37 @@ class Configuration:
     """
     
     # Environment mode
-    ENV_MODE: EnvMode = EnvMode.LOCAL
+    ENV_MODE: EnvMode = EnvMode.PRODUCTION
     
     # Subscription tier IDs - Production
-    STRIPE_FREE_TIER_ID_PROD: str = 'price_1RILb4G6l1KZGqIrK4QLrx9i'
-    STRIPE_TIER_2_20_ID_PROD: str = 'price_1RILb4G6l1KZGqIrhomjgDnO'
-    STRIPE_TIER_6_50_ID_PROD: str = 'price_1RILb4G6l1KZGqIr5q0sybWn'
-    STRIPE_TIER_12_100_ID_PROD: str = 'price_1RILb4G6l1KZGqIr5Y20ZLHm'
-    STRIPE_TIER_25_200_ID_PROD: str = 'price_1RILb4G6l1KZGqIrGAD8rNjb'
-    STRIPE_TIER_50_400_ID_PROD: str = 'price_1RILb4G6l1KZGqIruNBUMTF1'
-    STRIPE_TIER_125_800_ID_PROD: str = 'price_1RILb3G6l1KZGqIrbJA766tN'
-    STRIPE_TIER_200_1000_ID_PROD: str = 'price_1RILb3G6l1KZGqIrmauYPOiN'
+    STRIPE_FREE_TIER_ID_PROD: str = 'price_1S1ud4AnxOD5rXBGNHW2yHp8'  # Free
+    STRIPE_TIER_RIDICULOUSLY_CHEAP_ID_PROD: str = 'price_1S2VNiAnxOD5rXBGWs7gO2rv'  # $24.99/month
+    STRIPE_TIER_SERIOUS_BUSINESS_ID_PROD: str = 'price_1S2VO6AnxOD5rXBGU5KcFi0O'  # $94.99/month
     
     # Yearly subscription tier IDs - Production (15% discount)
-    STRIPE_TIER_2_20_YEARLY_ID_PROD: str = 'price_1ReHB5G6l1KZGqIrD70I1xqM'
-    STRIPE_TIER_6_50_YEARLY_ID_PROD: str = 'price_1ReHAsG6l1KZGqIrlAog487C'
-    STRIPE_TIER_12_100_YEARLY_ID_PROD: str = 'price_1ReHAWG6l1KZGqIrBHer2PQc'
-    STRIPE_TIER_25_200_YEARLY_ID_PROD: str = 'price_1ReH9uG6l1KZGqIrsvMLHViC'
-    STRIPE_TIER_50_400_YEARLY_ID_PROD: str = 'price_1ReH9fG6l1KZGqIrsPtu5KIA'
-    STRIPE_TIER_125_800_YEARLY_ID_PROD: str = 'price_1ReH9GG6l1KZGqIrfgqaJyat'
-    STRIPE_TIER_200_1000_YEARLY_ID_PROD: str = 'price_1ReH8qG6l1KZGqIrK1akY90q'
-
-    # Yearly commitment prices - Production (15% discount, monthly payments with 12-month commitment via schedules)
-    STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID_PROD: str = 'price_1RqtqiG6l1KZGqIrhjVPtE1s'  # $17/month
-    STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID_PROD: str = 'price_1Rqtr8G6l1KZGqIrQ0ql0qHi'  # $42.50/month
-    STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID_PROD: str = 'price_1RqtrUG6l1KZGqIrEb8hLsk3'  # $170/month
+    STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID_PROD: str = 'price_1S2VOMAnxOD5rXBGOfBNWIe4'  # $254.89/year
+    STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID_PROD: str = 'price_1S2VOfAnxOD5rXBGI80iSxA5'  # $968.88/year
 
     # Subscription tier IDs - Staging
     STRIPE_FREE_TIER_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrw14abxeL'
-    STRIPE_TIER_2_20_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrCRu0E4Gi'
-    STRIPE_TIER_6_50_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrvjlz5p5V'
-    STRIPE_TIER_12_100_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrT6UfgblC'
-    STRIPE_TIER_25_200_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrOVLKlOMj'
-    STRIPE_TIER_50_400_ID_STAGING: str = 'price_1RIKNgG6l1KZGqIrvsat5PW7'
-    STRIPE_TIER_125_800_ID_STAGING: str = 'price_1RIKNrG6l1KZGqIrjKT0yGvI'
-    STRIPE_TIER_200_1000_ID_STAGING: str = 'price_1RIKQ2G6l1KZGqIrum9n8SI7'
+    STRIPE_TIER_RIDICULOUSLY_CHEAP_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrCRu0E4Gi'  # $24.99/month
+    STRIPE_TIER_SERIOUS_BUSINESS_ID_STAGING: str = 'price_1RIGvuG6l1KZGqIrvjlz5p5V'  # $94.99/month
     
     # Yearly subscription tier IDs - Staging (15% discount)
-    STRIPE_TIER_2_20_YEARLY_ID_STAGING: str = 'price_1ReGogG6l1KZGqIrEyBTmtPk'
-    STRIPE_TIER_6_50_YEARLY_ID_STAGING: str = 'price_1ReGoJG6l1KZGqIr0DJWtoOc'
-    STRIPE_TIER_12_100_YEARLY_ID_STAGING: str = 'price_1ReGnZG6l1KZGqIr0ThLEl5S'
-    STRIPE_TIER_25_200_YEARLY_ID_STAGING: str = 'price_1ReGmzG6l1KZGqIre31mqoEJ'
-    STRIPE_TIER_50_400_YEARLY_ID_STAGING: str = 'price_1ReGmgG6l1KZGqIrn5nBc7e5'
-    STRIPE_TIER_125_800_YEARLY_ID_STAGING: str = 'price_1ReGmMG6l1KZGqIrvE2ycrAX'
-    STRIPE_TIER_200_1000_YEARLY_ID_STAGING: str = 'price_1ReGlXG6l1KZGqIrlgurP5GU'
-
-    # Yearly commitment prices - Staging (15% discount, monthly payments with 12-month commitment via schedules)
-    STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID_STAGING: str = 'price_1RqYGaG6l1KZGqIrIzcdPzeQ'  # $17/month
-    STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID_STAGING: str = 'price_1RqYH1G6l1KZGqIrWDKh8xIU'  # $42.50/month
-    STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID_STAGING: str = 'price_1RqYHbG6l1KZGqIrAUVf8KpG'  # $170/month
+    STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID_STAGING: str = 'price_1ReGogG6l1KZGqIrEyBTmtPk'  # $254.89/year
+    STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID_STAGING: str = 'price_1ReGoJG6l1KZGqIr0DJWtoOc'  # $968.88/year
     
     # Credit package price IDs - Production
-    STRIPE_CREDITS_10_PRICE_ID_PROD: str = 'price_1RxmQUG6l1KZGqIru453O1zW'
-    STRIPE_CREDITS_25_PRICE_ID_PROD: str = 'price_1RxmQlG6l1KZGqIr3hS5WtGg'
-    STRIPE_CREDITS_50_PRICE_ID_PROD: str = 'price_1RxmQvG6l1KZGqIrLbMZ3D6r'
-    STRIPE_CREDITS_100_PRICE_ID_PROD: str = 'price_1RxmR3G6l1KZGqIrpLwFCGac'
-    STRIPE_CREDITS_250_PRICE_ID_PROD: str = 'price_1RxmRAG6l1KZGqIrtBIMsZAj'
-    STRIPE_CREDITS_500_PRICE_ID_PROD: str = 'price_1RxmRGG6l1KZGqIrSyvl6w1G'
+    STRIPE_CREDITS_TEST_ID_PROD: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $1.00 - 500 credits (TESTING)
+    STRIPE_CREDITS_SMALL_PRICE_ID_PROD: str = 'price_1S2VXvAnxOD5rXBGylPu8TTc'  # $11.99
+    STRIPE_CREDITS_MEDIUM_PRICE_ID_PROD: str = 'price_1S2VY6AnxOD5rXBGWs7gO2rv'  # $28.99
+    STRIPE_CREDITS_LARGE_PRICE_ID_PROD: str = 'price_1S2VYHAnxOD5rXBGIL73U202'  # $55.99
     
     # Credit package price IDs - Staging  
-    STRIPE_CREDITS_10_PRICE_ID_STAGING: str = 'price_1RxXOvG6l1KZGqIrMqsiYQvk'
-    STRIPE_CREDITS_25_PRICE_ID_STAGING: str = 'price_1RxXPNG6l1KZGqIrQprPgDme'
-    STRIPE_CREDITS_50_PRICE_ID_STAGING: str = 'price_1RxXPYG6l1KZGqIrQprPgDme'
-    STRIPE_CREDITS_100_PRICE_ID_STAGING: str = 'price_1RxXPZG6l1KZGqIrQprPgDme'
-    STRIPE_CREDITS_250_PRICE_ID_STAGING: str = 'price_1RxXQ0G6l1KZGqIrQprPgDme'
-    STRIPE_CREDITS_500_PRICE_ID_STAGING: str = 'price_1RxXQ5G6l1KZGqIrQprPgDme'
+    STRIPE_CREDITS_TEST_PRICE_ID_STAGING: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $1.00 - 500 credits (TESTING)
+    STRIPE_CREDITS_SMALL_PRICE_ID_STAGING: str = 'price_1RxXOvG6l1KZGqIrMqsiYQvk'  # $11.99
+    STRIPE_CREDITS_MEDIUM_PRICE_ID_STAGING: str = 'price_1RxXPNG6l1KZGqIrQprPgDme'  # $28.99
+    STRIPE_CREDITS_LARGE_PRICE_ID_STAGING: str = 'price_1RxXPYG6l1KZGqIrQprPgDme'  # $55.99
     
     # Feature Flags - Environment Variable Configuration
     # These flags can be controlled via environment variables (e.g., ENABLE_CUSTOM_AGENTS=true)
@@ -142,121 +108,54 @@ class Configuration:
         return self.STRIPE_FREE_TIER_ID_PROD
     
     @property
-    def STRIPE_TIER_2_20_ID(self) -> str:
+    def STRIPE_TIER_RIDICULOUSLY_CHEAP_ID(self) -> str:
         if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_2_20_ID_STAGING
-        return self.STRIPE_TIER_2_20_ID_PROD
+            return self.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID_STAGING
+        return self.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID_PROD
     
     @property
-    def STRIPE_TIER_6_50_ID(self) -> str:
+    def STRIPE_TIER_SERIOUS_BUSINESS_ID(self) -> str:
         if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_6_50_ID_STAGING
-        return self.STRIPE_TIER_6_50_ID_PROD
-    
-    @property
-    def STRIPE_TIER_12_100_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_12_100_ID_STAGING
-        return self.STRIPE_TIER_12_100_ID_PROD
-    
-    @property
-    def STRIPE_TIER_25_200_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_25_200_ID_STAGING
-        return self.STRIPE_TIER_25_200_ID_PROD
-    
-    @property
-    def STRIPE_TIER_50_400_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_50_400_ID_STAGING
-        return self.STRIPE_TIER_50_400_ID_PROD
-    
-    @property
-    def STRIPE_TIER_125_800_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_125_800_ID_STAGING
-        return self.STRIPE_TIER_125_800_ID_PROD
-    
-    @property
-    def STRIPE_TIER_200_1000_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_200_1000_ID_STAGING
-        return self.STRIPE_TIER_200_1000_ID_PROD
+            return self.STRIPE_TIER_SERIOUS_BUSINESS_ID_STAGING
+        return self.STRIPE_TIER_SERIOUS_BUSINESS_ID_PROD
     
     # Yearly tier computed properties
     @property
-    def STRIPE_TIER_2_20_YEARLY_ID(self) -> str:
+    def STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID(self) -> str:
         if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_2_20_YEARLY_ID_STAGING
-        return self.STRIPE_TIER_2_20_YEARLY_ID_PROD
+            return self.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID_STAGING
+        return self.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID_PROD
     
     @property
-    def STRIPE_TIER_6_50_YEARLY_ID(self) -> str:
+    def STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID(self) -> str:
         if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_6_50_YEARLY_ID_STAGING
-        return self.STRIPE_TIER_6_50_YEARLY_ID_PROD
-    
-    @property
-    def STRIPE_TIER_12_100_YEARLY_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_12_100_YEARLY_ID_STAGING
-        return self.STRIPE_TIER_12_100_YEARLY_ID_PROD
-    
-    @property
-    def STRIPE_TIER_25_200_YEARLY_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_25_200_YEARLY_ID_STAGING
-        return self.STRIPE_TIER_25_200_YEARLY_ID_PROD
-    
-    @property
-    def STRIPE_TIER_50_400_YEARLY_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_50_400_YEARLY_ID_STAGING
-        return self.STRIPE_TIER_50_400_YEARLY_ID_PROD
-    
-    @property
-    def STRIPE_TIER_125_800_YEARLY_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_125_800_YEARLY_ID_STAGING
-        return self.STRIPE_TIER_125_800_YEARLY_ID_PROD
-    
-    @property
-    def STRIPE_TIER_200_1000_YEARLY_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_200_1000_YEARLY_ID_STAGING
-        return self.STRIPE_TIER_200_1000_YEARLY_ID_PROD
-    
-    # Yearly commitment prices computed properties
-    @property
-    def STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID_STAGING
-        return self.STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID_PROD
-
-    @property
-    def STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID_STAGING
-        return self.STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID_PROD
-
-    @property
-    def STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID_STAGING
-        return self.STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID_PROD
+            return self.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID_STAGING
+        return self.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID_PROD
     
     # Credit package price ID properties
     @property
-    def STRIPE_CREDITS_10_PRICE_ID(self) -> str:
+    def STRIPE_CREDITS_TEST_PRICE_ID(self) -> str:
         if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_CREDITS_10_PRICE_ID_STAGING
-        return self.STRIPE_CREDITS_10_PRICE_ID_PROD
+            return self.STRIPE_CREDITS_TEST_PRICE_ID_STAGING
+        return self.STRIPE_CREDITS_TEST_ID_PROD
     
     @property
-    def STRIPE_CREDITS_25_PRICE_ID(self) -> str:
+    def STRIPE_CREDITS_SMALL_PRICE_ID(self) -> str:
         if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_CREDITS_25_PRICE_ID_STAGING
-        return self.STRIPE_CREDITS_25_PRICE_ID_PROD
+            return self.STRIPE_CREDITS_SMALL_PRICE_ID_STAGING
+        return self.STRIPE_CREDITS_SMALL_PRICE_ID_PROD
+    
+    @property
+    def STRIPE_CREDITS_MEDIUM_PRICE_ID(self) -> str:
+        if self.ENV_MODE == EnvMode.STAGING:
+            return self.STRIPE_CREDITS_MEDIUM_PRICE_ID_STAGING
+        return self.STRIPE_CREDITS_MEDIUM_PRICE_ID_PROD
+    
+    @property
+    def STRIPE_CREDITS_LARGE_PRICE_ID(self) -> str:
+        if self.ENV_MODE == EnvMode.STAGING:
+            return self.STRIPE_CREDITS_LARGE_PRICE_ID_STAGING
+        return self.STRIPE_CREDITS_LARGE_PRICE_ID_PROD
     
     # LLM API keys
     ANTHROPIC_API_KEY: Optional[str] = None
@@ -278,6 +177,14 @@ class Configuration:
     # Alternate env var names some users set
     GOOGLE_CLOUD_PROJECT_ID: Optional[str] = None
     GOOGLE_CLOUD_LOCATION: Optional[str] = None
+    
+    # Google OAuth configuration for backend authentication
+    GOOGLE_OAUTH_CLIENT_ID: Optional[str] = None
+    GOOGLE_OAUTH_CLIENT_SECRET: Optional[str] = None
+    GOOGLE_OAUTH_REDIRECT_URI: Optional[str] = None
+    
+    # Frontend URL for OAuth redirects
+    NEXT_PUBLIC_URL: Optional[str] = None
     
     # OpenRouter site metadata
     OR_SITE_URL: Optional[str] = "https://he2.ai"
@@ -320,10 +227,15 @@ class Configuration:
     STRIPE_DEFAULT_TRIAL_DAYS: int = 14
     
     # Stripe Product IDs
-    STRIPE_PRODUCT_ID_PROD: str = 'prod_SCl7AQ2C8kK1CD'
-    STRIPE_PRODUCT_ID_STAGING: str = 'prod_SCgIj3G7yPOAWY'
+    STRIPE_SUBSCRIPTION_PRODUCT_ID: str = 'prod_your_subscription_product_id_here'  # For subscription plans
+    STRIPE_CREDITS_PRODUCT_ID: str = 'prod_your_credits_product_id_here'  # For credit packages
+    
+    # Legacy support (keep for backward compatibility)
+    STRIPE_PRODUCT_ID: str = 'prod_your_subscription_product_id_here'  # Default to subscription product
     
     # Sandbox configuration
+    STRIPE_PRODUCT_ID_PROD: str = 'prod_SCl7AQ2C8kK1CD'
+    STRIPE_PRODUCT_ID_STAGING: str = 'prod_SCgIj3G7yPOAWY'
     SANDBOX_IMAGE_NAME = "kortix/suna:0.1.3.6"
     SANDBOX_SNAPSHOT_NAME = "kortix/suna:0.1.3.6"
     SANDBOX_ENTRYPOINT = "/usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf"
@@ -347,25 +259,11 @@ class Configuration:
     # Note: These limits are bypassed in local mode (ENV_MODE=local) where unlimited agents are allowed
     AGENT_LIMITS = {
         'free': 2,
-        'tier_2_20': 5,
-        'tier_6_50': 20,
-        'tier_12_100': 20,
-        'tier_25_200': 100,
-        'tier_50_400': 100,
-        'tier_125_800': 100,
-        'tier_200_1000': 100,
+        'tier_ridiculously_cheap': 5,
+        'tier_serious_business': 100,
         # Yearly plans have same limits as monthly
-        'tier_2_20_yearly': 5,
-        'tier_6_50_yearly': 20,
-        'tier_12_100_yearly': 20,
-        'tier_25_200_yearly': 100,
-        'tier_50_400_yearly': 100,
-        'tier_125_800_yearly': 100,
-        'tier_200_1000_yearly': 100,
-        # Yearly commitment plans
-        'tier_2_17_yearly_commitment': 5,
-        'tier_6_42_yearly_commitment': 20,
-        'tier_25_170_yearly_commitment': 100,
+        'tier_ridiculously_cheap_yearly': 5,
+        'tier_serious_business_yearly': 100,
     }
 
     @property
@@ -391,12 +289,6 @@ class Configuration:
         else:
             # Local and staging: effectively infinite
             return 999999
-    
-    @property
-    def STRIPE_PRODUCT_ID(self) -> str:
-        if self.ENV_MODE == EnvMode.STAGING:
-            return self.STRIPE_PRODUCT_ID_STAGING
-        return self.STRIPE_PRODUCT_ID_PROD
     
     def __init__(self):
         """Initialize configuration by loading from environment variables."""

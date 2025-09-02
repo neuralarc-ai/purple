@@ -37,13 +37,12 @@ HELIUM_CONFIG = {
 def get_helium_model() -> str:
     """
     Get the appropriate model for Helium based on environment.
-    In production, randomly selects from the three Vertex AI models.
-    In other environments, uses the default model.
+    In production, always use Vertex Claude Sonnet 4.
+    In other environments, use the default model.
     """
     env_mode = os.getenv("ENV_MODE", "local").lower()
     
     if env_mode == "production":
-        from utils.constants import get_random_production_model
-        return get_random_production_model()
+        return "vertex_ai/claude-sonnet-4@20250514"
     
     return HELIUM_CONFIG["model"]

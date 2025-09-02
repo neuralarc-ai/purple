@@ -6,10 +6,11 @@ import {
   ParsedMetadata,
 } from '@/components/thread/types';
 import { toast } from 'sonner';
-import { FileAttachmentGrid } from '@/components/thread/file-attachment';
+import { FileAttachmentGrid, ThreadFilesDisplay } from '@/components/thread/file-attachment';
 import { useFilePreloader } from '@/hooks/react-query/files';
 import { useAuth } from '@/components/AuthProvider';
 import { Project } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import {
   extractPrimaryParam,
   getToolIcon,
@@ -35,6 +36,8 @@ import { ShowToolStream } from './ShowToolStream';
 import { ComposioUrlDetector } from './composio-url-detector';
 import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
+import { SECURITY_ALERT_VARIANTS, HARM_ALERT_VARIANT, HARM_CONTENT_PATTERNS } from '@/lib/security-database';
+
 
 // Helper function to render all attachments as standalone messages
 export function renderStandaloneAttachments(
@@ -54,15 +57,23 @@ export function renderStandaloneAttachments(
 
   return (
     <div className="w-full my-4">
-      <FileAttachmentGrid
-        attachments={validAttachments}
-        onFileClick={fileViewerHandler}
-        showPreviews={true}
-        sandboxId={sandboxId}
-        project={project}
-        // standalone={true}
-        // alignRight={alignRight}
-      />
+      <div className={cn(
+        "flex",
+        alignRight ? "justify-end" : "justify-start"
+      )}>
+        <div className={cn(
+          alignRight ? "max-w-[70%]" : "max-w-[90%]"
+        )}>
+          <ThreadFilesDisplay
+            attachments={validAttachments}
+            onFileClick={fileViewerHandler}
+            showPreviews={true}
+            sandboxId={sandboxId}
+            project={project}
+            rightAlignGrid={alignRight}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -449,7 +460,7 @@ export interface ThreadContentProps {
   messages: UnifiedMessage[];
   streamingTextContent?: string;
   streamingToolCall?: any;
-  agentStatus: 'idle' | 'running' | 'connecting' | 'error';
+  agentStatus: 'idle' | 'running' | 'connecting' | 'paused' | 'error';
   handleToolClick: (
     assistantMessageId: string | null,
     toolName: string,
@@ -496,7 +507,19 @@ const ActionButtons: React.FC<{
   
   // Ensure content is a string before copying
   const getCleanContent = () => {
-    if (typeof content === 'string') return content;
+    if (typeof content === 'string') {
+      // Try to parse as JSON first to extract just the content field
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed && typeof parsed.content === 'string') {
+          return parsed.content;
+        }
+      } catch (e) {
+        // If parsing fails, return the original string
+        return content;
+      }
+      return content;
+    }
     if (content?.text) return content.text;
     if (content?.content) return content.content;
     return JSON.stringify(content);
@@ -1126,7 +1149,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                         )}
 
                         <div className="flex justify-end">
-                          <div className="flex max-w-[85%] rounded-2xl rounded-br-sm bg-sidebar dark:bg-sidebar-accent border px-4 py-3 pb-2 break-words overflow-hidden">
+                          <div className="flex max-w-[85%] rounded-2xl rounded-br-sm bg-sidebar dark:bg-sidebar border px-4 py-3 pb-2 break-words overflow-hidden">
                             <div className="space-y-3 min-w-0 flex-1">
                               {cleanContent && (
                                 <ComposioUrlDetector
@@ -1245,6 +1268,52 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                       `submsg-assistant-${msgIndex}`;
 
                                     if (!parsedContent.content) return;
+
+                                    // Detect standard denial message and render as boxed notice
+                                    const denialKeyPhrases = [
+                                      'cannot comply with this request',
+                                      'security violation',
+                                      'unsafe instruction',
+                                      'safety and ethical boundaries',
+                                    ];
+                                    const isDenialNotice = typeof parsedContent.content === 'string'
+                                      && denialKeyPhrases.every(k => parsedContent.content.toLowerCase().includes(k));
+
+                                    if (isDenialNotice) {
+                                      // Check if this is harmful content to use specific variant
+                                      const isHarmful = HARM_CONTENT_PATTERNS.some(pattern => 
+                                        parsedContent.content.toLowerCase().includes(pattern.toLowerCase())
+                                      );
+                                      
+                                      let variant;
+                                      if (isHarmful) {
+                                        variant = HARM_ALERT_VARIANT;
+                                      } else {
+                                        // Deterministic variant pick based on message id/content to avoid flicker
+                                        const basis = `${message.message_id || ''}|${parsedContent.content}`;
+                                        let seed = 0;
+                                        for (let i = 0; i < basis.length; i++) seed = (seed * 31 + basis.charCodeAt(i)) >>> 0;
+                                        variant = SECURITY_ALERT_VARIANTS[(seed % SECURITY_ALERT_VARIANTS.length) || 0] || parsedContent.content;
+                                      }
+
+                                      elements.push(
+                                        <div
+                                          key={msgKey}
+                                          className={
+                                            assistantMessageCount > 0
+                                              ? 'mt-4'
+                                              : ''
+                                          }
+                                        >
+                                          <div className="border-2 rounded-lg p-3 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 shadow-sm">
+                                            <div className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1 flex items-center gap-1.5"><AlertTriangle className="h-4 w-4 text-red-500" /> Security Alert</div>
+                                            <div className="text-sm text-gray-800 dark:text-gray-300 leading-relaxed">{variant}</div>
+                                          </div>
+                                        </div>,
+                                      );
+                                      assistantMessageCount++;
+                                      return;
+                                    }
 
                                     const renderedContent =
                                       renderMarkdownContent(

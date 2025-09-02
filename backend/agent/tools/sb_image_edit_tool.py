@@ -10,7 +10,13 @@ import base64
 
 
 class SandboxImageEditTool(SandboxToolsBase):
-    """Tool for generating or editing images using OpenAI GPT Image 1 via OpenAI SDK (no mask support)."""
+    """Tool for generating or editing images via LiteLLM image endpoints (no mask support).
+
+    Notes:
+    - Uses LiteLLM `aimage_generation` and `aimage_edit` which proxy to the configured provider.
+    - Response formats vary by provider; parsing is hardened to support common shapes.
+    - Default model targets Vertex AI Gemini 2.5 Flash Image Preview.
+    """
 
     def __init__(self, project_id: str, thread_id: str, thread_manager: ThreadManager):
         super().__init__(project_id, thread_manager)
@@ -22,7 +28,7 @@ class SandboxImageEditTool(SandboxToolsBase):
             "type": "function",
             "function": {
                 "name": "image_edit_or_generate",
-                "description": "Generate a new image from a prompt, or edit an existing image (no mask support) using OpenAI GPT Image 1 via OpenAI SDK. Stores the result in the thread context.",
+                "description": "Generate a new image from a prompt, or edit an existing image (no mask support) using LiteLLM image API (e.g., Vertex AI Gemini image preview). Stores the result in the thread context.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -74,13 +80,13 @@ class SandboxImageEditTool(SandboxToolsBase):
         prompt: str,
         image_path: Optional[str] = None,
     ) -> ToolResult:
-        """Generate or edit images using OpenAI GPT Image 1 via OpenAI SDK (no mask support)."""
+        """Generate or edit images via LiteLLM image API (no mask support)."""
         try:
             await self._ensure_sandbox()
 
             if mode == "generate":
                 response = await aimage_generation(
-                    model="gpt-image-1",
+                    model="vertex_ai/imagen-4.0-generate-001",
                     prompt=prompt,
                     n=1,
                     size="1024x1024",
@@ -100,9 +106,9 @@ class SandboxImageEditTool(SandboxToolsBase):
                 )
 
                 response = await aimage_edit(
-                    image=[image_io],  # Type in the LiteLLM SDK is wrong
+                    image=[image_io],  # Type in the LiteLLM SDK expects list-like for some providers
                     prompt=prompt,
-                    model="gpt-image-1",
+                    model="vertex_ai/imagen-4.0-generate-001",
                     n=1,
                     size="1024x1024",
                 )
@@ -160,10 +166,50 @@ class SandboxImageEditTool(SandboxToolsBase):
                 f"Could not read image file from sandbox: {image_path} - {str(e)}"
             )
 
+    def _extract_b64_image(self, response) -> Optional[str]:
+        """Extract a base64-encoded image string from various provider response shapes."""
+        # Handle object with attributes (e.g., pydantic-like)
+        try:
+            if hasattr(response, "data") and response.data:
+                first = response.data[0]
+                if hasattr(first, "b64_json") and first.b64_json:
+                    return first.b64_json
+                if hasattr(first, "image_base64") and first.image_base64:
+                    return first.image_base64
+        except Exception:
+            pass
+
+        # Handle dict-like responses
+        try:
+            if isinstance(response, dict):
+                # OpenAI-like
+                data = response.get("data")
+                if isinstance(data, list) and data:
+                    item = data[0]
+                    if isinstance(item, dict):
+                        if item.get("b64_json"):
+                            return item["b64_json"]
+                        if item.get("image_base64"):
+                            return item["image_base64"]
+                # Some providers put it at top-level
+                if response.get("b64_json"):
+                    return response["b64_json"]
+                if response.get("image_base64"):
+                    return response["image_base64"]
+        except Exception:
+            pass
+
+        return None
+
     async def _process_image_response(self, response) -> str | ToolResult:
         """Download generated image and save to sandbox with random name."""
         try:
-            original_b64_str = response.data[0].b64_json
+            original_b64_str = self._extract_b64_image(response)
+            if not original_b64_str:
+                return self.fail_response(
+                    "Provider did not return image bytes in a recognized format."
+                )
+
             # Decode base64 image data
             image_data = base64.b64decode(original_b64_str)
 

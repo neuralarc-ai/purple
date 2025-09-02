@@ -15,6 +15,7 @@ import { handleFiles } from './file-upload-handler';
 import { MessageInput } from './message-input';
 import { AttachmentGroup } from '../attachment-group';
 import { useModelSelection } from './_use-model-selection';
+import { useModeSelection } from './_use-mode-selection';
 import { useFileDelete } from '@/hooks/react-query/files';
 import { useQueryClient } from '@tanstack/react-query';
 import { ToolCallInput } from './floating-tool-preview';
@@ -29,6 +30,8 @@ import { BillingModal } from '@/components/billing/billing-modal';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import { BorderBeam } from '@/components/magicui/border-beam';
+import { SecurityPopup } from './security-popup';
+import { useSecurityInterception } from '@/hooks/useSecurityInterception';
 
 export interface ChatInputHandles {
   getPendingFiles: () => File[];
@@ -43,6 +46,9 @@ export interface ChatInputProps {
       model_name?: string;
       enable_thinking?: boolean;
       agent_id?: string;
+      mode?: 'default' | 'agent';
+      enable_context_manager?: boolean;
+      reasoning_effort?: string;
     },
   ) => void;
   placeholder?: string;
@@ -137,12 +143,25 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
+    const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
 
     const [registryDialogOpen, setRegistryDialogOpen] = useState(false);
     const [showSnackbar, setShowSnackbar] = useState(defaultShowSnackbar);
     const [userDismissedUsage, setUserDismissedUsage] = useState(false);
     const [billingModalOpen, setBillingModalOpen] = useState(false);
     const [wasManuallyStopped, setWasManuallyStopped] = useState(false);
+    const [submitTimeout, setSubmitTimeout] = useState<NodeJS.Timeout | null>(null);
+    
+    // Security interception hook
+    const {
+      showPopup: showSecurityPopup,
+      popupMessage: securityPopupMessage,
+      popupType: securityPopupType,
+      shouldBlock: shouldBlockRequest,
+      closePopup: closeSecurityPopup,
+      shouldProceedWithRequest,
+    } = useSecurityInterception();
+    
     const {
       selectedModel,
       setSelectedModel: handleModelChange,
@@ -152,6 +171,12 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       getActualModelId,
       refreshCustomModels,
     } = useModelSelection();
+
+    const {
+      selectedMode,
+      setSelectedMode: handleModeChange,
+      hasInitialized: modeInitialized,
+    } = useModeSelection();
 
     const { data: subscriptionData } = useSubscriptionData();
     const deleteFileMutation = useFileDelete();
@@ -358,41 +383,155 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       )
         return;
 
+      // Set local loading state immediately for instant feedback
+      setLocalLoading(true);
+
+      // Clear any existing timeout
+      if (submitTimeout) {
+        clearTimeout(submitTimeout);
+      }
+
+      // Set immediate loading state with timeout
+      const timeout = setTimeout(() => {
+        console.warn('Submit operation taking longer than expected');
+      }, 5000); // 5 second timeout for immediate feedback
+      setSubmitTimeout(timeout);
+
+      try {
+        // Check for security concerns first
+      // The useSecurityInterception hook handles all security validation
+      if (!shouldProceedWithRequest(value)) {
+        // Security popup is already shown by the hook
+        return;
+      }
+
       // if (isAgentRunning && onStopAgent) {
-      //   onStopAgent();
-      //   return;
-      // }
-      setWasManuallyStopped(false);
-      let message = value;
+        //   onStopAgent();
+        //   return;
+        // }
+        setWasManuallyStopped(false);
+        let message = value;
 
-      if (uploadedFiles.length > 0) {
-        const fileInfo = uploadedFiles
-          .map((file) => `[Uploaded File: ${file.path}]`)
-          .join('\n');
-        message = message ? `${message}\n\n${fileInfo}` : fileInfo;
+        // Process files asynchronously to avoid blocking
+        if (uploadedFiles.length > 0) {
+          const fileInfo = uploadedFiles
+            .map((file) => `[Uploaded File: ${file.path}]`)
+            .join('\n');
+          message = message ? `${message}\n\n${fileInfo}` : fileInfo;
+        }
+
+        // Get model configuration asynchronously
+        let baseModelName = getActualModelId(selectedModel);
+        let thinkingEnabled = false;
+        if (selectedModel.endsWith('-thinking')) {
+          baseModelName = getActualModelId(selectedModel.replace(/-thinking$/, ''));
+          thinkingEnabled = true;
+        }
+
+      // Security check: block injections and malware content
+      // The useSecurityInterception hook handles all security validation
+      if (!shouldProceedWithRequest(message)) {
+        // Security popup is already shown by the hook
+        return;
       }
 
-      let baseModelName = getActualModelId(selectedModel);
-      let thinkingEnabled = false;
-      if (selectedModel.endsWith('-thinking')) {
-        baseModelName = getActualModelId(selectedModel.replace(/-thinking$/, ''));
-        thinkingEnabled = true;
+        // Determine mode-based configuration
+        const modeConfig = getModeConfiguration(selectedMode, thinkingEnabled);
+
+        // Track analytics asynchronously to avoid blocking
+        setTimeout(() => {
+          posthog.capture("task_prompt_submitted", { message });
+        }, 0);
+
+        // Submit the message
+        onSubmit(message, {
+          agent_id: selectedAgentId,
+          model_name: baseModelName,
+          enable_thinking: thinkingEnabled,
+          ...modeConfig,
+        });
+
+        // Clear form state
+        if (!isControlled) {
+          setUncontrolledValue('');
+        }
+        setUploadedFiles([]);
+
+      } catch (error) {
+        console.error('Error in handleSubmit:', error);
+      } finally {
+        // Clear timeout
+        if (submitTimeout) {
+          clearTimeout(submitTimeout);
+          setSubmitTimeout(null);
+        }
+        // Clear local loading state
+        setLocalLoading(false);
       }
-
-      posthog.capture("task_prompt_submitted", { message });
-
-      onSubmit(message, {
-        agent_id: selectedAgentId,
-        model_name: baseModelName,
-        enable_thinking: thinkingEnabled,
-      });
-
-      if (!isControlled) {
-        setUncontrolledValue('');
-      }
-
-      setUploadedFiles([]);
     };
+
+    // Helper function to get mode-based configuration
+    const getModeConfiguration = (mode: string, thinkingEnabled: boolean) => {
+      switch(mode) {
+        case 'default':
+          return {
+            enable_context_manager: false,
+            reasoning_effort: 'minimal',
+            enable_thinking: false,
+            max_tokens: 100, // Reduced for faster response
+            temperature: 0.5, // Lower temperature for more focused responses
+            stream: true,
+            enable_tools: true,
+            enable_search: true,
+            response_timeout: 5000, // 5 seconds timeout for ultra-fast response
+            chunk_size: 25, // Ultra-small chunks for immediate streaming
+            buffer_size: 50, // Smaller buffer for instant display
+            // Additional ultra-fast optimizations
+            enable_parallel_processing: true,
+            skip_initial_validation: true,
+            use_fast_model: true,
+            cache_responses: true
+          };
+        case 'agent':
+          return {
+            enable_context_manager: true,
+            reasoning_effort: thinkingEnabled ? 'medium' : 'low', // Reduced reasoning effort
+            enable_thinking: thinkingEnabled,
+            max_tokens: 500, // Reduced for faster response
+            temperature: 0.3,
+            stream: true,
+            enable_tools: true,
+            enable_search: true,
+            response_timeout: 15000, // 15 seconds for faster complex tasks
+            chunk_size: 75, // Smaller chunks for faster streaming
+            buffer_size: 150, // Smaller buffer for faster display
+            // Additional optimizations
+            enable_parallel_processing: true,
+            skip_initial_validation: false,
+            use_fast_model: false,
+            cache_responses: true
+          };
+        default:
+          return {
+            enable_context_manager: false,
+            reasoning_effort: 'minimal',
+            enable_thinking: false,
+            max_tokens: 100,
+            temperature: 0.5,
+            stream: true,
+            enable_tools: true,
+            enable_search: true,
+            response_timeout: 5000,
+            chunk_size: 25,
+            buffer_size: 50,
+            enable_parallel_processing: true,
+            skip_initial_validation: true,
+            use_fast_model: true,
+            cache_responses: true
+          };
+      }
+    };
+
     const handleStopAgent = () => {
       if (onStopAgent) {
         onStopAgent();
@@ -401,12 +540,20 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     };
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
+      
       if (isControlled) {
         controlledOnChange(newValue);
       } else {
         setUncontrolledValue(newValue);
       }
     };
+
+    // Auto-switch to agent mode when files are uploaded
+    useEffect(() => {
+      if (uploadedFiles.length > 0 && selectedMode !== 'agent') {
+        handleModeChange('agent');
+      }
+    }, [uploadedFiles.length, selectedMode, handleModeChange]);
 
     const handleTranscription = (transcribedText: string) => {
       // Replace the entire input value with the transcribed text
@@ -458,6 +605,12 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       setIsDraggingOver(true);
     };
 
+    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOver(true);
+    };
+
     const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       e.stopPropagation();
@@ -495,6 +648,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           <Card
             className={`shadow-none p-0 mt-4 w-full max-w-5xl mx-auto bg-transparent border-none overflow-visible ${enableAdvancedConfig && selectedAgentId ? '' : 'rounded-3xl'} relative z-10`}
             onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDrop={(e) => {
               e.preventDefault();
@@ -514,8 +668,17 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
               }
             }}
           >
+            {/* Security Popup - Positioned above the input */}
+            <SecurityPopup
+              isVisible={showSecurityPopup}
+              onClose={closeSecurityPopup}
+              message={securityPopupMessage}
+              type={securityPopupType}
+              showCloseButton={true}
+            />
+            
             <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
-              <CardContent className={`w-full p-2 pt-0 pb-3 border-black/10 dark:border-muted bg-white dark:bg-sidebar-accent rounded-3xl relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border`}>
+              <CardContent className={`w-full p-2 pb-3 border-black/15 dark:border-muted bg-white dark:bg-sidebar rounded-[28px] relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/50 border`}>
                 {/* <div className="absolute inset-0 rounded-[inherit] overflow-hidden border">
                   <BorderBeam 
                     duration={6}
@@ -538,6 +701,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   layout="inline"
                   maxHeight="180px"
                   showPreviews={true}
+                  isChatInput={true}
                 />
                 <MessageInput
                   ref={textareaRef}
@@ -546,7 +710,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   onSubmit={handleSubmit}
                   onTranscription={handleTranscription}
                   placeholder={placeholder}
-                  loading={loading}
+                  loading={loading || localLoading} // Use local loading state for immediate feedback
                   disabled={disabled}
                   isAgentRunning={isAgentRunning}
                   onStopAgent={handleStopAgent}
@@ -573,6 +737,8 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   selectedAgentId={selectedAgentId}
                   onAgentSelect={onAgentSelect}
                   hideAgentSelection={hideAgentSelection}
+                  selectedMode={selectedMode}
+                  onModeChange={handleModeChange}
                   onOpenIntegrations={() => setRegistryDialogOpen(true)}
                   onOpenInstructions={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=instructions`)}
                   onOpenKnowledge={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=knowledge`)}
@@ -602,6 +768,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
             open={billingModalOpen}
             onOpenChange={setBillingModalOpen}
           />
+          
         </div>
       </div>
     );

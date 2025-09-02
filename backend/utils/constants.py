@@ -33,9 +33,36 @@ MODELS = {
             "input_cost_per_million_tokens": 0.00,
             "output_cost_per_million_tokens": 0.00
         },
-        "context_window": 128_000,  # 128k tokens
+        "context_window": 32_768,  # 32k tokens
         "tier_availability": ["free"]
-    },    
+    },
+    "openrouter/mistralai/mistral-small-3.2-24b-instruct:free": {
+        "aliases": ["mistralai/mistral-small-3.2-24b-instruct:free"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.00,
+            "output_cost_per_million_tokens": 0.00
+        },
+        "context_window": 32_768,  # 32k tokens
+        "tier_availability": ["free"]
+    },
+    "openrouter/deepseek/deepseek-chat-v3.1:free": {
+        "aliases": ["deepseek/deepseek-chat-v3.1:free"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.00,
+            "output_cost_per_million_tokens": 0.00
+        },
+        "context_window": 32_768,  # 32k tokens
+        "tier_availability": ["free"]
+    },
+    "openrouter/deepseek/deepseek-r1-0528:free": {
+        "aliases": ["deepseek/deepseek-r1-0528:free"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.00,
+            "output_cost_per_million_tokens": 0.00
+        },
+        "context_window": 32_768,  # 32k tokens
+        "tier_availability": ["free"]
+    },
     
     # All models available for all tiers
     "gemini/gemini-2.5-pro": {
@@ -97,7 +124,7 @@ MODELS = {
     
     # Vertex AI Claude Sonnet 4 (using LiteLLM vertex_ai route)
     "vertex_ai/claude-sonnet-4@20250514": {
-        "aliases": ["claude-sonnet-4-vertex", "vertex/claude-sonnet-4@20250514"],
+        "aliases": ["claude-sonnet-4-vertex", "vertex/claude-sonnet-4@20250514", "claude-sonnet-4@20250514"],
         "pricing": {
             "input_cost_per_million_tokens": 3.00,
             "output_cost_per_million_tokens": 15.00
@@ -185,16 +212,10 @@ FREE_TIER_MODELS, PAID_TIER_MODELS, MODEL_NAME_ALIASES, HARDCODED_MODEL_PRICES, 
 # All tiers have access to all models without constraints
 MODEL_ACCESS_TIERS = {
     "free": FREE_TIER_MODELS,
-    "tier_2_20": FREE_TIER_MODELS,
-    "tier_6_50": FREE_TIER_MODELS,
-    "tier_12_100": FREE_TIER_MODELS,
-    "tier_25_200": FREE_TIER_MODELS,
-    "tier_50_400": FREE_TIER_MODELS,
-    "tier_125_800": FREE_TIER_MODELS,
-    "tier_200_1000": FREE_TIER_MODELS,
-    "tier_25_170_yearly_commitment": FREE_TIER_MODELS,
-    "tier_6_42_yearly_commitment": FREE_TIER_MODELS,
-    "tier_12_84_yearly_commitment": FREE_TIER_MODELS,
+    "tier_ridiculously_cheap": FREE_TIER_MODELS,
+    "tier_serious_business": FREE_TIER_MODELS,
+    "tier_ridiculously_cheap_yearly": FREE_TIER_MODELS,
+    "tier_serious_business_yearly": FREE_TIER_MODELS,
 }
 
 def get_model_context_window(model_name: str, default: int = 31_000) -> int:
@@ -233,13 +254,3 @@ def get_model_context_window(model_name: str, default: int = 31_000) -> int:
         return 128_000  # DeepSeek models
     
     return default
-
-def get_random_production_model() -> str:
-    import random
-    
-    production_models = [
-        "vertex_ai/claude-sonnet-4@20250514",  # Sonnet 4
-        "vertex_ai/gemini-2.5-pro",            # Gemini 2.5 Pro
-    ]
-    
-    return random.choice(production_models)
