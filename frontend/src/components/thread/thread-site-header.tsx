@@ -37,7 +37,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Star } from "lucide-react";
-import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler";
 
 interface ThreadSiteHeaderProps {
   threadId: string;
@@ -359,6 +358,7 @@ export function SiteHeader({
                 <p>Share Chat</p>
               </TooltipContent>
             </Tooltip>
+
             {!isMobile && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -378,6 +378,7 @@ export function SiteHeader({
             )}
 
             {/* <Tooltip>
+
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
@@ -391,8 +392,8 @@ export function SiteHeader({
               <TooltipContent side={isMobile ? "bottom" : "bottom"}>
                 <p>Toggle Computer Preview (CMD+I)</p>
               </TooltipContent>
-            </Tooltip> */}
-
+            </Tooltip>
+)}
           </TooltipProvider>
         </div>
       </header>

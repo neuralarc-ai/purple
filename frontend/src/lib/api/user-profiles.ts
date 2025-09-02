@@ -33,27 +33,52 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
 export const userProfilesApi = {
   async getProfile(): Promise<UserProfile> {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!session?.access_token) {
-      throw new Error('No authentication token');
-    }
-
-    const response = await fetch(`${API_BASE}/user-profiles/profile`, {
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Profile not found');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        console.error('No authentication token available');
+        throw new Error('No authentication token');
       }
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
 
-    return response.json();
+      console.log('Making request to user profiles API with token:', session.access_token.substring(0, 20) + '...');
+      
+      const response = await fetch(`${API_BASE}/user-profiles/profile`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('User profiles API response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('User profiles API error:', response.status, errorText);
+        
+        if (response.status === 404) {
+          throw new Error('Profile not found');
+        }
+        
+        if (response.status === 401) {
+          throw new Error('Authentication failed - please log in again');
+        }
+        
+        if (response.status === 500) {
+          throw new Error(`Server error: ${errorText || 'Internal server error'}`);
+        }
+        
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('User profiles API success:', data);
+      return data;
+    } catch (error) {
+      console.error('Error in getProfile:', error);
+      throw error;
+    }
   },
 
   async createProfile(profileData: UserProfileCreate): Promise<UserProfile> {
