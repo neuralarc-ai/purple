@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Copy, CheckCircle, Star, Clock, Heart } from 'lucide-react';
+import { Copy, CheckCircle, Star, Clock, Heart, Search, Plus } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PromptCard } from '@/components/prompt/prompt-card';
+import { FancyTabs, TabConfig } from '@/components/ui/fancy-tabs';
 
 interface GeneratedPrompt {
   id: number;
@@ -23,6 +24,7 @@ export default function PromptLibraryPage() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [previewPrompt, setPreviewPrompt] = useState<GeneratedPrompt | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   // Load favorites from localStorage on initial render
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(() => {
     if (typeof window !== 'undefined') {
@@ -38,8 +40,26 @@ export default function PromptLibraryPage() {
       localStorage.setItem('favoritePromptIds', JSON.stringify(Array.from(favoriteIds)));
     }
   }, [favoriteIds]);
-  const [recentlyUsed, setRecentlyUsed] = useState<GeneratedPrompt[]>([]);
+  const [recentlyUsed, setRecentlyUsed] = useState<GeneratedPrompt[]>(() => {
+    // Load from localStorage on initial render
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('recentlyUsedPrompts');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
   const [explorePrompts, setExplorePrompts] = useState<GeneratedPrompt[]>([]);
+
+  // Function to remove a prompt from recently used
+  const removeFromRecentlyUsed = (id: number) => {
+    setRecentlyUsed(prev => {
+      const updated = prev.filter(prompt => prompt.id !== id);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('recentlyUsedPrompts', JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
 
   // Hardcoded B2B prompts for Explore section (50 prompts across 5 industries)
   const allPrompts: GeneratedPrompt[] = [
@@ -369,17 +389,42 @@ export default function PromptLibraryPage() {
     setExplorePrompts(shuffleArray(allPrompts));
   }, []);
 
-  // Get filtered prompts based on active tab
-  const getFilteredPrompts = () => {
-    if (activeTab === 'favorites') {
-      return allPrompts.filter(prompt => favoriteIds.has(prompt.id));
-    } else if (activeTab === 'recent') {
-      return []; // For recent tab, we'll handle display in the JSX
-    }
-    return explorePrompts; // For explore tab
+  // Get filtered prompts based on search query, with industry matches first
+  const getFilteredPrompts = (prompts: GeneratedPrompt[]) => {
+    if (!searchQuery.trim()) return prompts;
+    
+    const query = searchQuery.toLowerCase().trim();
+    const industryMatches: GeneratedPrompt[] = [];
+    const otherMatches: GeneratedPrompt[] = [];
+    
+    prompts.forEach(prompt => {
+      const lowerIndustry = prompt.industry.toLowerCase();
+      const lowerDesc = prompt.description.toLowerCase();
+      const lowerContent = prompt.content.toLowerCase();
+      
+      if (lowerIndustry.includes(query)) {
+        industryMatches.push(prompt);
+      } else if (lowerDesc.includes(query) || lowerContent.includes(query)) {
+        otherMatches.push(prompt);
+      }
+    });
+    
+    return [...industryMatches, ...otherMatches];
   };
   
-  const filteredPrompts = getFilteredPrompts();
+  // Get filtered prompts for recent and explore sections
+  const filteredRecent = getFilteredPrompts(recentlyUsed);
+  const filteredExplore = getFilteredPrompts(explorePrompts);
+  const filteredFavorites = getFilteredPrompts(
+    allPrompts.filter(prompt => favoriteIds.has(prompt.id))
+  );
+  
+  // Check if there are any search results
+  const hasSearchResults = searchQuery.trim() && 
+    (filteredRecent.length > 0 || filteredExplore.length > 0 || filteredFavorites.length > 0);
+  
+  // For backward compatibility
+  const filteredPrompts = [...filteredFavorites];
   
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -401,17 +446,56 @@ export default function PromptLibraryPage() {
     });
   };
 
-  const copyToClipboard = (text: string, id: number, prompt?: GeneratedPrompt) => {
+  const copyToClipboard = (text: string, id: number, promptArg?: GeneratedPrompt) => {
+    // Copy to clipboard
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    if (prompt) {
-      addToRecentlyUsed(prompt);
+    
+    // Find the prompt in allPrompts if not provided
+    const promptToAdd = promptArg || allPrompts.find(p => p.id === id);
+    
+    if (promptToAdd) {
+      setRecentlyUsed(prev => {
+        // Create new array with the new prompt at the start, remove any duplicates
+        const updated = [
+          promptToAdd,
+          ...prev.filter(p => p.id !== promptToAdd.id)
+        ].slice(0, 10);
+        
+        // Save to localStorage
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('recentlyUsedPrompts', JSON.stringify(updated));
+          } catch (error) {
+            console.error('Error saving to localStorage:', error);
+          }
+        }
+        
+        return updated;
+      });
     }
+    
+    // Reset copied state after 2 seconds
     setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleCardClick = (prompt: GeneratedPrompt) => {
-    // Preview is now handled directly in the PromptCard
+    // Add to recently used
+    setRecentlyUsed(prev => {
+      const updated = [
+        prompt,
+        ...prev.filter(p => p.id !== prompt.id)
+      ].slice(0, 10);
+      
+      // Save to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('recentlyUsedPrompts', JSON.stringify(updated));
+      }
+      
+      return updated;
+    });
+    
+    // Show preview
     setPreviewPrompt(prompt);
     setIsPreviewOpen(true);
   };
@@ -422,26 +506,40 @@ export default function PromptLibraryPage() {
     }
   };
 
+  const promptTabs: TabConfig[] = [
+    {
+      value: 'recent',
+      icon: Clock,
+      label: 'Recently Used',
+    },
+    {
+      value: 'favorites',
+      icon: Star,
+      label: 'Favorites',
+    },
+  ];
+
   return (
     <div className="p-6 w-full">
-      <div className="flex flex-col space-y-4 mb-6">
+      <div className="flex flex-col items-center space-y-4 mb-6">
         <h1 className="text-2xl font-bold">Prompt Library</h1>
-        <Tabs
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as TabType)}
-          className="w-full"
-        >
-          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
-            <TabsTrigger value="recent" className="flex items-center justify-center">
-              <Clock className="h-4 w-4 mr-2" />
-              Recently Used
-            </TabsTrigger>
-            <TabsTrigger value="favorites" className="flex items-center justify-center">
-              <Star className="h-4 w-4 mr-2" />
-              Favorites
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <FancyTabs
+          tabs={promptTabs}
+          activeTab={activeTab}
+          onTabChange={(value) => setActiveTab(value as TabType)}
+        />
+        
+        {/* Search Bar */}
+        <div className="relative w-full max-w-2xl mt-4">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search prompts by industry, description, or content..."
+            className="w-full pl-10"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Prompts Grid */}
@@ -451,16 +549,31 @@ export default function PromptLibraryPage() {
           <div>
             <h2 className="text-lg font-semibold mb-4">Recent Prompts</h2>
             {recentlyUsed.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recentlyUsed.map((prompt) => (
-                  <PromptCard
-                    key={prompt.id}
-                    prompt={prompt}
-                    isFavorite={favoriteIds.has(prompt.id)}
-                    onCopy={copyToClipboard}
-                    onToggleFavorite={toggleFavorite}
-                    copiedId={copiedId}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {(searchQuery ? filteredRecent : recentlyUsed).map((prompt) => (
+                  <div key={`recent-${prompt.id}`} className="relative group">
+                    <PromptCard
+                      prompt={prompt}
+                      isFavorite={favoriteIds.has(prompt.id)}
+                      onCopy={copyToClipboard}
+                      onToggleFavorite={toggleFavorite}
+                      onCardClick={handleCardClick}
+                      copiedId={copiedId}
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFromRecentlyUsed(prompt.id);
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove from recent"
+                      aria-label="Remove from recent"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -474,21 +587,23 @@ export default function PromptLibraryPage() {
           <div>
             <h2 className="text-lg font-semibold mb-4">Explore</h2>
             {allPrompts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {explorePrompts.map((prompt) => (
-                  <PromptCard
-                    key={prompt.id}
-                    prompt={prompt}
-                    isFavorite={favoriteIds.has(prompt.id)}
-                    onCopy={copyToClipboard}
-                    onToggleFavorite={toggleFavorite}
-                    copiedId={copiedId}
-                  />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {(searchQuery ? filteredExplore : explorePrompts).map((prompt) => (
+                  <div key={prompt.id} onClick={() => handleCardClick(prompt)}>
+                    <PromptCard
+                      prompt={prompt}
+                      isFavorite={favoriteIds.has(prompt.id)}
+                      onCopy={copyToClipboard}
+                      onToggleFavorite={toggleFavorite}
+                      copiedId={copiedId}
+                      hideCopyButton={true}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground border rounded-lg">
-                No prompts found
+                {searchQuery ? 'No matching prompts found' : 'No prompts found'}
               </div>
             )}
           </div>
@@ -498,36 +613,32 @@ export default function PromptLibraryPage() {
           {/* Favorites Section */}
           <div>
             <h2 className="text-lg font-semibold mb-4">Favorites</h2>
-            {filteredPrompts.length > 0 ? (
+            {filteredFavorites.length > 0 ? (
               <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredPrompts.map((prompt) => (
-                  <Card
-                    key={`favorite-${prompt.id}`}
-                    className="p-4 h-48 hover:shadow-md transition-all duration-200 cursor-pointer hover:bg-gray-100/50 dark:hover:bg-gray-700/50 relative group flex flex-col"
-                    onClick={() => handleCardClick(prompt)}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                        {prompt.industry}
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(prompt.id, e);
-                        }}
-                        className="text-yellow-500 hover:text-yellow-600 dark:text-yellow-400 dark:hover:text-yellow-300 focus:outline-none"
-                        aria-label="Remove from favorites"
-                      >
-                        <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
-                      </button>
-                    </div>
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1 line-clamp-1">
-                      {prompt.description}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-4 leading-relaxed flex-grow">
-                      {prompt.content}
-                    </p>
-                  </Card>
+                {filteredFavorites.map((prompt) => (
+                  <div key={`favorite-${prompt.id}`} className="relative group" onClick={() => handleCardClick(prompt)}>
+                    <PromptCard
+                      prompt={prompt}
+                      isFavorite={favoriteIds.has(prompt.id)}
+                      onCopy={copyToClipboard}
+                      onToggleFavorite={toggleFavorite}
+                      copiedId={copiedId}
+                      hideCopyButton={true}
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(prompt.id, e);
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remove from favorites"
+                      aria-label="Remove from favorites"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 ))}
               </div>
             ) : (

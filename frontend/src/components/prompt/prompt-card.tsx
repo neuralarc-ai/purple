@@ -17,10 +17,12 @@ interface PromptCardProps {
   isFavorite: boolean;
   onCopy: (text: string, id: number, prompt?: any) => void;
   onToggleFavorite: (id: number, e: React.MouseEvent) => void;
+  onCardClick?: (prompt: any) => void;
   copiedId: number | null;
+  hideCopyButton?: boolean;
 }
 
-export function PromptCard({ prompt, isFavorite, onCopy, onToggleFavorite, copiedId }: PromptCardProps) {
+export function PromptCard({ prompt, isFavorite, onCopy, onToggleFavorite, onCardClick, copiedId, hideCopyButton = false }: PromptCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isOverflowing, setIsOverflowing] = useState(false);
   const contentRef = useRef<HTMLParagraphElement>(null);
@@ -39,85 +41,97 @@ export function PromptCard({ prompt, isFavorite, onCopy, onToggleFavorite, copie
       return;
     }
     
-    // Navigate to dashboard with the prompt content
-    const params = new URLSearchParams();
-    params.set('prompt', encodeURIComponent(prompt.content));
-    router.push(`/dashboard?${params.toString()}`);
+    if (onCardClick) {
+      onCardClick(prompt);
+    } else {
+      // Default behavior if onCardClick is not provided
+      const params = new URLSearchParams();
+      params.set('prompt', encodeURIComponent(prompt.content));
+      router.push(`/dashboard?${params.toString()}`);
+    }
   };
 
   return (
-    <Card 
-      className="p-4 hover:shadow-md transition-shadow cursor-pointer relative group"
-      onClick={handleCardClick}
-    >
-      <div className="flex justify-between items-start mb-2">
-        <h3 className="font-medium text-sm text-muted-foreground">
-          {prompt.industry} • {prompt.description}
-        </h3>
-        <div className="flex space-x-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 text-muted-foreground hover:text-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFavorite(prompt.id, e);
-            }}
-          >
-            <Heart
-              className={`h-4 w-4 ${isFavorite ? 'fill-current text-red-500' : ''}`}
-              fill={isFavorite ? 'currentColor' : 'none'}
-            />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 text-muted-foreground hover:text-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              onCopy(prompt.content, prompt.id, prompt);
-            }}
-          >
-            {copiedId === prompt.id ? (
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            ) : (
-              <Copy className="h-4 w-4" />
+    <div className="h-full flex flex-col">
+      <Card 
+        className={`p-4 cursor-pointer hover:shadow-md transition-shadow flex flex-col h-full ${
+          onCardClick ? 'hover:bg-accent/5' : ''
+        }`}
+        onClick={handleCardClick}
+      >
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-medium text-sm text-muted-foreground line-clamp-1">{prompt.industry}</h3>
+          <div className="flex items-center gap-1">
+            {!hideCopyButton && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCopy(prompt.content, prompt.id, prompt);
+                }}
+                className="text-muted-foreground hover:text-foreground transition-colors p-1"
+                title="Copy to clipboard"
+              >
+                {copiedId === prompt.id ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </button>
             )}
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(prompt.id, e);
+              }}
+            >
+              <Star
+                className={`h-4 w-4 ${isFavorite ? 'fill-current text-yellow-500' : ''}`}
+                fill={isFavorite ? 'currentColor' : 'none'}
+              />
+            </Button>
+          </div>
         </div>
-      </div>
-      <div className="relative">
-        <p
-          ref={contentRef}
-          className={`text-sm text-foreground whitespace-pre-line ${
-            isExpanded ? '' : 'line-clamp-4'
-          }`}
-        >
-          {prompt.content}
-        </p>
-        {isOverflowing && !isExpanded && (
-          <button
-            className="text-xs text-blue-500 hover:underline mt-1 block"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(true);
-            }}
+        <div className="flex-grow flex flex-col">
+          <p
+            ref={contentRef}
+            className={`text-sm text-foreground whitespace-pre-line flex-grow ${
+              isExpanded ? '' : 'line-clamp-4'
+            }`}
+            style={{ minHeight: '6rem' }}
           >
-            Show more
-          </button>
-        )}
-        {isExpanded && (
-          <button
-            className="text-xs text-blue-500 hover:underline mt-1 block"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsExpanded(false);
-            }}
-          >
-            Show less
-          </button>
-        )}
-      </div>
-    </Card>
+            {prompt.content}
+          </p>
+          {isOverflowing && !isExpanded && (
+            <div className="mt-2">
+              <button
+                className="text-xs text-blue-500 hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(true);
+                }}
+              >
+                Show more
+              </button>
+            </div>
+          )}
+          {isExpanded && (
+            <div className="mt-2">
+              <button
+                className="text-xs text-blue-500 hover:underline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(false);
+                }}
+              >
+                Show less
+              </button>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
   );
 }

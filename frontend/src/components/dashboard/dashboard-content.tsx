@@ -28,7 +28,7 @@ import { useFeatureFlag } from '@/lib/feature-flags';
 import { CustomAgentsSection } from './custom-agents-section';
 import { toast } from 'sonner';
 import { ReleaseBadge } from '../auth/release-badge';
-import { UseCaseCategories } from '../chat/use-case-categories';
+import { UseCases } from './use-cases';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -316,17 +316,21 @@ export function DashboardContent() {
                     enableAdvancedConfig={true}
                     onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
                   />
-                  <div className="mt-4 w-full">
-                    <UseCaseCategories 
-                      onUseCaseSelect={(prompt) => {
-                        setInputValue(prompt);
-                        // Optional: Auto-focus the input after selection
-                        setTimeout(() => {
-                          document.querySelector('textarea')?.focus();
-                        }, 0);
-                      }} 
-                    />
-                  </div>
+                  <UseCases 
+                    onUseCaseSelect={(prompt) => {
+                      setInputValue(prompt);
+                      // Focus the input after a short delay to ensure it's rendered
+                      setTimeout(() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          textarea.focus();
+                          // Move cursor to the end of the text
+                          const length = prompt.length;
+                          textarea.setSelectionRange(length, length);
+                        }
+                      }, 0);
+                    }} 
+                  />
                 </div>
               </div>
             </div>
