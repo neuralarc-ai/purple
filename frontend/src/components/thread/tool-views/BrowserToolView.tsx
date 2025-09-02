@@ -1,17 +1,12 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import {
   Globe,
   MonitorPlay,
   ExternalLink,
-  CheckCircle,
   AlertTriangle,
   CircleDashed,
-  RefreshCw,
-  Code2,
-  ImageIcon,
   Hand,
   Play,
-  Pause,
 } from 'lucide-react';
 import { ToolViewProps } from './types';
 import {
@@ -33,7 +28,6 @@ export function BrowserToolView({
   toolContent,
   assistantTimestamp,
   toolTimestamp,
-  isSuccess = true,
   isStreaming = false,
   project,
   agentStatus = 'idle',
@@ -41,6 +35,7 @@ export function BrowserToolView({
   currentIndex = 0,
   totalCalls = 1,
 }: ToolViewProps) {
+
   // Try to extract data using the new parser first
   const assistantToolData = extractToolData(assistantContent);
   const toolToolData = extractToolData(toolContent);
@@ -245,25 +240,7 @@ export function BrowserToolView({
     );
   }, [vncPreviewUrl]);
 
-  const [progress, setProgress] = React.useState(100);
 
-  React.useEffect(() => {
-    if (isRunning) {
-      setProgress(0);
-      const timer = setInterval(() => {
-        setProgress((prevProgress) => {
-          if (prevProgress >= 95) {
-            clearInterval(timer);
-            return prevProgress;
-          }
-          return prevProgress + 2;
-        });
-      }, 500);
-      return () => clearInterval(timer);
-    } else {
-      setProgress(100);
-    }
-  }, [isRunning]);
 
   // Reset loading state when screenshot changes
   React.useEffect(() => {
@@ -376,34 +353,7 @@ export function BrowserToolView({
                 {browserTakeoverMode ? 'Release' : 'Takeover'}
               </span>
             </Button>
-            
-<!--             {!isRunning && (
-              <Badge -->
-          {/* {!isRunning && (
-            <Badge
-
-              variant="secondary"
-              className={
-                isSuccess
-                  ? "bg-gradient-to-b from-emerald-200 to-emerald-100 text-emerald-700 dark:from-emerald-800/50 dark:to-emerald-900/60 dark:text-emerald-300"
-                  : "bg-gradient-to-b from-rose-200 to-rose-100 text-rose-700 dark:from-rose-800/50 dark:to-rose-900/60 dark:text-rose-300"
-              }
-            >
-              {isSuccess ? (
-                <CheckCircle className="h-3.5 w-3.5 mr-1" />
-              ) : (
-                <AlertTriangle className="h-3.5 w-3.5 mr-1" />
-              )}
-              {isSuccess ? 'Browser action completed' : 'Browser action failed'}
-            </Badge>
-          )}
-
-          {isRunning && (
-            <Badge className="bg-gradient-to-b from-blue-200 to-blue-100 text-blue-700 dark:from-blue-800/50 dark:to-blue-900/60 dark:text-blue-300">
-              <CircleDashed className="h-3.5 w-3.5 animate-spin mr-1" />
-              Executing browser action
-            </Badge>
-          )} */}
+          </div>
         </div>
       </CardHeader>
 

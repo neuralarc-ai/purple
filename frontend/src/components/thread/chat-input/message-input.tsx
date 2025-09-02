@@ -58,6 +58,8 @@ interface MessageInputProps {
   enableAdvancedConfig?: boolean;
   hideAgentSelection?: boolean;
   isHeliumAgent?: boolean;
+  selectedMode: 'default' | 'agent';
+  onModeChange: (mode: 'default' | 'agent') => void;
   // New props for integrations
   onOpenIntegrations?: () => void;
   onOpenInstructions?: () => void;
@@ -103,6 +105,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       enableAdvancedConfig = false,
       hideAgentSelection = false,
       isHeliumAgent,
+      selectedMode,
+      onModeChange,
       onOpenIntegrations,
       onOpenInstructions,
       onOpenKnowledge,
@@ -151,7 +155,15 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
           !loading &&
           (!disabled || isAgentRunning)
         ) {
-          onSubmit(e as unknown as React.FormEvent);
+          // Pre-emptive loading state for Enter key submissions
+          const textarea = e.currentTarget;
+          textarea.disabled = true;
+          textarea.style.opacity = '0.5';
+          
+          // Call onSubmit after a minimal delay to ensure loading state renders
+          setTimeout(() => {
+            onSubmit(e as unknown as React.FormEvent);
+          }, 10);
         }
       }
     };
@@ -258,6 +270,48 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
         <div className="flex items-center justify-between mt-0 mb-1 px-2">
           <div className="flex items-center gap-3">
+            {/* Mode Toggle */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-muted-foreground font-medium">
+                Mode:
+              </label>
+              <div className="flex items-center bg-muted rounded-lg p-1">
+                <button
+                  type="button"
+                  onClick={() => onModeChange('default')}
+                  className={cn(
+                    "text-xs px-3 py-1 rounded-md transition-all duration-200 font-medium",
+                    selectedMode === 'default'
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                                     disabled={loading || (disabled && !isAgentRunning)}
+                   title="Ultra-fast chat mode with tools and search - optimized for immediate response display"
+                 >
+                   💬 Chat
+                 </button>
+                 <button
+                   type="button"
+                   onClick={() => onModeChange('agent')}
+                   className={cn(
+                     "text-xs px-3 py-1 rounded-md transition-all duration-200 font-medium",
+                     selectedMode === 'agent'
+                       ? "bg-background text-foreground shadow-sm"
+                       : "text-muted-foreground hover:text-foreground"
+                   )}
+                   disabled={loading || (disabled && !isAgentRunning)}
+                   title="Full AI agent with context management, file processing, tools, and enhanced capabilities"
+                 >
+                   🤖 Agent
+                </button>
+              </div>
+              {uploadedFiles.length > 0 && selectedMode !== 'agent' && (
+                <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                  Files require agent mode
+                </span>
+              )}
+            </div>
+
             {!hideAttachments && (
               <>
                 <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -373,7 +427,23 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
             <Button
               type="submit"
-              onClick={isAgentRunning && onStopAgent ? onStopAgent : onSubmit}
+              onClick={(e) => {
+                // Pre-emptive loading state - show loading immediately
+                if (isAgentRunning && onStopAgent) {
+                  onStopAgent();
+                } else {
+                  // Set loading state immediately for better UX
+                  const button = e.currentTarget;
+                  const originalContent = button.innerHTML;
+                  button.innerHTML = '<div class="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent"></div>';
+                  button.disabled = true;
+                  
+                  // Call onSubmit after a minimal delay to ensure loading state renders
+                  setTimeout(() => {
+                    onSubmit(e);
+                  }, 10);
+                }
+              }}
               size="icon"
               className={cn(
                 'w-8 h-8 flex-shrink-0 rounded-full cursor-pointer',
