@@ -30,6 +30,8 @@ import { BillingModal } from '@/components/billing/billing-modal';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import { BorderBeam } from '@/components/magicui/border-beam';
+import { SecurityPopup } from './security-popup';
+import { useSecurityInterception } from '@/hooks/useSecurityInterception';
 
 export interface ChatInputHandles {
   getPendingFiles: () => File[];
@@ -149,6 +151,17 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const [billingModalOpen, setBillingModalOpen] = useState(false);
     const [wasManuallyStopped, setWasManuallyStopped] = useState(false);
     const [submitTimeout, setSubmitTimeout] = useState<NodeJS.Timeout | null>(null);
+    
+    // Security interception hook
+    const {
+      showPopup: showSecurityPopup,
+      popupMessage: securityPopupMessage,
+      popupType: securityPopupType,
+      shouldBlock: shouldBlockRequest,
+      closePopup: closeSecurityPopup,
+      shouldProceedWithRequest,
+    } = useSecurityInterception();
+    
     const {
       selectedModel,
       setSelectedModel: handleModelChange,
@@ -263,7 +276,14 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       setSubmitTimeout(timeout);
 
       try {
-        // if (isAgentRunning && onStopAgent) {
+        // Check for security concerns first
+      // The useSecurityInterception hook handles all security validation
+      if (!shouldProceedWithRequest(value)) {
+        // Security popup is already shown by the hook
+        return;
+      }
+
+      // if (isAgentRunning && onStopAgent) {
         //   onStopAgent();
         //   return;
         // }
@@ -285,6 +305,13 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           baseModelName = getActualModelId(selectedModel.replace(/-thinking$/, ''));
           thinkingEnabled = true;
         }
+
+      // Security check: block injections and malware content
+      // The useSecurityInterception hook handles all security validation
+      if (!shouldProceedWithRequest(message)) {
+        // Security popup is already shown by the hook
+        return;
+      }
 
         // Determine mode-based configuration
         const modeConfig = getModeConfiguration(selectedMode, thinkingEnabled);
@@ -391,6 +418,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     };
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
+      
       if (isControlled) {
         controlledOnChange(newValue);
       } else {
@@ -455,6 +483,12 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       setIsDraggingOver(true);
     };
 
+    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOver(true);
+    };
+
     const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       e.stopPropagation();
@@ -492,6 +526,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           <Card
             className={`shadow-none p-0 mt-4 w-full max-w-5xl mx-auto bg-transparent border-none overflow-visible ${enableAdvancedConfig && selectedAgentId ? '' : 'rounded-3xl'} relative z-10`}
             onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDrop={(e) => {
               e.preventDefault();
@@ -511,6 +546,15 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
               }
             }}
           >
+            {/* Security Popup - Positioned above the input */}
+            <SecurityPopup
+              isVisible={showSecurityPopup}
+              onClose={closeSecurityPopup}
+              message={securityPopupMessage}
+              type={securityPopupType}
+              showCloseButton={true}
+            />
+            
             <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
               <CardContent className={`w-full p-2 pb-3 border-black/15 dark:border-muted bg-white dark:bg-sidebar rounded-[28px] relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/50 border`}>
                 {/* <div className="absolute inset-0 rounded-[inherit] overflow-hidden border">
@@ -602,6 +646,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
             open={billingModalOpen}
             onOpenChange={setBillingModalOpen}
           />
+          
         </div>
       </div>
     );

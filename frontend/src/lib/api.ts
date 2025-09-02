@@ -1195,7 +1195,9 @@ export const streamAgent = (
           try {
             const jsonData = JSON.parse(rawData);
             if (jsonData.status === 'error') {
-              console.error(`[STREAM] Error status received for ${agentRunId}:`, jsonData);
+              // Ensure we always have something meaningful to log/show
+              const safeError = jsonData && Object.keys(jsonData).length > 0 ? jsonData : { message: 'Unknown stream error', raw: rawData };
+              console.error(`[STREAM] Error status received for ${agentRunId}:`, safeError);
               
               // Pass the error message to the callback
               callbacks.onError(jsonData.message || 'Unknown error occurred');
