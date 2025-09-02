@@ -258,14 +258,7 @@ export default function UsageLogs({ accountId }: Props) {
         <CardHeader>
           <CardTitle>Daily Usage Logs</CardTitle>
           <CardDescription>
-            <div className='flex justify-between items-center'>
-              Your token usage organized by day, sorted by most recent.{" "}
-              <Button variant='outline' asChild className='text-sm ml-4'>
-                <Link href="/model-pricing">
-                  View Model Pricing <OpenInNewWindowIcon className='w-4 h-4' />
-                </Link>
-              </Button>
-            </div>
+            Your token usage organized by day, sorted by most recent.
           </CardDescription>
         </CardHeader>
         <CardContent>
