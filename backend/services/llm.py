@@ -33,7 +33,7 @@ class LLMError(Exception):
 
 def setup_api_keys() -> None:
     """Set up API keys from environment variables."""
-    providers = ['OPENAI', 'ANTHROPIC', 'GROQ', 'OPENROUTER', 'XAI', 'MORPH', 'GEMINI']
+    providers = ['OPENROUTER', 'GEMINI']
     for provider in providers:
         key = getattr(config, f'{provider}_API_KEY')
         if key:
@@ -47,18 +47,18 @@ def setup_api_keys() -> None:
         logger.debug(f"Set OPENROUTER_API_BASE to {config.OPENROUTER_API_BASE}")
 
     # Set up AWS Bedrock credentials
-    aws_access_key = config.AWS_ACCESS_KEY_ID
-    aws_secret_key = config.AWS_SECRET_ACCESS_KEY
-    aws_region = config.AWS_REGION_NAME
+    # aws_access_key = config.AWS_ACCESS_KEY_ID
+    # aws_secret_key = config.AWS_SECRET_ACCESS_KEY
+    # aws_region = config.AWS_REGION_NAME
 
-    if aws_access_key and aws_secret_key and aws_region:
-        logger.debug(f"AWS credentials set for Bedrock in region: {aws_region}")
-        # Configure LiteLLM to use AWS credentials
-        os.environ['AWS_ACCESS_KEY_ID'] = aws_access_key
-        os.environ['AWS_SECRET_ACCESS_KEY'] = aws_secret_key
-        os.environ['AWS_REGION_NAME'] = aws_region
-    else:
-        logger.warning(f"Missing AWS credentials for Bedrock integration - access_key: {bool(aws_access_key)}, secret_key: {bool(aws_secret_key)}, region: {aws_region}")
+    # if aws_access_key and aws_secret_key and aws_region:
+    #     logger.debug(f"AWS credentials set for Bedrock in region: {aws_region}")
+    #     # Configure LiteLLM to use AWS credentials
+    #     os.environ['AWS_ACCESS_KEY_ID'] = aws_access_key
+    #     os.environ['AWS_SECRET_ACCESS_KEY'] = aws_secret_key
+    #     os.environ['AWS_REGION_NAME'] = aws_region
+    # else:
+    #     logger.warning(f"Missing AWS credentials for Bedrock integration - access_key: {bool(aws_access_key)}, secret_key: {bool(aws_secret_key)}, region: {aws_region}")
 
     # Vertex AI / Gemini via LiteLLM
     # Prefer explicit VERTEXAI_*; fall back to GOOGLE_CLOUD_* if present
@@ -84,13 +84,13 @@ def get_openrouter_fallback(model_name: str) -> Optional[str]:
     
     # Map models to their OpenRouter equivalents
     fallback_mapping = {
-        "anthropic/claude-3-7-sonnet-latest": "openrouter/anthropic/claude-3.7-sonnet",
-        "anthropic/claude-sonnet-4-20250514": "openrouter/anthropic/claude-sonnet-4",
-        "vertex_ai/claude-3-5-sonnet@20240620": "openrouter/anthropic/claude-sonnet-4",
-        "xai/grok-4": "openrouter/x-ai/grok-4",
-        "gemini/gemini-2.5-pro": "openrouter/google/gemini-2.5-pro",
-        "gemini/gemini-2.5-flash": "openrouter/google/gemini-2.5-flash",
-        "gemini/gemini-2.0-flash": "openrouter/google/gemini-2.0-flash",
+        # "anthropic/claude-3-7-sonnet-latest": "openrouter/anthropic/claude-3.7-sonnet",
+        # "anthropic/claude-sonnet-4-20250514": "openrouter/anthropic/claude-sonnet-4",
+        # "vertex_ai/claude-3-5-sonnet@20240620": "openrouter/anthropic/claude-sonnet-4",
+        # "xai/grok-4": "openrouter/x-ai/grok-4",
+        # "gemini/gemini-2.5-pro": "openrouter/google/gemini-2.5-pro",
+        # "gemini/gemini-2.5-flash": "openrouter/google/gemini-2.5-flash",
+        "z-ai/glm-4.5:free": "openrouter/z-ai/glm-4.5-air:free",
     }
     
     # Check for exact match first
@@ -115,10 +115,10 @@ def _configure_token_limits(params: Dict[str, Any], model_name: str, max_tokens:
     if max_tokens is None:
         return
     
-    if model_name.startswith("bedrock/") and "claude-3-7" in model_name:
+    if model_name.startswith("bedrock/") and "claude-4" in model_name:
         # For Claude 3.7 in Bedrock, do not set max_tokens or max_tokens_to_sample
         # as it causes errors with inference profiles
-        logger.debug(f"Skipping max_tokens for Claude 3.7 model: {model_name}")
+        logger.debug(f"Skipping max_tokens for Claude 4 model: {model_name}")
         return
     
     is_openai_o_series = 'o1' in model_name
@@ -194,35 +194,35 @@ def _configure_bedrock(params: Dict[str, Any], model_name: str, model_id: Option
         params["model_id"] = "arn:aws:bedrock:us-west-2:935064898258:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0"
         logger.debug(f"Auto-set model_id for Claude 3.7 Sonnet: {params['model_id']}")
 
-def _configure_openai_gpt5(params: Dict[str, Any], model_name: str) -> None:
-    """Configure OpenAI GPT-5 specific parameters."""
-    if "gpt-5" not in model_name:
-        return
+# def _configure_openai_gpt5(params: Dict[str, Any], model_name: str) -> None:
+#     """Configure OpenAI GPT-5 specific parameters."""
+#     if "gpt-5" not in model_name:
+#         return
     
 
-    # Drop unsupported temperature param (only default 1 allowed)
-    if "temperature" in params and params["temperature"] != 1:
-        params.pop("temperature", None)
+#     # Drop unsupported temperature param (only default 1 allowed)
+#     if "temperature" in params and params["temperature"] != 1:
+#         params.pop("temperature", None)
 
-    # Request priority service tier when calling OpenAI directly
+#     # Request priority service tier when calling OpenAI directly
 
-    # Pass via both top-level and extra_body for LiteLLM compatibility
-    if not model_name.startswith("openrouter/"):
-        params["service_tier"] = "priority"
-        extra_body = params.get("extra_body", {})
-        if "service_tier" not in extra_body:
-            extra_body["service_tier"] = "priority"
-        params["extra_body"] = extra_body
+#     # Pass via both top-level and extra_body for LiteLLM compatibility
+#     if not model_name.startswith("openrouter/"):
+#         params["service_tier"] = "priority"
+#         extra_body = params.get("extra_body", {})
+#         if "service_tier" not in extra_body:
+#             extra_body["service_tier"] = "priority"
+#         params["extra_body"] = extra_body
 
-def _configure_kimi_k2(params: Dict[str, Any], model_name: str) -> None:
-    """Configure Kimi K2-specific parameters."""
-    is_kimi_k2 = "kimi-k2" in model_name.lower() or model_name.startswith("moonshotai/kimi-k2")
-    if not is_kimi_k2:
-        return
+# def _configure_kimi_k2(params: Dict[str, Any], model_name: str) -> None:
+#     """Configure Kimi K2-specific parameters."""
+#     is_kimi_k2 = "kimi-k2" in model_name.lower() or model_name.startswith("moonshotai/kimi-k2")
+#     if not is_kimi_k2:
+#         return
     
-    params["provider"] = {
-        "order": ["groq", "moonshotai"] #, "groq", "together/fp8", "novita/fp8", "baseten/fp8", 
-    }
+#     params["provider"] = {
+#         "order": ["groq", "moonshotai"] #, "groq", "together/fp8", "novita/fp8", "baseten/fp8", 
+#     }
 
 def _configure_vertex_ai(params: Dict[str, Any], model_name: str) -> None:
     """Configure Vertex AI-specific parameters for Gemini and Claude models via LiteLLM."""
@@ -391,9 +391,9 @@ def prepare_params(
     
     _add_fallback_model(params, model_name, messages)
     # Add OpenAI GPT-5 specific parameters
-    _configure_openai_gpt5(params, model_name)
+    # _configure_openai_gpt5(params, model_name)
     # Add Kimi K2-specific parameters
-    _configure_kimi_k2(params, model_name)
+    # _configure_kimi_k2(params, model_name)
     # Add Vertex/Gemini-specific parameters
     _configure_vertex_ai(params, model_name)
     _configure_thinking(params, model_name, enable_thinking, reasoning_effort)

@@ -45,6 +45,13 @@ export interface UseAgentStreamResult {
   agentRunId: string | null; // Expose the currently managed agentRunId
   startStreaming: (runId: string) => void;
   stopStreaming: () => Promise<void>;
+  paused: boolean;
+  inTakeover: boolean;
+  pause: () => Promise<void>;
+  resume: () => Promise<void>;
+  takeover: () => Promise<void>;
+  release: () => Promise<void>;
+  logManual: (payload: { event_type: string; data?: Record<string, any>; description?: string }) => Promise<void>;
 }
 
 // Define the callbacks the hook consumer can provide
@@ -90,6 +97,8 @@ export function useAgentStream(
   const [textContent, setTextContent] = useState<
     { content: string; sequence?: number }[]
   >([]);
+  const [paused, setPaused] = useState<boolean>(false);
+  const [inTakeover, setInTakeover] = useState<boolean>(false);
   
   // Add throttled state updates for smoother streaming
   const throttleRef = useRef<NodeJS.Timeout | null>(null);
@@ -785,6 +794,31 @@ export function useAgentStream(
     }
   }, [agentRunId, finalizeStream]); // Add dependencies
 
+  const pause = useCallback(async () => {
+    setPaused(true);
+    toast.success('Automation paused');
+  }, []);
+
+  const resume = useCallback(async () => {
+    setPaused(false);
+    toast.success('Automation resumed');
+  }, []);
+
+  const takeover = useCallback(async () => {
+    setInTakeover(true);
+    toast.success('Manual takeover activated');
+  }, []);
+
+  const release = useCallback(async () => {
+    setInTakeover(false);
+    toast.success('Manual takeover released');
+  }, []);
+
+  const logManual = useCallback(async (payload: { event_type: string; data?: Record<string, any>; description?: string }) => {
+    // Implementation would typically call an API endpoint
+    console.log('Manual event logged:', payload);
+  }, []);
+
   return {
     status,
     textContent: orderedTextContent,
@@ -793,5 +827,12 @@ export function useAgentStream(
     agentRunId,
     startStreaming,
     stopStreaming,
+    paused,
+    inTakeover,
+    pause,
+    resume,
+    takeover,
+    release,
+    logManual,
   };
 }

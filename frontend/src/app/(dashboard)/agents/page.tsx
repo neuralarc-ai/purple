@@ -546,8 +546,10 @@ export default function AgentsPage() {
         <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/40 shadow-sm">
           <div className="container max-w-7xl mx-auto px-4 py-6">
             <div className="space-y-6">
-              <div className="text-4xl font-semibold tracking-tight">
-                <span className="text-primary">AI Agents</span>
+              <div className="flex justify-center md:justify-start pt-4 md:pt-0">
+                <div className="text-4xl font-semibold tracking-tight">
+                  <span className="text-primary">AI Agents</span>
+                </div>
               </div>
               <TabsNavigation activeTab={activeTab} onTabChange={handleTabChange} onCreateAgent={handleCreateNewAgent} />
             </div>
@@ -571,8 +573,10 @@ export default function AgentsPage() {
         <div className="relative bg-gradient-to-b from-background/95 via-background/70 to-transparent">
           <div className="container mx-auto max-w-7xl px-4 py-6">
             <div className="space-y-6">
-              <div className="text-2xl font-semibold tracking-tight">
-                <span className="text-primary">AI Agents</span>
+              <div className="flex justify-center md:justify-start pt-4 md:pt-0">
+                <div className="text-2xl font-semibold tracking-tight">
+                  <span className="text-primary">AI Agents</span>
+                </div>
               </div>
               <TabsNavigation activeTab={activeTab} onTabChange={handleTabChange} onCreateAgent={handleCreateNewAgent} />
             </div>

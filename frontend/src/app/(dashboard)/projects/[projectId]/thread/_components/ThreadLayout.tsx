@@ -7,6 +7,8 @@ import { BillingErrorAlert } from '@/components/billing/usage-limit-alert';
 import { Project } from '@/lib/api';
 import { ApiMessageType, BillingData } from '../_types';
 import { ToolCallInput } from '@/components/thread/tool-call-side-panel';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { logManualEvent } from '@/lib/api';
 import { useMediumScreen } from '@/hooks/react-query/use-medium-screen';
 import { useCustomBreakpoint } from '@/hooks/use-custom-breakpoints';
 
@@ -28,7 +30,11 @@ interface ThreadLayoutProps {
   toolCalls: ToolCallInput[];
   messages: ApiMessageType[];
   externalNavIndex?: number;
-  agentStatus: 'idle' | 'running' | 'connecting' | 'error';
+  agentStatus: 'idle' | 'running' | 'connecting' | 'paused' | 'error';
+  paused: boolean;
+  inTakeover: boolean;
+  onHeaderTakeoverToggle: () => void;
+  onLogManual?: (payload: { event_type: string; data?: Record<string, any>; description?: string }) => Promise<void>;
   currentToolIndex: number;
   onSidePanelNavigate: (index: number) => void;
   onSidePanelClose: () => void;
@@ -71,6 +77,10 @@ export function ThreadLayout({
   messages,
   externalNavIndex,
   agentStatus,
+  paused,
+  inTakeover,
+  onHeaderTakeoverToggle,
+  onLogManual,
   currentToolIndex,
   onSidePanelNavigate,
   onSidePanelClose,
@@ -141,6 +151,9 @@ export function ThreadLayout({
           onProjectRenamed={onProjectRenamed}
           isMobileView={isMobile}
           debugMode={debugMode}
+          paused={paused}
+          inTakeover={inTakeover}
+          onTakeoverToggle={onHeaderTakeoverToggle}
           isSidePanelOpen={isSidePanelOpen}
           agentStatus={agentStatus}
         />
@@ -177,6 +190,12 @@ export function ThreadLayout({
           initialFilePath={fileToView}
           project={project || undefined}
           filePathList={filePathList}
+          editable={inTakeover}
+          onFileEdited={async ({ path, bytes }) => {
+            try {
+              await onLogManual?.({ event_type: 'file_edit', data: { path, bytes } });
+            } catch {}
+          }}
         />
       )}
 

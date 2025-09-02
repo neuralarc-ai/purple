@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Globe,
   MonitorPlay,
@@ -6,6 +6,12 @@ import {
   CheckCircle,
   AlertTriangle,
   CircleDashed,
+  RefreshCw,
+  Code2,
+  ImageIcon,
+  Hand,
+  Play,
+  Pause,
 } from 'lucide-react';
 import { ToolViewProps } from './types';
 import {
@@ -63,6 +69,74 @@ export function BrowserToolView({
   // Add loading states for images
   const [imageLoading, setImageLoading] = React.useState(true);
   const [imageError, setImageError] = React.useState(false);
+  
+  // Browser takeover state
+  const [browserTakeoverMode, setBrowserTakeoverMode] = React.useState(false);
+  const [browserState, setBrowserState] = React.useState<any>(null);
+  const [takeoverLoading, setTakeoverLoading] = React.useState(false);
+
+  // Browser takeover methods
+  const handleBrowserTakeover = async () => {
+    setTakeoverLoading(true);
+    try {
+      const response = await fetch('http://localhost:8004/api/takeover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setBrowserTakeoverMode(true);
+        setBrowserState(data.state);
+      }
+    } catch (error) {
+      console.error('Failed to enable browser takeover:', error);
+    } finally {
+      setTakeoverLoading(false);
+    }
+  };
+
+  const handleBrowserRelease = async () => {
+    setTakeoverLoading(true);
+    try {
+      const response = await fetch('http://localhost:8004/api/release', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setBrowserTakeoverMode(false);
+        setBrowserState(data.state);
+      }
+    } catch (error) {
+      console.error('Failed to release browser takeover:', error);
+    } finally {
+      setTakeoverLoading(false);
+    }
+  };
+
+  const refreshBrowserState = async () => {
+    try {
+      const response = await fetch('http://localhost:8004/api/state');
+      const data = await response.json();
+      if (data.success) {
+        setBrowserTakeoverMode(data.state.takeover_mode);
+        setBrowserState(data.state);
+      }
+    } catch (error) {
+      console.error('Failed to refresh browser state:', error);
+    }
+  };
+
+  // Poll browser state when in takeover mode
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (browserTakeoverMode) {
+      interval = setInterval(refreshBrowserState, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [browserTakeoverMode]);
 
   try {
     const topLevelParsed = safeJsonParse<{ content?: any }>(toolContent, {});
@@ -278,8 +352,37 @@ export function BrowserToolView({
             </div>
           </div>
 
+          <div className='flex items-center gap-2'>
+            {/* Browser Takeover Controls */}
+            <Button
+              variant={browserTakeoverMode ? "default" : "outline"}
+              size="sm"
+              onClick={browserTakeoverMode ? handleBrowserRelease : handleBrowserTakeover}
+              disabled={takeoverLoading}
+              className={`h-7 px-2 ${browserTakeoverMode 
+                ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500' 
+                : 'hover:bg-muted'
+              }`}
+              title={browserTakeoverMode ? "Release browser control" : "Take control of browser"}
+            >
+              {takeoverLoading ? (
+                <CircleDashed className="h-3.5 w-3.5 animate-spin" />
+              ) : browserTakeoverMode ? (
+                <Play className="h-3.5 w-3.5" />
+              ) : (
+                <Hand className="h-3.5 w-3.5" />
+              )}
+              <span className="ml-1 text-xs">
+                {browserTakeoverMode ? 'Release' : 'Takeover'}
+              </span>
+            </Button>
+            
+            {/* Browser Status Badges - Commented out for now */}
+            {/* {!isRunning && (
+              <Badge */}
           {/* {!isRunning && (
             <Badge
+
               variant="secondary"
               className={
                 isSuccess
@@ -302,6 +405,7 @@ export function BrowserToolView({
               Executing browser action
             </Badge>
           )} */}
+        </div>
         </div>
       </CardHeader>
 
@@ -404,25 +508,38 @@ export function BrowserToolView({
 
       <div className="px-4 py-2 h-fit bg-white backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
         <div className="h-full flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
-          {!isRunning && (
+          {browserTakeoverMode && browserState && (
+            <Badge variant="outline" className="h-6 py-0.5 bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-300">
+              <Hand className="h-3 w-3 mr-1" />
+              Manual Control
+            </Badge>
+          )}
+          {!isRunning && !browserTakeoverMode && (
             <Badge className="h-6 py-0.5">
               <Globe className="h-3 w-3" />
               {operation}
             </Badge>
           )}
-          {url && (
+          {(browserState?.url || url) && (
             <span className="text-xs truncate max-w-[200px] hidden sm:inline-block">
-              {url}
+              {browserState?.url || url}
+            </span>
+          )}
+          {browserState?.title && (
+            <span className="text-xs truncate max-w-[150px] hidden md:inline-block text-zinc-400">
+              {browserState.title}
             </span>
           )}
         </div>
 
         <div className="text-xs text-zinc-500 dark:text-zinc-400">
-          {toolTimestamp && !isRunning
-            ? formatTimestamp(toolTimestamp)
-            : assistantTimestamp
-              ? formatTimestamp(assistantTimestamp)
-              : ''}
+          {browserTakeoverMode && browserState?.timestamp 
+            ? `Updated ${formatTimestamp(browserState.timestamp)}`
+            : toolTimestamp && !isRunning
+              ? formatTimestamp(toolTimestamp)
+              : assistantTimestamp
+                ? formatTimestamp(assistantTimestamp)
+                : ''}
         </div>
       </div>
     </Card>

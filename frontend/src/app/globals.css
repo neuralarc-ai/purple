@@ -319,7 +319,7 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.1838 0 0);
+  --sidebar: oklch(0.1869 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -794,4 +794,21 @@
   --shimmer-color-1: var(--helium-blue) !important;
   --shimmer-color-2: var(--helium-green) !important;
   --shimmer-color-3: var(--helium-yellow) !important;
+}
+
+@media (max-width: 512px) {
+  .project-ellipsis {
+    max-width: 160px;  /* adjust as needed */
+    min-width: 0;      /* allows text to shrink below content size */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;    /* ensures proper truncation */
+  }
+}
+
+@media (max-width: 430px) {
+  .wrap-bottom-text {
+   font-size: 10px;
+  }
 }

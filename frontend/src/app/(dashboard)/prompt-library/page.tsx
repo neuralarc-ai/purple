@@ -11,6 +11,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface GeneratedPrompt {
   id: number;
@@ -426,17 +433,17 @@ export default function PromptLibraryPage() {
   return (
     <div className="p-6 w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-center md:justify-between mb-6 pt-4 md:pt-0">
         <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Prompt Library</h1>
       </div>
 
-      {/* Industry Tabs */}
-      <div className="flex gap-2 mb-6">
+      {/* Industry Tabs - Desktop */}
+      <div className="hidden md:flex gap-2 mb-6 overflow-x-auto">
         {industries.map((industry) => (
           <button
             key={industry}
             onClick={() => setActiveTab(industry)}
-            className={`flex-1 py-2 px-4 text-center font-medium text-sm rounded-full border transition-all duration-200 ${activeTab === industry
+            className={`flex-shrink-0 py-2 px-4 text-center font-medium text-sm rounded-full border transition-all duration-200 ${activeTab === industry
               ? 'bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white'
               : 'bg-transparent text-gray-600 border-gray-300 hover:border-gray-400 hover:text-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:text-gray-200'
               }`}
@@ -444,6 +451,22 @@ export default function PromptLibraryPage() {
             {industry}
           </button>
         ))}
+      </div>
+
+      {/* Industry Dropdown - Mobile */}
+      <div className="md:hidden mb-6">
+        <Select value={activeTab} onValueChange={setActiveTab}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select an industry" />
+          </SelectTrigger>
+          <SelectContent>
+            {industries.map((industry) => (
+              <SelectItem key={industry} value={industry}>
+                {industry}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Search */}

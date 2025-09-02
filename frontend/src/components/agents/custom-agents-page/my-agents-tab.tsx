@@ -136,11 +136,11 @@ export const MyAgentsTab = ({
               styling={getTemplateStyling(template)}
               isActioning={isActioning}
               onPrimaryAction={
-                template.is_public 
+                template.is_public
                   ? () => onUnpublish(template.template_id, template.name)
                   : () => onPublish(template)
               }
-              onSecondaryAction={template.is_public ? () => {} : undefined}
+              onSecondaryAction={template.is_public ? () => { } : undefined}
             />
           );
         })}
@@ -158,12 +158,12 @@ export const MyAgentsTab = ({
         />
         <div className="flex items-center gap-3">
           <Select value={agentFilter} onValueChange={(value: AgentFilter) => setAgentFilter(value)}>
-            <SelectTrigger className="w-[180px] h-12 rounded-xl">
+            <SelectTrigger className="w-[180px] h-12 rounded-full">
               <SelectValue placeholder="Filter agents" />
             </SelectTrigger>
-            <SelectContent className='rounded-xl'>
+            <SelectContent className='rounded-4xl'>
               {filterOptions.map((filter) => (
-                <SelectItem key={filter.value} className='rounded-xl' value={filter.value}>
+                <SelectItem key={filter.value} className='rounded-4xl' value={filter.value}>
                   {filter.label}
                 </SelectItem>
               ))}
