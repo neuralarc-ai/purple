@@ -50,7 +50,6 @@ export interface PricingTier {
   features: string[];
   stripePriceId: string;
   yearlyStripePriceId?: string; // Add yearly price ID support
-  monthlyCommitmentStripePriceId?: string; // Add monthly commitment with yearly commitment support
   upgradePlans: UpgradePlan[];
   hidden?: boolean; // Optional property to hide plans from display while keeping them in code
   billingPeriod?: 'monthly' | 'yearly'; // Add billing period support
@@ -137,13 +136,14 @@ export const siteConfig = {
     },
     {
       name: 'Ridiculously Cheap',
-      price: '$19.99',
-      yearlyPrice: '$203.89',
-      originalYearlyPrice: '$239.88',
+      price: '$24.99',
+      yearlyPrice: '$254.89',
+      originalYearlyPrice: '$299.88',
       discountPercentage: 15,
-      description: 'Perfect for small teams and startups',
+      description: 'Perfect for individuals and small projects',
+      
       buttonText: 'Start Free',
-      buttonColor: 'bg-secondary text-white',
+      buttonColor: 'bg-primary text-white dark:text-black',
       isPopular: false,
       /** @deprecated */
       hours: '2 hours',
@@ -154,16 +154,15 @@ export const siteConfig = {
         'Premium AI Models',
         'Community support',
       ],
-      stripePriceId: config.SUBSCRIPTION_TIERS.TIER_2_20.priceId,
-      yearlyStripePriceId: config.SUBSCRIPTION_TIERS.TIER_2_20_YEARLY.priceId,
-      monthlyCommitmentStripePriceId: config.SUBSCRIPTION_TIERS.TIER_2_17_YEARLY_COMMITMENT.priceId,
+      stripePriceId: config.SUBSCRIPTION_TIERS.TIER_RIDICULOUSLY_CHEAP.priceId,
+      yearlyStripePriceId: config.SUBSCRIPTION_TIERS.TIER_RIDICULOUSLY_CHEAP_YEARLY.priceId,
       upgradePlans: [],
     },
     {
       name: 'Serious Business',
-      price: '$59.99',
-      yearlyPrice: '$611.89',
-      originalYearlyPrice: '$719.88',
+      price: '$94.99',
+      yearlyPrice: '$968.88',
+      originalYearlyPrice: '$1139.88',
       discountPercentage: 15,
       description: 'Ideal for growing businesses and teams',
       
@@ -179,9 +178,8 @@ export const siteConfig = {
         'Premium AI Models',
         'Priority support',
       ],
-      stripePriceId: config.SUBSCRIPTION_TIERS.TIER_6_50.priceId,
-      yearlyStripePriceId: config.SUBSCRIPTION_TIERS.TIER_6_50_YEARLY.priceId,
-      monthlyCommitmentStripePriceId: config.SUBSCRIPTION_TIERS.TIER_6_42_YEARLY_COMMITMENT.priceId,
+      stripePriceId: config.SUBSCRIPTION_TIERS.TIER_SERIOUS_BUSINESS.priceId,
+      yearlyStripePriceId: config.SUBSCRIPTION_TIERS.TIER_SERIOUS_BUSINESS_YEARLY.priceId,
       upgradePlans: [],
     },
   ],

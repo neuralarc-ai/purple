@@ -185,16 +185,10 @@ FREE_TIER_MODELS, PAID_TIER_MODELS, MODEL_NAME_ALIASES, HARDCODED_MODEL_PRICES, 
 # All tiers have access to all models without constraints
 MODEL_ACCESS_TIERS = {
     "free": FREE_TIER_MODELS,
-    "tier_2_20": FREE_TIER_MODELS,
-    "tier_6_50": FREE_TIER_MODELS,
-    "tier_12_100": FREE_TIER_MODELS,
-    "tier_25_200": FREE_TIER_MODELS,
-    "tier_50_400": FREE_TIER_MODELS,
-    "tier_125_800": FREE_TIER_MODELS,
-    "tier_200_1000": FREE_TIER_MODELS,
-    "tier_25_170_yearly_commitment": FREE_TIER_MODELS,
-    "tier_6_42_yearly_commitment": FREE_TIER_MODELS,
-    "tier_12_84_yearly_commitment": FREE_TIER_MODELS,
+    "tier_ridiculously_cheap": FREE_TIER_MODELS,
+    "tier_serious_business": FREE_TIER_MODELS,
+    "tier_ridiculously_cheap_yearly": FREE_TIER_MODELS,
+    "tier_serious_business_yearly": FREE_TIER_MODELS,
 }
 
 def get_model_context_window(model_name: str, default: int = 31_000) -> int:

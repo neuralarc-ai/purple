@@ -33,12 +33,9 @@ interface CreditPackage {
 }
 
 const CREDIT_PACKAGES: CreditPackage[] = [
-    { credits: 100, price: 10, creditsPerDollar: 10 },
-    { credits: 250, price: 20, creditsPerDollar: 12.5 },
-    { credits: 500, price: 35, creditsPerDollar: 14.3 },
-    { credits: 1000, price: 60, popular: true, creditsPerDollar: 16.7 },
-    { credits: 2500, price: 125, creditsPerDollar: 20 },
-    { credits: 5000, price: 200, creditsPerDollar: 25 },
+    { credits: 12, price: 11.99, creditsPerDollar: 1.0 },
+    { credits: 29, price: 28.99, creditsPerDollar: 1.0 },
+    { credits: 56, price: 55.99, popular: true, creditsPerDollar: 1.0 },
 ];
 
 export function CreditPurchaseModal({ 
