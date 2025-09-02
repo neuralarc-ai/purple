@@ -55,7 +55,7 @@ export function ThreadSkeleton({
                                             </div>
                                             
                                             <div className="flex justify-end">
-                                                <div className="flex max-w-[85%] rounded-2xl rounded-br-sm bg-sidebar dark:bg-sidebar-accent border px-4 py-3 pb-2">
+                                                <div className="flex max-w-[85%] rounded-2xl rounded-br-sm bg-sidebar dark:bg-sidebar border px-4 py-3 pb-2">
                                                     <div className="space-y-3 min-w-0 flex-1">
                                                         <Skeleton className="h-4 w-48" />
                                                         <Skeleton className="h-4 w-32" />
