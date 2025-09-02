@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { billingApi, ThreadTokenUsage } from '@/lib/api-enhanced';
 
-export function useThreadTokenUsage(threadId: string, agentStatus?: 'idle' | 'running' | 'connecting' | 'error') {
+export function useThreadTokenUsage(threadId: string, agentStatus?: 'idle' | 'running' | 'connecting' | 'paused' | 'error') {
   const staleTime = agentStatus === 'running' ? 5 * 1000 : 10 * 1000;
   const refetchInterval = agentStatus === 'running' ? 10 * 1000 : 30 * 1000;
   
