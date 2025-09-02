@@ -58,11 +58,13 @@ class Configuration:
     STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID_STAGING: str = 'price_1ReGoJG6l1KZGqIr0DJWtoOc'  # $968.88/year
     
     # Credit package price IDs - Production
+    STRIPE_CREDITS_TEST_ID_PROD: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $1.00 - 500 credits (TESTING)
     STRIPE_CREDITS_SMALL_PRICE_ID_PROD: str = 'price_1S2VXvAnxOD5rXBGylPu8TTc'  # $11.99
-    STRIPE_CREDITS_MEDIUM_PRICE_ID_PROD: str = 'price_1S2VY6AnxOD5rXBGtGwOtWJv'  # $28.99
+    STRIPE_CREDITS_MEDIUM_PRICE_ID_PROD: str = 'price_1S2VY6AnxOD5rXBGWs7gO2rv'  # $28.99
     STRIPE_CREDITS_LARGE_PRICE_ID_PROD: str = 'price_1S2VYHAnxOD5rXBGIL73U202'  # $55.99
     
     # Credit package price IDs - Staging  
+    STRIPE_CREDITS_TEST_PRICE_ID_STAGING: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $1.00 - 500 credits (TESTING)
     STRIPE_CREDITS_SMALL_PRICE_ID_STAGING: str = 'price_1RxXOvG6l1KZGqIrMqsiYQvk'  # $11.99
     STRIPE_CREDITS_MEDIUM_PRICE_ID_STAGING: str = 'price_1RxXPNG6l1KZGqIrQprPgDme'  # $28.99
     STRIPE_CREDITS_LARGE_PRICE_ID_STAGING: str = 'price_1RxXPYG6l1KZGqIrQprPgDme'  # $55.99
@@ -131,6 +133,12 @@ class Configuration:
         return self.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID_PROD
     
     # Credit package price ID properties
+    @property
+    def STRIPE_CREDITS_TEST_PRICE_ID(self) -> str:
+        if self.ENV_MODE == EnvMode.STAGING:
+            return self.STRIPE_CREDITS_TEST_PRICE_ID_STAGING
+        return self.STRIPE_CREDITS_TEST_ID_PROD
+    
     @property
     def STRIPE_CREDITS_SMALL_PRICE_ID(self) -> str:
         if self.ENV_MODE == EnvMode.STAGING:

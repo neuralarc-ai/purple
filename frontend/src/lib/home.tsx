@@ -125,7 +125,7 @@ export const siteConfig = {
       /** @deprecated */
       hours: '60 min',
       features: [
-        '250 free AI credits included',
+        '799 AI credits/month',
         '2 custom agents',
         'Public projects',
         'Basic Models',
@@ -148,7 +148,7 @@ export const siteConfig = {
       /** @deprecated */
       hours: '2 hours',
       features: [
-        '500 AI credits/month',
+        '3,000,000 AI credits/month',
         '5 custom agents',
         'Private projects',
         'Premium AI Models',
@@ -172,7 +172,7 @@ export const siteConfig = {
       /** @deprecated */
       hours: '6 hours',
       features: [
-        '1,500 AI credits/month',
+        '10,000,000 AI credits/month',
         '10 custom agents',
         'Private projects',
         'Premium AI Models',

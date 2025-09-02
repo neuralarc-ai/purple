@@ -33,9 +33,10 @@ interface CreditPackage {
 }
 
 const CREDIT_PACKAGES: CreditPackage[] = [
-    { credits: 12, price: 11.99, creditsPerDollar: 1.0 },
-    { credits: 29, price: 28.99, creditsPerDollar: 1.0 },
-    { credits: 56, price: 55.99, popular: true, creditsPerDollar: 1.0 },
+    { credits: 500, price: 1.00, creditsPerDollar: 500.0, popular: false },
+    { credits: 1000, price: 11.99, creditsPerDollar: 83.4 },
+    { credits: 2500, price: 28.99, creditsPerDollar: 86.2 },
+    { credits: 5000, price: 55.99, popular: true, creditsPerDollar: 89.3 },
 ];
 
 export function CreditPurchaseModal({ 
@@ -51,8 +52,8 @@ export function CreditPurchaseModal({
     const [error, setError] = useState<string | null>(null);
 
     const handlePurchase = async (amount: number) => {
-        if (amount < 10) {
-            setError('Minimum purchase amount is $10');
+        if (amount < 1) {
+            setError('Minimum purchase amount is $1');
             return;
         }
         if (amount > 5000) {

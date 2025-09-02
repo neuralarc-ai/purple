@@ -31,9 +31,10 @@ CREDIT_MIN_START_DOLLARS = 0.20
 
 # Credit packages with Stripe price IDs
 CREDIT_PACKAGES = {
-    'credits_small': {'amount': 12, 'price': 11.99, 'stripe_price_id': config.STRIPE_CREDITS_SMALL_PRICE_ID},
-    'credits_medium': {'amount': 29, 'price': 28.99, 'stripe_price_id': config.STRIPE_CREDITS_MEDIUM_PRICE_ID},
-    'credits_large': {'amount': 56, 'price': 55.99, 'stripe_price_id': config.STRIPE_CREDITS_LARGE_PRICE_ID},
+    'credits_test': {'amount': 500, 'price': 1.00, 'stripe_price_id': config.STRIPE_CREDITS_TEST_PRICE_ID},
+    'credits_small': {'amount': 1000, 'price': 11.99, 'stripe_price_id': config.STRIPE_CREDITS_SMALL_PRICE_ID},
+    'credits_medium': {'amount': 2500, 'price': 28.99, 'stripe_price_id': config.STRIPE_CREDITS_MEDIUM_PRICE_ID},
+    'credits_large': {'amount': 5000, 'price': 55.99, 'stripe_price_id': config.STRIPE_CREDITS_LARGE_PRICE_ID},
 }
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -94,12 +95,13 @@ def get_model_pricing(model: str) -> tuple[float, float] | None:
 
 
 SUBSCRIPTION_TIERS = {
-    config.STRIPE_FREE_TIER_ID: {'name': 'free', 'minutes': 60, 'cost': 50.00},  # 500 credits = $5.00
-    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 24.99 + 5.00},  # 2 hours
-    config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 94.99 + 5.00},  # 6 hours
-    # Yearly tiers (same usage limits, different billing period)
-    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 254.89 + 5.00},  # 2 hours/month, $254.89/year
-    config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 968.88 + 5.00},  # 6 hours/month, $968.88/year
+    config.STRIPE_FREE_TIER_ID: {'name': 'free', 'minutes': 60, 'cost': 7.99},  # 799 credits = $7.99
+    # Monthly tiers
+    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 30.00},  # 3,000 credits/month
+    config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 100.00},  # 10,000 credits/month
+    # Yearly tiers (same usage limits, different billing period) - displayed as monthly equivalent
+    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 360.00},  # 36,000 credits/month (billed yearly)
+    config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 1200.00},  # 120,000 credits/month (billed yearly)
 }
 
 # Pydantic models for request/response validation
@@ -753,24 +755,22 @@ async def get_user_credit_balance(client: SupabaseClient, user_id: str) -> Credi
         if result.data and len(result.data) > 0:
             data = result.data[0]
             balance_dollars = float(data.get('balance_dollars', 0))
-            is_highest_tier = await is_user_on_highest_tier(user_id)
             return CreditBalance(
                 balance_dollars=balance_dollars,
                 balance_credits=int(balance_dollars * 100),  # Convert to credits
                 total_purchased=float(data.get('total_purchased', 0)),
                 total_used=float(data.get('total_used', 0)),
                 last_updated=data.get('last_updated'),
-                can_purchase_credits=is_highest_tier
+                can_purchase_credits=True
             )
         else:
             # No balance record exists yet - this is normal for users who haven't purchased credits
-            is_highest_tier = await is_user_on_highest_tier(user_id)
             return CreditBalance(
                 balance_dollars=0.0,
                 balance_credits=0,
                 total_purchased=0.0,
                 total_used=0.0,
-                can_purchase_credits=is_highest_tier
+                can_purchase_credits=True
             )
     except Exception as e:
         logger.error(f"Error getting credit balance for user {user_id}: {str(e)}")
@@ -779,7 +779,7 @@ async def get_user_credit_balance(client: SupabaseClient, user_id: str) -> Credi
             balance_credits=0,
             total_purchased=0.0,
             total_used=0.0,
-            can_purchase_credits=False
+            can_purchase_credits=True
         )
 
 async def add_credits_to_balance(client: SupabaseClient, user_id: str, amount: float, purchase_id: str = None) -> float:
@@ -1138,7 +1138,7 @@ async def create_checkout_session(
                         except Exception as invoice_error:
                             logger.error(f"Error processing invoice for immediate payment: {str(invoice_error)}")
                             # Don't fail the entire operation if invoice processing fails
-                    
+                        
                     return {
                         "subscription_id": updated_subscription.id,
                         "status": "updated",
@@ -1361,7 +1361,7 @@ async def get_subscription(
                 current_usage=current_usage,
                 credit_balance=credit_balance_info.balance_dollars,
                 credit_balance_credits=credit_balance_info.balance_credits,
-                can_purchase_credits=credit_balance_info.can_purchase_credits
+                can_purchase_credits=True
             )
         
         # Extract current plan details
@@ -1379,7 +1379,7 @@ async def get_subscription(
             price_id=current_price_id,
             current_period_end=datetime.fromtimestamp(current_item['current_period_end'], tz=timezone.utc),
             cancel_at_period_end=subscription['cancel_at_period_end'],
-            trial_end=datetime.fromtimestamp(subscription['trial_end'], tz=timezone.utc) if subscription.get('trial_end') else None,
+            trial_end=datetime.fromtimestamp(subscription.get('trial_end'), tz=timezone.utc) if subscription.get('trial_end') else None,
             minutes_limit=current_tier_info['minutes'],
             cost_limit=current_tier_info['cost'],
             current_usage=current_usage,
@@ -1394,7 +1394,7 @@ async def get_subscription(
             },
             credit_balance=credit_balance_info.balance_dollars,
             credit_balance_credits=credit_balance_info.balance_credits,
-            can_purchase_credits=credit_balance_info.can_purchase_credits
+            can_purchase_credits=True
         )
 
         # Check for an attached schedule (indicates pending downgrade)
@@ -2081,20 +2081,12 @@ async def purchase_credits(
 ):
     """
     Create a Stripe checkout session for purchasing credits.
-    Only available for users on the highest subscription tier.
+    Available for all users (no subscription required).
     """
     try:
-        # Check if user is on the highest tier
-        is_highest_tier = await is_user_on_highest_tier(current_user_id)
-        if not is_highest_tier:
-            raise HTTPException(
-                status_code=403,
-                detail="Credit purchases are only available for users on the highest subscription tier ($1000/month)."
-            )
-        
         # Validate amount
-        if request.amount_dollars < 10:
-            raise HTTPException(status_code=400, detail="Minimum credit purchase is $10")
+        if request.amount_dollars < 1:
+            raise HTTPException(status_code=400, detail="Minimum credit purchase is $1")
         
         if request.amount_dollars > 5000:
             raise HTTPException(status_code=400, detail="Maximum credit purchase is $5000")
@@ -2121,6 +2113,15 @@ async def purchase_credits(
                 matching_package = package_info
                 break
         
+        # Map specific known package prices to fixed credits
+        FIXED_CREDIT_PACKAGES = {
+            11.99: 1000,  # $11.99 → 1,000 credits
+            28.99: 2500,  # $28.99 → 2,500 credits
+            55.99: 5000,  # $55.99 → 5,000 credits
+        }
+        
+        fixed_credits = FIXED_CREDIT_PACKAGES.get(round(request.amount_dollars, 2))
+        
         # Create a checkout session
         if matching_package and matching_package['stripe_price_id']:
             # Use pre-configured price ID
@@ -2136,7 +2137,8 @@ async def purchase_credits(
                 cancel_url=request.cancel_url,
                 metadata={
                     'user_id': current_user_id,
-                    'credit_amount': str(request.amount_dollars),
+                    # Store the credit amount in DOLLARS so webhook can add precisely credits/100 dollars
+                    'credit_amount': str((fixed_credits / 100) if fixed_credits else request.amount_dollars),
                     'type': 'credit_purchase'
                 }
             )
@@ -2160,7 +2162,7 @@ async def purchase_credits(
                 cancel_url=request.cancel_url,
                 metadata={
                     'user_id': current_user_id,
-                    'credit_amount': str(request.amount_dollars),
+                    'credit_amount': str((fixed_credits / 100) if fixed_credits else request.amount_dollars),
                     'type': 'credit_purchase'
                 }
             )
@@ -2277,15 +2279,12 @@ async def get_credit_history(
 async def can_purchase_credits(
     current_user_id: str = Depends(get_current_user_id_from_jwt)
 ):
-    """Check if the current user can purchase credits (must be on highest tier)."""
+    """Check if the current user can purchase credits (now available for all users)."""
     try:
-        is_highest_tier = await is_user_on_highest_tier(current_user_id)
-        
         return {
-            "can_purchase": is_highest_tier,
-            "reason": "Credit purchases are available" if is_highest_tier else "Must be on the highest subscription tier ($1000/month) to purchase credits"
+            "can_purchase": True,
+            "reason": "Credit purchases are available for all users"
         }
-        
     except Exception as e:
         logger.error(f"Error checking credit purchase eligibility: {str(e)}")
         raise HTTPException(status_code=500, detail="Error checking eligibility")
