@@ -8,6 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import Image from 'next/image';
+import {
+  Stepper,
+  StepperIndicator,
+  StepperItem,
+  StepperSeparator,
+  StepperTrigger,
+} from "@/components/ui/stepper";
 import { 
   CheckCircle2, 
   ChevronLeft, 
@@ -30,14 +38,16 @@ import {
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 
-interface OnboardingData {
-  termsAccepted: boolean;
-  privacyAccepted: boolean;
-  displayName: string;
-  role: string;
-  otherRole: string; // Add field for custom role input
-  referralSource: string;
-}
+  interface OnboardingData {
+    termsAccepted: boolean;
+    privacyAccepted: boolean;
+    displayName: string;
+    role: string;
+    otherRole: string; // Add field for custom role input
+    referralSource: string;
+    otherReferral: string; // Add field for custom referral input
+    showPrivacy: boolean; // Add field for toggling between Terms and Privacy
+  }
 
 const roles = [
   { id: 'product-management', name: 'Product Management', icon: <TrendingUp className="h-5 w-5" /> },
@@ -62,8 +72,8 @@ const referralSources = [
 ];
 
 const steps = [
-  { id: 'legal', name: 'Legal & Email', icon: <FileText className="h-4 w-4" /> },
-  { id: 'name', name: 'Your Name', icon: <User className="h-4 w-4" /> },
+  { id: 'legal', name: 'Because your trust deserves clarity.', icon: <FileText className="h-4 w-4" /> },
+  { id: 'name', name: 'Let’s start simple—your name?', icon: <User className="h-4 w-4" /> },
   { id: 'role', name: 'Your Role', icon: <Briefcase className="h-4 w-4" /> },
   { id: 'referral', name: 'How did you find us?', icon: <Search className="h-4 w-4" /> },
 ];
@@ -82,6 +92,8 @@ export default function OnboardingPage() {
     role: '',
     otherRole: '',
     referralSource: '',
+    otherReferral: '',
+    showPrivacy: false,
   });
 
   useEffect(() => {
@@ -226,136 +238,278 @@ export default function OnboardingPage() {
     switch (currentStep) {
       case 0:
         return (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="terms"
-                  checked={data.termsAccepted}
-                  onCheckedChange={(checked) => updateData({ termsAccepted: !!checked })}
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="terms" className="text-sm font-medium">
-                    I accept the Terms of Service
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    By accepting, you agree to our terms and conditions.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="privacy"
-                  checked={data.privacyAccepted}
-                  onCheckedChange={(checked) => updateData({ privacyAccepted: !!checked })}
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="privacy" className="text-sm font-medium">
+          <div className="flex gap-8">
+            {/* Left Card - Privacy Policy */}
+            <Card className="flex-1 p-6">
+              <CardHeader className="pb-4">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="privacy"
+                    checked={data.privacyAccepted}
+                    onCheckedChange={(checked) => updateData({ privacyAccepted: !!checked })}
+                  />
+                  <CardTitle className="text-xl">
                     I accept the Privacy Policy
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    We respect your privacy and protect your data.
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="max-h-96 overflow-y-auto">
+                <div className="space-y-4 text-sm">
+                  <p>
+                    This Privacy Policy describes how Helium ("we", "our", or "us") collects, uses, and shares your information when you use our platform.
+                  </p>
+                  <div>
+                    <h3 className="font-semibold">Information We Collect</h3>
+                    <p>
+                      We collect information you provide directly to us, such as when you create an account, use our services, or contact us for support.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">How We Use Your Information</h3>
+                    <p>
+                      We use the information we collect to provide, maintain, and improve our services, communicate with you, and ensure security.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Information Sharing</h3>
+                    <p>
+                      We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except as described in this policy.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Data Security</h3>
+                    <p>
+                      We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Your Rights</h3>
+                    <p>
+                      You have the right to access, correct, or delete your personal information. Contact us to exercise these rights.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Contact</h3>
+                    <p>
+                      For privacy-related questions, contact us at: {" "}
+                      <a
+                        href="mailto:privacy@neuralarc.ai"
+                        className="text-blue-600 hover:underline"
+                      >
+                        privacy@neuralarc.ai
+                      </a>
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500 pt-4 border-t border-gray-200">
+                    Last updated: May, 2025
                   </p>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
+
+            {/* Right Card - Terms of Use */}
+            <Card className="flex-1 p-6">
+              <CardHeader className="pb-4">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="terms"
+                    checked={data.termsAccepted}
+                    onCheckedChange={(checked) => updateData({ termsAccepted: !!checked })}
+                  />
+                  <CardTitle className="text-xl">
+                    I accept the Terms of Service
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="max-h-96 overflow-y-auto">
+                <div className="space-y-4 text-sm">
+                  <p>
+                    Welcome to Helium. By accessing or using https://he2.ai (the "Platform"), you agree to be bound by these Terms of Use. If you do not agree, please do not use the Platform.
+                  </p>
+                  <div>
+                    <h3 className="font-semibold">Use of Platform</h3>
+                    <p>
+                      The Platform is provided for informational and experimental purposes only. You agree to use it in compliance with all applicable laws and regulations.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">User Content</h3>
+                    <p>
+                      You are responsible for any content you input or generate using the Platform. Do not submit unlawful, harmful, or infringing content.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Intellectual Property</h3>
+                    <p>
+                      All content, trademarks, and intellectual property on the Platform are owned by Helium and its licensors. You may not copy, reproduce, or distribute any part of the Platform without permission.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Disclaimer of Warranties</h3>
+                    <p>
+                      The Platform is provided "as is" without warranties of any kind. We do not guarantee the accuracy, completeness, or reliability of any content or output.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Limitation of Liability</h3>
+                    <p>
+                      We are not liable for any damages arising from your use of the Platform, including direct, indirect, incidental, or consequential damages.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Changes to Terms</h3>
+                    <p>
+                      We may update these Terms of Use at any time. Continued use of the Platform constitutes acceptance of the revised terms.
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold">Contact</h3>
+                    <p>
+                      For questions, contact us at: {" "}
+                      <a
+                        href="mailto:support@neuralarc.ai"
+                        className="text-blue-600 hover:underline"
+                      >
+                        support@neuralarc.ai
+                      </a>
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500 pt-4 border-t border-gray-200">
+                    Last updated: May, 2025
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         );
 
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="displayName" className="text-sm font-medium">
-                Before we get started, what should I call you?
-              </Label>
-              <Input
-                id="displayName"
-                placeholder="Enter your name"
-                value={data.displayName}
-                onChange={(e) => updateData({ displayName: e.target.value })}
-                className="text-lg"
-              />
-            </div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-3">
-              {roles.map((role) => (
-                <Card
-                  key={role.id}
-                  className={cn(
-                    "cursor-pointer transition-all hover:shadow-md",
-                    data.role === role.id && "ring-2 ring-primary bg-primary/5"
-                  )}
-                  onClick={() => updateData({ role: role.id })}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-muted-foreground">
-                        {role.icon}
-                      </div>
-                      <span className="text-sm font-medium">{role.name}</span>
-                      {data.role === role.id && (
-                        <CheckCircle2 className="h-4 w-4 text-primary ml-auto" />
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            {/* Custom role input when "Other" is selected */}
-            {data.role === 'other' && (
-              <div className="space-y-2 mt-4">
-                <Label htmlFor="otherRole" className="text-sm font-medium">
-                  Please specify your role <span className="text-red-500">*</span>
-                </Label>
+              case 1:
+          return (
+            <div className="text-left max-w-md mx-auto">
+              <h2 className="text-2xl font-semibold mb-8">
+              Let’s start simple—your name?
+              </h2>
+              <div className="flex justify-start">
                 <Input
-                  id="otherRole"
-                  placeholder="Enter your role or job title"
-                  value={data.otherRole}
-                  onChange={(e) => updateData({ otherRole: e.target.value })}
-                  className="text-lg"
+                  id="displayName"
+                  placeholder="Enter your name"
+                  value={data.displayName}
+                  onChange={(e) => updateData({ displayName: e.target.value })}
+                  className="text-xl h-16 w-80 border border-black dark:border-white dark:text-white dark:bg-gray-800"
                 />
               </div>
-            )}
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-3">
-              {referralSources.map((source) => (
-                <Card
-                  key={source.id}
-                  className={cn(
-                    "cursor-pointer transition-all hover:shadow-md",
-                    data.referralSource === source.id && "ring-2 ring-primary bg-primary/5"
-                  )}
-                  onClick={() => updateData({ referralSource: source.id })}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="text-muted-foreground">
-                        {source.icon}
-                      </div>
-                      <span className="text-sm font-medium">{source.name}</span>
-                      {data.referralSource === source.id && (
-                        <CheckCircle2 className="h-4 w-4 text-primary ml-auto" />
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
             </div>
-          </div>
-        );
+          );
+
+              case 2:
+          return (
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold mb-8">
+              Where do you fit in?
+              </h2>
+                            <div className="grid grid-cols-4 gap-3 max-w-4xl mx-auto">
+                {roles.map((role) => (
+                  <div
+                    key={role.id}
+                    className={cn(
+                      "cursor-pointer transition-all duration-300",
+                      role.id === 'other' && data.role === 'other' 
+                        ? "" 
+                        : cn(
+                            "hover:shadow-md rounded-lg border",
+                            data.role === role.id ? "border-primary bg-primary/5" : "border-gray-200 bg-white"
+                          )
+                    )}
+                    onClick={() => updateData({ role: role.id })}
+                  >
+                    {role.id === 'other' && data.role === 'other' ? (
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <Label htmlFor="otherRole" className="text-sm font-medium text-center mb-2 text-black">
+                          Please specify your role <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="otherRole"
+                          placeholder="Enter your role or job title"
+                          value={data.otherRole}
+                          onChange={(e) => updateData({ otherRole: e.target.value })}
+                          className="text-base h-12 w-full text-black border border-black dark:border-white dark:text-white dark:bg-gray-800"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    ) : (
+                      <div className="p-2 flex flex-col items-center space-y-1">
+                        <div className="text-muted-foreground">
+                          {role.icon}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-medium text-center">{role.name}</span>
+                          {data.role === role.id && (
+                            <CheckCircle2 className="h-3 w-3 text-primary flex-shrink-0" />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+
+              case 3:
+          return (
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold mb-8">
+                How did you find us?
+              </h2>
+              <div className="grid grid-cols-4 gap-3 max-w-4xl mx-auto">
+                {referralSources.map((source, index) => (
+                  <div
+                    key={source.id}
+                    className={cn(
+                      "cursor-pointer transition-all duration-300",
+                      source.id === 'other' && data.referralSource === 'other' 
+                        ? "" 
+                        : cn(
+                            "hover:shadow-md rounded-lg border",
+                            data.referralSource === source.id ? "border-primary bg-primary/5" : "border-gray-200 bg-white"
+                          ),
+                      // Center the last item (Others) below Social Media and News
+                      index === referralSources.length - 1 && referralSources.length % 4 !== 0 ? "col-start-2 col-span-2" : ""
+                    )}
+                    onClick={() => updateData({ referralSource: source.id })}
+                  >
+                    {source.id === 'other' && data.referralSource === 'other' ? (
+                      <div className="flex flex-col items-center justify-center h-full">
+                        <Label htmlFor="otherReferral" className="text-sm font-medium text-center mb-2 text-black">
+                          Please specify <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="otherReferral"
+                          placeholder="Enter how you found us"
+                          value={data.otherReferral || ''}
+                          onChange={(e) => updateData({ otherReferral: e.target.value })}
+                          className="text-base h-12 w-full text-black border border-black dark:border-white dark:text-white dark:bg-gray-800"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    ) : (
+                      <div className="p-2 flex flex-col items-center space-y-1">
+                        <div className="text-muted-foreground">
+                          {source.icon}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-medium text-center">{source.name}</span>
+                          {data.referralSource === source.id && (
+                            <CheckCircle2 className="h-3 w-3 text-primary flex-shrink-0" />
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
 
       default:
         return null;
@@ -405,126 +559,92 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 ">
+      <div className="w-full max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Welcome to Helium</h1>
-          <p className="text-muted-foreground mt-2">
+        <div className="text-center py-4">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <h1 className="text-4xl font-bold tracking-tight">Welcome to Helium</h1>
+            <Image
+              src="/logo-light.svg"
+              alt="Helium Light Logo"
+              width={40}
+              height={40}
+              className="block dark:hidden"
+            />
+            <Image
+              src="/logo-dark.svg"
+              alt="Helium Dark Logo"
+              width={40}
+              height={40}
+              className="hidden dark:block"
+            />
+          </div>
+          <p className="text-muted-foreground mt-2 text-lg">
             Let's get you set up in just a few steps
           </p>
         </div>
 
         {/* Stepper */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between relative">
-            <div className="absolute left-0 right-0 top-[14px] h-[2px] bg-muted-foreground/20 -z-10" />
-            <div 
-              className="absolute left-0 top-[14px] h-[2px] bg-primary -z-10 transition-all duration-300"
-              style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
-            />
-            
-            {steps.map((step, index) => {
-              const isCompleted = index < currentStep;
-              const isCurrent = index === currentStep;
-              const isUpcoming = index > currentStep;
-              
-              return (
-                <div key={step.id} className="flex flex-col items-center gap-2">
-                  <div className="bg-background p-1 rounded-full">
-                    <div
-                      className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300",
-                        isCompleted && "bg-primary text-primary-foreground",
-                        isCurrent && "bg-primary text-primary-foreground shadow-lg shadow-primary/25 ring-4 ring-primary/20",
-                        isUpcoming && "bg-muted-foreground/20 text-muted-foreground"
-                      )}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="h-4 w-4" />
-                      ) : (
-                        <div className="h-4 w-4 flex items-center justify-center">
-                          {step.icon}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <span className={cn(
-                    "text-xs font-medium transition-all duration-300 text-center max-w-20",
-                    isCompleted && "text-foreground",
-                    isCurrent && "text-primary font-semibold",
-                    isUpcoming && "text-muted-foreground"
-                  )}>
-                    {step.name}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+        <div className="mb-12 mt-16 flex justify-center">
+          <Stepper value={currentStep + 1} className="max-w-xl">
+            {steps.map((step, index) => (
+              <StepperItem key={step.id} step={index + 1} className="not-last:flex-1">
+                <StepperTrigger asChild>
+                  <StepperIndicator className="w-8 h-8 text-sm" />
+                </StepperTrigger>
+                {index < steps.length - 1 && <StepperSeparator />}
+              </StepperItem>
+            ))}
+          </Stepper>
         </div>
 
-        {/* Content */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {steps[currentStep].icon}
-              {steps[currentStep].name}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {renderStepContent()}
-          </CardContent>
-        </Card>
+        {/* Content - Centered */}
+        <div className="flex-1 flex flex-col justify-center min-h-[50vh]">
+          {renderStepContent()}
 
-        {/* Navigation */}
-        <div className="flex justify-between">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={currentStep === 0 || isSubmitting}
-            className="flex items-center gap-2"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </Button>
+          {/* Navigation */}
+          <div className="flex justify-between mt-8 h-12">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={currentStep === 0 || isSubmitting}
+              className="flex items-center justify-center px-3 py-2 text-sm rounded-md h-10"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
 
-          <div className="flex gap-2">
-            {currentStep < steps.length - 1 ? (
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed() || isSubmitting}
-                className="flex items-center gap-2"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleComplete}
-                disabled={!canProceed() || isSubmitting}
-                className="flex items-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Completing...
-                  </>
-                ) : (
-                  <>
-                    Complete Setup
-                    <CheckCircle2 className="h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            )}
+            <div className="flex gap-3">
+              {currentStep < steps.length - 1 ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={!canProceed() || isSubmitting}
+                  className="flex items-center gap-2 px-6 py-2 text-sm rounded-md h-10"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleComplete}
+                  disabled={!canProceed() || isSubmitting}
+                  className="flex items-center gap-2 px-6 py-2 text-sm rounded-md h-10"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Completing...
+                    </>
+                  ) : (
+                    <>
+                      Complete Setup
+                      <CheckCircle2 className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* Progress indicator */}
-        <div className="text-center mt-4">
-          <p className="text-xs text-muted-foreground">
-            Step {currentStep + 1} of {steps.length}
-          </p>
         </div>
       </div>
     </div>

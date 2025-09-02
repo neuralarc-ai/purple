@@ -559,22 +559,6 @@ export default function ProfilePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Success Message */}
-      {isSubmitted && (
-        <Card className="max-w-2xl border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-3 text-green-700 dark:text-green-300">
-              <CheckCircle className="h-5 h-5" />
-              <div>
-                <p className="font-medium">Profile updated successfully!</p>
-                <p className="text-sm text-green-600 dark:text-green-400">
-                  Your preferences have been saved and will be used to personalize your Helium experience.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
