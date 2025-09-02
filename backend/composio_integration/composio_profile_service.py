@@ -39,7 +39,8 @@ class ComposioProfileService:
     def _get_encryption_key(self) -> bytes:
         key = os.getenv("ENCRYPTION_KEY")
         if not key:
-            raise ValueError("ENCRYPTION_KEY environment variable is required")
+            logger.error("ENCRYPTION_KEY environment variable is not set")
+            raise ValueError("ENCRYPTION_KEY environment variable is required for profile encryption")
         return key.encode()
 
     def _encrypt_config(self, config_json: str) -> str:
@@ -89,6 +90,85 @@ class ComposioProfileService:
             
             counter += 1
             current_name = f"{original_name} ({counter})"
+
+    async def get_or_create_profile(
+        self,
+        account_id: str,
+        profile_name: str,
+        toolkit_slug: str,
+        toolkit_name: str,
+        mcp_url: str,
+        redirect_url: Optional[str] = None,
+        user_id: str = "default",
+        is_default: bool = False,
+        connected_account_id: Optional[str] = None,
+    ) -> ComposioProfile:
+        """
+        Get existing profile or create new one if it doesn't exist.
+        This prevents duplicate profile creation for the same toolkit.
+        """
+        try:
+            # First, check if a profile already exists for this toolkit and account
+            existing_profiles = await self.get_profiles(account_id, toolkit_slug)
+            
+            if existing_profiles:
+                # Check if any existing profile has the same connected_account_id or is suitable for reuse
+                for profile in existing_profiles:
+                    if (profile.connected_account_id == connected_account_id or 
+                        (not profile.connected_account_id and not connected_account_id)):
+                        logger.debug(f"Found existing profile {profile.profile_id} for toolkit {toolkit_slug}")
+                        
+                        # Update the existing profile with new MCP URL if different
+                        if profile.mcp_url != mcp_url:
+                            await self._update_profile_mcp_url(profile.profile_id, mcp_url)
+                            profile.mcp_url = mcp_url
+                        
+                        return profile
+            
+            # No suitable existing profile found, create a new one
+            return await self.create_profile(
+                account_id, profile_name, toolkit_slug, toolkit_name, 
+                mcp_url, redirect_url, user_id, is_default, connected_account_id
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to get or create Composio profile: {e}", exc_info=True)
+            raise
+
+    async def _update_profile_mcp_url(self, profile_id: str, new_mcp_url: str) -> None:
+        """Update the MCP URL for an existing profile"""
+        try:
+            client = await self.db.client
+            
+            # Get current config
+            result = await client.table('user_mcp_credential_profiles').select('encrypted_config').eq(
+                'profile_id', profile_id
+            ).execute()
+            
+            if not result.data:
+                raise ValueError(f"Profile {profile_id} not found")
+            
+            # Decrypt, update, and re-encrypt config
+            config = self._decrypt_config(result.data[0]['encrypted_config'])
+            config['mcp_url'] = new_mcp_url
+            config['updated_at'] = datetime.now(timezone.utc).isoformat()
+            
+            config_json = json.dumps(config, sort_keys=True)
+            encrypted_config = self._encrypt_config(config_json)
+            config_hash = self._generate_config_hash(config_json)
+            
+            # Update the profile
+            await client.table('user_mcp_credential_profiles').update({
+                'encrypted_config': encrypted_config,
+                'config_hash': config_hash,
+                'updated_at': datetime.now(timezone.utc).isoformat()
+            }).eq('profile_id', profile_id).execute()
+            
+            logger.debug(f"Updated MCP URL for profile {profile_id}")
+            
+        except Exception as e:
+            logger.error(f"Failed to update MCP URL for profile {profile_id}: {e}", exc_info=True)
+            raise
 
     async def create_profile(
         self,
@@ -295,3 +375,42 @@ class ComposioProfileService:
         except Exception as e:
             logger.error(f"Failed to get Composio profiles: {e}", exc_info=True)
             raise 
+
+    async def get_profile(self, profile_id: str, account_id: str) -> Optional[ComposioProfile]:
+        """Get a specific profile by ID and account ID"""
+        try:
+            client = await self.db.client
+            
+            result = await client.table('user_mcp_credential_profiles').select('*').eq(
+                'profile_id', profile_id
+            ).eq('account_id', account_id).execute()
+            
+            if not result.data:
+                return None
+            
+            row = result.data[0]
+            config = self._decrypt_config(row['encrypted_config'])
+            
+            return ComposioProfile(
+                profile_id=row['profile_id'],
+                account_id=row['account_id'],
+                mcp_qualified_name=row['mcp_qualified_name'],
+                profile_name=row['profile_name'],
+                display_name=row['display_name'],
+                encrypted_config=row['encrypted_config'],
+                config_hash=row['config_hash'],
+                toolkit_slug=config.get('toolkit_slug', ''),
+                toolkit_name=config.get('toolkit_name', ''),
+                mcp_url=config.get('mcp_url', ''),
+                redirect_url=config.get('redirect_url'),
+                connected_account_id=config.get('connected_account_id'),
+                is_active=row.get('is_active', True),
+                is_default=row.get('is_default', False),
+                is_connected=bool(config.get('redirect_url')),
+                created_at=datetime.fromisoformat(row['created_at'].replace('Z', '+00:00')) if row.get('created_at') else None,
+                updated_at=datetime.fromisoformat(row['updated_at'].replace('Z', '+00:00')) if row.get('updated_at') else None
+            )
+            
+        except Exception as e:
+            logger.error(f"Failed to get profile {profile_id}: {e}", exc_info=True)
+            raise

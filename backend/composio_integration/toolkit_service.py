@@ -2,6 +2,8 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from utils.logger import logger
 from .client import ComposioClient
+from .composio_registry import composio_registry, AppCategory, CategorizedApp
+from .toolkit_cache import toolkit_cache
 
 
 class CategoryInfo(BaseModel):
@@ -76,29 +78,117 @@ class ToolsListResponse(BaseModel):
 class ToolkitService:
     def __init__(self, api_key: Optional[str] = None):
         self.client = ComposioClient.get_client(api_key)
+        self._all_toolkits_cache_key = "all_toolkits"
+        self._categorized_cache_key = "categorized_toolkits"
     
+    async def _fetch_all_toolkits_from_api(self) -> List[ToolkitInfo]:
+        """Fetch all toolkits from API and cache them"""
+        try:
+            logger.debug("Fetching all toolkits from Composio API")
+            
+            # Check cache first
+            cached_data = await toolkit_cache.get(self._all_toolkits_cache_key)
+            if cached_data:
+                logger.debug("Using cached toolkit data")
+                return [ToolkitInfo(**toolkit) for toolkit in cached_data["toolkits"]]
+            
+            # Fetch from API
+            params = {
+                "limit": 1000,  # Increased limit to get more apps
+                "managed_by": "composio"
+            }
+            
+            toolkits_response = self.client.toolkits.list(**params)
+            
+            if hasattr(toolkits_response, '__dict__'):
+                response_data = toolkits_response.__dict__
+            else:
+                response_data = toolkits_response
+            
+            items = response_data.get('items', [])
+            
+            toolkits = []
+            for item in items:
+                if hasattr(item, '__dict__'):
+                    toolkit_data = item.__dict__
+                elif hasattr(item, '_asdict'):
+                    toolkit_data = item._asdict()
+                else:
+                    toolkit_data = item
+                
+                auth_schemes = toolkit_data.get("auth_schemes", [])
+                
+                logo_url = None
+                meta = toolkit_data.get("meta", {})
+                if isinstance(meta, dict):
+                    logo_url = meta.get("logo")
+                elif hasattr(meta, '__dict__'):
+                    logo_url = meta.__dict__.get("logo")
+                
+                if not logo_url:
+                    logo_url = toolkit_data.get("logo")
+                
+                tags = []
+                categories = []
+                if isinstance(meta, dict) and "categories" in meta:
+                    category_list = meta.get("categories", [])
+                    for cat in category_list:
+                        if isinstance(cat, dict):
+                            cat_name = cat.get("name", "")
+                            cat_id = cat.get("id", "")
+                            tags.append(cat_name)
+                            categories.append(cat_id)
+                        elif hasattr(cat, '__dict__'):
+                            cat_name = cat.__dict__.get("name", "")
+                            cat_id = cat.__dict__.get("id", "")
+                            tags.append(cat_name)
+                            categories.append(cat_id)
+                
+                description = None
+                if isinstance(meta, dict):
+                    description = meta.get("description")
+                elif hasattr(meta, '__dict__'):
+                    description = meta.__dict__.get("description")
+                
+                if not description:
+                    description = toolkit_data.get("description")
+                
+                toolkit = ToolkitInfo(
+                    slug=toolkit_data.get("slug", ""),
+                    name=toolkit_data.get("name", ""),
+                    description=description,
+                    logo=logo_url,
+                    tags=tags,
+                    auth_schemes=auth_schemes,
+                    categories=categories
+                )
+                toolkits.append(toolkit)
+            
+            # Cache the results
+            cache_data = {
+                "toolkits": [toolkit.dict() for toolkit in toolkits],
+                "total_items": len(toolkits)
+            }
+            await toolkit_cache.set(self._all_toolkits_cache_key, cache_data)
+            
+            logger.debug(f"Successfully fetched and cached {len(toolkits)} toolkits")
+            return toolkits
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch toolkits from API: {e}", exc_info=True)
+            raise
+
     async def list_categories(self) -> List[CategoryInfo]:
         try:
-            logger.debug("Fetching Composio categories")
-            popular_categories = [
-                {"id": "popular", "name": "Popular"},
-                {"id": "productivity", "name": "Productivity"},
-                {"id": "crm", "name": "CRM"},
-                {"id": "marketing", "name": "Marketing"},
-                {"id": "analytics", "name": "Analytics"},
-                {"id": "communication", "name": "Communication"},
-                {"id": "project-management", "name": "Project Management"},
-                {"id": "scheduling", "name": "Scheduling"},
-            ]
-
-            special_apps=[
-                "googlesuper",
-                'googleclassroom',
-                "docusign"
+            logger.debug("Fetching Composio categories from registry")
+            
+            registry_categories = composio_registry.get_categories()
+            categories = [
+                CategoryInfo(id=cat.id, name=cat.name) 
+                for cat in registry_categories
             ]
             
-            categories = [CategoryInfo(**cat) for cat in popular_categories]
-            logger.debug(f"Successfully fetched {len(categories)} categories")
+            logger.debug(f"Successfully fetched {len(categories)} categories from registry")
             return categories
             
         except Exception as e:
@@ -197,11 +287,143 @@ class ToolkitService:
                 "next_cursor": response_data.get("next_cursor")
             }
             
-            logger.debug(f"Successfully fetched {len(toolkits)} toolkits with OAUTH2 in both auth schemes" + (f" for category {category}" if category else ""))
+            logger.debug(f"Successfully fetched {len(toolkits)} toolkits" + (f" for category {category}" if category else ""))
             return result
             
         except Exception as e:
             logger.error(f"Failed to list toolkits: {e}", exc_info=True)
+            raise
+    
+    async def list_categorized_toolkits(self, limit: int = 500, cursor: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get toolkits organized by categories using the composio registry with caching
+        """
+        try:
+            logger.debug("Fetching and categorizing toolkits with caching")
+            
+            # Check cache first
+            cached_data = await toolkit_cache.get(self._categorized_cache_key)
+            if cached_data:
+                logger.debug("Using cached categorized toolkit data")
+                return cached_data
+            
+            # Get all toolkits from cache or API
+            toolkits = await self._fetch_all_toolkits_from_api()
+            
+            # Convert to dict format for registry
+            toolkit_dicts = []
+            for toolkit in toolkits:
+                toolkit_dict = {
+                    "slug": toolkit.slug,
+                    "name": toolkit.name,
+                    "description": toolkit.description,
+                    "logo": toolkit.logo,
+                    "tags": toolkit.tags,
+                    "auth_schemes": toolkit.auth_schemes,
+                    "categories": toolkit.categories
+                }
+                toolkit_dicts.append(toolkit_dict)
+            
+            # Categorize using registry
+            categorized_toolkits = composio_registry.categorize_apps(toolkit_dicts)
+            
+            # Get category info
+            categories = composio_registry.get_categories()
+            category_info = {cat.id: {"name": cat.name, "description": cat.description} for cat in categories}
+            
+            result = {
+                "categories": category_info,
+                "categorized_toolkits": categorized_toolkits,
+                "total_items": len(toolkits),
+                "total_categories": len([cat for cat in categorized_toolkits.values() if cat])
+            }
+            
+            # Cache the categorized results
+            await toolkit_cache.set(self._categorized_cache_key, result)
+            
+            logger.debug(f"Successfully categorized {len(toolkits)} toolkits into {result['total_categories']} categories")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to list categorized toolkits: {e}", exc_info=True)
+            raise
+    
+    async def get_toolkits_by_category(self, category_id: str, limit: int = 100, cursor: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get toolkits filtered by a specific category using cached data
+        """
+        try:
+            logger.debug(f"Fetching toolkits for category: {category_id} (using cache)")
+            
+            # Get categorized data (from cache if available)
+            try:
+                categorized_data = await self.list_categorized_toolkits()
+                categorized_toolkits = categorized_data.get("categorized_toolkits", {})
+            except Exception as e:
+                logger.error(f"Failed to get categorized data: {e}")
+                # Fallback to empty result if categorization fails
+                categorized_toolkits = {}
+            
+            # Get apps for specific category
+            category_apps = categorized_toolkits.get(category_id, [])
+            
+            # Apply limit
+            limited_apps = category_apps[:limit]
+            
+            # Convert back to ToolkitInfo format
+            filtered_toolkits = []
+            for app in limited_apps:
+                # Handle both CategorizedApp objects and dictionaries
+                if hasattr(app, 'slug'):
+                    # It's a CategorizedApp object
+                    toolkit = ToolkitInfo(
+                        slug=app.slug,
+                        name=app.name,
+                        description=app.description,
+                        logo=app.logo,
+                        tags=app.tags,
+                        auth_schemes=app.auth_schemes,
+                        categories=[app.category_id]
+                    )
+                elif isinstance(app, dict):
+                    # It's a dictionary
+                    toolkit = ToolkitInfo(
+                        slug=app.get("slug", ""),
+                        name=app.get("name", ""),
+                        description=app.get("description"),
+                        logo=app.get("logo"),
+                        tags=app.get("tags", []),
+                        auth_schemes=app.get("auth_schemes", []),
+                        categories=[app.get("category_id", "")]
+                    )
+                else:
+                    # Fallback: try to convert to dict
+                    app_dict = app.dict() if hasattr(app, 'dict') else {}
+                    toolkit = ToolkitInfo(
+                        slug=app_dict.get("slug", ""),
+                        name=app_dict.get("name", ""),
+                        description=app_dict.get("description"),
+                        logo=app_dict.get("logo"),
+                        tags=app_dict.get("tags", []),
+                        auth_schemes=app_dict.get("auth_schemes", []),
+                        categories=[app_dict.get("category_id", "")]
+                    )
+                filtered_toolkits.append(toolkit)
+            
+            result = {
+                "items": filtered_toolkits,
+                "total_items": len(category_apps),
+                "total_pages": (len(category_apps) + limit - 1) // limit if limit > 0 else 1,
+                "current_page": 1,
+                "category_id": category_id,
+                "category_name": composio_registry.get_category_by_id(category_id).name if composio_registry.get_category_by_id(category_id) else "Unknown"
+            }
+            
+            logger.debug(f"Successfully fetched {len(filtered_toolkits)} toolkits for category {category_id} from cache")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Failed to get toolkits for category {category_id}: {e}", exc_info=True)
             raise
     
     async def get_toolkit_by_slug(self, slug: str) -> Optional[ToolkitInfo]:
@@ -218,44 +440,57 @@ class ToolkitService:
     
     async def search_toolkits(self, query: str, category: Optional[str] = None, limit: int = 100, cursor: Optional[str] = None) -> Dict[str, Any]:
         try:
-            all_toolkits = []
-            current_cursor = cursor
-            query_lower = query.lower()
+            logger.debug(f"Searching toolkits with query: {query}, category: {category}")
             
-            # Keep fetching until we have enough results or no more pages
-            while len(all_toolkits) < limit:
-                # Fetch a batch of toolkits
-                batch = await self.list_toolkits(limit=100, cursor=current_cursor, category=category)
-                if not batch.get('items'):
-                    break
-                    
-                # Filter the batch
-                filtered = [
-                    toolkit for toolkit in batch['items']
-                    if (query_lower in toolkit.name.lower() or 
-                       (toolkit.description and query_lower in toolkit.description.lower()) or
-                       any(query_lower in tag.lower() for tag in toolkit.tags))
-                ]
-                
-                all_toolkits.extend(filtered)
-                current_cursor = batch.get('next_cursor')
-                
-                # If there are no more pages or we've reached the limit, stop
-                if not current_cursor or len(all_toolkits) >= limit:
-                    break
+            # Get all toolkits first
+            toolkits_response = await self.list_toolkits(limit=500, cursor=cursor)
+            toolkits = toolkits_response.get("items", [])
             
-            # Apply the limit
-            limited_results = all_toolkits[:limit]
-            total_items = len(all_toolkits)
+            # Convert to dict format for registry
+            toolkit_dicts = []
+            for toolkit in toolkits:
+                toolkit_dict = {
+                    "slug": toolkit.slug,
+                    "name": toolkit.name,
+                    "description": toolkit.description,
+                    "logo": toolkit.logo,
+                    "tags": toolkit.tags,
+                    "auth_schemes": toolkit.auth_schemes,
+                    "categories": toolkit.categories
+                }
+                toolkit_dicts.append(toolkit_dict)
             
-            logger.debug(f"Found {total_items} toolkits matching query: {query}" + (f" in category {category}" if category else ""))
-            return {
-                "items": limited_results,
-                "total_items": total_items,
-                "total_pages": (total_items + limit - 1) // limit if limit > 0 else 0,
+            # Use registry for smart search
+            search_results = composio_registry.search_apps(toolkit_dicts, query, category)
+            
+            # Apply limit
+            limited_results = search_results[:limit]
+            
+            # Convert back to ToolkitInfo format
+            result_toolkits = []
+            for app in limited_results:
+                toolkit = ToolkitInfo(
+                    slug=app.slug,
+                    name=app.name,
+                    description=app.description,
+                    logo=app.logo,
+                    tags=app.tags,
+                    auth_schemes=app.auth_schemes,
+                    categories=[app.category_id]
+                )
+                result_toolkits.append(toolkit)
+            
+            result = {
+                "items": result_toolkits,
+                "total_items": len(search_results),
+                "total_pages": (len(search_results) + limit - 1) // limit if limit > 0 else 1,
                 "current_page": 1,
-                "next_cursor": current_cursor if len(all_toolkits) > len(limited_results) else None
+                "query": query,
+                "category": category
             }
+            
+            logger.debug(f"Found {len(search_results)} toolkits matching query: {query}" + (f" in category {category}" if category else ""))
+            return result
             
         except Exception as e:
             logger.error(f"Failed to search toolkits: {e}", exc_info=True)

@@ -27,6 +27,7 @@ import {
   Calendar,
   Palette,
   File,
+  Folder,
 } from 'lucide-react';
 import {
   useComposioCategories,
@@ -57,7 +58,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  popular: <Flame className="h-4 w-4" />,
+  all: <Folder className="h-4 w-4" />, // All Apps category
+  popular: <Flame className="h-4 w-4" />, // Popular category
   productivity: <BarChart3 className="h-4 w-4" />,
   crm: <Users className="h-4 w-4" />,
   marketing: <Megaphone className="h-4 w-4" />,
@@ -884,7 +886,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                     (isLoading || isCategoryLoading) && 'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  {CATEGORY_ICONS.popular}
+                  {CATEGORY_ICONS.all}
                   <span>All Apps</span>
                   {(isLoading || isCategoryLoading) && selectedCategory === '' && (
                     <Loader2 className="ml-auto h-3 w-3 animate-spin" />
