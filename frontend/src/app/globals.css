@@ -771,7 +771,7 @@
 
 @theme inline {
   --animate-shiny-text: shiny-text 2s infinite;
- 
+
   @keyframes shiny-text {
     0% {
       background-position: calc(-100% - var(--shiny-width)) 0;
@@ -794,4 +794,8 @@
   --shimmer-color-1: var(--helium-blue) !important;
   --shimmer-color-2: var(--helium-green) !important;
   --shimmer-color-3: var(--helium-yellow) !important;
+}
+::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
 }

@@ -161,9 +161,9 @@ export const MyAgentsTab = ({
             <SelectTrigger className="w-[180px] h-12 rounded-full">
               <SelectValue placeholder="Filter agents" />
             </SelectTrigger>
-            <SelectContent className='rounded-4xl'>
+            <SelectContent>
               {filterOptions.map((filter) => (
-                <SelectItem key={filter.value} className='rounded-4xl' value={filter.value}>
+                <SelectItem key={filter.value} value={filter.value}>
                   {filter.label}
                 </SelectItem>
               ))}

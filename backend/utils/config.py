@@ -279,6 +279,14 @@ class Configuration:
     GOOGLE_CLOUD_PROJECT_ID: Optional[str] = None
     GOOGLE_CLOUD_LOCATION: Optional[str] = None
     
+    # Google OAuth configuration for backend authentication
+    GOOGLE_OAUTH_CLIENT_ID: Optional[str] = None
+    GOOGLE_OAUTH_CLIENT_SECRET: Optional[str] = None
+    GOOGLE_OAUTH_REDIRECT_URI: Optional[str] = None
+    
+    # Frontend URL for OAuth redirects
+    NEXT_PUBLIC_URL: Optional[str] = None
+    
     # OpenRouter site metadata
     OR_SITE_URL: Optional[str] = "https://he2.ai"
     OR_APP_NAME: Optional[str] = "Helium AI"    

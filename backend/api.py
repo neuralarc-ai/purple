@@ -29,6 +29,7 @@ import sys
 from services import email_api
 from triggers import api as triggers_api
 from services import api_keys_api
+from auth import api as auth_api
 
 
 if sys.platform == "win32":
@@ -161,6 +162,7 @@ api_router.include_router(sandbox_api.router)
 api_router.include_router(billing_api.router)
 api_router.include_router(feature_flags_api.router)
 api_router.include_router(api_keys_api.router)
+api_router.include_router(auth_api.router)
 
 from mcp_module import api as mcp_api
 from credentials import api as credentials_api
