@@ -48,6 +48,7 @@ import { toast } from 'sonner';
 import { useSubscriptionData } from '@/contexts/SubscriptionContext';
 import { useUsageRealtime } from '@/hooks/useUsageRealtime';
 import { useAuth } from '@/components/AuthProvider';
+import { BillingModal } from '@/components/billing/billing-modal';
 
 
 // Dynamic icon component that changes path based on theme
@@ -95,6 +96,7 @@ export function NavUserWithTeams({
   const { profile, preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
   const [showEditNameDialog, setShowEditNameDialog] = React.useState(false);
+  const [showBillingModal, setShowBillingModal] = React.useState(false);
   const [editName, setEditName] = React.useState(user.name);
   
   // Update editName when preferredName changes
@@ -545,6 +547,12 @@ export function NavUserWithTeams({
                     Settings
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="rounded-full cursor-pointer"
+                  onClick={() => setShowBillingModal(true)}
+                >
+                  Manage Subscription
+                </DropdownMenuItem>
                 {!flagLoading && customAgentsEnabled && (
                   <DropdownMenuItem asChild className="rounded-full cursor-pointer">
                     {/* <Link href="/settings/credentials">
@@ -618,6 +626,13 @@ export function NavUserWithTeams({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Billing Modal */}
+      <BillingModal 
+        open={showBillingModal} 
+        onOpenChange={setShowBillingModal}
+        returnUrl={typeof window !== 'undefined' ? window.location.href : '/'}
+      />
     </>
   );
 }
