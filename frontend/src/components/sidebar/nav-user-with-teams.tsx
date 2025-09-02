@@ -94,7 +94,14 @@ export function NavUserWithTeams({
   const router = useRouter();
   const { isMobile } = useSidebar();
   const { data: accounts } = useAccounts();
-  const { profile, preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
+  const { profile, preferredName, isLoading: profileLoading, isAuthError } = useUserProfileWithFallback();
+  
+  // Debug: Log profile data to see what's being fetched
+  React.useEffect(() => {
+    console.log('NavUserWithTeams - Profile data:', profile);
+    console.log('NavUserWithTeams - Profile avatar:', profile?.avatar);
+  }, [profile]);
+  
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
   const [showEditNameDialog, setShowEditNameDialog] = React.useState(false);
   const [editName, setEditName] = React.useState(user.name);

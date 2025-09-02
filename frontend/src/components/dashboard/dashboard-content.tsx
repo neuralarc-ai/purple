@@ -55,7 +55,7 @@ export function DashboardContent() {
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   const { data: accounts } = useAccounts();
-  const { preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
+  const { preferredName, isLoading: profileLoading, isAuthError } = useUserProfileWithFallback();
   const personalAccount = accounts?.find((account) => account.personal_account);
   const chatInputRef = useRef<ChatInputHandles>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();

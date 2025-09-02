@@ -149,16 +149,20 @@ async def get_current_user_id_from_jwt(request: Request) -> str:
     token = auth_header.split(' ')[1]
     
     try:
+        structlog.get_logger().info(f"Attempting to decode JWT token: {token[:20]}...")
         payload = jwt.decode(token, options={"verify_signature": False})
+        structlog.get_logger().info(f"JWT payload decoded successfully: {payload}")
         user_id = payload.get('sub')
         
         if not user_id:
+            structlog.get_logger().error("No 'sub' field found in JWT payload")
             raise HTTPException(
                 status_code=401,
                 detail="Invalid token payload",
                 headers={"WWW-Authenticate": "Bearer"}
             )
 
+        structlog.get_logger().info(f"Extracted user_id from JWT: {user_id}")
         sentry.sentry.set_user({ "id": user_id })
         structlog.contextvars.bind_contextvars(
             user_id=user_id,
@@ -166,7 +170,8 @@ async def get_current_user_id_from_jwt(request: Request) -> str:
         )
         return user_id
         
-    except PyJWTError:
+    except PyJWTError as e:
+        structlog.get_logger().error(f"JWT decode error: {e}")
         raise HTTPException(
             status_code=401,
             detail="Invalid token",

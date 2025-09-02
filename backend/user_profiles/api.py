@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
@@ -55,15 +55,22 @@ async def get_user_profile(
 ):
     """Get the current user's profile."""
     try:
+        logger.info(f"Getting user profile for user_id: {user_id}")
         client = await db.client
         result = await client.table('user_profiles').select('*').eq('user_id', user_id).execute()
         
+        logger.info(f"Database query result: {result}")
+        
         if not result.data or len(result.data) == 0:
+            logger.warning(f"No profile found for user_id: {user_id}")
             raise HTTPException(status_code=404, detail="User profile not found")
         
+        logger.info(f"Profile found for user_id: {user_id}")
         return UserProfileResponse(**result.data[0])
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Error fetching user profile: {e}")
+        logger.error(f"Error fetching user profile: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch user profile")
 
 @router.post("/profile", response_model=UserProfileResponse)
@@ -303,10 +310,46 @@ async def complete_onboarding(
         logger.error(f"Error completing onboarding: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to complete onboarding: {str(e)}")
 
-@router.get("/test")
-async def test_endpoint():
-    """Test endpoint to verify the API is working."""
-    return {"message": "User profiles API is working", "status": "ok"}
+@router.get("/test-auth")
+async def test_auth(request: Request):
+    """Test endpoint to debug authentication issues."""
+    try:
+        auth_header = request.headers.get('Authorization')
+        logger.info(f"Auth header: {auth_header}")
+        
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return {"error": "No Bearer token found", "auth_header": auth_header}
+        
+        token = auth_header.split(' ')[1]
+        logger.info(f"Token (first 20 chars): {token[:20]}...")
+        
+        try:
+            import jwt
+            payload = jwt.decode(token, options={"verify_signature": False})
+            logger.info(f"JWT payload: {payload}")
+            
+            user_id = payload.get('sub')
+            if user_id:
+                return {
+                    "success": True,
+                    "user_id": user_id,
+                    "payload": payload
+                }
+            else:
+                return {
+                    "error": "No 'sub' field in payload",
+                    "payload": payload
+                }
+        except Exception as e:
+            logger.error(f"JWT decode error: {e}")
+            return {
+                "error": f"JWT decode failed: {str(e)}",
+                "token_preview": token[:50] + "..." if len(token) > 50 else token
+            }
+            
+    except Exception as e:
+        logger.error(f"Test auth error: {e}")
+        return {"error": f"Test auth failed: {str(e)}"}
 
 @router.get("/health")
 async def health_check():

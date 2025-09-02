@@ -187,7 +187,9 @@ from admin import api as admin_api
 api_router.include_router(admin_api.router)
 
 from user_profiles import api as user_profiles_api
+from invite_codes import api as invite_codes_api
 api_router.include_router(user_profiles_api.router, prefix="/user-profiles")
+api_router.include_router(invite_codes_api.router, prefix="/invite-codes")
 
 from composio_integration import api as composio_api
 api_router.include_router(composio_api.router)
@@ -302,7 +304,6 @@ async def health_check():
     except Exception as e:
         logger.error(f"Failed health docker check: {e}")
         raise HTTPException(status_code=500, detail="Health check failed")
-
 
 app.include_router(api_router, prefix="/api")
 

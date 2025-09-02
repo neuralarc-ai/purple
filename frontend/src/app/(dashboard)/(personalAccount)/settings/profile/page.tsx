@@ -26,6 +26,7 @@ import { userProfilesApi, type UserProfile } from '@/lib/api/user-profiles';
 import Avatar from 'boring-avatars';
 import { Avatar as UIAvatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/components/AuthProvider';
+import { useQueryClient } from '@tanstack/react-query';
 
 const workOptions = [
   'Product Management',
@@ -102,6 +103,7 @@ interface ProfileFormData {
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState<ProfileFormData>({
     fullName: '',
     preferredName: '',
@@ -226,6 +228,7 @@ export default function ProfilePage() {
         userProfile = await userProfilesApi.createProfile(profileData);
       }
 
+      // Update local state with the response
       setProfile(userProfile);
       setFormData({
         fullName: userProfile.full_name,
@@ -246,6 +249,12 @@ export default function ProfilePage() {
       
       setHasProfile(true);
       setIsSubmitted(true);
+      
+      // Invalidate the user profile query to update navigation and other components
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+      // Force a refetch to ensure immediate update
+      queryClient.refetchQueries({ queryKey: ['user-profile'] });
+      
       toast.success('Profile updated successfully!');
       
       // Reset form after successful submission
@@ -502,6 +511,10 @@ export default function ProfilePage() {
                     }
                     // Also update form data to ensure immediate display
                     setFormData(prev => ({ ...prev, avatar: avatarOption.value }));
+                    // Invalidate the user profile query to update navigation and other components
+                    queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+                    // Force a refetch to ensure immediate update
+                    queryClient.refetchQueries({ queryKey: ['user-profile'] });
                     setShowAvatarModal(false);
                   }}
                   className={`

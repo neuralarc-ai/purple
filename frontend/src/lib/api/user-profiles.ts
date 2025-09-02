@@ -28,7 +28,11 @@ export interface UserProfileUpdate {
   avatar?: string;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
+const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+const getApiUrl = (endpoint: string) => {
+  const base = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
+  return `${base}${endpoint}`;
+};
 
 export const userProfilesApi = {
   async getProfile(): Promise<UserProfile> {
@@ -39,21 +43,37 @@ export const userProfilesApi = {
       throw new Error('No authentication token');
     }
 
-    const response = await fetch(`${API_BASE}/user-profiles/profile`, {
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    try {
+      const response = await fetch(getApiUrl('/user-profiles/profile'), {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error('Profile not found');
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Profile not found');
+        }
+        if (response.status === 401) {
+          throw new Error('Authentication failed - please log in again');
+        }
+        if (response.status === 500) {
+          // If we get a 500 error, it might be an authentication issue
+          const errorText = await response.text().catch(() => 'Unknown error');
+          if (errorText.includes('Invalid token') || errorText.includes('authentication')) {
+            throw new Error('Authentication failed - please log in again');
+          }
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
 
-    return response.json();
+      return response.json();
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      throw error;
+    }
   },
 
   async createProfile(profileData: UserProfileCreate): Promise<UserProfile> {
@@ -64,7 +84,7 @@ export const userProfilesApi = {
       throw new Error('No authentication token');
     }
 
-    const response = await fetch(`${API_BASE}/user-profiles/profile`, {
+    const response = await fetch(getApiUrl('/user-profiles/profile'), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
@@ -95,7 +115,7 @@ export const userProfilesApi = {
       throw new Error('No authentication token');
     }
 
-    const response = await fetch(`${API_BASE}/user-profiles/profile`, {
+    const response = await fetch(getApiUrl('/user-profiles/profile'), {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
@@ -126,7 +146,7 @@ export const userProfilesApi = {
       throw new Error('No authentication token');
     }
 
-    const response = await fetch(`${API_BASE}/user-profiles/profile`, {
+    const response = await fetch(getApiUrl('/user-profiles/profile'), {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
