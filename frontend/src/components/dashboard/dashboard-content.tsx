@@ -43,6 +43,7 @@ export function DashboardContent() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const { data: accounts } = useAccounts();
+  const { preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
   const personalAccount = accounts?.find((account) => account.personal_account);
   const { 
     selectedAgentId, 
@@ -57,13 +58,6 @@ export function DashboardContent() {
     runningCount: number;
     runningThreadIds: string[];
   } | null>(null);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isMobile = useIsMobile();
-  const { data: accounts } = useAccounts();
-  const { preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
-  const personalAccount = accounts?.find((account) => account.personal_account);
-  const chatInputRef = useRef<ChatInputHandles>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
