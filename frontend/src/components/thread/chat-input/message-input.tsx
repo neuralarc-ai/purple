@@ -270,7 +270,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             onPaste={handlePaste}
             placeholder={placeholder}
             className={cn(
-              "w-full bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-5 min-h-[86px] max-h-[240px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]",
+              "w-full bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-4 min-h-[86px] max-h-[240px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]",
               isDraggingOver ? 'opacity-40' : '',
             )}
             disabled={loading || (disabled && !isAgentRunning)}
@@ -279,7 +279,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
         </div>
 
         <div className="flex items-center justify-between mt-0 mb-1 px-2">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {!hideAttachments && (
               <>
                 <DropdownMenu
@@ -360,8 +360,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                   variant="ghost"
                   onClick={handleImprovePrompt}
                   className={cn(
-                    'h-8 px-3 bg-transparent hover:bg-background/50 transition-all duration-200 text-sm',
-                    'border border-muted-foreground/20 rounded-full',
+                    'h-8 px-3 bg-transparent dark:border-muted-foreground/30 shadow-none group transition-all duration-200 text-sm',
+                    'border border-muted-foreground/20 rounded-xl bg-white dark:bg-sidebar-accent hover:bg-background/50! ',
                   )}
                   disabled={
                     !isLoggedIn ||
@@ -374,15 +374,15 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                 >
                   {isImprovingPrompt ? (
                     <>
-                      <Wand2 className="h-3 w-3 mr-1.5 text-muted-foreground" />
+                      <Wand2 className="h-3 w-3 text-muted-foreground stroke-[1.5]" />
                       <AnimatedShinyText className="text-xs">
                         Improving prompt
                       </AnimatedShinyText>
                     </>
                   ) : (
                     <>
-                      <Wand2 className="h-3 w-3 mr-1.5 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      <Wand2 className="h-3 w-3 text-muted-foreground stroke-[1.5]" />
+                      <span className="text-xs text-muted-foreground group-hover:text-foreground transition-all">
                         Improve Prompt
                       </span>
                     </>

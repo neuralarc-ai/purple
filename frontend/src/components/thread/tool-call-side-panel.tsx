@@ -798,7 +798,7 @@ export function ToolCallSidePanel({
           >
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="flex flex-col h-full">
-                <div className="pt-4 pl-4 pr-4">
+                <div className="pt-4 pl-4 pr-4 pb-4">
                   <div className="flex items-center justify-between">
                     <div className="ml-2 flex items-center gap-2">
                       <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
@@ -1168,7 +1168,7 @@ export function ToolCallSidePanel({
             }
           }}
           className={cn(
-            'fixed top-3 right-2 bottom-4 shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border rounded-[22px] flex flex-col z-[51] md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
+            'fixed top-3 right-2 bottom-6 shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border rounded-[22px] flex flex-col z-[51] md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
             widthClass,
           )}  
           style={{
@@ -1251,7 +1251,7 @@ export function ToolCallSidePanel({
                       step={1}
                       value={[displayIndex]}
                       onValueChange={handleSliderChange}
-                      className="w-full [&>span:first-child]:h-1 [&>span:first-child]:bg-zinc-200 dark:[&>span:first-child]:bg-zinc-800 [&>span:first-child>span]:bg-[#0081F2] [&>span:first-child>span]:h-1.5"
+                      className="w-full [&>span:first-child]:h-1 [&>span:first-child]:bg-zinc-200 dark:[&>span:first-child]:bg-zinc-800 [&>span:first-child>span]:bg-helium-blue [&>span:first-child>span]:h-1.5"
                     />
                   </div>
 
