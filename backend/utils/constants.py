@@ -124,7 +124,7 @@ MODELS = {
     
     # Vertex AI Claude Sonnet 4 (using LiteLLM vertex_ai route)
     "vertex_ai/claude-sonnet-4@20250514": {
-        "aliases": ["claude-sonnet-4-vertex", "vertex/claude-sonnet-4@20250514"],
+        "aliases": ["claude-sonnet-4-vertex", "vertex/claude-sonnet-4@20250514", "claude-sonnet-4@20250514"],
         "pricing": {
             "input_cost_per_million_tokens": 3.00,
             "output_cost_per_million_tokens": 15.00
