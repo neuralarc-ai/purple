@@ -155,6 +155,7 @@ export function ThreadLayout({
           inTakeover={inTakeover}
           onTakeoverToggle={onHeaderTakeoverToggle}
           isSidePanelOpen={isSidePanelOpen}
+          agentStatus={agentStatus}
         />
 
         {children}

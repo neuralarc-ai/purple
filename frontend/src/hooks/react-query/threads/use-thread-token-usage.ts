@@ -3,13 +3,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { billingApi, ThreadTokenUsage } from '@/lib/api-enhanced';
 
-export function useThreadTokenUsage(threadId: string) {
+export function useThreadTokenUsage(threadId: string, agentStatus?: 'idle' | 'running' | 'connecting' | 'error') {
+  const staleTime = agentStatus === 'running' ? 5 * 1000 : 10 * 1000;
+  const refetchInterval = agentStatus === 'running' ? 10 * 1000 : 30 * 1000;
+  
+  console.log(`[useThreadTokenUsage] Hook config for thread ${threadId}:`, {
+    agentStatus,
+    staleTime: `${staleTime / 1000}s`,
+    refetchInterval: `${refetchInterval / 1000}s`
+  });
+
   return useQuery({
     queryKey: ['thread-token-usage', threadId],
     queryFn: async (): Promise<ThreadTokenUsage | null> => {
       if (!threadId) return null;
       
-      console.log('Fetching thread token usage for:', threadId);
+      console.log(`[useThreadTokenUsage] Fetching thread token usage for: ${threadId}`);
       
       try {
         // Use the working usage logs method directly
@@ -50,16 +59,20 @@ export function useThreadTokenUsage(threadId: string) {
           models,
         };
         
-        console.log('Thread token usage result:', result);
+        console.log(`[useThreadTokenUsage] Thread token usage result for ${threadId}:`, result);
         return result;
         
       } catch (error) {
-        console.error('Error fetching thread token usage:', error);
+        console.error(`[useThreadTokenUsage] Error fetching thread token usage for ${threadId}:`, error);
         return null;
       }
     },
     enabled: !!threadId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
+    staleTime,
+    gcTime: 2 * 60 * 1000, // 2 minutes cache time
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnMount: true, // Always refetch on mount for fresh data
+    refetchInterval,
+    refetchIntervalInBackground: false, // Only refetch when tab is active
   });
 }
