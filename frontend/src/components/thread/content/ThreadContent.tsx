@@ -6,10 +6,11 @@ import {
   ParsedMetadata,
 } from '@/components/thread/types';
 import { toast } from 'sonner';
-import { FileAttachmentGrid } from '@/components/thread/file-attachment';
+import { FileAttachmentGrid, ThreadFilesDisplay } from '@/components/thread/file-attachment';
 import { useFilePreloader } from '@/hooks/react-query/files';
 import { useAuth } from '@/components/AuthProvider';
 import { Project } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import {
   extractPrimaryParam,
   getToolIcon,
@@ -36,6 +37,7 @@ import { ComposioUrlDetector } from './composio-url-detector';
 import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
 
+
 // Helper function to render all attachments as standalone messages
 export function renderStandaloneAttachments(
   attachments: string[],
@@ -54,15 +56,23 @@ export function renderStandaloneAttachments(
 
   return (
     <div className="w-full my-4">
-      <FileAttachmentGrid
-        attachments={validAttachments}
-        onFileClick={fileViewerHandler}
-        showPreviews={true}
-        sandboxId={sandboxId}
-        project={project}
-        // standalone={true}
-        // alignRight={alignRight}
-      />
+      <div className={cn(
+        "flex",
+        alignRight ? "justify-end" : "justify-start"
+      )}>
+        <div className={cn(
+          alignRight ? "max-w-[70%]" : "max-w-[90%]"
+        )}>
+          <ThreadFilesDisplay
+            attachments={validAttachments}
+            onFileClick={fileViewerHandler}
+            showPreviews={true}
+            sandboxId={sandboxId}
+            project={project}
+            rightAlignGrid={alignRight}
+          />
+        </div>
+      </div>
     </div>
   );
 }

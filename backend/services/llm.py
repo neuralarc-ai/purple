@@ -380,7 +380,7 @@ def _configure_caching(params: Dict[str, Any], model_name: str, messages: List[D
 def prepare_params(
     messages: List[Dict[str, Any]],
     model_name: str,
-    temperature: float = 0,
+    temperature: float = 0.3,
     max_tokens: Optional[int] = None,
     response_format: Optional[Any] = None,
     tools: Optional[List[Dict[str, Any]]] = None,
@@ -438,7 +438,7 @@ async def make_llm_api_call(
     messages: List[Dict[str, Any]],
     model_name: str,
     response_format: Optional[Any] = None,
-    temperature: float = 0,
+    temperature: float = 0.3,
     max_tokens: Optional[int] = None,
     tools: Optional[List[Dict[str, Any]]] = None,
     tool_choice: str = "auto",

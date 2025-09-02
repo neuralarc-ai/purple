@@ -535,6 +535,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   layout="inline"
                   maxHeight="180px"
                   showPreviews={true}
+                  isChatInput={true}
                 />
                 <MessageInput
                   ref={textareaRef}

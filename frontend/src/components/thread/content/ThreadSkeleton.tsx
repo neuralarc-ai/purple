@@ -139,7 +139,7 @@ export function ThreadSkeleton({
                     className={cn(
                         "fixed bottom-6 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6",
                         "transition-[left,right] duration-200 ease-in-out will-change-[left,right]",
-                        "left-[50px] right-0"
+                        "left-[53px] right-[45vw]"
                     )}
                 >
                     <div className="flex justify-center px-0">
