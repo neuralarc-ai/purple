@@ -49,6 +49,8 @@ import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { threadKeys } from '@/hooks/react-query/threads/keys';
 import { useProjectRealtime } from '@/hooks/useProjectRealtime';
+import { useUsageRealtime } from '@/hooks/useUsageRealtime';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function ThreadPage({
   params,
@@ -63,6 +65,10 @@ export default function ThreadPage({
   const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Enable real-time updates for usage data
+  useUsageRealtime(user?.id);
 
   // State
   const [newMessage, setNewMessage] = useState('');

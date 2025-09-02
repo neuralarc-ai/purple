@@ -66,6 +66,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useSubscriptionData } from '@/contexts/SubscriptionContext';
+import { useUsageRealtime } from '@/hooks/useUsageRealtime';
+import { useAuth } from '@/components/AuthProvider';
 
 // Custom Logout Icon component using the logout.svg
 const LogoutIcon = ({ className }: { className?: string }) => (
@@ -143,7 +145,11 @@ export function NavUserWithTeams({
     useFeatureFlag('custom_agents');
   
   // Get real-time subscription data for credit usage
-  const { data: subscriptionData } = useSubscriptionData();
+  const { data: subscriptionData, refetch: refetchSubscription } = useSubscriptionData();
+  const { user: authUser } = useAuth();
+
+  // Enable real-time updates for usage data
+  useUsageRealtime(authUser?.id);
 
   // Prepare personal account and team accounts
   const personalAccount = React.useMemo(
@@ -388,23 +394,40 @@ export function NavUserWithTeams({
               
               {/* Credit Usage Section */}
               <div className="px-1.5 py-2">
-                <div className="text-xs text-muted-foreground mb-2">
-                  {subscriptionData ? (
-                    subscriptionData.current_usage && subscriptionData.cost_limit ? (
-                      subscriptionData.current_usage >= subscriptionData.cost_limit 
-                        ? "You have used 100% of your credits"
-                        : `You have used ${Math.round((subscriptionData.current_usage / subscriptionData.cost_limit) * 100)}% of your credits`
-                    ) : "No usage limit set"
-                  ) : "Loading usage..."
-                  }
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs text-muted-foreground">
+                    {subscriptionData ? (
+                      subscriptionData.current_usage && subscriptionData.cost_limit ? (
+                        subscriptionData.current_usage >= subscriptionData.cost_limit 
+                          ? "You have used 100% of your credits"
+                          : `You have used ${Math.round((subscriptionData.current_usage / subscriptionData.cost_limit) * 100)}% of your credits`
+                      ) : "No usage limit set"
+                    ) : "Loading usage..."
+                    }
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => refetchSubscription()}
+                    className="h-6 w-6 p-0 hover:bg-muted"
+                  >
+                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </Button>
                 </div>
-                <div className="text-xs text-muted-foreground mb-2">
-                  {subscriptionData ? (
-                    subscriptionData.current_usage && subscriptionData.cost_limit ? (
-                      `${Math.round((subscriptionData.current_usage || 0) * 100).toLocaleString()} / ${Math.round((subscriptionData.cost_limit || 0) * 100).toLocaleString()}`
-                    ) : "0 / 0"
-                  ) : "Loading..."
-                  }
+                <div className="flex items-center gap-1 mb-2">
+                  <div className="text-xs text-muted-foreground">
+                    {subscriptionData ? (
+                      subscriptionData.current_usage && subscriptionData.cost_limit ? (
+                        `${Math.round((subscriptionData.current_usage || 0) * 100).toLocaleString()} / ${Math.round((subscriptionData.cost_limit || 0) * 100).toLocaleString()}`
+                      ) : "0 / 0"
+                    ) : "Loading..."
+                    }
+                  </div>
+                  {subscriptionData && (
+                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" title="Live updates enabled" />
+                  )}
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div 

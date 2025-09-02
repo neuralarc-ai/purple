@@ -142,6 +142,7 @@ export function ThreadLayout({
           isMobileView={isMobile}
           debugMode={debugMode}
           isSidePanelOpen={isSidePanelOpen}
+          agentStatus={agentStatus}
         />
 
         {children}
