@@ -771,7 +771,7 @@
 
 @theme inline {
   --animate-shiny-text: shiny-text 2s infinite;
- 
+
   @keyframes shiny-text {
     0% {
       background-position: calc(-100% - var(--shiny-width)) 0;
@@ -796,6 +796,12 @@
   --shimmer-color-3: var(--helium-yellow) !important;
 }
 
+::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+
 @media (max-width: 512px) {
   .project-ellipsis {
     max-width: 160px;  /* adjust as needed */
@@ -812,3 +818,4 @@
    font-size: 10px;
   }
 }
+

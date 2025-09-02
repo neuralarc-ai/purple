@@ -29,7 +29,18 @@ import { useFeatureFlag } from '@/lib/feature-flags';
 import { CustomAgentsSection } from './custom-agents-section';
 import { toast } from 'sonner';
 import { ReleaseBadge } from '../auth/release-badge';
+
+import { AnimatedThemeToggler } from '@/components/magicui/animated-theme-toggler';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
 import { UseCases } from './use-cases';
+
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -367,6 +378,22 @@ export function DashboardContent() {
         showUsageLimitAlert={true}
       />
       <div className="flex flex-col h-screen w-full overflow-hidden">
+        {/* Theme Toggle Button - Top Right */}
+        <div className="absolute top-8 right-8 z-10">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="h-10 w-10 ">
+                  <AnimatedThemeToggler className="h-6 w-6 cursor-pointer" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Change theme</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
         <div className="flex-1 overflow-y-auto">
           <div className="min-h-full flex flex-col">
             {/* {customAgentsEnabled && (

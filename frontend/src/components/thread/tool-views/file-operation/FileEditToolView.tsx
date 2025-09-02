@@ -60,7 +60,7 @@ const FinalContentView: React.FC<{ content: string }> = ({ content }) => {
   const processContent = (text: string) => {
     // Split content into lines
     const lines = text.split('\n');
-    
+
     return lines.map((line, index) => {
       // Check if line starts with ** (markdown bold)
       if (line.trim().startsWith('**') && line.trim().endsWith('**')) {
@@ -74,7 +74,7 @@ const FinalContentView: React.FC<{ content: string }> = ({ content }) => {
           </div>
         );
       }
-      
+
       // Check if line starts with # (markdown headers)
       if (line.trim().startsWith('#')) {
         const headerText = line.trim().replace(/^#+\s*/, '');
@@ -86,7 +86,7 @@ const FinalContentView: React.FC<{ content: string }> = ({ content }) => {
           </div>
         );
       }
-      
+
       // Check if line starts with a number followed by a dot (numbered headers)
       if (/^\d+\./.test(line.trim())) {
         const headerText = line.trim();
@@ -98,12 +98,12 @@ const FinalContentView: React.FC<{ content: string }> = ({ content }) => {
           </div>
         );
       }
-      
+
       // Regular text - check for inline ** bold text
       const processedLine = line.replace(/\*\*(.*?)\*\*/g, (match, boldText) => {
         return `<bold>${boldText}</bold>`;
       });
-      
+
       if (processedLine.includes('<bold>')) {
         const parts = processedLine.split(/(<bold>.*?<\/bold>)/);
         return (
@@ -118,7 +118,7 @@ const FinalContentView: React.FC<{ content: string }> = ({ content }) => {
           </div>
         );
       }
-      
+
       // Regular text
       return (
         <div key={index} className="mb-1">

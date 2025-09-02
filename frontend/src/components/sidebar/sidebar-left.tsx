@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useTheme } from 'next-themes';
 import {
   Bot,
   Menu,
@@ -141,7 +140,6 @@ function FloatingMobileMenuButton() {
               height={22}
               className="block dark:hidden mb-0"
             />
-
             <Image
               src="/icons/menu-dark.svg"
               alt="menu Dark Logo"
@@ -160,7 +158,6 @@ function FloatingMobileMenuButton() {
 export function SidebarLeft({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
-  const { theme } = useTheme();
   const { state, setOpen, setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const [user, setUser] = useState<{
@@ -276,15 +273,18 @@ export function SidebarLeft({
               }}
             >
               <Image
-                src={
-                  theme === 'dark'
-                    ? '/icons/plus-dark.svg'
-                    : '/icons/plus-light.svg'
-                }
+                src="/icons/plus-light.svg"
                 alt="plus Light Logo"
                 width={20}
                 height={20}
-                className="mr-1"
+                className="mr-1 block dark:hidden"
+              />
+              <Image
+                src="/icons/plus-dark.svg"
+                alt="plus Dark Logo"
+                width={20}
+                height={20}
+                className="mr-1 hidden dark:block"
               />
               <span className="flex items-center justify-between w-full">
                 New Task
@@ -295,25 +295,26 @@ export function SidebarLeft({
             <Link href="/agents?tab=my-agents">
               <SidebarMenuButton
                 className={cn('touch-manipulation', {
-                  'bg-accent px-2 text-accent-foreground font-medium':
-                    pathname === '/agents' &&
-                    (searchParams.get('tab') === 'my-agents' ||
-                      searchParams.get('tab') === null),
+                  'bg-accent px-4 text-accent-foreground font-medium':
+                    pathname === '/agents',
                 })}
                 onClick={() => {
                   if (isMobile) setOpenMobile(false);
                 }}
               >
                 <Image
-                  src={
-                    theme === 'dark'
-                      ? '/icons/bot-dark.svg'
-                      : '/icons/bot-light.svg'
-                  }
+                  src="/icons/bot-light.svg"
                   alt="bot Light Logo"
                   width={20}
                   height={20}
-                  className="mr-1"
+                  className="mr-1 block dark:hidden"
+                />
+                <Image
+                  src="/icons/bot-dark.svg"
+                  alt="bot Dark Logo"
+                  width={20}
+                  height={20}
+                  className="mr-1 hidden dark:block"
                 />
                 <span className="flex items-center justify-between w-full">
                   My Agents
@@ -335,15 +336,18 @@ export function SidebarLeft({
               >
                 <Link href="/prompt-library" className="flex items-center">
                   <Image
-                    src={
-                      theme === 'dark'
-                        ? '/icons/prompt-dark.svg'
-                        : '/icons/prompt-light.svg'
-                    }
-                    alt="Prompt Library"
+                    src="/icons/prompt-light.svg"
+                    alt="Prompt Library Light"
                     width={20}
                     height={20}
-                    className="mr-1"
+                    className="mr-1 block dark:hidden"
+                  />
+                  <Image
+                    src="/icons/prompt-dark.svg"
+                    alt="Prompt Library Dark"
+                    width={20}
+                    height={20}
+                    className="mr-1 hidden dark:block"
                   />
                   <span>Prompt Library</span>
                 </Link>
