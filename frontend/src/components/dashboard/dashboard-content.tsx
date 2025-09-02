@@ -29,14 +29,21 @@ import { useFeatureFlag } from '@/lib/feature-flags';
 import { CustomAgentsSection } from './custom-agents-section';
 import { toast } from 'sonner';
 import { ReleaseBadge } from '../auth/release-badge';
+import { UseCases } from './use-cases';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
 export function DashboardContent() {
+  const searchParams = useSearchParams();
   const [inputValue, setInputValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
   const [autoSubmit, setAutoSubmit] = useState(false);
+  const chatInputRef = useRef<ChatInputHandles>(null);
+  const router = useRouter();
+  const isMobile = useIsMobile();
+  const { data: accounts } = useAccounts();
+  const personalAccount = accounts?.find((account) => account.personal_account);
   const { 
     selectedAgentId, 
     setSelectedAgent, 
@@ -44,8 +51,7 @@ export function DashboardContent() {
     getCurrentAgent
   } = useAgentSelection();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
-  const { billingError, handleBillingError, clearBillingError } =
-    useBillingError();
+  const { billingError, handleBillingError, clearBillingError } = useBillingError();
   const [showAgentLimitDialog, setShowAgentLimitDialog] = useState(false);
   const [agentLimitData, setAgentLimitData] = useState<{
     runningCount: number;
@@ -61,6 +67,18 @@ export function DashboardContent() {
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
+  // Handle prompt from URL
+  useEffect(() => {
+    const promptParam = searchParams?.get('prompt');
+    if (promptParam) {
+      const decodedPrompt = decodeURIComponent(promptParam);
+      setInputValue(decodedPrompt);
+      // Focus the input after a small delay to ensure it's rendered
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 100);
+    }
+  }, [searchParams]);
   // Welcome messages that change on refresh
   const welcomeMessages = [
     "What do we tackle first, {name}?",
@@ -396,6 +414,21 @@ export function DashboardContent() {
                     onAgentSelect={setSelectedAgent}
                     enableAdvancedConfig={true}
                     onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
+                  />
+                  <UseCases 
+                    onUseCaseSelect={(prompt) => {
+                      setInputValue(prompt);
+                      // Focus the input after a short delay to ensure it's rendered
+                      setTimeout(() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          textarea.focus();
+                          // Move cursor to the end of the text
+                          const length = prompt.length;
+                          textarea.setSelectionRange(length, length);
+                        }
+                      }, 0);
+                    }} 
                   />
                 </div>
               </div>

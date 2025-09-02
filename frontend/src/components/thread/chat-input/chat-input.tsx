@@ -33,6 +33,7 @@ import { BorderBeam } from '@/components/magicui/border-beam';
 export interface ChatInputHandles {
   getPendingFiles: () => File[];
   clearPendingFiles: () => void;
+  focus: () => void;
 }
 
 export interface ChatInputProps {
@@ -211,6 +212,11 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     useImperativeHandle(ref, () => ({
       getPendingFiles: () => pendingFiles,
       clearPendingFiles: () => setPendingFiles([]),
+      focus: () => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      },
     }));
 
     useEffect(() => {
