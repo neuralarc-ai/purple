@@ -137,7 +137,7 @@ export function ThreadSkeleton({
                 {/* ChatInput - Positioned at bottom with exact same styling as actual layout */}
                 <div
                     className={cn(
-                        "fixed bottom-6 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6",
+                        "fixed bottom-6 mx-6 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6",
                         "transition-[left,right] duration-200 ease-in-out will-change-[left,right]",
                         "left-[53px] right-[45vw]"
                     )}
