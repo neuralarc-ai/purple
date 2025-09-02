@@ -379,16 +379,16 @@ export function DashboardContent() {
       />
       <div className="flex flex-col h-screen w-full overflow-hidden">
         {/* Theme Toggle Button - Top Right */}
-        <div className="absolute top-8 right-8 z-10">
+        <div className="absolute py-4 right-12 z-10">
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="h-10 w-10 ">
-                  <AnimatedThemeToggler className="h-6 w-6 cursor-pointer" />
+                <div className="h-8 w-8 flex items-center justify-center rounded-full bg-black dark:bg-white p-1.5">
+                  <AnimatedThemeToggler className="h-4 w-4 cursor-pointer" />
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Change theme</p>
+                <p>Toggle theme</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

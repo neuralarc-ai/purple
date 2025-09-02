@@ -13,6 +13,7 @@ import {
   Book,
   Building2,
   Settings,
+  ClipboardPen,
 } from 'lucide-react';
 
 import { NavAgents } from '@/components/sidebar/nav-agents';
@@ -335,19 +336,8 @@ export function SidebarLeft({
                 className="touch-manipulation"
               >
                 <Link href="/prompt-library" className="flex items-center">
-                  <Image
-                    src="/icons/prompt-light.svg"
-                    alt="Prompt Library Light"
-                    width={20}
-                    height={20}
-                    className="mr-1 block dark:hidden"
-                  />
-                  <Image
-                    src="/icons/prompt-dark.svg"
-                    alt="Prompt Library Dark"
-                    width={20}
-                    height={20}
-                    className="mr-1 hidden dark:block"
+                  <ClipboardPen 
+                    className="mr-1 h-5 w-5 stroke-[1.5]" 
                   />
                   <span>Prompt Library</span>
                 </Link>

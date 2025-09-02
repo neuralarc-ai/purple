@@ -358,8 +358,27 @@ export function SiteHeader({
                 <p>Share Chat</p>
               </TooltipContent>
             </Tooltip>
-{!isMobile && (
-            <Tooltip>
+
+            {!isMobile && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 cursor-pointer"
+                    asChild
+                  >
+                    <AnimatedThemeToggler className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side={isMobile ? "bottom" : "bottom"}>
+                  <p>Toggle theme</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+
+            {/* <Tooltip>
+
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
