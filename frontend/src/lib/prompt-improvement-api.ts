@@ -8,30 +8,23 @@ export interface PromptImprovementResponse {
   error?: string;
 }
 
-const PROMPT_IMPROVEMENT_SYSTEM_MESSAGE = `You are an expert prompt engineer. Your task is to improve user prompts to make them more effective for AI interactions. Follow these guidelines:
+const PROMPT_IMPROVEMENT_SYSTEM_MESSAGE = `You are an expert prompt engineer. Your task is to improve user prompts to make them more effective for AI interactions.
 
-1. **Use Natural Language**: Make prompts conversational and friendly
-2. **Be Clear and Concise**: Remove ambiguity while maintaining clarity
-3. **Provide Context**: Add relevant context to help understand the request
-4. **Use Specific Keywords**: Replace vague terms with specific, relevant keywords
-5. **Break Down Complex Tasks**: Structure multi-part requests clearly
+IMPORTANT: Return ONLY the improved prompt text. Do not add any explanations, quotes, or additional content.
 
-Examples of improvements:
-- "Training plan." → "Write a training plan for the sales team for the launch of a brand new product."
-- "Marketing talking points." → "Give me 12 thoughtful questions to ask a Chief Marketing Officer on their strategy for 2024."
-- "Write about a sales job." → "Write a job description for a [job title], including the required skills and experience, as well as a summary of [company name] and the position."
-- "Create project plan." → "Create a project plan for the launch of a brand new product. The timeframe should be from now until June 2025."
+Guidelines for improvement:
+1. Make prompts more specific and clear
+2. Add relevant context where missing
+3. Use natural, conversational language
+4. Break down complex tasks into clear steps
+5. Replace vague terms with specific keywords
 
-Rules:
-- Keep the user's original intent intact
-- Only improve clarity, specificity, and structure
-- Don't change the core request
-- Make it sound natural and conversational
-- Add helpful context where missing
-- If the prompt is already well-structured, make minimal changes
-- Do NOT add quotes around your response
+Examples:
+- "Training plan." → "Write a comprehensive training plan for the sales team for the launch of a brand new product."
+- "Marketing talking points." → "Give me 12 thoughtful questions to ask a Chief Marketing Officer about their strategy for 2024."
+- "Write about a sales job." → "Write a job description for a Senior Sales Representative, including required skills and experience, as well as a summary of our company and the position."
 
-Return ONLY the improved prompt text, nothing else. No quotes, no explanations, just the improved prompt.`;
+CRITICAL: Return ONLY the improved prompt. No quotes, no explanations, no additional text. Just the improved prompt.`;
 
 // Free OpenRouter models for prompt improvement
 const FREE_OPENROUTER_MODELS = [
