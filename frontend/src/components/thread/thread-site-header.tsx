@@ -47,6 +47,9 @@ interface ThreadSiteHeaderProps {
   isMobileView?: boolean;
   debugMode?: boolean;
   isSidePanelOpen?: boolean;
+  paused?: boolean;
+  inTakeover?: boolean;
+  onTakeoverToggle?: () => void;
 }
 
 export function SiteHeader({
@@ -60,6 +63,9 @@ export function SiteHeader({
   isMobileView,
   debugMode,
   isSidePanelOpen,
+  paused,
+  inTakeover,
+  onTakeoverToggle,
 }: ThreadSiteHeaderProps) {
   const pathname = usePathname()
   const [isEditing, setIsEditing] = useState(false)

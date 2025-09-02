@@ -194,25 +194,25 @@ def _configure_bedrock(params: Dict[str, Any], model_name: str, model_id: Option
         params["model_id"] = "arn:aws:bedrock:us-west-2:935064898258:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0"
         logger.debug(f"Auto-set model_id for Claude 3.7 Sonnet: {params['model_id']}")
 
-def _configure_openai_gpt5(params: Dict[str, Any], model_name: str) -> None:
-    """Configure OpenAI GPT-5 specific parameters."""
-    if "gpt-5" not in model_name:
-        return
+# def _configure_openai_gpt5(params: Dict[str, Any], model_name: str) -> None:
+#     """Configure OpenAI GPT-5 specific parameters."""
+#     if "gpt-5" not in model_name:
+#         return
     
 
-    # Drop unsupported temperature param (only default 1 allowed)
-    if "temperature" in params and params["temperature"] != 1:
-        params.pop("temperature", None)
+#     # Drop unsupported temperature param (only default 1 allowed)
+#     if "temperature" in params and params["temperature"] != 1:
+#         params.pop("temperature", None)
 
-    # Request priority service tier when calling OpenAI directly
+#     # Request priority service tier when calling OpenAI directly
 
-    # Pass via both top-level and extra_body for LiteLLM compatibility
-    if not model_name.startswith("openrouter/"):
-        params["service_tier"] = "priority"
-        extra_body = params.get("extra_body", {})
-        if "service_tier" not in extra_body:
-            extra_body["service_tier"] = "priority"
-        params["extra_body"] = extra_body
+#     # Pass via both top-level and extra_body for LiteLLM compatibility
+#     if not model_name.startswith("openrouter/"):
+#         params["service_tier"] = "priority"
+#         extra_body = params.get("extra_body", {})
+#         if "service_tier" not in extra_body:
+#             extra_body["service_tier"] = "priority"
+#         params["extra_body"] = extra_body
 
 # def _configure_kimi_k2(params: Dict[str, Any], model_name: str) -> None:
 #     """Configure Kimi K2-specific parameters."""
@@ -391,9 +391,9 @@ def prepare_params(
     
     _add_fallback_model(params, model_name, messages)
     # Add OpenAI GPT-5 specific parameters
-    _configure_openai_gpt5(params, model_name)
+    # _configure_openai_gpt5(params, model_name)
     # Add Kimi K2-specific parameters
-    _configure_kimi_k2(params, model_name)
+    # _configure_kimi_k2(params, model_name)
     # Add Vertex/Gemini-specific parameters
     _configure_vertex_ai(params, model_name)
     _configure_thinking(params, model_name, enable_thinking, reasoning_effort)

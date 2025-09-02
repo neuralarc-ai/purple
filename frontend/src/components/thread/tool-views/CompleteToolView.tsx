@@ -348,7 +348,7 @@ export function CompleteToolView({
             ) : null}
 
             {/* Tasks Completed Section */}
-            {/* {completeData.tasksCompleted && completeData.tasksCompleted.length > 0 && (
+            {completeData.tasksCompleted && completeData.tasksCompleted.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <ListChecks className="h-4 w-4" />
@@ -372,7 +372,7 @@ export function CompleteToolView({
                   ))}
                 </div>
               </div>
-            )} */}
+            )}
 
             {/* Progress Section for Streaming */}
             {isStreaming && (
