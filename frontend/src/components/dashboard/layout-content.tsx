@@ -21,6 +21,7 @@ import { useProjects, useThreads } from '@/hooks/react-query/sidebar/use-sidebar
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAgents } from '@/hooks/react-query/agents/use-agents';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
+import { useUsageRealtime } from '@/hooks/useUsageRealtime';
 
 interface DashboardLayoutContentProps {
   children: React.ReactNode;
@@ -37,6 +38,9 @@ export default function DashboardLayoutContent({
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const isMobile = useIsMobile();
+
+  // Enable real-time updates for usage data across all dashboard pages
+  useUsageRealtime(user?.id);
   const {
     data: healthData,
     isLoading: isCheckingHealth,

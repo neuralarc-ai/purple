@@ -39,6 +39,9 @@ interface FileRendererProps {
   markdownRef?: React.RefObject<HTMLDivElement>;
   onDownload?: () => void;
   isDownloading?: boolean;
+  // Takeover editing support
+  editable?: boolean;
+  onEdit?: (newContent: string) => void;
 }
 
 // Helper function to determine file type from extension
@@ -162,6 +165,8 @@ export function FileRenderer({
   markdownRef,
   onDownload,
   isDownloading,
+  editable = false,
+  onEdit,
 }: FileRendererProps) {
   const fileType = getFileTypeFromExtension(fileName);
   const language = getLanguageFromExtension(fileName);
@@ -223,6 +228,8 @@ export function FileRenderer({
           content={content || ''}
           language={language}
           className="w-full h-full"
+          editable={editable}
+          onChange={onEdit}
         />
       ) : (
         <div className="w-full h-full p-4">

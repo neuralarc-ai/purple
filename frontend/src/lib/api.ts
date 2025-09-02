@@ -787,7 +787,7 @@ export const startAgent = async (
       throw networkError;
     }
 
-    handleApiError(error, { operation: 'start agent', resource: 'AI assistant' });
+    // Re-throw other errors so callers can handle appropriately
     throw error;
   }
 };
@@ -827,6 +827,195 @@ export const stopAgent = async (agentRunId: string): Promise<void> => {
     const stopError = new Error(`Error stopping agent: ${response.statusText}`);
     handleApiError(stopError, { operation: 'stop agent', resource: 'AI assistant' });
     throw stopError;
+  }
+};
+
+// Agent control helpers (pause/resume/takeover/release and manual-event)
+export const pauseAgentRun = async (agentRunId: string): Promise<void> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      const authError = new NoAccessTokenAvailableError();
+      handleApiError(authError, { operation: 'pause agent', resource: 'AI assistant' });
+      throw authError;
+    }
+
+    const response = await fetch(`${API_URL}/agent-run/${agentRunId}/pause`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const err = new Error(`Error pausing agent: ${response.statusText}`);
+      handleApiError(err, { operation: 'pause agent', resource: 'AI assistant' });
+      throw err;
+    }
+  } catch (error) {
+    handleApiError(error, { operation: 'pause agent', resource: 'AI assistant' });
+    throw error;
+  }
+};
+
+export const resumeAgentRun = async (agentRunId: string): Promise<void> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      const authError = new NoAccessTokenAvailableError();
+      handleApiError(authError, { operation: 'resume agent', resource: 'AI assistant' });
+      throw authError;
+    }
+
+    const response = await fetch(`${API_URL}/agent-run/${agentRunId}/resume`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const err = new Error(`Error resuming agent: ${response.statusText}`);
+      handleApiError(err, { operation: 'resume agent', resource: 'AI assistant' });
+      throw err;
+    }
+  } catch (error) {
+    handleApiError(error, { operation: 'resume agent', resource: 'AI assistant' });
+    throw error;
+  }
+};
+
+export const takeoverAgentRun = async (agentRunId: string): Promise<void> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      const authError = new NoAccessTokenAvailableError();
+      handleApiError(authError, { operation: 'takeover agent', resource: 'AI assistant' });
+      throw authError;
+    }
+
+    const response = await fetch(`${API_URL}/agent-run/${agentRunId}/takeover`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const err = new Error(`Error taking over agent: ${response.statusText}`);
+      handleApiError(err, { operation: 'take over agent', resource: 'AI assistant' });
+      throw err;
+    }
+  } catch (error) {
+    handleApiError(error, { operation: 'take over agent', resource: 'AI assistant' });
+    throw error;
+  }
+};
+
+export const releaseAgentRun = async (agentRunId: string): Promise<void> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      const authError = new NoAccessTokenAvailableError();
+      handleApiError(authError, { operation: 'release agent', resource: 'AI assistant' });
+      throw authError;
+    }
+
+    const response = await fetch(`${API_URL}/agent-run/${agentRunId}/release`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const err = new Error(`Error releasing agent: ${response.statusText}`);
+      handleApiError(err, { operation: 'release agent', resource: 'AI assistant' });
+      throw err;
+    }
+  } catch (error) {
+    handleApiError(error, { operation: 'release agent', resource: 'AI assistant' });
+    throw error;
+  }
+};
+
+export type ManualEventPayload = {
+  event_type: string; // preferred client-side field
+  data?: Record<string, any>;
+  description?: string;
+  // Accept legacy/alternate shape just in case callers pass `type`
+  // This keeps the function resilient without changing callers.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  type?: string;
+};
+
+export const logManualEvent = async (
+  agentRunId: string,
+  event: ManualEventPayload,
+): Promise<void> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      const authError = new NoAccessTokenAvailableError();
+      handleApiError(authError, { operation: 'log manual event', resource: 'AI assistant' });
+      throw authError;
+    }
+
+    const response = await fetch(`${API_URL}/agent-run/${agentRunId}/manual-event`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      // Backend expects { type: string, data: object }
+      body: JSON.stringify({
+        type: (event as any).type ?? event.event_type,
+        data: {
+          ...(event.data || {}),
+          ...(event.description ? { description: event.description } : {}),
+        },
+      }),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      const err = new Error(`Error logging manual event: ${response.statusText}${errText ? ` - ${errText}` : ''}`);
+      handleApiError(err, { operation: 'log manual event', resource: 'AI assistant' });
+      throw err;
+    }
+  } catch (error) {
+    handleApiError(error, { operation: 'log manual event', resource: 'AI assistant' });
+    throw error;
   }
 };
 

@@ -125,7 +125,7 @@ function FloatingMobileMenuButton() {
   if (!isMobile || openMobile) return null;
 
   return (
-    <div className="fixed top-6 left-4 z-50 md:hidden">
+    <div className="fixed top-1 left-0 z-50 md:hidden">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
