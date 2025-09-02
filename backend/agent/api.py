@@ -24,6 +24,7 @@ from services.llm import make_llm_api_call
 from run_agent_background import run_agent_background, _cleanup_redis_response_list, update_agent_run_status
 from utils.constants import MODEL_NAME_ALIASES
 from flags.flags import is_enabled
+from utils.security import is_malicious_input
 
 from .config_helper import extract_agent_config, build_unified_config
 from .utils import check_agent_run_limit
@@ -957,7 +958,8 @@ async def stream_agent_run(
                     elif queue_item["type"] == "error":
                         logger.error(f"Listener error for {agent_run_id}: {queue_item['data']}")
                         terminate_stream = True
-                        yield f"data: {json.dumps({'type': 'status', 'status': 'error'})}\n\n"
+                        # Include a descriptive message so clients don't receive an empty object
+                        yield f"data: {json.dumps({'type': 'status', 'status': 'error', 'message': str(queue_item.get('data') or 'Stream listener error')})}\n\n"
                         break
 
                 except asyncio.CancelledError:
@@ -1055,6 +1057,9 @@ async def initiate_agent_with_files(
     files: List[UploadFile] = File(default=[]),
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
+    # Security check: block prompt injection or malware content
+    if is_malicious_input(prompt or ""):
+        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     """
     Initiate a new agent session with optional file attachments.
 
@@ -3361,6 +3366,8 @@ async def add_message_to_thread(
     user_id: str = Depends(get_current_user_id_from_jwt),
 ):
     """Add a message to a thread"""
+    if is_malicious_input(message or ""):
+        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     logger.debug(f"Adding message to thread: {thread_id}")
     client = await db.client
     await verify_thread_access(client, thread_id, user_id)
@@ -3387,6 +3394,8 @@ async def create_message(
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
     """Create a new message in a thread."""
+    if is_malicious_input(getattr(message_data, 'content', '') or ""):
+        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     logger.debug(f"Creating message in thread: {thread_id}")
     client = await db.client
     

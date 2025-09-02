@@ -24,6 +24,7 @@ import { BillingModal } from '@/components/billing/billing-modal';
 import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 import { useThreadQuery } from '@/hooks/react-query/threads/use-threads';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
+
 import { AgentRunLimitDialog } from '@/components/thread/agent-run-limit-dialog';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { CustomAgentsSection } from './custom-agents-section';
@@ -41,6 +42,8 @@ import {
 
 import { UseCases } from './use-cases';
 
+import { SecurityPopup } from '@/components/thread/chat-input/security-popup';
+import { useSecurityInterception } from '@/hooks/useSecurityInterception';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -72,19 +75,17 @@ export function DashboardContent() {
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  // Handle prompt from URL
-  useEffect(() => {
-    const promptParam = searchParams?.get('prompt');
-    if (promptParam) {
-      const decodedPrompt = decodeURIComponent(promptParam);
-      setInputValue(decodedPrompt);
-      // Focus the input after a small delay to ensure it's rendered
-      setTimeout(() => {
-        chatInputRef.current?.focus();
-      }, 100);
-    }
-  }, [searchParams]);
-  // Welcome message - cached and persistent
+  // Security interception hook
+  const {
+    showPopup: showSecurityPopup,
+    popupMessage: securityPopupMessage,
+    popupType: securityPopupType,
+    shouldBlock: shouldBlockRequest,
+    closePopup: closeSecurityPopup,
+    shouldProceedWithRequest,
+  } = useSecurityInterception();
+
+  
   const welcomeMessage = useMemo(() => {
     // Check if we have a cached welcome message
     const cachedMessage = localStorage.getItem('cached_welcome_message');
@@ -213,6 +214,12 @@ export function DashboardContent() {
     setLocalLoading(true);
     
     // Set loading state immediately
+    // Check for security concerns on submission only
+    if (!shouldProceedWithRequest(message)) {
+      // Security popup is already shown by the hook
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -379,7 +386,7 @@ export function DashboardContent() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="h-8 w-8 flex items-center justify-center rounded-full">
+                <div className="h-9 w-9 flex items-center justify-center rounded-full">
                   <AnimatedThemeToggler className="h-4 w-4 cursor-pointer" />
                 </div>
               </TooltipTrigger>
@@ -415,6 +422,15 @@ export function DashboardContent() {
                   </div>
                 </div>
                 <div className="w-full">
+                  {/* Security Popup - Positioned above the input */}
+                  <SecurityPopup
+                    isVisible={showSecurityPopup}
+                    onClose={closeSecurityPopup}
+                    message={securityPopupMessage}
+                    type={securityPopupType}
+                    showCloseButton={true}
+                  />
+                  
                   <ChatInput
                     ref={chatInputRef}
                     onSubmit={handleSubmit}
