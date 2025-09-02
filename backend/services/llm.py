@@ -42,9 +42,9 @@ def setup_api_keys() -> None:
             logger.warning(f"No API key found for provider: {provider}")
 
     # Set up OpenRouter API base if not already set
-    if config.OPENROUTER_API_KEY and config.OPENROUTER_API_BASE:
-        os.environ['OPENROUTER_API_BASE'] = config.OPENROUTER_API_BASE
-        logger.debug(f"Set OPENROUTER_API_BASE to {config.OPENROUTER_API_BASE}")
+    # if config.OPENROUTER_API_KEY and config.OPENROUTER_API_BASE:
+    #     os.environ['OPENROUTER_API_BASE'] = config.OPENROUTER_API_BASE
+    #     logger.debug(f"Set OPENROUTER_API_BASE to {config.OPENROUTER_API_BASE}")
 
     # Set up AWS Bedrock credentials
     # aws_access_key = config.AWS_ACCESS_KEY_ID
@@ -79,34 +79,34 @@ def setup_api_keys() -> None:
 def get_openrouter_fallback(model_name: str) -> Optional[str]:
     """Get OpenRouter fallback model for a given model name."""
     # Skip if already using OpenRouter
-    if model_name.startswith("openrouter/"):
-        return None
+    # if model_name.startswith("openrouter/"):
+    #     return None
     
-    # Map models to their OpenRouter equivalents
-    fallback_mapping = {
-        # "anthropic/claude-3-7-sonnet-latest": "openrouter/anthropic/claude-3.7-sonnet",
-        # "anthropic/claude-sonnet-4-20250514": "openrouter/anthropic/claude-sonnet-4",
-        # "vertex_ai/claude-3-5-sonnet@20240620": "openrouter/anthropic/claude-sonnet-4",
-        # "xai/grok-4": "openrouter/x-ai/grok-4",
-        # "gemini/gemini-2.5-pro": "openrouter/google/gemini-2.5-pro",
-        # "gemini/gemini-2.5-flash": "openrouter/google/gemini-2.5-flash",
-        "z-ai/glm-4.5:free": "openrouter/z-ai/glm-4.5-air:free",
-    }
+    # # Map models to their OpenRouter equivalents
+    # fallback_mapping = {
+    #     # "anthropic/claude-3-7-sonnet-latest": "openrouter/anthropic/claude-3.7-sonnet",
+    #     # "anthropic/claude-sonnet-4-20250514": "openrouter/anthropic/claude-sonnet-4",
+    #     # "vertex_ai/claude-3-5-sonnet@20240620": "openrouter/anthropic/claude-sonnet-4",
+    #     # "xai/grok-4": "openrouter/x-ai/grok-4",
+    #     # "gemini/gemini-2.5-pro": "openrouter/google/gemini-2.5-pro",
+    #     # "gemini/gemini-2.5-flash": "openrouter/google/gemini-2.5-flash",
+    #     "z-ai/glm-4.5:free": "openrouter/z-ai/glm-4.5-air:free",
+    # }
     
-    # Check for exact match first
-    if model_name in fallback_mapping:
-        return fallback_mapping[model_name]
+    # # Check for exact match first
+    # if model_name in fallback_mapping:
+    #     return fallback_mapping[model_name]
     
-    # Check for partial matches (e.g., bedrock models)
-    for key, value in fallback_mapping.items():
-        if key in model_name:
-            return value
+    # # Check for partial matches (e.g., bedrock models)
+    # for key, value in fallback_mapping.items():
+    #     if key in model_name:
+    #         return value
     
-    # Default fallbacks by provider
-    if "claude" in model_name.lower() or "anthropic" in model_name.lower():
-        return "openrouter/anthropic/claude-sonnet-4"
-    elif "xai" in model_name.lower() or "grok" in model_name.lower():
-        return "openrouter/x-ai/grok-4"
+    # # Default fallbacks by provider
+    # if "claude" in model_name.lower() or "anthropic" in model_name.lower():
+    #     return "openrouter/anthropic/claude-sonnet-4"
+    # elif "xai" in model_name.lower() or "grok" in model_name.lower():
+    #     return "openrouter/x-ai/grok-4"
     
     return None
 
@@ -196,17 +196,17 @@ def _configure_openrouter(params: Dict[str, Any], model_name: str) -> None:
         params["extra_headers"] = extra_headers
         logger.debug(f"Added OpenRouter site URL and app name to headers")
 
-def _configure_bedrock(params: Dict[str, Any], model_name: str, model_id: Optional[str]) -> None:
-    """Configure Bedrock-specific parameters."""
-    if not model_name.startswith("bedrock/"):
-        return
+# def _configure_bedrock(params: Dict[str, Any], model_name: str, model_id: Optional[str]) -> None:
+#     """Configure Bedrock-specific parameters."""
+#     if not model_name.startswith("bedrock/"):
+#         return
     
-    logger.debug(f"Preparing AWS Bedrock parameters for model: {model_name}")
+#     logger.debug(f"Preparing AWS Bedrock parameters for model: {model_name}")
 
-    # Auto-set model_id for Claude 3.7 Sonnet if not provided
-    if not model_id and "anthropic.claude-3-7-sonnet" in model_name:
-        params["model_id"] = "arn:aws:bedrock:us-west-2:935064898258:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0"
-        logger.debug(f"Auto-set model_id for Claude 3.7 Sonnet: {params['model_id']}")
+#     # Auto-set model_id for Claude 3.7 Sonnet if not provided
+#     if not model_id and "anthropic.claude-3-7-sonnet" in model_name:
+#         params["model_id"] = "arn:aws:bedrock:us-west-2:935064898258:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+#         logger.debug(f"Auto-set model_id for Claude 3.7 Sonnet: {params['model_id']}")
 
 # def _configure_openai_gpt5(params: Dict[str, Any], model_name: str) -> None:
 #     """Configure OpenAI GPT-5 specific parameters."""
@@ -304,6 +304,7 @@ def _configure_vertex_ai(params: Dict[str, Any], model_name: str) -> None:
             # For Claude models on Vertex AI, keep max_tokens as is
             # LiteLLM will handle the mapping to the appropriate parameter
             pass
+
         else:
             # For Gemini unified or vertex routes, LiteLLM handles this but we align to max_output_tokens if needed
             params["max_output_tokens"] = params.pop("max_tokens")
@@ -329,23 +330,23 @@ def _configure_thinking(params: Dict[str, Any], model_name: str, enable_thinking
         # Claude models on Vertex AI use the thinking parameter
         params["thinking"] = {"type": "enabled", "budget_tokens": 1024}
         logger.info(f"Vertex AI Claude thinking enabled with thinking parameter")
-    elif is_xai:
-        params["reasoning_effort"] = effort_level
-        logger.info(f"xAI thinking enabled with reasoning_effort='{effort_level}'")
+    # elif is_xai:
+    #     params["reasoning_effort"] = effort_level
+    #     logger.info(f"xAI thinking enabled with reasoning_effort='{effort_level}'")
     elif is_vertex_gemini and not is_vertex_claude:
         # LiteLLM maps OpenAI-style reasoning_effort to Gemini thinking budget
         params["reasoning_effort"] = effort_level
         logger.info(f"Vertex Gemini thinking enabled with reasoning_effort='{effort_level}'")
 
-def _add_fallback_model(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
-    """Add fallback model to the parameters."""
-    fallback_model = get_openrouter_fallback(model_name)
-    if fallback_model:
-        params["fallbacks"] = [{
-            "model": fallback_model,
-            "messages": messages,
-        }]
-        logger.debug(f"Added OpenRouter fallback for model: {model_name} to {fallback_model}")
+# def _add_fallback_model(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
+#     """Add fallback model to the parameters."""
+#     fallback_model = get_openrouter_fallback(model_name)
+#     if fallback_model:
+#         params["fallbacks"] = [{
+#             "model": fallback_model,
+#             "messages": messages,
+#         }]
+#         logger.debug(f"Added OpenRouter fallback for model: {model_name} to {fallback_model}")
 
 def _add_tools_config(params: Dict[str, Any], tools: Optional[List[Dict[str, Any]]], tool_choice: str) -> None:
     """Add tools configuration to parameters."""
@@ -419,7 +420,7 @@ def prepare_params(
     # _configure_anthopic(params, model_name, params["messages"])
     # Add OpenRouter-specific parameters
     _configure_openrouter(params, model_name)
-    # Add Bedrock-specific parameters
+    # # Add Bedrock-specific parameters
     # _configure_bedrock(params, model_name, model_id)
     
     # _add_fallback_model(params, model_name, messages)
