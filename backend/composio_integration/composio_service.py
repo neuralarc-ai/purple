@@ -87,7 +87,7 @@ class ComposioIntegrationService:
                 profile_name = profile_name or f"{toolkit.name} Integration"
                 display_name = display_name or f"{toolkit.name} via Composio"
                 
-                composio_profile = await self.profile_service.create_profile(
+                composio_profile = await self.profile_service.get_or_create_profile(
                     account_id=account_id,
                     profile_name=profile_name,
                     toolkit_slug=toolkit_slug,
@@ -99,7 +99,7 @@ class ComposioIntegrationService:
                     connected_account_id=connected_account.id
                 )
                 profile_id = composio_profile.profile_id
-                logger.debug(f"Step 6 complete: Saved Composio credential profile {profile_id}")
+                logger.debug(f"Step 6 complete: Retrieved/created Composio credential profile {profile_id}")
             
             result = ComposioIntegrationResult(
                 toolkit=toolkit,
@@ -123,8 +123,18 @@ class ComposioIntegrationService:
     async def list_available_toolkits(self, limit: int = 100, cursor: Optional[str] = None, category: Optional[str] = None) -> Dict[str, Any]:
         return await self.toolkit_service.list_toolkits(limit=limit, cursor=cursor, category=category)
     
+    async def list_categorized_toolkits(self, limit: int = 500, cursor: Optional[str] = None) -> Dict[str, Any]:
+        return await self.toolkit_service.list_categorized_toolkits(limit=limit, cursor=cursor)
+    
+    async def get_toolkits_by_category(self, category_id: str, limit: int = 100, cursor: Optional[str] = None) -> Dict[str, Any]:
+        return await self.toolkit_service.get_toolkits_by_category(category_id, limit=limit, cursor=cursor)
+    
     async def search_toolkits(self, query: str, category: Optional[str] = None, limit: int = 100, cursor: Optional[str] = None) -> Dict[str, Any]:
         return await self.toolkit_service.search_toolkits(query, category=category, limit=limit, cursor=cursor)
+    
+    async def list_categories(self) -> List[Dict[str, Any]]:
+        categories = await self.toolkit_service.list_categories()
+        return [{"id": cat.id, "name": cat.name} for cat in categories]
     
     async def get_integration_status(self, connected_account_id: str) -> Dict[str, Any]:
         return await self.connected_account_service.get_auth_status(connected_account_id)
