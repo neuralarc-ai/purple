@@ -50,6 +50,8 @@ import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { threadKeys } from '@/hooks/react-query/threads/keys';
 import { useProjectRealtime } from '@/hooks/useProjectRealtime';
+import { useUsageRealtime } from '@/hooks/useUsageRealtime';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function ThreadPage({
   params,
@@ -64,6 +66,10 @@ export default function ThreadPage({
   const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  // Enable real-time updates for usage data
+  useUsageRealtime(user?.id);
 
   // State
   const [newMessage, setNewMessage] = useState('');
@@ -864,6 +870,21 @@ export default function ThreadPage({
           onSubmit={handleSubmitMessage}
         />
 
+        {/* Disclaimer text between content and chat input */}
+        <div
+          className={cn(
+            'px-4 text-center',
+            'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
+          )}
+        >
+          <div className="max-w-[100vw] overflow-x-auto whitespace-nowrap">
+            <p className="text-xs text-muted-foreground bg-background backdrop-blur-sm rounded-lg px-3 inline-block">
+              Helium can make mistakes. 
+              Check important info. See Cookie Preferences.
+            </p>
+          </div>
+        </div>
+
         {/* Automation control banners */}
         {(paused || inTakeover) && (
           <div className="fixed top-16 left-1/2 -translate-x-1/2 z-20">
@@ -893,7 +914,7 @@ export default function ThreadPage({
 
         <div
           className={cn(
-            'fixed bottom-5 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6',
+            'fixed bottom-6 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6',
             'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
             leftSidebarState === 'expanded'
               ? 'left-[72px] md:left-[256px]'
@@ -955,29 +976,6 @@ export default function ThreadPage({
               />
             </div>
           </div>
-        </div>
-
-        {/* Disclaimer text at bottom */}
-        <div
-          className={cn(
-            'fixed bottom-0 z-10 px-4 pt-4 text-center',
-            'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
-            leftSidebarState === 'expanded'
-              ? 'left-[72px] md:left-[256px]'
-              : isSidePanelOpen
-                ? 'left-[53px]'
-                : 'left-[50px]',
-            isSidePanelOpen
-              ? leftSidebarState === 'expanded'
-                ? 'right-[45vw] 2xl:right-[40.5vw] xl:right-[40.5vw] lg:right-[43vw]'
-                : 'right-[46vw]'
-              : 'right-0',
-            isMobile ? 'left-0 right-0' : '',
-          )}
-        >
-          <p className="text-xs text-muted-foreground bg-background backdrop-blur-sm rounded px-2 pt-4">
-            Helium can make mistakes. Check important info. See Cookie Preferences.
-          </p>
         </div>
       </ThreadLayout>
 

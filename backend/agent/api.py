@@ -327,7 +327,11 @@ async def start_agent(
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
     logger.debug(f"Resolved model name: {resolved_model}")
 
-    # Update model_name to use the resolved version
+    # Hard override: in production, always force Vertex Claude Sonnet 4
+    if os.getenv("ENV_MODE", "local").lower() == "production":
+        resolved_model = "vertex_ai/claude-sonnet-4@20250514"
+
+    # Update model_name to use the resolved version (or forced one)
     model_name = resolved_model
 
     logger.debug(f"Starting new agent for thread: {thread_id} with config: model={model_name}, thinking={body.enable_thinking}, effort={body.reasoning_effort}, stream={body.stream}, context_manager={body.enable_context_manager} (Instance: {instance_id})")
@@ -1064,12 +1068,11 @@ async def initiate_agent_with_files(
     logger.debug(f"Original model_name from request: {model_name}")
 
     if model_name is None:
-        # In production, randomly select from the three Vertex AI models
+        # In production, force Vertex Claude Sonnet 4
         env_mode = os.getenv("ENV_MODE", "local").lower()
         if env_mode == "production":
-            from utils.constants import get_random_production_model
-            model_name = get_random_production_model()
-            logger.debug(f"Production environment: randomly selected model: {model_name}")
+            model_name = "vertex_ai/claude-sonnet-4@20250514"
+            logger.debug(f"Production environment: using fixed model: {model_name}")
         else:
             model_name = "vertex_ai/gemini-2.5-flash"
             logger.debug(f"Non-production environment: using default model: {model_name}")
@@ -1490,16 +1493,16 @@ async def get_agents(
 
                 for row in (versions_result.data or []):
                     config = row.get('config') or {}
-                    tools = config.get('tools') or {}
+                    agent_tools_config = config.get('tools') or {}
                     version_dict = {
                         'version_id': row['version_id'],
                         'agent_id': row['agent_id'],
                         'version_number': row['version_number'],
                         'version_name': row['version_name'],
                         'system_prompt': config.get('system_prompt', ''),
-                        'configured_mcps': tools.get('mcp', []),
-                        'custom_mcps': tools.get('custom_mcp', []),
-                        'agentpress_tools': tools.get('agentpress', {}),
+                        'configured_mcps': agent_tools_config.get('mcp', []),
+                        'custom_mcps': agent_tools_config.get('custom_mcp', []),
+                        'agentpress_tools': agent_tools_config.get('agentpress', {}),
                         'is_active': row.get('is_active', False),
                         'created_at': row.get('created_at'),
                         'updated_at': row.get('updated_at') or row.get('created_at'),

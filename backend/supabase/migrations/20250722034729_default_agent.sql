@@ -60,7 +60,7 @@ BEGIN
 END;
 $$;
 
--- Create function to get all Suna default agents
+-- Create function to get all Helium default agents
 CREATE OR REPLACE FUNCTION get_all_helium_default_agents()
 RETURNS TABLE (
     agent_id UUID,
