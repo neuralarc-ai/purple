@@ -199,7 +199,7 @@ api_router.include_router(prompt_generation_api.router)
 # Prompt improvement endpoint
 @api_router.post("/improve-prompt")
 async def improve_prompt(request: Request):
-    """Improve a user prompt using OpenRouter models"""
+    """Improve a user prompt using Vertex AI Gemini 2.0 Flash model"""
     try:
         from services.llm import make_llm_api_call, setup_api_keys
         
@@ -208,7 +208,7 @@ async def improve_prompt(request: Request):
         
         body = await request.json()
         prompt = body.get('prompt', '').strip()
-        model = body.get('model', 'openrouter/mistralai/mistral-small-3.2-24b-instruct:free')
+        model = body.get('model', 'vertex_ai/gemini-2.0-flash')  # Default to Gemini 2.0 Flash
         system_message = body.get('system_message', '')
         
         if not prompt:
@@ -265,8 +265,8 @@ async def improve_prompt(request: Request):
         
         # Provide more specific error messages for common issues
         error_message = str(e)
-        if "openrouter" in error_message.lower():
-            error_message = f"OpenRouter error: {error_message}"
+        if "vertex" in error_message.lower():
+            error_message = f"Vertex AI error: {error_message}"
         elif "authentication" in error_message.lower():
             error_message = f"Authentication error: {error_message}"
         elif "quota" in error_message.lower():

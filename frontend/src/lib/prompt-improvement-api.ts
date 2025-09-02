@@ -26,25 +26,20 @@ Examples:
 
 CRITICAL: Return ONLY the improved prompt. No quotes, no explanations, no additional text. Just the improved prompt.`;
 
-// Free OpenRouter models for prompt improvement
-const FREE_OPENROUTER_MODELS = [
-  'openrouter/mistralai/mistral-small-3.2-24b-instruct:free',
-  'openrouter/deepseek/deepseek-chat-v3.1:free',
-  'openrouter/meta-llama/llama-4-maverick:free',
-];
+// Vertex AI Gemini 2.0 Flash model for prompt improvement
+const GEMINI_2_FLASH_MODEL = 'vertex_ai/gemini-2.0-flash';
 
 /**
- * Gets a random free OpenRouter model for prompt improvement
+ * Gets the Gemini 2.0 Flash model for prompt improvement
  */
-function getRandomOpenRouterModel(): string {
-  const randomIndex = Math.floor(Math.random() * FREE_OPENROUTER_MODELS.length);
-  return FREE_OPENROUTER_MODELS[randomIndex];
+function getGeminiModel(): string {
+  return GEMINI_2_FLASH_MODEL;
 }
 
 /**
- * Improves a prompt using a random free OpenRouter model
+ * Improves a prompt using Vertex AI Gemini 2.0 Flash model
  */
-export async function improvePromptWithOpenRouter(
+export async function improvePromptWithGemini(
   originalPrompt: string,
 ): Promise<PromptImprovementResponse> {
   try {
@@ -56,8 +51,8 @@ export async function improvePromptWithOpenRouter(
       };
     }
 
-    const selectedModel = getRandomOpenRouterModel();
-    console.log(`Using OpenRouter model for prompt improvement: ${selectedModel}`);
+    const selectedModel = getGeminiModel();
+    console.log(`Using Vertex AI Gemini 2.0 Flash for prompt improvement: ${selectedModel}`);
 
     const response = await fetch('/api/improve-prompt', {
       method: 'POST',
@@ -96,4 +91,4 @@ export async function improvePromptWithOpenRouter(
 }
 
 // Keep the old function name for backward compatibility
-export const improvePromptWithGemini = improvePromptWithOpenRouter;
+export const improvePromptWithOpenRouter = improvePromptWithGemini;
