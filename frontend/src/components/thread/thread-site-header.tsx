@@ -49,7 +49,7 @@ interface ThreadSiteHeaderProps {
   isMobileView?: boolean;
   debugMode?: boolean;
   isSidePanelOpen?: boolean;
-  agentStatus?: 'idle' | 'running' | 'connecting' | 'error';
+  agentStatus?: 'idle' | 'running' | 'connecting' | 'paused' | 'error';
   paused?: boolean;
   inTakeover?: boolean;
   onTakeoverToggle?: () => void;
