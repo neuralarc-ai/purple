@@ -333,11 +333,11 @@ export function SidebarLeft({
                 onClick={() => {
                   if (isMobile) setOpenMobile(false);
                 }}
-                className="touch-manipulation"
+                className="touch-manipulation px-4.5"
               >
                 <Link href="/prompt-library" className="flex items-center">
                   <ClipboardPen 
-                    className="mr-1 h-5 w-5 stroke-[1.5]" 
+                    className="mr-1.5 h-5 w-5 stroke-[1.5]" 
                   />
                   <span>Prompt Library</span>
                 </Link>

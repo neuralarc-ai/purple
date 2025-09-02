@@ -157,8 +157,6 @@ export function DashboardContent() {
 
   const threadQuery = useThreadQuery(initiatedThreadId || '');
 
-  const enabledEnvironment = isStagingMode() || isLocalMode();
-
   useEffect(() => {
     console.log('🚀 Dashboard effect:', { 
       agentsLength: agents.length, 
@@ -288,10 +286,10 @@ export function DashboardContent() {
       case 'default':
         return {
           enable_context_manager: false,
-          reasoning_effort: 'minimal',
+          reasoning_effort: 'low',
           enable_thinking: false,
           max_tokens: 100, // Reduced for faster response
-          temperature: 0.5, // Lower temperature for more focused responses
+          temperature: 0.3, // Lower temperature for more focused responses
           stream: true,
           enable_tools: true,
           enable_search: true,
@@ -307,7 +305,7 @@ export function DashboardContent() {
       case 'agent':
         return {
           enable_context_manager: true,
-          reasoning_effort: thinkingEnabled ? 'medium' : 'low', // Reduced reasoning effort
+          reasoning_effort: thinkingEnabled ? 'high' : 'medium', // Reduced reasoning effort
           enable_thinking: thinkingEnabled,
           max_tokens: 500, // Reduced for faster response
           temperature: 0.3,
@@ -326,10 +324,10 @@ export function DashboardContent() {
       default:
         return {
           enable_context_manager: false,
-          reasoning_effort: 'minimal',
+          reasoning_effort: 'low',
           enable_thinking: false,
           max_tokens: 100,
-          temperature: 0.5,
+          temperature: 0.3,
           stream: true,
           enable_tools: true,
           enable_search: true,
@@ -381,7 +379,7 @@ export function DashboardContent() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="h-8 w-8 flex items-center justify-center rounded-full bg-black dark:bg-white p-1.5">
+                <div className="h-8 w-8 flex items-center justify-center rounded-full">
                   <AnimatedThemeToggler className="h-4 w-4 cursor-pointer" />
                 </div>
               </TooltipTrigger>
@@ -403,21 +401,17 @@ export function DashboardContent() {
               <div className="w-full max-w-[800px] flex flex-col items-center justify-center space-y-1 md:space-y-2">
                 <div className="flex flex-col items-center text-center w-full">
                   <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground/80 libre-baskerville-regular">
-                    {profileLoading ? (
-                      <span>Loading...</span>
-                    ) : (
-                      currentWelcomeMessage.split('{name}').map((part, index, array) => {
-                        if (index === array.length - 1) {
-                          return part;
-                        }
-                        return (
-                          <span key={index}>
-                            {part}
-                            <span>{cachedUserName}</span>
-                          </span>
-                        );
-                      })
-                    )}
+                    {currentWelcomeMessage.split('{name}').map((part, index, array) => {
+                      if (index === array.length - 1) {
+                        return part;
+                      }
+                      return (
+                        <span key={index}>
+                          {part}
+                          <span>{cachedUserName}</span>
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="w-full">
