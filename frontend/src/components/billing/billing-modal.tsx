@@ -146,7 +146,7 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                         {/* Credit Balance Display - Temporarily show for all users for testing */}
                         <div className="mb-6">
                             <CreditBalanceDisplay 
-                                balance={subscriptionData?.credit_balance || 0}
+                                balance={subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)}
                                 canPurchase={true} // Temporarily enable for all users for testing
                                 onPurchaseClick={() => setShowCreditPurchaseModal(true)}
                             />
