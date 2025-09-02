@@ -136,6 +136,8 @@ class SubscriptionStatus(BaseModel):
     # Credit information
     credit_balance: Optional[float] = None
     credit_balance_credits: Optional[int] = None
+    credit_total_purchased: Optional[float] = None
+    credit_total_used: Optional[float] = None
     can_purchase_credits: bool = False
 
 class PurchaseCreditsRequest(BaseModel):
@@ -1361,6 +1363,8 @@ async def get_subscription(
                 current_usage=current_usage,
                 credit_balance=credit_balance_info.balance_dollars,
                 credit_balance_credits=credit_balance_info.balance_credits,
+                credit_total_purchased=credit_balance_info.total_purchased,
+                credit_total_used=credit_balance_info.total_used,
                 can_purchase_credits=True
             )
         
@@ -1394,6 +1398,8 @@ async def get_subscription(
             },
             credit_balance=credit_balance_info.balance_dollars,
             credit_balance_credits=credit_balance_info.balance_credits,
+            credit_total_purchased=credit_balance_info.total_purchased,
+            credit_total_used=credit_balance_info.total_used,
             can_purchase_credits=True
         )
 

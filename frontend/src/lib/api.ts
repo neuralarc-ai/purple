@@ -1788,6 +1788,8 @@ export interface SubscriptionStatus {
   // Credit information
   credit_balance?: number;
   credit_balance_credits?: number; // Add credit amount (1 credit = $0.01)
+  credit_total_purchased?: number; // Total purchased in dollars
+  credit_total_used?: number; // Total used in dollars
   can_purchase_credits?: boolean;
 }
 
