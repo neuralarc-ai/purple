@@ -1,17 +1,12 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import {
   Globe,
   MonitorPlay,
   ExternalLink,
-  CheckCircle,
   AlertTriangle,
   CircleDashed,
-  RefreshCw,
-  Code2,
-  ImageIcon,
   Hand,
   Play,
-  Pause,
 } from 'lucide-react';
 import { ToolViewProps } from './types';
 import {
@@ -33,7 +28,6 @@ export function BrowserToolView({
   toolContent,
   assistantTimestamp,
   toolTimestamp,
-  isSuccess = true,
   isStreaming = false,
   project,
   agentStatus = 'idle',
@@ -41,6 +35,7 @@ export function BrowserToolView({
   currentIndex = 0,
   totalCalls = 1,
 }: ToolViewProps) {
+
   // Try to extract data using the new parser first
   const assistantToolData = extractToolData(assistantContent);
   const toolToolData = extractToolData(toolContent);
@@ -245,25 +240,7 @@ export function BrowserToolView({
     );
   }, [vncPreviewUrl]);
 
-  const [progress, setProgress] = React.useState(100);
 
-  React.useEffect(() => {
-    if (isRunning) {
-      setProgress(0);
-      const timer = setInterval(() => {
-        setProgress((prevProgress) => {
-          if (prevProgress >= 95) {
-            clearInterval(timer);
-            return prevProgress;
-          }
-          return prevProgress + 2;
-        });
-      }, 500);
-      return () => clearInterval(timer);
-    } else {
-      setProgress(100);
-    }
-  }, [isRunning]);
 
   // Reset loading state when screenshot changes
   React.useEffect(() => {
@@ -376,6 +353,7 @@ export function BrowserToolView({
                 {browserTakeoverMode ? 'Release' : 'Takeover'}
               </span>
             </Button>
+          </div>
             
             {/* Browser Status Badges - Commented out for now */}
             {/* {!isRunning && (
@@ -405,7 +383,6 @@ export function BrowserToolView({
               Executing browser action
             </Badge>
           )} */}
-        </div>
         </div>
       </CardHeader>
 

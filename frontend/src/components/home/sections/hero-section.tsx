@@ -57,6 +57,7 @@ export function HeroSection() {
   const [mounted, setMounted] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const { scrollY } = useScroll();
   const [inputValue, setInputValue] = useState('');
@@ -158,7 +159,11 @@ export function HeroSection() {
   // Handle ChatInput submission
   const handleChatInputSubmit = async (
     message: string,
-    options?: { model_name?: string; enable_thinking?: boolean }
+    options?: { 
+      model_name?: string; 
+      enable_thinking?: boolean;
+      mode?: 'default' | 'agent';
+    }
   ) => {
     if ((!message.trim() && !chatInputRef.current?.getPendingFiles().length) || isSubmitting) return;
 
@@ -169,12 +174,16 @@ export function HeroSection() {
       return;
     }
 
-    // User is logged in, create the agent with files like dashboard does
+    // Set loading state immediately
     setIsSubmitting(true);
+    setLocalLoading(true); // Set local loading state for instant feedback
+
     try {
+      // Process files asynchronously to avoid blocking
       const files = chatInputRef.current?.getPendingFiles() || [];
       localStorage.removeItem(PENDING_PROMPT_KEY);
 
+      // Create FormData asynchronously
       const formData = new FormData();
       formData.append('prompt', message);
 
@@ -183,18 +192,28 @@ export function HeroSection() {
         formData.append('agent_id', selectedAgentId);
       }
 
-      // Add files if any
+      // Process files asynchronously
       files.forEach((file) => {
         const normalizedName = normalizeFilenameToNFC(file.name);
         formData.append('files', file, normalizedName);
       });
 
-      if (options?.model_name) formData.append('model_name', options.model_name);
-      formData.append('enable_thinking', String(options?.enable_thinking ?? false));
-      formData.append('reasoning_effort', 'low');
-      formData.append('stream', 'true');
-      formData.append('enable_context_manager', 'false');
+      // Handle mode-based configuration asynchronously
+      if (options?.mode) {
+        const modeConfig = getModeConfiguration(options.mode, options.enable_thinking);
+        formData.append('enable_thinking', String(options.enable_thinking ?? false));
+        formData.append('reasoning_effort', modeConfig.reasoning_effort);
+        formData.append('enable_context_manager', String(modeConfig.enable_context_manager));
+      } else {
+        // Fallback to default configuration
+        if (options?.model_name) formData.append('model_name', options.model_name);
+        formData.append('enable_thinking', String(options?.enable_thinking ?? false));
+        formData.append('reasoning_effort', 'low');
+        formData.append('stream', 'true');
+        formData.append('enable_context_manager', 'false');
+      }
 
+      // Submit the request
       const result = await initiateAgentMutation.mutateAsync(formData);
 
       if (result.thread_id) {
@@ -228,6 +247,69 @@ export function HeroSection() {
       }
     } finally {
       setIsSubmitting(false);
+      setLocalLoading(false); // Clear local loading state
+    }
+  };
+
+  // Helper function to get mode-based configuration
+  const getModeConfiguration = (mode: string, thinkingEnabled: boolean) => {
+    switch(mode) {
+      case 'default':
+        return {
+          enable_context_manager: false,
+          reasoning_effort: 'minimal',
+          enable_thinking: false,
+          max_tokens: 100, // Reduced for faster response
+          temperature: 0.5, // Lower temperature for more focused responses
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 5000, // 5 seconds timeout for ultra-fast response
+          chunk_size: 25, // Ultra-small chunks for immediate streaming
+          buffer_size: 50, // Smaller buffer for instant display
+          // Additional ultra-fast optimizations
+          enable_parallel_processing: true,
+          skip_initial_validation: true,
+          use_fast_model: true,
+          cache_responses: true
+        };
+      case 'agent':
+        return {
+          enable_context_manager: true,
+          reasoning_effort: thinkingEnabled ? 'medium' : 'low', // Reduced reasoning effort
+          enable_thinking: thinkingEnabled,
+          max_tokens: 500, // Reduced for faster response
+          temperature: 0.3,
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 15000, // 15 seconds for faster complex tasks
+          chunk_size: 75, // Smaller chunks for faster streaming
+          buffer_size: 150, // Smaller buffer for faster display
+          // Additional optimizations
+          enable_parallel_processing: true,
+          skip_initial_validation: false,
+          use_fast_model: false,
+          cache_responses: true
+        };
+      default:
+        return {
+          enable_context_manager: false,
+          reasoning_effort: 'minimal',
+          enable_thinking: false,
+          max_tokens: 100,
+          temperature: 0.5,
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 5000,
+          chunk_size: 25,
+          buffer_size: 50,
+          enable_parallel_processing: true,
+          skip_initial_validation: true,
+          use_fast_model: true,
+          cache_responses: true
+        };
     }
   };
 
@@ -340,7 +422,7 @@ export function HeroSection() {
                   ref={chatInputRef}
                   onSubmit={handleChatInputSubmit}
                   placeholder="Describe the agent you want to build or the task you want completed..."
-                  loading={isSubmitting}
+                  loading={isSubmitting || localLoading} // Use local loading state for immediate feedback
                   disabled={isSubmitting}
                   value={inputValue}
                   onChange={setInputValue}
