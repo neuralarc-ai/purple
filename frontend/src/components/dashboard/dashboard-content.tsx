@@ -62,9 +62,9 @@ export function DashboardContent() {
   useEffect(() => {
     const promptParam = searchParams?.get('prompt');
     if (promptParam) {
+      // Decode but don't set the input value
       const decodedPrompt = decodeURIComponent(promptParam);
-      setInputValue(decodedPrompt);
-      // Focus the input after a small delay to ensure it's rendered
+      // Just focus the input without setting the value
       setTimeout(() => {
         chatInputRef.current?.focus();
       }, 100);
@@ -248,12 +248,8 @@ export function DashboardContent() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const pendingPrompt = localStorage.getItem(PENDING_PROMPT_KEY);
-
-      if (pendingPrompt) {
-        setInputValue(pendingPrompt);
-        setAutoSubmit(true);
-      }
+      // Clear any pending prompts from localStorage without setting them
+      localStorage.removeItem(PENDING_PROMPT_KEY);
     }, 200);
 
     return () => clearTimeout(timer);
@@ -317,9 +313,10 @@ export function DashboardContent() {
                     onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
                   />
                   <UseCases 
+                    router={router}
                     onUseCaseSelect={(prompt) => {
                       setInputValue(prompt);
-                      // Focus the input after a short delay to ensure it's rendered
+                      // Focus the input and set cursor to the end
                       setTimeout(() => {
                         const textarea = document.querySelector('textarea');
                         if (textarea) {

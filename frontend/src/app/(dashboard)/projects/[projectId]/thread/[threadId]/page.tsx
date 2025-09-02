@@ -66,6 +66,29 @@ export default function ThreadPage({
 
   // State
   const [newMessage, setNewMessage] = useState('');
+  
+  // Check for prompt in URL when component mounts
+  useEffect(() => {
+    // First, check URL parameters
+    const promptFromUrl = searchParams.get('prompt');
+    if (promptFromUrl) {
+      const decodedPrompt = decodeURIComponent(promptFromUrl);
+      setNewMessage(decodedPrompt);
+      
+      // Clean up the URL without causing a re-render
+      const cleanUrl = () => {
+        const newUrl = new URL(window.location.href);
+        if (newUrl.searchParams.has('prompt')) {
+          newUrl.searchParams.delete('prompt');
+          window.history.replaceState({}, '', newUrl.toString());
+        }
+      };
+      
+      // Clean up the URL after a short delay to ensure the message is set
+      const timer = setTimeout(cleanUrl, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
   const [isSending, setIsSending] = useState(false);
   const [fileViewerOpen, setFileViewerOpen] = useState(false);
   const [fileToView, setFileToView] = useState<string | null>(null);

@@ -44,10 +44,19 @@ export function PromptCard({ prompt, isFavorite, onCopy, onToggleFavorite, onCar
     if (onCardClick) {
       onCardClick(prompt);
     } else {
-      // Default behavior if onCardClick is not provided
-      const params = new URLSearchParams();
-      params.set('prompt', encodeURIComponent(prompt.content));
-      router.push(`/dashboard?${params.toString()}`);
+      // Try to send the prompt back to the opener window
+      if (window.opener) {
+        window.opener.postMessage(
+          { type: 'PROMPT_SELECTED', content: prompt.content },
+          window.location.origin
+        );
+      } else {
+        // Fallback to localStorage
+        localStorage.setItem('selectedPrompt', prompt.content);
+      }
+      
+      // Close the prompt library
+      window.close();
     }
   };
 

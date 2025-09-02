@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Copy, CheckCircle, Star, Clock, Heart, Search, Plus } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -20,11 +21,18 @@ interface GeneratedPrompt {
 type TabType = 'recent' | 'favorites';
 
 export default function PromptLibraryPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('recent');
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [previewPrompt, setPreviewPrompt] = useState<GeneratedPrompt | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const handlePreviewCopy = () => {
+    if (previewPrompt) {
+      copyToClipboard(previewPrompt.content, previewPrompt.id, previewPrompt);
+    }
+  };
   // Load favorites from localStorage on initial render
   const [favoriteIds, setFavoriteIds] = useState<Set<number>>(() => {
     if (typeof window !== 'undefined') {
@@ -61,319 +69,70 @@ export default function PromptLibraryPage() {
     });
   };
 
-  // Hardcoded B2B prompts for Explore section (50 prompts across 5 industries)
+  // Industry analysis prompts
   const allPrompts: GeneratedPrompt[] = [
-    // HR Prompts (10)
     {
       id: 1,
-      industry: 'HR',
-      description: 'Job Description Generator',
-      content: 'Create a comprehensive job description for a [Job Title] role in the [Industry] sector. Include key responsibilities, required qualifications, and preferred skills. Focus on [specific requirements].'
+      industry: 'Industry Analysis',
+      description: 'Market Trends Analysis',
+      content: 'Analyze the current market trends in the {{industry}} sector over the last 12 months. Include consumer behavior shifts, regulatory changes, digital adoption, and competitor activities. Provide data-backed insights with KPIs such as revenue growth rates, churn ratios, or foot traffic patterns.'
     },
     {
       id: 2,
-      industry: 'HR',
-      description: 'Performance Review Template',
-      content: 'Create a structured performance review form for [Job Role] including sections for goal achievement, core competencies, and development plans.'
+      industry: 'Operations',
+      description: 'Operational Workflow Evaluation',
+      content: 'Evaluate operational workflows in {{industry}} to identify bottlenecks and automation opportunities. Include metrics like production cycle time for manufacturing, call resolution rates for telecom, or claims processing time for healthcare. Suggest scalable improvements for cost savings and efficiency gains.'
     },
     {
       id: 3,
-      industry: 'HR',
-      description: 'Employee Onboarding Checklist',
-      content: 'Develop a 30-60-90 day onboarding checklist for new [Department] hires, covering HR paperwork, training sessions, and key introductions.'
+      industry: 'Marketing',
+      description: 'Customer Segmentation Strategy',
+      content: 'Develop a customer segmentation strategy for a {{industry}} company using historical data and behavioral trends. Include profiles based on key factors such as spending habits in retail, ARPU in telecom, or risk scores in banking, and recommend targeted campaigns for better engagement.'
     },
     {
       id: 4,
-      industry: 'HR',
-      description: 'Exit Interview Questionnaire',
-      content: 'Create an exit interview form to gather feedback from departing employees about their experience, reasons for leaving, and suggestions for improvement.'
+      industry: 'Compliance',
+      description: 'Compliance & Risk Assessment',
+      content: 'Conduct a compliance and risk assessment tailored to the {{industry}} sector. Highlight regulatory obligations (HIPAA for healthcare, PCI DSS for banking, GDPR for all industries), identify operational and security risks, and propose actionable mitigation strategies.'
     },
     {
       id: 5,
-      industry: 'HR',
-      description: 'Remote Work Policy',
-      content: 'Draft a comprehensive remote work policy covering work hours, availability expectations, communication protocols, and equipment requirements.'
+      industry: 'Sales',
+      description: 'Sales & Demand Forecast',
+      content: 'Build a sales and demand forecast for a {{industry}} business for the next 4 quarters. Leverage historical performance, seasonality, and external economic factors to project revenue, volume, and margins. Include KPIs such as sales velocity, revenue per customer, or service adoption rates.'
     },
     {
       id: 6,
-      industry: 'HR',
-      description: 'Diversity & Inclusion Survey',
-      content: 'Design an employee survey to assess workplace diversity, inclusion, and belonging. Include both quantitative and qualitative questions.'
+      industry: 'Technology',
+      description: 'Digital Transformation Plan',
+      content: 'Design a digital transformation plan for a {{industry}} organization. Recommend suitable technologies like AI analytics for finance, IoT for manufacturing, or telemedicine platforms for healthcare. Define success metrics, integration challenges, and potential ROI.'
     },
     {
       id: 7,
-      industry: 'HR',
-      description: 'Training Needs Assessment',
-      content: 'Create a template to identify skill gaps and training needs across different departments, including current competencies and desired skill levels.'
+      industry: 'Competitive Analysis',
+      description: 'Competitive Benchmarking',
+      content: 'Perform a competitive benchmarking analysis for a {{industry}} firm. Compare KPIs such as net promoter score, operational costs, market share, or innovation index with top competitors. Suggest clear strategies to close gaps and gain market advantage.'
     },
     {
       id: 8,
-      industry: 'HR',
-      description: 'Employee Engagement Survey',
-      content: 'Develop a comprehensive employee engagement survey covering job satisfaction, work environment, management effectiveness, and company culture.'
+      industry: 'Supply Chain',
+      description: 'Supply Chain Performance',
+      content: 'Assess the supply chain performance of a {{industry}} organization. For manufacturing, examine raw material lead times; for retail, analyze inventory turnover; for healthcare, evaluate supplier reliability. Recommend data-driven improvements for resilience and cost efficiency.'
     },
     {
       id: 9,
       industry: 'HR',
-      description: 'Compensation Review Template',
-      content: 'Create a structured format for conducting annual compensation reviews, including market data analysis, performance metrics, and adjustment recommendations.'
+      description: 'Workforce Productivity Analysis',
+      content: 'Analyze workforce productivity and engagement trends in a {{industry}} business. Include KPIs like employee satisfaction scores, output per hour, or attrition rates. Recommend tools, training, or cultural initiatives to boost retention and operational performance.'
     },
     {
       id: 10,
-      industry: 'HR',
-      description: 'Workplace Safety Protocol',
-      content: 'Develop a workplace safety protocol document for [Type of Workplace], including emergency procedures, first aid, and hazard reporting.'
-    },
-
-    // Healthcare Prompts (10)
-    {
-      id: 11,
-      industry: 'Healthcare',
-      description: 'Patient Intake Form',
-      content: 'Draft a professional patient intake form for a [Type of Practice] clinic. Include personal information, medical history, and insurance details with HIPAA compliance.'
-    },
-    {
-      id: 12,
-      industry: 'Healthcare',
-      description: 'Medical Billing Template',
-      content: 'Design a medical billing template for [Type of Practice] including patient details, insurance information, CPT codes, and payment terms.'
-    },
-    {
-      id: 13,
-      industry: 'Healthcare',
-      description: 'Patient Discharge Instructions',
-      content: 'Create a template for post-procedure discharge instructions including medication guidelines, activity restrictions, and warning signs to watch for.'
-    },
-    {
-      id: 14,
-      industry: 'Healthcare',
-      description: 'HIPAA Compliance Checklist',
-      content: 'Develop a comprehensive HIPAA compliance checklist covering administrative, physical, and technical safeguards for healthcare providers.'
-    },
-    {
-      id: 15,
-      industry: 'Healthcare',
-      description: 'Telehealth Consent Form',
-      content: 'Draft an informed consent form for telehealth services, including technology requirements, privacy considerations, and limitations of virtual care.'
-    },
-    {
-      id: 16,
-      industry: 'Healthcare',
-      description: 'Medication Administration Record',
-      content: 'Create a template for tracking medication administration including drug name, dosage, time, and staff initials.'
-    },
-    {
-      id: 17,
-      industry: 'Healthcare',
-      description: 'Infection Control Protocol',
-      content: 'Develop a comprehensive infection control policy for [Type of Healthcare Facility] including hand hygiene, PPE usage, and disinfection procedures.'
-    },
-    {
-      id: 18,
-      industry: 'Healthcare',
-      description: 'Clinical Trial Consent Form',
-      content: 'Create a participant information and consent form for a clinical trial, including study purpose, procedures, risks, and benefits.'
-    },
-    {
-      id: 19,
-      industry: 'Healthcare',
-      description: 'Medical Equipment Maintenance Log',
-      content: 'Design a log for tracking medical equipment maintenance, including service dates, issues found, and next service due date.'
-    },
-    {
-      id: 20,
-      industry: 'Healthcare',
-      description: 'Patient Satisfaction Survey',
-      content: 'Develop a patient satisfaction survey covering wait times, staff interactions, and overall care experience.'
-    },
-
-    // Finance Prompts (10)
-    {
-      id: 21,
       industry: 'Finance',
-      description: 'Investment Proposal',
-      content: 'Create a template for an investment proposal for [Type of Investment] targeting [Target Investors]. Include executive summary, market analysis, and financial projections.'
-    },
-    {
-      id: 22,
-      industry: 'Finance',
-      description: 'Quarterly Financial Report',
-      content: 'Create a template for a quarterly financial report including income statement, balance sheet, cash flow statement, and key performance indicators.'
-    },
-    {
-      id: 23,
-      industry: 'Finance',
-      description: 'Business Loan Application',
-      content: 'Develop a comprehensive business loan application template including company overview, loan purpose, financial history, and repayment plan.'
-    },
-    {
-      id: 24,
-      industry: 'Finance',
-      description: 'Budget Forecast Template',
-      content: 'Create a 12-month budget forecast template with monthly breakdowns for revenue, expenses, and cash flow projections.'
-    },
-    {
-      id: 25,
-      industry: 'Finance',
-      description: 'Expense Report Form',
-      content: 'Design an employee expense report form with sections for date, description, category, amount, and approval fields.'
-    },
-    {
-      id: 26,
-      industry: 'Finance',
-      description: 'Financial Risk Assessment',
-      content: 'Create a template for assessing financial risks including market risk, credit risk, and operational risk factors.'
-    },
-    {
-      id: 27,
-      industry: 'Finance',
-      description: 'Invoice Template',
-      content: 'Design a professional invoice template with company branding, itemized services, payment terms, and tax calculations.'
-    },
-    {
-      id: 28,
-      industry: 'Finance',
-      description: 'Investment Portfolio Review',
-      content: 'Create a template for quarterly investment portfolio reviews including performance metrics, asset allocation, and rebalancing recommendations.'
-    },
-    {
-      id: 29,
-      industry: 'Finance',
-      description: 'Financial Policy Document',
-      content: 'Develop a comprehensive financial policy document covering authorization limits, expense approvals, and financial controls.'
-    },
-    {
-      id: 30,
-      industry: 'Finance',
-      description: 'Break-Even Analysis',
-      content: 'Create a template for calculating break-even points including fixed costs, variable costs, and contribution margin analysis.'
-    },
-
-    // Legal Prompts (10)
-    {
-      id: 31,
-      industry: 'Legal',
-      description: 'NDA Template',
-      content: 'Generate a non-disclosure agreement between [Party A] and [Party B] for the purpose of [Purpose]. Include confidentiality clauses and return of information provisions.'
-    },
-    {
-      id: 32,
-      industry: 'Legal',
-      description: 'Employment Contract',
-      content: 'Draft a comprehensive employment contract including position details, compensation, benefits, intellectual property rights, and termination clauses.'
-    },
-    {
-      id: 33,
-      industry: 'Legal',
-      description: 'Privacy Policy Generator',
-      content: 'Create a privacy policy template for a [Type of Business] website, covering data collection, usage, and protection practices.'
-    },
-    {
-      id: 34,
-      industry: 'Legal',
-      description: 'Terms of Service',
-      content: 'Draft a terms of service agreement for [Type of Service] including user responsibilities, limitations of liability, and dispute resolution.'
-    },
-    {
-      id: 35,
-      industry: 'Legal',
-      description: 'Cease and Desist Letter',
-      content: 'Create a template for a cease and desist letter regarding [Issue], including specific violations and requested actions.'
-    },
-    {
-      id: 36,
-      industry: 'Legal',
-      description: 'Intake Form for New Clients',
-      content: 'Design a comprehensive client intake form for [Type of Legal Practice] including case details, opposing parties, and relevant deadlines.'
-    },
-    {
-      id: 37,
-      industry: 'Legal',
-      description: 'Contract Review Checklist',
-      content: 'Create a detailed checklist for reviewing [Type of Contract] including key clauses, potential risks, and negotiation points.'
-    },
-    {
-      id: 38,
-      industry: 'Legal',
-      description: 'Corporate Resolution Template',
-      content: 'Draft a template for corporate resolutions including company details, meeting information, and specific actions being approved.'
-    },
-    {
-      id: 39,
-      industry: 'Legal',
-      description: 'Demand Letter',
-      content: 'Create a template for a demand letter regarding [Issue], including factual background, legal basis, and specific demands.'
-    },
-    {
-      id: 40,
-      industry: 'Legal',
-      description: 'Compliance Audit Checklist',
-      content: 'Develop a checklist for conducting [Regulation] compliance audits, including required documentation and key control points.'
-    },
-
-    // Telecom Prompts (10)
-    {
-      id: 41,
-      industry: 'Telecom',
-      description: 'Service Level Agreement',
-      content: 'Draft a service level agreement for [Telecom Service] with guaranteed uptime of [X]%, response times, and resolution procedures.'
-    },
-    {
-      id: 42,
-      industry: 'Telecom',
-      description: 'Network Security Policy',
-      content: 'Develop a comprehensive network security policy covering access controls, data encryption, and incident response procedures.'
-    },
-    {
-      id: 43,
-      industry: 'Telecom',
-      description: 'Customer Service Script',
-      content: 'Create a troubleshooting script for customer service representatives handling [Specific Issue] calls, including escalation paths.'
-    },
-    {
-      id: 44,
-      industry: 'Telecom',
-      description: '5G Implementation Plan',
-      content: 'Develop a phased implementation plan for 5G network rollout, including site selection, testing procedures, and customer migration strategy.'
-    },
-    {
-      id: 45,
-      industry: 'Telecom',
-      description: 'Roaming Agreement Template',
-      content: 'Draft a template for roaming agreements between telecom operators, covering service terms, pricing, and quality standards.'
-    },
-    {
-      id: 46,
-      industry: 'Telecom',
-      description: 'Network Outage Report',
-      content: 'Create a template for documenting network outages including root cause analysis, impact assessment, and preventive measures.'
-    },
-    {
-      id: 47,
-      industry: 'Telecom',
-      description: 'BYOD Policy',
-      content: 'Develop a Bring Your Own Device policy covering security requirements, acceptable use, and support limitations.'
-    },
-    {
-      id: 48,
-      industry: 'Telecom',
-      description: 'Vendor Assessment Form',
-      content: 'Create a template for evaluating telecom equipment vendors including technical capabilities, support services, and pricing structures.'
-    },
-    {
-      id: 49,
-      industry: 'Telecom',
-      description: 'Disaster Recovery Plan',
-      content: 'Develop a comprehensive disaster recovery plan for telecom infrastructure including backup systems and communication protocols.'
-    },
-    {
-      id: 50,
-      industry: 'Telecom',
-      description: 'Customer Satisfaction Survey',
-      content: 'Design a survey to measure customer satisfaction with telecom services, including network quality, customer support, and billing experience.'
+      description: 'Financial Performance Review',
+      content: 'Review the financial performance of a {{industry}} company. Break down revenue streams, operating margins, and expense drivers. Suggest actionable strategies to improve cash flow, profitability, and scalability while mitigating financial risks.'
     }
   ];
-  
+
   // Shuffle array using Fisher-Yates algorithm
   const shuffleArray = (array: any[]) => {
     const newArray = [...array];
@@ -425,7 +184,7 @@ export default function PromptLibraryPage() {
   
   // For backward compatibility
   const filteredPrompts = [...filteredFavorites];
-  
+
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setFavoriteIds(prev => {
@@ -440,10 +199,7 @@ export default function PromptLibraryPage() {
   };
 
   const addToRecentlyUsed = (prompt: GeneratedPrompt) => {
-    setRecentlyUsed((prev) => {
-      const updated = prev.filter((p) => p.id !== prompt.id);
-      return [prompt, ...updated].slice(0, 10);
-    });
+    setRecentlyUsed(prev => [prompt, ...prev.filter(p => p.id !== prompt.id)].slice(0, 10));
   };
 
   const copyToClipboard = (text: string, id: number, promptArg?: GeneratedPrompt) => {
@@ -480,29 +236,62 @@ export default function PromptLibraryPage() {
   };
 
   const handleCardClick = (prompt: GeneratedPrompt) => {
-    // Add to recently used
-    setRecentlyUsed(prev => {
-      const updated = [
-        prompt,
-        ...prev.filter(p => p.id !== prompt.id)
-      ].slice(0, 10);
+    try {
+      // Add to recently used
+      setRecentlyUsed(prev => {
+        const updated = [prompt, ...prev.filter(p => p.id !== prompt.id)].slice(0, 10);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('recentlyUsedPrompts', JSON.stringify(updated));
+        }
+        return updated;
+      });
+
+      // Get URL parameters if they exist
+      const searchParams = new URLSearchParams(window.location.search);
+      const threadId = searchParams.get('threadId');
+      const projectId = searchParams.get('projectId');
+
+      // Store the prompt in localStorage with a timestamp
+      const promptData = {
+        content: prompt.content,
+        timestamp: Date.now(),
+        threadId: threadId || null,
+        projectId: projectId || null
+      };
       
-      // Save to localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('recentlyUsedPrompts', JSON.stringify(updated));
+      localStorage.setItem('selectedPrompt', JSON.stringify(promptData));
+      
+      // Try to send the prompt back to the parent window if opened in a new tab
+      if (window.opener) {
+        try {
+          window.opener.postMessage(
+            { type: 'PROMPT_SELECTED', ...promptData },
+            window.location.origin
+          );
+          window.close();
+          return;
+        } catch (error) {
+          console.error('Error sending message to parent window:', error);
+          // Continue with normal navigation if postMessage fails
+        }
       }
       
-      return updated;
-    });
-    
-    // Show preview
-    setPreviewPrompt(prompt);
-    setIsPreviewOpen(true);
-  };
-
-  const handlePreviewCopy = () => {
-    if (previewPrompt) {
-      copyToClipboard(previewPrompt.content, previewPrompt.id, previewPrompt);
+      // Always redirect to dashboard with the prompt
+      const returnUrl = threadId && projectId 
+        ? `/dashboard/projects/${projectId}/thread/${threadId}`
+        : '/dashboard';
+        
+      const newSearchParams = new URLSearchParams();
+      newSearchParams.set('prompt', encodeURIComponent(prompt.content));
+      newSearchParams.set('fromPromptLibrary', 'true');
+      
+      // Use replace to avoid adding to browser history
+      router.replace(`${returnUrl}?${newSearchParams.toString()}`);
+    } catch (error) {
+      console.error('Error handling prompt selection:', error);
+      // Fallback to showing the preview if something goes wrong
+      setPreviewPrompt(prompt);
+      setIsPreviewOpen(true);
     }
   };
 
@@ -528,18 +317,6 @@ export default function PromptLibraryPage() {
           activeTab={activeTab}
           onTabChange={(value) => setActiveTab(value as TabType)}
         />
-        
-        {/* Search Bar */}
-        <div className="relative w-full max-w-2xl mt-4">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search prompts by industry, description, or content..."
-            className="w-full pl-10"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
       </div>
 
       {/* Prompts Grid */}
