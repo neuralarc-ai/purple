@@ -243,64 +243,57 @@ export function CreditBalanceDisplay({ balance, canPurchase, onPurchaseClick, su
     const totalCreditsLeft = freeCreditsLeft + monthlyCreditsLeft + addOnCreditsLeft;
 
     return (
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-background to-muted/20">
-            <CardHeader className="pb-4">
-                <CardTitle className="text-base font-semibold flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                        <div className="p-1.5 bg-yellow-100 dark:bg-yellow-900/20 rounded-lg">
-                            <Zap className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                        </div>
-                        Credit Balance
-                    </span>
-                    {canPurchase && onPurchaseClick && (
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={onPurchaseClick}
-                            className="text-xs h-8 px-3"
-                        >
-                            Add Credits
-                        </Button>
-                    )}
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-                <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg border border-primary/10">
-                        <span className="text-sm font-medium text-foreground">Total Credits</span>
-                        <span className="text-lg font-bold text-primary">{totalCreditsLeft.toLocaleString()}</span>
+        <div className="space-y-3">
+            <div className="flex items-center justify-between">
+                <span className="text-base font-semibold">
+                    Credit Balance
+                </span>
+                {canPurchase && onPurchaseClick && (
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={onPurchaseClick}
+                        className="text-xs h-8 px-3"
+                    >
+                        Add Credits
+                    </Button>
+                )}
+            </div>
+            <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg border border-primary/10">
+                    <span className="text-sm font-medium text-foreground">Total Credits</span>
+                    <span className="text-lg font-bold text-primary">{totalCreditsLeft.toLocaleString()}</span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                    <div className="flex justify-between items-center py-2 px-3 bg-muted/30 rounded-md">
+                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            Free credits
+                        </span>
+                        <span className="font-medium">{freeCreditsLeft.toLocaleString()}</span>
                     </div>
-                    <div className="grid grid-cols-1 gap-2">
-                        <div className="flex justify-between items-center py-2 px-3 bg-muted/30 rounded-md">
-                            <span className="text-sm text-muted-foreground flex items-center gap-2">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                Free credits
-                            </span>
-                            <span className="font-medium">{freeCreditsLeft.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 px-3 bg-muted/30 rounded-md">
-                            <span className="text-sm text-muted-foreground flex items-center gap-2">
-                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                Monthly credits
-                            </span>
-                            <span className="font-medium">{monthlyCreditsLeft.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 px-3 bg-muted/30 rounded-md">
-                            <span className="text-sm text-muted-foreground flex items-center gap-2">
-                                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                Add-on credits
-                            </span>
-                            <span className="font-medium">{addOnCreditsLeft.toLocaleString()}</span>
-                        </div>
+                    <div className="flex justify-between items-center py-2 px-3 bg-muted/30 rounded-md">
+                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            Monthly credits
+                        </span>
+                        <span className="font-medium">{monthlyCreditsLeft.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 px-3 bg-muted/30 rounded-md">
+                        <span className="text-sm text-muted-foreground flex items-center gap-2">
+                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                            Add-on credits
+                        </span>
+                        <span className="font-medium">{addOnCreditsLeft.toLocaleString()}</span>
                     </div>
                 </div>
-                <p className="text-xs text-muted-foreground mt-4 text-center">
-                    {canPurchase 
-                        ? 'Available for usage beyond subscription limits'
-                        : 'Upgrade to highest tier to purchase credits'
-                    }
-                </p>
-            </CardContent>
-        </Card>
+            </div>
+            <p className="text-xs text-muted-foreground mt-4 text-center">
+                {canPurchase 
+                    ? 'Available for usage beyond subscription limits'
+                    : 'Upgrade to highest tier to purchase credits'
+                }
+            </p>
+        </div>
     );
 } 

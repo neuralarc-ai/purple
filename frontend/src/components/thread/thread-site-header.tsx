@@ -164,8 +164,7 @@ export function SiteHeader({
         isMobile && "px-2"
       )}>
 
-
-        <div className="flex flex-1 items-center gap-2 px-3">
+        <div className="flex flex-1 items-center gap-2 px-11">
           {isEditing ? (
             <Input
               ref={inputRef}
@@ -183,7 +182,7 @@ export function SiteHeader({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div 
-                    className="text-base px-10 md:px-0 font-medium text-muted-foreground hover:text-foreground cursor-pointer flex items-center font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] project-ellipsis"
+                    className="text-base font-medium text-muted-foreground hover:text-foreground cursor-pointer flex items-center font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] project-ellipsis"
                     onClick={startEditing}
                      title="Click to rename project"
                   >

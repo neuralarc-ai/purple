@@ -100,7 +100,7 @@ interface ProfileFormData {
   avatar: string;
 }
 
-export default function ProfilePage() {
+export function PersonalAccountProfilePage() {
   const { user } = useAuth();
   const [formData, setFormData] = useState<ProfileFormData>({
     fullName: '',
@@ -288,20 +288,13 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6 pt-4 md:pt-0">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-        <p className="text-muted-foreground">
-          Tell us about yourself to personalize your Helium experience
-        </p>
-      </div>
-
+    <div className="space-y-4 pt-2 md:pt-0">
       <Card className="max-w-2xl">
         
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {/* Profile Image Display */}
-            <div className="flex items-center space-x-4 mb-6">
+            <div className="flex items-center space-x-3 mb-4">
               <div className="relative">
                 <button
                   type="button"
@@ -309,17 +302,17 @@ export default function ProfilePage() {
                   className="group cursor-pointer transition-transform hover:scale-105"
                 >
                   {profile?.avatar ? (
-                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary/40 transition-colors">
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/20 group-hover:border-primary/40 transition-colors">
                       <Avatar
                         name={formData.fullName || 'User'}
                         colors={JSON.parse(profile.avatar).colors}
                         variant="beam"
-                        size={80}
+                        size={64}
                       />
                     </div>
                   ) : (
-                    <UIAvatar className="w-20 h-20 border-2 border-primary/20 group-hover:border-primary/40 transition-colors">
-                      <AvatarFallback className="text-2xl font-semibold">
+                    <UIAvatar className="w-16 h-16 border-2 border-primary/20 group-hover:border-primary/40 transition-colors">
+                      <AvatarFallback className="text-xl font-semibold">
                         {getInitials(formData.fullName || user?.user_metadata?.name || 'User')}
                       </AvatarFallback>
                     </UIAvatar>
@@ -327,14 +320,14 @@ export default function ProfilePage() {
                 </button>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-medium">Profile Picture</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-base font-medium">Profile Picture</h3>
+                <p className="text-xs text-muted-foreground">
                   {profile?.avatar ? 'Custom avatar selected' : 'Click to select an avatar'}
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowAvatarModal(true)}
-                  className="text-sm text-primary hover:text-primary/80 underline underline-offset-2 mt-1"
+                  className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 mt-1"
                 >
                   Change avatar
                 </button>

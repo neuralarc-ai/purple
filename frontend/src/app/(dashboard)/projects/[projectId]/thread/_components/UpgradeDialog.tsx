@@ -7,15 +7,20 @@ interface UpgradeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDismiss: () => void;
+  onUpgradeClick?: () => void;
 }
 
-export function UpgradeDialog({ open, onOpenChange, onDismiss }: UpgradeDialogProps) {
+export function UpgradeDialog({ open, onOpenChange, onDismiss, onUpgradeClick }: UpgradeDialogProps) {
   const router = useRouter();
 
   const handleUpgradeClick = () => {
-    router.push('/settings/billing');
+    if (onUpgradeClick) {
+      onUpgradeClick();
+    } else {
+      router.push('/settings/billing');
+    }
     onOpenChange(false);
-            localStorage.setItem('helium_upgrade_dialog_displayed', 'true');
+    localStorage.setItem('helium_upgrade_dialog_displayed', 'true');
   };
 
   return (

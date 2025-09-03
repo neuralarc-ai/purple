@@ -49,6 +49,7 @@ import { useSubscriptionData } from '@/contexts/SubscriptionContext';
 import { useUsageRealtime } from '@/hooks/useUsageRealtime';
 import { useAuth } from '@/components/AuthProvider';
 import { BillingModal } from '@/components/billing/billing-modal';
+import { SettingsModal } from '@/components/settings/settings-modal';
 
 
 // Dynamic icon component that changes path based on theme
@@ -97,6 +98,7 @@ export function NavUserWithTeams({
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
   const [showEditNameDialog, setShowEditNameDialog] = React.useState(false);
   const [showBillingModal, setShowBillingModal] = React.useState(false);
+  const [showSettingsModal, setShowSettingsModal] = React.useState(false);
   const [editName, setEditName] = React.useState(user.name);
   
   // Update editName when preferredName changes
@@ -550,11 +552,11 @@ export function NavUserWithTeams({
 
               {/* User Settings Section */}
               <DropdownMenuGroup>                
-                <DropdownMenuItem asChild className="rounded-full cursor-pointer">
-                  <Link href="/settings/billing">
-                    {/* <CreditCard className="h-4 w-4 mb-0" /> */}
-                    Settings
-                  </Link>
+                <DropdownMenuItem 
+                  className="rounded-full cursor-pointer"
+                  onClick={() => setShowSettingsModal(true)}
+                >
+                  Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   className="rounded-full cursor-pointer"
@@ -641,6 +643,12 @@ export function NavUserWithTeams({
         open={showBillingModal} 
         onOpenChange={setShowBillingModal}
         returnUrl={typeof window !== 'undefined' ? window.location.href : '/'}
+      />
+
+      {/* Settings Modal */}
+      <SettingsModal 
+        open={showSettingsModal} 
+        onOpenChange={setShowSettingsModal}
       />
     </>
   );
