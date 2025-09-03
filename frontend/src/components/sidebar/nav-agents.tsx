@@ -494,6 +494,7 @@ export function NavAgents() {
                             ? 'bg-primary/10'
                             : ''
                           }`}
+                        tooltip={thread.projectName}
                       >
                         <div className="flex items-center w-full">
                           <Link

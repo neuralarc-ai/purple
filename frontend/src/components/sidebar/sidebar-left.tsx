@@ -167,7 +167,7 @@ export function SidebarLeft({
                 <TooltipTrigger asChild>
                   <SidebarTrigger className="h-8 w-8" />
                 </TooltipTrigger>
-                <TooltipContent>Toggle sidebar (CMD+B)</TooltipContent>
+                <TooltipContent side="right" align="center">Toggle sidebar (CMD+B)</TooltipContent>
               </Tooltip>
             )}
           </div>
@@ -178,7 +178,7 @@ export function SidebarLeft({
               <TooltipTrigger asChild>
                 <SidebarTrigger className="h-8 w-8" />
               </TooltipTrigger>
-              <TooltipContent>Toggle sidebar (CMD+B)</TooltipContent>
+              <TooltipContent side="right" align="center">Toggle sidebar (CMD+B)</TooltipContent>
             </Tooltip>
           </div>
         )}
@@ -195,6 +195,7 @@ export function SidebarLeft({
                 posthog.capture('new_task_clicked');
                 if (isMobile) setOpenMobile(false);
               }}
+              tooltip="New Task"
             >
               <Image
                 src="/icons/plus-light.svg"
@@ -225,6 +226,7 @@ export function SidebarLeft({
                 onClick={() => {
                   if (isMobile) setOpenMobile(false);
                 }}
+                tooltip="Agents"
               >
                 <Image
                   src="/icons/bot-light.svg"
@@ -257,6 +259,7 @@ export function SidebarLeft({
                   if (isMobile) setOpenMobile(false);
                 }}
                 className="touch-manipulation px-4.5"
+                tooltip="Prompt Library"
               >
                 <Link href="/prompt-library" className="flex items-center">
                   <ClipboardPen 

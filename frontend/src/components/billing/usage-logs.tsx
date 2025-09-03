@@ -243,7 +243,7 @@ export default function UsageLogs({ accountId }: Props) {
           </AlertDescription>
         </Alert>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.open('/settings/billing', '_blank')}>
+          <Button variant="outline">
             Upgrade Plan
           </Button>
         </div>
