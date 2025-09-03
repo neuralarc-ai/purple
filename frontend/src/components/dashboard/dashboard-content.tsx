@@ -24,19 +24,42 @@ import { BillingModal } from '@/components/billing/billing-modal';
 import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 import { useThreadQuery } from '@/hooks/react-query/threads/use-threads';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
+
 import { AgentRunLimitDialog } from '@/components/thread/agent-run-limit-dialog';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { CustomAgentsSection } from './custom-agents-section';
 import { toast } from 'sonner';
 import { ReleaseBadge } from '../auth/release-badge';
 
+import { AnimatedThemeToggler } from '@/components/magicui/animated-theme-toggler';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+import { UseCases } from './use-cases';
+
+import { SecurityPopup } from '@/components/thread/chat-input/security-popup';
+import { useSecurityInterception } from '@/hooks/useSecurityInterception';
+import { TokenUsage } from './token-usage';
+
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
 export function DashboardContent() {
+  const searchParams = useSearchParams();
   const [inputValue, setInputValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
   const [autoSubmit, setAutoSubmit] = useState(false);
+  const chatInputRef = useRef<ChatInputHandles>(null);
+  const router = useRouter();
+  const isMobile = useIsMobile();
+  const { data: accounts } = useAccounts();
+  const { preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
+  const personalAccount = accounts?.find((account) => account.personal_account);
   const { 
     selectedAgentId, 
     setSelectedAgent, 
@@ -44,38 +67,50 @@ export function DashboardContent() {
     getCurrentAgent
   } = useAgentSelection();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
-  const { billingError, handleBillingError, clearBillingError } =
-    useBillingError();
+  const { billingError, handleBillingError, clearBillingError } = useBillingError();
   const [showAgentLimitDialog, setShowAgentLimitDialog] = useState(false);
   const [agentLimitData, setAgentLimitData] = useState<{
     runningCount: number;
     runningThreadIds: string[];
   } | null>(null);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isMobile = useIsMobile();
-  const { data: accounts } = useAccounts();
-  const { preferredName, isLoading: profileLoading, isAuthError } = useUserProfileWithFallback();
-  const personalAccount = accounts?.find((account) => account.personal_account);
-  const chatInputRef = useRef<ChatInputHandles>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  // Welcome messages that change on refresh
-  const welcomeMessages = [
-    "What do we tackle first, {name}?",
-    "Let's lock in - what's the focus, {name}?",
-    "What's the game plan, {name}?",
-    "Time to go higher, {name} — what's the move?",
-    "Ready to lift off, {name}?",
-    "Let's rise above the noise, {name}."
-  ];
+  // Handle prompt from URL
+  useEffect(() => {
+    const promptParam = searchParams?.get('prompt');
+    if (promptParam) {
+      // Decode but don't set the input value
+      const decodedPrompt = decodeURIComponent(promptParam);
+      // Just focus the input without setting the value
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 100);
+    }
+  }, [searchParams]);
+  
+  // Security interception hook
+  const {
+    showPopup: showSecurityPopup,
+    popupMessage: securityPopupMessage,
+    popupType: securityPopupType,
+    shouldBlock: shouldBlockRequest,
+    closePopup: closeSecurityPopup,
+    shouldProceedWithRequest,
+  } = useSecurityInterception();
   
   const welcomeMessage = useMemo(() => {
-    // Generate a new random message on each component mount (refresh)
-    const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-    return randomMessage;
-  }, []); // Empty dependency array - generates new message on each mount
+    // Check if we have a cached welcome message
+    const cachedMessage = localStorage.getItem('cached_welcome_message');
+    if (cachedMessage) {
+      return cachedMessage;
+    }
+    
+    // Use the specific message and cache it
+    const message = "Let's rise above the noise, {name}.";
+    localStorage.setItem('cached_welcome_message', message);
+    return message;
+  }, []); // Empty dependency array - uses cached message
 
   const [currentWelcomeMessage, setCurrentWelcomeMessage] = useState('');
 
@@ -136,8 +171,6 @@ export function DashboardContent() {
 
   const threadQuery = useThreadQuery(initiatedThreadId || '');
 
-  const enabledEnvironment = isStagingMode() || isLocalMode();
-
   useEffect(() => {
     console.log('🚀 Dashboard effect:', { 
       agentsLength: agents.length, 
@@ -194,6 +227,12 @@ export function DashboardContent() {
     setLocalLoading(true);
     
     // Set loading state immediately
+    // Check for security concerns on submission only
+    if (!shouldProceedWithRequest(message)) {
+      // Security popup is already shown by the hook
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -267,10 +306,10 @@ export function DashboardContent() {
       case 'default':
         return {
           enable_context_manager: false,
-          reasoning_effort: 'minimal',
+          reasoning_effort: 'low',
           enable_thinking: false,
           max_tokens: 100, // Reduced for faster response
-          temperature: 0.5, // Lower temperature for more focused responses
+          temperature: 0.3, // Lower temperature for more focused responses
           stream: true,
           enable_tools: true,
           enable_search: true,
@@ -286,7 +325,7 @@ export function DashboardContent() {
       case 'agent':
         return {
           enable_context_manager: true,
-          reasoning_effort: thinkingEnabled ? 'medium' : 'low', // Reduced reasoning effort
+          reasoning_effort: thinkingEnabled ? 'high' : 'medium', // Reduced reasoning effort
           enable_thinking: thinkingEnabled,
           max_tokens: 500, // Reduced for faster response
           temperature: 0.3,
@@ -305,10 +344,10 @@ export function DashboardContent() {
       default:
         return {
           enable_context_manager: false,
-          reasoning_effort: 'minimal',
+          reasoning_effort: 'low',
           enable_thinking: false,
           max_tokens: 100,
-          temperature: 0.5,
+          temperature: 0.3,
           stream: true,
           enable_tools: true,
           enable_search: true,
@@ -325,12 +364,8 @@ export function DashboardContent() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const pendingPrompt = localStorage.getItem(PENDING_PROMPT_KEY);
-
-      if (pendingPrompt) {
-        setInputValue(pendingPrompt);
-        setAutoSubmit(true);
-      }
+      // Clear any pending prompts from localStorage without setting them
+      localStorage.removeItem(PENDING_PROMPT_KEY);
     }, 200);
 
     return () => clearTimeout(timer);
@@ -355,6 +390,26 @@ export function DashboardContent() {
         showUsageLimitAlert={true}
       />
       <div className="flex flex-col h-screen w-full overflow-hidden">
+        {/* Top Right Controls */}
+        <div className="absolute py-4 right-12 z-10 flex items-center gap-3">
+          {/* Token Usage */}
+          <TokenUsage onUpgradeClick={() => setShowPaymentModal(true)} />
+          
+          {/* Theme Toggle Button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="h-9 w-9 flex items-center justify-center rounded-full">
+                  <AnimatedThemeToggler className="h-4 w-4 cursor-pointer" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle theme</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
         <div className="flex-1 overflow-y-auto">
           <div className="min-h-full flex flex-col">
             {/* {customAgentsEnabled && (
@@ -366,24 +421,29 @@ export function DashboardContent() {
               <div className="w-full max-w-[800px] flex flex-col items-center justify-center space-y-1 md:space-y-2">
                 <div className="flex flex-col items-center text-center w-full">
                   <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground/80 libre-baskerville-regular">
-                    {profileLoading ? (
-                      <span>Loading...</span>
-                    ) : (
-                      currentWelcomeMessage.split('{name}').map((part, index, array) => {
-                        if (index === array.length - 1) {
-                          return part;
-                        }
-                        return (
-                          <span key={index}>
-                            {part}
-                            <span>{cachedUserName}</span>
-                          </span>
-                        );
-                      })
-                    )}
+                    {currentWelcomeMessage.split('{name}').map((part, index, array) => {
+                      if (index === array.length - 1) {
+                        return part;
+                      }
+                      return (
+                        <span key={index}>
+                          {part}
+                          <span>{cachedUserName}</span>
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="w-full">
+                  {/* Security Popup - Positioned above the input */}
+                  <SecurityPopup
+                    isVisible={showSecurityPopup}
+                    onClose={closeSecurityPopup}
+                    message={securityPopupMessage}
+                    type={securityPopupType}
+                    showCloseButton={true}
+                  />
+                  
                   <ChatInput
                     ref={chatInputRef}
                     onSubmit={handleSubmit}
@@ -396,6 +456,22 @@ export function DashboardContent() {
                     onAgentSelect={setSelectedAgent}
                     enableAdvancedConfig={true}
                     onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
+                  />
+                  <UseCases 
+                    router={router}
+                    onUseCaseSelect={(prompt) => {
+                      setInputValue(prompt);
+                      // Focus the input and set cursor to the end
+                      setTimeout(() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          textarea.focus();
+                          // Move cursor to the end of the text
+                          const length = prompt.length;
+                          textarea.setSelectionRange(length, length);
+                        }
+                      }, 0);
+                    }} 
                   />
                 </div>
               </div>

@@ -15,6 +15,7 @@ import { handleFiles } from './file-upload-handler';
 import { MessageInput } from './message-input';
 import { AttachmentGroup } from '../attachment-group';
 import { useModelSelection } from './_use-model-selection';
+import { useModeSelection } from './_use-mode-selection';
 import { useFileDelete } from '@/hooks/react-query/files';
 import { useQueryClient } from '@tanstack/react-query';
 import { ToolCallInput } from './floating-tool-preview';
@@ -29,10 +30,13 @@ import { BillingModal } from '@/components/billing/billing-modal';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import { BorderBeam } from '@/components/magicui/border-beam';
+import { SecurityPopup } from './security-popup';
+import { useSecurityInterception } from '@/hooks/useSecurityInterception';
 
 export interface ChatInputHandles {
   getPendingFiles: () => File[];
   clearPendingFiles: () => void;
+  focus: () => void;
 }
 
 export interface ChatInputProps {
@@ -139,7 +143,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
-    const [selectedMode, setSelectedMode] = useState<'default' | 'agent'>('default');
     const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
 
     const [registryDialogOpen, setRegistryDialogOpen] = useState(false);
@@ -148,6 +151,17 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const [billingModalOpen, setBillingModalOpen] = useState(false);
     const [wasManuallyStopped, setWasManuallyStopped] = useState(false);
     const [submitTimeout, setSubmitTimeout] = useState<NodeJS.Timeout | null>(null);
+    
+    // Security interception hook
+    const {
+      showPopup: showSecurityPopup,
+      popupMessage: securityPopupMessage,
+      popupType: securityPopupType,
+      shouldBlock: shouldBlockRequest,
+      closePopup: closeSecurityPopup,
+      shouldProceedWithRequest,
+    } = useSecurityInterception();
+    
     const {
       selectedModel,
       setSelectedModel: handleModelChange,
@@ -157,6 +171,12 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       getActualModelId,
       refreshCustomModels,
     } = useModelSelection();
+
+    const {
+      selectedMode,
+      setSelectedMode: handleModeChange,
+      hasInitialized: modeInitialized,
+    } = useModeSelection();
 
     const { data: subscriptionData } = useSubscriptionData();
     const deleteFileMutation = useFileDelete();
@@ -211,6 +231,11 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     useImperativeHandle(ref, () => ({
       getPendingFiles: () => pendingFiles,
       clearPendingFiles: () => setPendingFiles([]),
+      focus: () => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      },
     }));
 
     useEffect(() => {
@@ -219,13 +244,135 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       }
     }, [agents, onAgentSelect, initializeFromAgents]);
 
-
+    useEffect(() => {
+      const setPromptValue = (prompt: string) => {
+        if (!prompt) return;
+        
+        if (isControlled && controlledOnChange) {
+          controlledOnChange(prompt);
+        } else {
+          setUncontrolledValue(prompt);
+        }
+        
+        // Focus the input after a short delay and set cursor to end
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            const length = prompt.length;
+            textareaRef.current.setSelectionRange(length, length);
+          }
+        }, 100);
+      };
+      
+      // Check for prompt in URL search params
+      const checkUrlForPrompt = () => {
+        if (typeof window === 'undefined') return false;
+        
+        // Check URL search params first (newer approach)
+        const urlParams = new URLSearchParams(window.location.search);
+        const promptFromSearch = urlParams.get('prompt');
+        
+        if (promptFromSearch) {
+          const prompt = decodeURIComponent(promptFromSearch);
+          setPromptValue(prompt);
+          
+          // Clean up the URL
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.delete('prompt');
+          window.history.replaceState({}, '', newUrl.toString());
+          return true;
+        }
+        
+        // Check URL hash (legacy approach)
+        const hash = window.location.hash;
+        if (hash.startsWith('#prompt=')) {
+          const prompt = decodeURIComponent(hash.replace('#prompt=', ''));
+          setPromptValue(prompt);
+          
+          // Clean up the URL
+          const newUrl = new URL(window.location.href);
+          newUrl.hash = '';
+          window.history.replaceState({}, '', newUrl.toString());
+          return true;
+        }
+        
+        return false;
+      };
+      
+      // Handle messages from prompt library
+      const handleMessage = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        
+        if (event.data?.type === 'PROMPT_SELECTED' && event.data.content) {
+          setPromptValue(event.data.content);
+        }
+      };
+      
+      // Check for prompt in localStorage
+      const checkLocalStorageForPrompt = () => {
+        const selectedPrompt = localStorage.getItem('selectedPrompt');
+        if (selectedPrompt) {
+          try {
+            // Try to parse as JSON first
+            const promptData = JSON.parse(selectedPrompt);
+            // If it has a content field, use that, otherwise use the whole string
+            const promptContent = typeof promptData === 'object' && promptData !== null && 'content' in promptData
+              ? promptData.content
+              : selectedPrompt;
+            setPromptValue(promptContent);
+          } catch (e) {
+            // If not valid JSON, use as is
+            setPromptValue(selectedPrompt);
+          }
+          localStorage.removeItem('selectedPrompt');
+          return true;
+        }
+        return false;
+      };
+      
+      // Try to get prompt from different sources in order
+      let promptFound = checkUrlForPrompt();
+      if (!promptFound) {
+        promptFound = checkLocalStorageForPrompt();
+      }
+      
+      // Set up event listeners
+      window.addEventListener('message', handleMessage);
+      window.addEventListener('focus', checkLocalStorageForPrompt);
+      
+      // Cleanup
+      return () => {
+        window.removeEventListener('message', handleMessage);
+        window.removeEventListener('focus', checkLocalStorageForPrompt);
+      };
+    }, [isControlled, controlledOnChange]);
 
     useEffect(() => {
-      if (autoFocus && textareaRef.current) {
-        textareaRef.current.focus();
+      if (autoFocus) {
+        textareaRef.current?.focus();
       }
-    }, [autoFocus]);
+    }, [autoFocus, messages]);
+
+    useEffect(() => {
+      const handlePromptSelected = (event: Event) => {
+        const customEvent = event as CustomEvent<{ content: string }>;
+        const promptContent = customEvent.detail?.content;
+        if (promptContent) {
+          if (isControlled && controlledOnChange) {
+            controlledOnChange(promptContent);
+          } else {
+            setUncontrolledValue(promptContent);
+          }
+          // Focus the input after setting the prompt
+          textareaRef.current?.focus();
+        }
+      };
+
+      window.addEventListener('promptSelected', handlePromptSelected as EventListener);
+      return () => {
+        window.removeEventListener('promptSelected', handlePromptSelected as EventListener);
+      };
+    }, [isControlled, controlledOnChange]);
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -251,7 +398,14 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       setSubmitTimeout(timeout);
 
       try {
-        // if (isAgentRunning && onStopAgent) {
+        // Check for security concerns first
+      // The useSecurityInterception hook handles all security validation
+      if (!shouldProceedWithRequest(value)) {
+        // Security popup is already shown by the hook
+        return;
+      }
+
+      // if (isAgentRunning && onStopAgent) {
         //   onStopAgent();
         //   return;
         // }
@@ -273,6 +427,13 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           baseModelName = getActualModelId(selectedModel.replace(/-thinking$/, ''));
           thinkingEnabled = true;
         }
+
+      // Security check: block injections and malware content
+      // The useSecurityInterception hook handles all security validation
+      if (!shouldProceedWithRequest(message)) {
+        // Security popup is already shown by the hook
+        return;
+      }
 
         // Determine mode-based configuration
         const modeConfig = getModeConfiguration(selectedMode, thinkingEnabled);
@@ -379,6 +540,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     };
     const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newValue = e.target.value;
+      
       if (isControlled) {
         controlledOnChange(newValue);
       } else {
@@ -389,9 +551,9 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     // Auto-switch to agent mode when files are uploaded
     useEffect(() => {
       if (uploadedFiles.length > 0 && selectedMode !== 'agent') {
-        setSelectedMode('agent');
+        handleModeChange('agent');
       }
-    }, [uploadedFiles.length, selectedMode]);
+    }, [uploadedFiles.length, selectedMode, handleModeChange]);
 
     const handleTranscription = (transcribedText: string) => {
       // Replace the entire input value with the transcribed text
@@ -443,6 +605,12 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       setIsDraggingOver(true);
     };
 
+    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDraggingOver(true);
+    };
+
     const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
       e.stopPropagation();
@@ -480,6 +648,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           <Card
             className={`shadow-none p-0 mt-4 w-full max-w-5xl mx-auto bg-transparent border-none overflow-visible ${enableAdvancedConfig && selectedAgentId ? '' : 'rounded-3xl'} relative z-10`}
             onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
             onDragLeave={handleDragLeave}
             onDrop={(e) => {
               e.preventDefault();
@@ -499,8 +668,17 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
               }
             }}
           >
+            {/* Security Popup - Positioned above the input */}
+            <SecurityPopup
+              isVisible={showSecurityPopup}
+              onClose={closeSecurityPopup}
+              message={securityPopupMessage}
+              type={securityPopupType}
+              showCloseButton={true}
+            />
+            
             <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
-              <CardContent className={`w-full p-2 pb-3 border-black/15 dark:border-muted bg-white dark:bg-sidebar-accent rounded-[28px] relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border`}>
+              <CardContent className={`w-full p-2 pb-3 border-black/15 dark:border-muted bg-white dark:bg-sidebar rounded-[28px] relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/50 border`}>
                 {/* <div className="absolute inset-0 rounded-[inherit] overflow-hidden border">
                   <BorderBeam 
                     duration={6}
@@ -523,6 +701,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   layout="inline"
                   maxHeight="180px"
                   showPreviews={true}
+                  isChatInput={true}
                 />
                 <MessageInput
                   ref={textareaRef}
@@ -559,7 +738,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   onAgentSelect={onAgentSelect}
                   hideAgentSelection={hideAgentSelection}
                   selectedMode={selectedMode}
-                  onModeChange={setSelectedMode}
+                  onModeChange={handleModeChange}
                   onOpenIntegrations={() => setRegistryDialogOpen(true)}
                   onOpenInstructions={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=instructions`)}
                   onOpenKnowledge={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=knowledge`)}
@@ -589,6 +768,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
             open={billingModalOpen}
             onOpenChange={setBillingModalOpen}
           />
+          
         </div>
       </div>
     );

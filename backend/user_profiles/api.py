@@ -56,23 +56,28 @@ async def get_user_profile(
 ):
     """Get the current user's profile."""
     try:
-        logger.info(f"Getting user profile for user_id: {user_id}")
-        client = await db.client
-        result = await client.table('user_profiles').select('*').eq('user_id', user_id).execute()
+        logger.info(f"Fetching user profile for user_id: {user_id}")
         
-        logger.info(f"Database query result: {result}")
+        client = await db.client
+        logger.info("Database client obtained successfully")
+        
+        result = await client.table('user_profiles').select('*').eq('user_id', user_id).execute()
+        logger.info(f"Database query executed, found {len(result.data) if result.data else 0} records")
         
         if not result.data or len(result.data) == 0:
-            logger.warning(f"No profile found for user_id: {user_id}")
+            logger.info(f"No profile found for user_id: {user_id}")
             raise HTTPException(status_code=404, detail="User profile not found")
         
-        logger.info(f"Profile found for user_id: {user_id}")
-        return UserProfileResponse(**result.data[0])
+        profile_data = result.data[0]
+        logger.info(f"Profile found for user_id: {user_id}, profile_id: {profile_data.get('id')}")
+        
+        return UserProfileResponse(**profile_data)
     except HTTPException:
+        # Re-raise HTTP exceptions as they are
         raise
     except Exception as e:
-        logger.error(f"Error fetching user profile: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to fetch user profile")
+        logger.error(f"Error fetching user profile for user_id {user_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch user profile: {str(e)}")
 
 @router.post("/profile", response_model=UserProfileResponse)
 async def create_user_profile(
@@ -433,6 +438,11 @@ async def test_email(request: Request):
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "user_profiles"}
+
+@router.get("/test-auth")
+async def test_auth(user_id: str = Depends(get_current_user_id_from_jwt)):
+    """Test endpoint to verify authentication is working."""
+    return {"message": "Authentication successful", "user_id": user_id}
 
 @router.get("/test-db")
 async def test_database():

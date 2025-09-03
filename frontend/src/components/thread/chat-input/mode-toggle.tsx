@@ -1,6 +1,13 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Atom, MessageCircle, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ModeToggleProps {
   selectedMode: 'default' | 'agent';
@@ -18,34 +25,82 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
   const isChatMode = selectedMode === 'default';
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>      
-      <div 
-        className={cn(
-          "relative w-16 h-8 bg-gradient-to-r from-helium-blue/30 to-helium-green/30 backdrop-blur-sm rounded-full p-0.5 cursor-pointer overflow-hidden",
-          disabled && "opacity-50 cursor-not-allowed"
-        )}
-        onClick={() => {
-          if (!disabled) {
-            onModeChange(isChatMode ? 'agent' : 'default');
-          }
-        }}
-      >
-        <motion.div
-          className="absolute top-0.5 bottom-0.5 bg-sidebar dark:bg-sidebar-accent rounded-full shadow-sm flex items-center justify-center w-12"
-          animate={{
-            x: isChatMode ? 0 : 12, // 12px = 0.75rem (small gap)
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 500,
-            damping: 30,
-          }}
-        >
-          <span className="text-xs font-medium text-muted-foreground">
-            {isChatMode ? "Chat" : "Agent"}
-          </span>
-        </motion.div>
+    <TooltipProvider>
+      <div className={cn("flex items-center", className)}>
+        <div className="relative bg-none h-8 border dark:border-muted-foreground/30 rounded-full p-1 flex items-center gap-1">
+          {/* Animated sliding background */}
+          <motion.div
+            className={cn(
+              "absolute w-6 h-6 rounded-full backdrop-blur-2xl",
+              isChatMode ? "bg-helium-yellow" : "bg-helium-green"
+            )}
+            animate={{
+              x: isChatMode ? 0 : 28, // 28px = gap (1) + width (6.5) + padding adjustments
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 500,
+              damping: 30,
+            }}
+          />
+
+          {/* Chat Mode Tab */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className={cn(
+                  "relative flex items-center cursor-pointer justify-center w-6 h-6 rounded-full transition-all duration-200 z-10",
+                  isChatMode 
+                    ? "dark:text-muted" 
+                    : "text-muted-foreground"
+                )}
+                onClick={() => {
+                  if (!disabled) {
+                    onModeChange('default');
+                  }
+                }}
+                disabled={disabled}
+              >
+                <MessageSquare className="h-4 w-4" strokeWidth={1.5} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="rounded-xl">
+              <div className="text-center p-1">
+                <div className="font-semibold text-base">Chat</div>
+                <div className="text-xs text-sidebar/70 dark:text-muted max-w-[160px]">Answer everyday questions or chat before starting tasks</div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Agent Mode Tab */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className={cn(
+                  "relative flex items-center cursor-pointer justify-center w-6 h-6 rounded-full transition-all duration-200 z-10",
+                  !isChatMode 
+                    ? "dark:text-muted " 
+                    : "text-muted-foreground"
+                )}
+                onClick={() => {
+                  if (!disabled) {
+                    onModeChange('agent');
+                  }
+                }}
+                disabled={disabled}
+              >
+                <Atom className="h-4 w-4" strokeWidth={1.5} />          
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="rounded-xl">
+              <div className="text-center p-1" >
+                <div className="font-semibold text-base">Agent</div>
+                <div className="text-xs text-sidebar/70 dark:text-muted max-w-[160px]">Tackle complex tasks and deliver results autonomously</div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };

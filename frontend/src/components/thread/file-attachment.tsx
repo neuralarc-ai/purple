@@ -288,7 +288,7 @@ export function FileAttachment({
                     title={filename}
                 >
                     <div className="flex-shrink-0">
-                        <FileImage className="h-6 w-6 text-gray-500" />
+                        <FileImage className="h-6 w-6 text-helium-blue" />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col justify-center overflow-hidden">
                         <div className="text-sm font-medium text-foreground truncate max-w-full" title={filename}>
@@ -345,7 +345,7 @@ export function FileAttachment({
                 className={cn(
                     "group relative h-[54px] rounded-xl cursor-pointer",
                     "bg-card border border-border hover:border-border/50 transition-colors",
-                    "px-3 py-2 overflow-hidden", // Standard padding like other file types
+                    "px-2.5 py-2 overflow-hidden", // Standard padding like other file types
                     "flex items-center gap-3", // Horizontal layout like other file types
                     isGridLayout ? "w-full" : "inline-block", // Full width in grid
                     className
@@ -358,12 +358,12 @@ export function FileAttachment({
             >
                 {/* File Icon */}
                 <div className="flex-shrink-0">
-                    <FileImage className="h-6 w-6 text-gray-500" />
+                    <FileImage className="h-8 w-8 text-gray-500" />
                 </div>
                 
                 {/* File Info - Same layout as other file types */}
-                <div className="flex-1 min-w-0 flex flex-col justify-center overflow-hidden">
-                    <div className="text-sm font-medium text-foreground truncate max-w-full" title={filename}>
+                <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+                    <div className="text-sm font-medium text-foreground truncate max-w-fit" title={filename}>
                         {filename}
                     </div>
                     <div className="text-xs text-muted-foreground flex items-center gap-1 truncate">
@@ -522,26 +522,55 @@ export function FileAttachment({
     
     // Get the appropriate icon path based on file type
     const getIconPath = () => {
-        switch (fileType) {
-            case 'pdf':
-                return '/icons/pdf.svg';
-            case 'markdown':
-                return '/icons/md.svg';
-            case 'csv':
-                return '/icons/csv.svg';
-            case 'document':
-                return '/icons/doc.svg';
-            case 'html':
-                return '/icons/html.svg';
-            case 'spreadsheet':
-                return '/icons/csv.svg';
-            case 'image':
-                return '/icons/image-icon.svg';
-            case 'code':
-                return '/icons/code-icon.svg';
-            default:
-                return '/icons/file-icon.svg';
+        const ext = extension.toLowerCase();
+        
+        // HTML, CSS, JS, PY files
+        if (['html', 'htm', 'css', 'js', 'jsx', 'ts', 'tsx', 'py'].includes(ext)) {
+            return '/icons/html.svg';
         }
+        
+        // DOC, DOCX, Word files
+        if (['doc', 'docx'].includes(ext)) {
+            return '/icons/doc.svg';
+        }
+        
+        // Markdown files
+        if (['md', 'markdown'].includes(ext)) {
+            return '/icons/md.svg';
+        }
+        
+        // TXT files
+        if (['txt'].includes(ext)) {
+            return '/icons/txt.svg';
+        }
+        
+        // CSV files
+        if (['csv', 'tsv'].includes(ext)) {
+            return '/icons/csv.svg';
+        }
+        
+        // XLSX files
+        if (['xls', 'xlsx'].includes(ext)) {
+            return '/icons/xlsx.svg';
+        }
+        
+        // Image files
+        if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'img'].includes(ext)) {
+            return '/icons/img.svg';
+        }
+        
+        // PDF files
+        if (['pdf'].includes(ext)) {
+            return '/icons/pdf.svg';
+        }
+        
+        // Archive files
+        if (['zip', 'rar', 'tar', 'gz', '7z'].includes(ext)) {
+            return '/icons/zip.svg';
+        }
+        
+        // Default fallback
+        return '/icons/html.svg';
     };
 
     return (
@@ -560,17 +589,18 @@ export function FileAttachment({
             title={filename}
         >
             <div className="relative min-w-[47px] h-[54px] flex-shrink-0 flex items-center justify-center">
-                <img 
+                <Image 
                     src={getIconPath()} 
                     alt={fileType} 
+                    width={36}
+                    height={36}
                     className={cn(
-                        "h-9 w-9 object-contain",
-                        isDocumentType ? "opacity-90" : "opacity-70"
+                        "object-contain w-9 h-9"                        
                     )} 
                     onError={(e) => {
                         // Fallback to default icon if custom icon fails to load
                         const target = e.target as HTMLImageElement;
-                        target.src = '/icons/html.svg';
+                        target.src = '/icons/md.svg';
                     }}
                 />
             </div>
@@ -659,7 +689,7 @@ export function FileAttachmentGrid({
                     
                     {/* View all files in this task button - shown as 4th item when there are more than 3 files */}
                     {showViewAll && (
-                        <div className="w-full h-[300px] flex items-center">
+                        <div className="w-full h-[54px] flex items-center">
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -822,12 +852,18 @@ export function ThreadFilesDisplay({
     const getGridPosition = (index: number, total: number, isRightAligned: boolean) => {
         if (total === 1) {
             // Single file: [][1] for user messages, [1][] for assistant messages
-            return isRightAligned ? "col-start-1" : "col-start-2";
+            return isRightAligned ? "col-start-2" : "col-start-1";
+        } else if (total === 2) {
+            // Two files: [1][2] for both user and assistant messages
+            return "";
         } else if (total === 3) {
-            // Three files: [1][2] and [][3] for user messages, [1][2] and [3][] for assistant messages
+            // Three files: [1][2] and [3][] for assistant messages, [1][2] and [][3] for user messages
             if (index === 2) { // Third file
-                return isRightAligned ? "col-start-1" : "col-start-2";
+                return isRightAligned ? "col-start-2" : "col-start-1";
             }
+        } else if (total === 4) {
+            // Four files: [1][2] and [3][4] for both user and assistant messages
+            return "";
         }
         // Default positioning for other cases
         return "";
@@ -836,7 +872,10 @@ export function ThreadFilesDisplay({
     return (
         <>
             <div className={cn("w-full mt-4", className)}>
-                <div className="grid grid-cols-2 gap-2">
+                <div className={cn(
+                    "grid grid-cols-2 gap-2",
+                    rightAlignGrid ? "justify-items-start" : "justify-items-end"
+                )}>
                     {visibleAttachments.map((filepath, index) => (
                         <div 
                             key={`${filepath}-${index}`} 
@@ -860,7 +899,10 @@ export function ThreadFilesDisplay({
                     
                     {/* View all files in this task button - shown as 5th item when there are more than 4 files */}
                     {showViewAll && (
-                        <div className="w-full h-[80px] flex items-center">
+                        <div className={cn(
+                            "w-full h-[80px] flex items-center",
+                            getGridPosition(visibleAttachments.length, visibleAttachments.length + 1, rightAlignGrid)
+                        )}>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();

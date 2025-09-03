@@ -14,6 +14,9 @@ import { useStartAgentMutation, useStopAgentMutation } from '@/hooks/react-query
 import { BillingError } from '@/lib/api';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
 import { HeliumLogo } from '../sidebar/helium-logo';
+import { SecurityPopup } from '@/components/thread/chat-input/security-popup';
+import { useSecurityInterception } from '@/hooks/useSecurityInterception';
+import { SECURITY_ALERT_VARIANTS, HARM_ALERT_VARIANT } from '@/lib/security-database';
 
 interface Agent {
   agent_id: string;
@@ -44,6 +47,18 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
   const [hasStartedConversation, setHasStartedConversation] = useState(false);
+
+  // Security interception hook
+  const {
+    showPopup: showSecurityPopup,
+    popupMessage: securityPopupMessage,
+    popupType: securityPopupType,
+    shouldBlock: shouldBlockRequest,
+    closePopup: closeSecurityPopup,
+    shouldProceedWithRequest,
+    openPopup,
+    isHarmfulContent,
+  } = useSecurityInterception();
 
   const isHeliumAgent = agentMetadata?.is_helium_default || false;
 
@@ -165,6 +180,56 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
     }
   }, [streamingTextContent]);
 
+  // Detect assistant denial message and show as popup
+  useEffect(() => {
+    const DENIAL_TEXT = "I cannot comply with this request. It appears to be a security violation or unsafe instruction. I'm designed to help with legitimate tasks while maintaining safety and ethical boundaries.";
+
+    const extractText = (raw: any): string => {
+      if (typeof raw === 'string') {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.content === 'string') return parsed.content;
+        } catch {}
+        return raw;
+      }
+      return '';
+    };
+
+    const pickVariant = (seedSource: string): string => {
+      // Check if this is harmful content to use specific variant
+      const isHarmful = isHarmfulContent(seedSource || '');
+      
+      if (isHarmful) {
+        return HARM_ALERT_VARIANT;
+      }
+      
+      // Use randomized variant for general security issues
+      const pool = SECURITY_ALERT_VARIANTS;
+      if (!pool || pool.length === 0) return DENIAL_TEXT;
+      let seed = 0;
+      const basis = seedSource || '';
+      for (let i = 0; i < basis.length; i++) seed = (seed * 31 + basis.charCodeAt(i)) >>> 0;
+      return pool[seed % pool.length] || DENIAL_TEXT;
+    };
+
+    // Check latest assistant message
+    const lastAssistant = [...messages].reverse().find(m => m.type === 'assistant');
+    const lastAssistantText = lastAssistant ? extractText(lastAssistant.content) : '';
+
+    const matchesDenial = (text: string) =>
+      !!text && text.toLowerCase().includes(DENIAL_TEXT.toLowerCase());
+
+    if (matchesDenial(lastAssistantText)) {
+      openPopup(pickVariant(lastAssistantText), 'error', true);
+      return;
+    }
+
+    // Also check streaming text while it is coming in
+    if (matchesDenial(streamingTextContent || '')) {
+      openPopup(pickVariant(streamingTextContent || ''), 'error', true);
+    }
+  }, [messages, streamingTextContent, openPopup]);
+
   const handleSubmitFirstMessage = async (
     message: string,
     options?: {
@@ -177,6 +242,12 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
     },
   ) => {
     if (!message.trim() && !chatInputRef.current?.getPendingFiles().length) return;
+    
+    // Check for security concerns on submission only
+    if (!shouldProceedWithRequest(message)) {
+      // Security popup is already shown by the hook
+      return;
+    }
 
     // Set loading state immediately
     setIsSubmitting(true);
@@ -329,6 +400,13 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       options?: { model_name?: string; enable_thinking?: boolean },
     ) => {
       if (!message.trim() || !threadId) return;
+      
+      // Check for security concerns on submission only
+      if (!shouldProceedWithRequest(message)) {
+        // Security popup is already shown by the hook
+        return;
+      }
+
       setIsSubmitting(true);
 
       const optimisticUserMessage: UnifiedMessage = {
@@ -451,24 +529,35 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       </div>
       <div className="flex-shrink-0">
         <div className="px-8 md:pb-4">
-          <ChatInput
-            ref={chatInputRef}
-            onSubmit={threadId ? handleSubmitMessage : handleSubmitFirstMessage}
-            loading={isSubmitting || localLoading} // Use local loading state for immediate feedback
-            placeholder={`Message ${agent.name || 'agent'}...`}
-            value={inputValue}
-            onChange={setInputValue}
-            disabled={isSubmitting}
-            isAgentRunning={agentStatus === 'running' || agentStatus === 'connecting'}
-            onStopAgent={handleStopAgent}
-            agentName={agent.name}
-            hideAttachments={false}
-            bgColor='bg-muted-foreground/10'
-            selectedAgentId={agent.agent_id}
-            onAgentSelect={() => {
-              toast.info("You can only test the agent you are currently configuring");
-            }}
-          />
+          <div className="w-full">
+            {/* Security Popup - Positioned above the input */}
+            <SecurityPopup
+              isVisible={showSecurityPopup}
+              onClose={closeSecurityPopup}
+              message={securityPopupMessage}
+              type={securityPopupType}
+              showCloseButton={true}
+            />
+            
+            <ChatInput
+              ref={chatInputRef}
+              onSubmit={threadId ? handleSubmitMessage : handleSubmitFirstMessage}
+              loading={isSubmitting || localLoading} // Use local loading state for immediate feedback
+              placeholder={`Message ${agent.name || 'agent'}...`}
+              value={inputValue}
+              onChange={setInputValue}
+              disabled={isSubmitting}
+              isAgentRunning={agentStatus === 'running' || agentStatus === 'connecting'}
+              onStopAgent={handleStopAgent}
+              agentName={agent.name}
+              hideAttachments={false}
+              bgColor='bg-muted-foreground/10'
+              selectedAgentId={agent.agent_id}
+              onAgentSelect={() => {
+                toast.info("You can only test the agent you are currently configuring");
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

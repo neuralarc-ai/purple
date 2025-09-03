@@ -2,24 +2,13 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useTheme } from 'next-themes';
 import {
-  Bot,
-  Menu,
-  Store,
-  Plus,
-  Zap,
-  ChevronRight,
-  Loader2,
-  Book,
-  Building2,
-  Settings,
+  ClipboardPen,
 } from 'lucide-react';
 
 import { NavAgents } from '@/components/sidebar/nav-agents';
 import { NavUserWithTeams } from '@/components/sidebar/nav-user-with-teams';
 import { HeliumLogo } from '@/components/sidebar/helium-logo';
-import { CTACard } from '@/components/sidebar/cta';
 import {
   Sidebar,
   SidebarContent,
@@ -143,7 +132,6 @@ function FloatingMobileMenuButton() {
               height={22}
               className="block dark:hidden mb-0"
             />
-
             <Image
               src="/icons/menu-dark.svg"
               alt="menu Dark Logo"
@@ -162,7 +150,6 @@ function FloatingMobileMenuButton() {
 export function SidebarLeft({
   ...props
 }: React.ComponentProps<typeof Sidebar>) {
-  const { theme } = useTheme();
   const { state, setOpen, setOpenMobile } = useSidebar();
   const isMobile = useIsMobile();
   const [user, setUser] = useState<{
@@ -232,8 +219,10 @@ export function SidebarLeft({
       className="bg-background/95 backdrop-blur-sm [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
       {...props}
     >
-      <SidebarHeader className="px-2 py-2">
-        <div className="flex h-[40px] items-center px-1 relative">
+      <SidebarHeader className="py-2">
+        <div className={cn("flex h-[40px] items-center px-1.5 relative", {
+          "pl-4": state !== 'collapsed'
+        })}>
           <Link
             href="/dashboard"
             className="flex-shrink-0"
@@ -250,7 +239,7 @@ export function SidebarLeft({
                 <TooltipTrigger asChild>
                   <SidebarTrigger className="h-8 w-8" />
                 </TooltipTrigger>
-                <TooltipContent>Toggle sidebar (CMD+B)</TooltipContent>
+                <TooltipContent side="right" align="center">Toggle sidebar (CMD+B)</TooltipContent>
               </Tooltip>
             )}
           </div>
@@ -261,7 +250,7 @@ export function SidebarLeft({
               <TooltipTrigger asChild>
                 <SidebarTrigger className="h-8 w-8" />
               </TooltipTrigger>
-              <TooltipContent>Toggle sidebar (CMD+B)</TooltipContent>
+              <TooltipContent side="right" align="center">Toggle sidebar (CMD+B)</TooltipContent>
             </Tooltip>
           </div>
         )}
@@ -278,17 +267,21 @@ export function SidebarLeft({
                 posthog.capture('new_task_clicked');
                 if (isMobile) setOpenMobile(false);
               }}
+              tooltip="New Task"
             >
               <Image
-                src={
-                  theme === 'dark'
-                    ? '/icons/plus-dark.svg'
-                    : '/icons/plus-light.svg'
-                }
+                src="/icons/plus-light.svg"
                 alt="plus Light Logo"
                 width={20}
                 height={20}
-                className="mr-1"
+                className="mr-1 block dark:hidden"
+              />
+              <Image
+                src="/icons/plus-dark.svg"
+                alt="plus Dark Logo"
+                width={20}
+                height={20}
+                className="mr-1 hidden dark:block"
               />
               <span className="flex items-center justify-between w-full">
                 New Task
@@ -299,25 +292,27 @@ export function SidebarLeft({
             <Link href="/agents?tab=my-agents">
               <SidebarMenuButton
                 className={cn('touch-manipulation', {
-                  'bg-accent px-2 text-accent-foreground font-medium':
-                    pathname === '/agents' &&
-                    (searchParams.get('tab') === 'my-agents' ||
-                      searchParams.get('tab') === null),
+                  'bg-accent px-4 text-accent-foreground font-medium':
+                    pathname === '/agents',
                 })}
                 onClick={() => {
                   if (isMobile) setOpenMobile(false);
                 }}
+                tooltip="Agents"
               >
                 <Image
-                  src={
-                    theme === 'dark'
-                      ? '/icons/bot-dark.svg'
-                      : '/icons/bot-light.svg'
-                  }
+                  src="/icons/bot-light.svg"
                   alt="bot Light Logo"
                   width={20}
                   height={20}
-                  className="mr-1"
+                  className="mr-1 block dark:hidden"
+                />
+                <Image
+                  src="/icons/bot-dark.svg"
+                  alt="bot Dark Logo"
+                  width={20}
+                  height={20}
+                  className="mr-1 hidden dark:block"
                 />
                 <span className="flex items-center justify-between w-full">
                   My Agents
@@ -335,19 +330,12 @@ export function SidebarLeft({
                 onClick={() => {
                   if (isMobile) setOpenMobile(false);
                 }}
-                className="touch-manipulation"
+                className="touch-manipulation px-4.5"
+                tooltip="Prompt Library"
               >
                 <Link href="/prompt-library" className="flex items-center">
-                  <Image
-                    src={
-                      theme === 'dark'
-                        ? '/icons/prompt-dark.svg'
-                        : '/icons/prompt-light.svg'
-                    }
-                    alt="Prompt Library"
-                    width={20}
-                    height={20}
-                    className="mr-1"
+                  <ClipboardPen 
+                    className="mr-1.5 h-5 w-5 stroke-[1.5]" 
                   />
                   <span>Prompt Library</span>
                 </Link>

@@ -1195,7 +1195,9 @@ export const streamAgent = (
           try {
             const jsonData = JSON.parse(rawData);
             if (jsonData.status === 'error') {
-              console.error(`[STREAM] Error status received for ${agentRunId}:`, jsonData);
+              // Ensure we always have something meaningful to log/show
+              const safeError = jsonData && Object.keys(jsonData).length > 0 ? jsonData : { message: 'Unknown stream error', raw: rawData };
+              console.error(`[STREAM] Error status received for ${agentRunId}:`, safeError);
               
               // Pass the error message to the callback
               callbacks.onError(jsonData.message || 'Unknown error occurred');
@@ -1755,7 +1757,7 @@ export interface CreateCheckoutSessionRequest {
   success_url: string;
   cancel_url: string;
   referral_id?: string;
-  commitment_type?: 'monthly' | 'yearly' | 'yearly_commitment';
+  commitment_type?: 'monthly' | 'yearly';
 }
 
 export interface CreatePortalSessionRequest {
@@ -1788,6 +1790,8 @@ export interface SubscriptionStatus {
   // Credit information
   credit_balance?: number;
   credit_balance_credits?: number; // Add credit amount (1 credit = $0.01)
+  credit_total_purchased?: number; // Total purchased in dollars
+  credit_total_used?: number; // Total used in dollars
   can_purchase_credits?: boolean;
 }
 

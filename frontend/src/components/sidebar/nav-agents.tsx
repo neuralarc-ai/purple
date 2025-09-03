@@ -14,6 +14,7 @@ import {
   X,
   Check,
   History,
+  ListTodo,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePathname, useRouter } from 'next/navigation';
@@ -81,6 +82,7 @@ export function NavAgents() {
   );
   const [deleteProgress, setDeleteProgress] = useState(0);
   const [totalToDelete, setTotalToDelete] = useState(0);
+  const [isSelectMode, setIsSelectMode] = useState(false);
 
   const {
     data: projects = [],
@@ -210,6 +212,21 @@ export function NavAgents() {
   // Deselect all threads
   const deselectAllThreads = () => {
     setSelectedThreads(new Set());
+  };
+
+  // Exit select mode and clear selections
+  const exitSelectMode = () => {
+    setIsSelectMode(false);
+    setSelectedThreads(new Set());
+  };
+
+  // Toggle select mode
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    if (isSelectMode) {
+      // Exit select mode and clear selections
+      setSelectedThreads(new Set());
+    }
   };
 
   // Function to handle thread deletion
@@ -392,37 +409,52 @@ export function NavAgents() {
     <SidebarGroup>
       <div className="flex justify-between items-center">
         <SidebarGroupLabel>Chat History</SidebarGroupLabel>
+
         {state !== 'collapsed' || isMobile ? (
           <div className="flex items-center space-x-1">
-            {selectedThreads.size > 0 ? (
+            {isSelectMode ? (
               <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={deselectAllThreads}
-                  className="h-7 w-7"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={selectAllThreads}
-                  disabled={selectedThreads.size === combinedThreads.length}
-                  className="h-7 w-7"
-                >
-                  <Check className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleMultiDelete}
-                  className="h-7 w-7 text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={exitSelectMode}
+                      className="h-7 w-7"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Cancel</TooltipContent>
+                </Tooltip>
+                {selectedThreads.size > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleMultiDelete}
+                    className="h-7 w-7 text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </>
-            ) : null}
+            ) : (
+              combinedThreads.length > 0 && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleSelectMode}
+                      className="h-8 w-8 opacity-60 hover:opacity-100"
+                    >
+                      <ListTodo className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>Select</TooltipContent>
+                </Tooltip>
+              )
+            )}
           </div>
         ) : null}
       </div>
@@ -456,13 +488,13 @@ export function NavAgents() {
                     >
                       <SidebarMenuButton
                         asChild
-                        className={`relative ${
-                          isActive
-                            ? 'bg-accent text-accent-foreground font-medium'
-                            : isSelected
-                              ? 'bg-primary/10'
-                              : ''
-                        }`}
+                        className={`relative ${isActive
+                          ? 'bg-accent text-accent-foreground font-medium'
+                          : isSelected
+                            ? 'bg-primary/10'
+                            : ''
+                          }`}
+                        tooltip={thread.projectName}
                       >
                         <div className="flex items-center w-full">
                           <Link
@@ -481,25 +513,26 @@ export function NavAgents() {
                             </span>
                           </Link>
 
-                          {/* Checkbox - only visible on hover of this specific area */}
-                          <div
-                            className="mr-1 flex-shrink-0 w-4 h-4 flex items-center justify-center group/checkbox"
-                            onClick={(e) =>
-                              toggleThreadSelection(thread.threadId, e)
-                            }
-                          >
+                          {/* Checkbox - only visible when in select mode */}
+                          {isSelectMode && (
                             <div
-                              className={`h-4 w-4 border rounded cursor-pointer transition-all duration-150 flex items-center justify-center ${
-                                isSelected
-                                  ? 'opacity-100 bg-primary border-primary hover:bg-primary/90'
-                                  : 'opacity-0 group-hover/checkbox:opacity-100 border-muted-foreground/30 bg-background hover:bg-muted/50'
-                              }`}
+                              className="mr-1 flex-shrink-0 w-4 h-4 flex items-center justify-center"
+                              onClick={(e) =>
+                                toggleThreadSelection(thread.threadId, e)
+                              }
                             >
-                              {isSelected && (
-                                <Check className="h-3 w-3 text-primary-foreground" />
-                              )}
+                              <div
+                                className={`h-4 w-4 border rounded cursor-pointer transition-all duration-150 flex items-center justify-center ${isSelected
+                                  ? 'bg-primary border-primary hover:bg-primary/90'
+                                  : 'border-muted-foreground/30 bg-background hover:bg-muted/50'
+                                  }`}
+                              >
+                                {isSelected && (
+                                  <Check className="h-3 w-3 text-primary-foreground" />
+                                )}
+                              </div>
                             </div>
-                          </div>
+                          )}
 
                           {/* Dropdown Menu - inline with content */}
                           <DropdownMenu>

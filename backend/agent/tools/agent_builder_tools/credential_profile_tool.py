@@ -353,42 +353,47 @@ After connecting, you'll be able to use {result.toolkit.name} tools in your agen
             if not profile:
                 return self.fail_response("Credential profile not found")
             
-            # Remove from agent configuration if it exists
-            agent_result = await client.table('agents').select('current_version_id').eq('agent_id', self.agent_id).execute()
-            if agent_result.data and agent_result.data[0].get('current_version_id'):
-                version_result = await client.table('agent_versions')\
-                    .select('config')\
-                    .eq('version_id', agent_result.data[0]['current_version_id'])\
-                    .maybe_single()\
-                    .execute()
-                
-                if version_result.data and version_result.data.get('config'):
-                    current_config = version_result.data['config']
-                    current_tools = current_config.get('tools', {})
-                    current_custom_mcps = current_tools.get('custom_mcp', [])
-                    
-                    updated_mcps = [mcp for mcp in current_custom_mcps if mcp.get('config', {}).get('profile_id') != profile_id]
-                    
-                    if len(updated_mcps) != len(current_custom_mcps):
-                        from agent.versioning.version_service import get_version_service
-                        try:
-                            current_tools['custom_mcp'] = updated_mcps
-                            current_config['tools'] = current_tools
-                            
-                            version_service = await get_version_service()
-                            await version_service.create_version(
-                                agent_id=self.agent_id,
-                                user_id=account_id,
-                                system_prompt=current_config.get('system_prompt', ''),
-                                configured_mcps=current_config.get('tools', {}).get('mcp', []),
-                                custom_mcps=updated_mcps,
-                                agentpress_tools=current_config.get('tools', {}).get('agentpress', {}),
-                                change_description=f"Deleted credential profile {profile.display_name}"
-                            )
-                        except Exception as e:
-                            return self.fail_response(f"Failed to update agent config: {str(e)}")
+            # Remove from all agent configurations that reference this profile
+            from agent.versioning.version_service import get_version_service
+            version_service = await get_version_service()
             
-            # Delete the profile
+            # Get all agent versions that might reference this profile
+            all_versions = await client.table('agent_versions')\
+                .select('*')\
+                .eq('agent_id', self.agent_id)\
+                .execute()
+            
+            if all_versions.data:
+                for version in all_versions.data:
+                    if not version.get('config'):
+                        continue
+                        
+                    config = version['config']
+                    tools = config.get('tools', {})
+                    custom_mcps = tools.get('custom_mcp', [])
+                    
+                    # Filter out the profile being deleted
+                    updated_mcps = [
+                        mcp for mcp in custom_mcps 
+                        if mcp.get('config', {}).get('profile_id') != profile_id
+                    ]
+                    
+                    # If we removed any references, update the version
+                    if len(updated_mcps) != len(custom_mcps):
+                        try:
+                            tools['custom_mcp'] = updated_mcps
+                            config['tools'] = tools
+                            
+                            # Update the version config
+                            await client.table('agent_versions')\
+                                .update({'config': config})\
+                                .eq('version_id', version['version_id'])\
+                                .execute()
+                                
+                        except Exception as e:
+                            logger.error(f"Error updating agent version {version['version_id']} when removing profile {profile_id}: {str(e)}")
+            
+            # Now delete the profile from the profile service
             await profile_service.delete_profile(profile_id)
             
             return self.success_response({
@@ -401,4 +406,5 @@ After connecting, you'll be able to use {result.toolkit.name} tools in your agen
             })
             
         except Exception as e:
-            return self.fail_response(f"Error deleting credential profile: {str(e)}") 
+            logger.error(f"Error deleting credential profile {profile_id}: {str(e)}", exc_info=True)
+            return self.fail_response(f"Error deleting credential profile: {str(e)}")

@@ -24,6 +24,7 @@ from services.llm import make_llm_api_call
 from run_agent_background import run_agent_background, _cleanup_redis_response_list, update_agent_run_status
 from utils.constants import MODEL_NAME_ALIASES
 from flags.flags import is_enabled
+from utils.security import is_malicious_input
 
 from .config_helper import extract_agent_config, build_unified_config
 from .utils import check_agent_run_limit
@@ -327,7 +328,11 @@ async def start_agent(
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
     logger.debug(f"Resolved model name: {resolved_model}")
 
-    # Update model_name to use the resolved version
+    # Hard override: in production, always force Vertex Claude Sonnet 4
+    if os.getenv("ENV_MODE", "local").lower() == "production":
+        resolved_model = "vertex_ai/claude-sonnet-4@20250514"
+
+    # Update model_name to use the resolved version (or forced one)
     model_name = resolved_model
 
     logger.debug(f"Starting new agent for thread: {thread_id} with config: model={model_name}, thinking={body.enable_thinking}, effort={body.reasoning_effort}, stream={body.stream}, context_manager={body.enable_context_manager} (Instance: {instance_id})")
@@ -953,7 +958,8 @@ async def stream_agent_run(
                     elif queue_item["type"] == "error":
                         logger.error(f"Listener error for {agent_run_id}: {queue_item['data']}")
                         terminate_stream = True
-                        yield f"data: {json.dumps({'type': 'status', 'status': 'error'})}\n\n"
+                        # Include a descriptive message so clients don't receive an empty object
+                        yield f"data: {json.dumps({'type': 'status', 'status': 'error', 'message': str(queue_item.get('data') or 'Stream listener error')})}\n\n"
                         break
 
                 except asyncio.CancelledError:
@@ -1051,6 +1057,9 @@ async def initiate_agent_with_files(
     files: List[UploadFile] = File(default=[]),
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
+    # Security check: block prompt injection or malware content
+    if is_malicious_input(prompt or ""):
+        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     """
     Initiate a new agent session with optional file attachments.
 
@@ -1064,12 +1073,11 @@ async def initiate_agent_with_files(
     logger.debug(f"Original model_name from request: {model_name}")
 
     if model_name is None:
-        # In production, randomly select from the three Vertex AI models
+        # In production, force Vertex Claude Sonnet 4
         env_mode = os.getenv("ENV_MODE", "local").lower()
         if env_mode == "production":
-            from utils.constants import get_random_production_model
-            model_name = get_random_production_model()
-            logger.debug(f"Production environment: randomly selected model: {model_name}")
+            model_name = "vertex_ai/claude-sonnet-4@20250514"
+            logger.debug(f"Production environment: using fixed model: {model_name}")
         else:
             model_name = "vertex_ai/gemini-2.5-flash"
             logger.debug(f"Non-production environment: using default model: {model_name}")
@@ -2033,9 +2041,14 @@ async def create_agent(
         
         try:
             version_service = await _get_version_service()
-            from agent.helium_config import HELIUM_CONFIG
             from agent.config_helper import _get_default_agentpress_tools
-            system_prompt = HELIUM_CONFIG["system_prompt"]
+            
+            # Use user-provided system prompt or basic default, not Helium's prompt
+            if agent_data.system_prompt:
+                system_prompt = agent_data.system_prompt
+            else:
+                # Basic default prompt for new agents
+                system_prompt = "You are a helpful AI assistant. You can help users with various tasks including answering questions, providing information, and assisting with problem-solving."
             
             # Use default tools if none specified, ensuring builder tools are included
             agentpress_tools = agent_data.agentpress_tools if agent_data.agentpress_tools else _get_default_agentpress_tools()
@@ -3353,6 +3366,8 @@ async def add_message_to_thread(
     user_id: str = Depends(get_current_user_id_from_jwt),
 ):
     """Add a message to a thread"""
+    if is_malicious_input(message or ""):
+        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     logger.debug(f"Adding message to thread: {thread_id}")
     client = await db.client
     await verify_thread_access(client, thread_id, user_id)
@@ -3379,6 +3394,8 @@ async def create_message(
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
     """Create a new message in a thread."""
+    if is_malicious_input(getattr(message_data, 'content', '') or ""):
+        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     logger.debug(f"Creating message in thread: {thread_id}")
     client = await db.client
     

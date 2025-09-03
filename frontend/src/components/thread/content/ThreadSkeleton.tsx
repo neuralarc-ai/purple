@@ -17,9 +17,7 @@ export function ThreadSkeleton({
     return (
         <div className="flex h-screen">
             <div
-                className={`flex flex-col flex-1 overflow-hidden transition-all duration-200 ease-in-out ${
-                    isSidePanelOpen ? 'mr-[45vw]' : ''
-                }`}
+                className="flex flex-col w-[55vw] overflow-hidden transition-all duration-200 ease-in-out"
             >
                 {/* Skeleton Header */}
                 {showHeader && (
@@ -55,7 +53,7 @@ export function ThreadSkeleton({
                                             </div>
                                             
                                             <div className="flex justify-end">
-                                                <div className="flex max-w-[85%] rounded-2xl rounded-br-sm bg-sidebar dark:bg-sidebar-accent border px-4 py-3 pb-2">
+                                                <div className="flex max-w-[85%] rounded-2xl rounded-br-sm bg-sidebar dark:bg-sidebar border px-4 py-3 pb-2">
                                                     <div className="space-y-3 min-w-0 flex-1">
                                                         <Skeleton className="h-4 w-48" />
                                                         <Skeleton className="h-4 w-32" />
@@ -139,7 +137,7 @@ export function ThreadSkeleton({
                     className={cn(
                         "fixed bottom-6 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-6",
                         "transition-[left,right] duration-200 ease-in-out will-change-[left,right]",
-                        "left-[50px] right-0"
+                        "left-[53px] right-[45vw]"
                     )}
                 >
                     <div className="flex justify-center px-0">
@@ -163,8 +161,8 @@ export function ThreadSkeleton({
             </div>
 
             {/* Side Panel - Always visible in skeleton with 45% width */}
-            <div className="hidden sm:block">
-                <div className="h-screen w-[45vw] border-l">
+            <div className="w-[45vw] border-l">
+                <div className="h-screen w-full">
                     <div className="p-4">
                         <Skeleton className="h-8 w-32 mb-4" />
                         <Skeleton className="h-20 w-full rounded-md mb-4" />

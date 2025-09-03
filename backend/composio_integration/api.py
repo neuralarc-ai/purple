@@ -220,18 +220,63 @@ async def list_categories(
     try:
         logger.debug("Fetching Composio categories")
         
-        toolkit_service = ToolkitService()
-        categories = await toolkit_service.list_categories()
+        service = get_integration_service()
+        categories = await service.list_categories()
         
         return {
             "success": True,
-            "categories": [cat.dict() for cat in categories],
+            "categories": categories,
             "total": len(categories)
         }
         
     except Exception as e:
         logger.error(f"Failed to fetch categories: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to fetch categories: {str(e)}")
+
+
+@router.get("/toolkits/categorized")
+async def list_categorized_toolkits(
+    limit: int = Query(500, le=1000),
+    cursor: Optional[str] = Query(None),
+    user_id: str = Depends(get_current_user_id_from_jwt)
+) -> Dict[str, Any]:
+    try:
+        logger.debug(f"Fetching categorized Composio toolkits with limit: {limit}")
+        
+        service = get_integration_service()
+        result = await service.list_categorized_toolkits(limit=limit, cursor=cursor)
+        
+        return {
+            "success": True,
+            **result
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch categorized toolkits: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch categorized toolkits: {str(e)}")
+
+
+@router.get("/toolkits/category/{category_id}")
+async def get_toolkits_by_category(
+    category_id: str,
+    limit: int = Query(100, le=500),
+    cursor: Optional[str] = Query(None),
+    user_id: str = Depends(get_current_user_id_from_jwt)
+) -> Dict[str, Any]:
+    try:
+        logger.debug(f"Fetching toolkits for category: {category_id}")
+        
+        service = get_integration_service()
+        result = await service.get_toolkits_by_category(category_id, limit=limit, cursor=cursor)
+        
+        return {
+            "success": True,
+            **result
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch toolkits for category {category_id}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to fetch toolkits for category: {str(e)}")
 
 
 @router.get("/toolkits")
@@ -249,6 +294,8 @@ async def list_toolkits(
         
         if search:
             result = await service.search_toolkits(search, category=category, limit=limit, cursor=cursor)
+        elif category:
+            result = await service.get_toolkits_by_category(category, limit=limit, cursor=cursor)
         else:
             result = await service.list_available_toolkits(limit, cursor=cursor, category=category)
         
@@ -264,7 +311,14 @@ async def list_toolkits(
         
     except Exception as e:
         logger.error(f"Failed to fetch toolkits: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to fetch toolkits: {str(e)}")
+        # Provide more specific error information for debugging
+        error_detail = f"Failed to fetch toolkits"
+        if category:
+            error_detail += f" for category '{category}'"
+        if search:
+            error_detail += f" with search '{search}'"
+        error_detail += f": {str(e)}"
+        raise HTTPException(status_code=500, detail=error_detail)
 
 
 @router.get("/toolkits/{toolkit_slug}/details")

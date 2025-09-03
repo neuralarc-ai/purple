@@ -17,6 +17,17 @@ import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
+  Flame,
+  BarChart3,
+  Users,
+  Megaphone,
+  LineChart,
+  MessageSquare,
+  ClipboardList,
+  Calendar,
+  Palette,
+  File,
+  Folder,
 } from 'lucide-react';
 import {
   useComposioCategories,
@@ -32,6 +43,7 @@ import { cn } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CustomMCPDialog } from '../mcp/custom-mcp-dialog';
+import { createClient } from '@/lib/supabase/client';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDeleteProfile } from '@/hooks/react-query/composio/use-composio-mutations';
 import {
@@ -45,16 +57,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const CATEGORY_EMOJIS: Record<string, string> = {
-  popular: '🔥',
-  productivity: '📊',
-  crm: '👥',
-  marketing: '📢',
-  analytics: '📈',
-  communication: '💬',
-  'project-management': '📋',
-  scheduling: '📅',
-  'Design & creative tools': '🎨',
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  all: <Folder className="h-4 w-4" />, // All Apps category
+  popular: <Flame className="h-4 w-4" />, // Popular category
+  productivity: <BarChart3 className="h-4 w-4" />,
+  crm: <Users className="h-4 w-4" />,
+  marketing: <Megaphone className="h-4 w-4" />,
+  analytics: <LineChart className="h-4 w-4" />,
+  communication: <MessageSquare className="h-4 w-4" />,
+  'project-management': <ClipboardList className="h-4 w-4" />,
+  scheduling: <Calendar className="h-4 w-4" />,
+  'Design & creative tools': <Palette className="h-4 w-4" />,
+  default: <File className="h-4 w-4" />,
 };
 
 const PAGE_SIZE = 10;
@@ -121,7 +135,7 @@ const getAgentConnectedApps = (
         connectedApps.push({
           toolkit,
           profile: {
-            profile_id: `custom-${toolkit.slug}-${Date.now()}`,
+            profile_id: `custom-${toolkit.slug}-${crypto.randomUUID()}`,
             profile_name: mcpConfig.name,
             display_name: mcpConfig.name,
             toolkit_slug: toolkit.slug,
@@ -141,21 +155,7 @@ const getAgentConnectedApps = (
   return connectedApps;
 };
 
-const isAppConnectedToAgent = (
-  agent: any,
-  appSlug: string,
-  profiles: ComposioProfile[]
-): boolean => {
-  if (!agent?.custom_mcps) return false;
 
-  return agent.custom_mcps.some((mcpConfig: any) => {
-    if (mcpConfig.config?.profile_id) {
-      const profile = profiles.find((p) => p.profile_id === mcpConfig.config.profile_id);
-      return profile?.toolkit_slug === appSlug;
-    }
-    return false;
-  });
-};
 
 const AppCardSkeleton = () => (
   <div className="border border-border/50 rounded-xl p-4 h-full flex flex-col">
@@ -190,22 +190,43 @@ const ConnectedAppCard = ({
   onManageTools,
   onDelete,
   isUpdating,
+  currentAgentId,
 }: {
   connectedApp: ConnectedApp;
   onManageTools: (connectedApp: ConnectedApp) => void;
   onDelete: (profileId: string) => Promise<void>;
   isUpdating: boolean;
+  currentAgentId?: string;
 }) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       setIsDeleting(true);
       await onDelete(connectedApp.profile.profile_id);
+
+      // Invalidate and refetch queries to refresh the UI
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['composio', 'profiles'],
+          refetchType: 'active'
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['agents', 'detail', currentAgentId],
+          refetchType: 'active'
+        }),
+        queryClient.refetchQueries({
+          queryKey: ['composio', 'profiles']
+        })
+      ]);
+
       setShowDeleteDialog(false);
-      toast.success('Profile deleted successfully');
+
+      // Force a hard refresh of the page to ensure all components update
+      window.location.reload();
     } catch (error) {
       console.error('Failed to delete profile:', error);
       toast.error('Failed to delete profile');
@@ -272,7 +293,7 @@ const ConnectedAppCard = ({
             Connected as "{profile.profile_name}"
           </p>
         </div>
-        
+
         <div className="mt-auto pt-3 border-t">
           {hasEnabledTools ? (
             <div className="flex flex-col items-center gap-1">
@@ -309,7 +330,7 @@ const ConnectedAppCard = ({
           )}
         </div>
       </div>
-      
+
       <Button
         variant="ghost"
         size="sm"
@@ -350,7 +371,6 @@ const AppCard = ({
   profiles,
   onConnect,
   onConfigure,
-  isConnectedToAgent,
   currentAgentId,
   mode,
 }: {
@@ -358,12 +378,11 @@ const AppCard = ({
   profiles: ComposioProfile[];
   onConnect: () => void;
   onConfigure: (profile: ComposioProfile) => void;
-  isConnectedToAgent: boolean;
   currentAgentId?: string;
   mode?: 'full' | 'profile-only';
 }) => {
   const connectedProfiles = profiles.filter((p) => p.is_connected);
-  const canConnect = mode === 'profile-only' ? true : !isConnectedToAgent && !!currentAgentId;
+  const canConnect = mode === 'profile-only' ? true : !!currentAgentId;
 
   const clickHandler = canConnect
     ? connectedProfiles.length > 0
@@ -375,9 +394,8 @@ const AppCard = ({
     <div
       onClick={clickHandler}
       className={cn(
-        'border border-border rounded-xl p-4 transition-all cursor-pointer hover:border-primary/50 hover:shadow-md h-full flex flex-col',
-        !clickHandler && 'opacity-60 cursor-not-allowed',
-        isConnectedToAgent && 'border-green-500/30 bg-green-50 dark:bg-green-900/10'
+        'border border-border rounded-xl p-4 transition-all cursor-pointer hover:border-primary/50 h-full flex flex-col',
+        !clickHandler && 'opacity-60 cursor-not-allowed'
       )}
     >
       <div className="flex flex-col items-center text-center">
@@ -415,30 +433,17 @@ const AppCard = ({
           {app.description || 'No description available'}
         </p>
       </div>
-      
+
       <div className="mt-auto pt-3 border-t">
-        {isConnectedToAgent ? (
+        {connectedProfiles.length > 0 ? (
           <div className="flex items-center justify-center gap-1 text-xs text-green-600 dark:text-green-400">
-            <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span>Connected</span>
-            <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-              Connected to this agent
-            </div>
-          </div>
-        ) : connectedProfiles.length > 0 ? (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-              Profile available ({connectedProfiles.length})
-            </div>
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            <span>Profile available ({connectedProfiles.length})</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-              Not connected
-            </div>
+          <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+            <span>Not connected</span>
           </div>
         )}
       </div>
@@ -457,6 +462,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
 }) => {
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [isCategoryLoading, setIsCategoryLoading] = useState<boolean>(false);
   const [selectedApp, setSelectedApp] = useState<ComposioToolkit | null>(null);
   const [showConnector, setShowConnector] = useState(false);
   const [showConnectedApps, setShowConnectedApps] = useState(true);
@@ -529,8 +535,129 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
 
   const isLoadingConnectedApps = currentAgentId && (isLoadingAgent || isLoadingProfiles || isLoading);
 
-  // filtering (by search handled server-side via hook) — we still keep the list as-is
-  const filteredToolkits = useMemo(() => allToolkits, [allToolkits]);
+  // Debug: Log categories and toolkits data
+  useEffect(() => {
+    console.group('Composio Registry Debug');
+
+    // Debug: Log the actual data structure
+    console.log('=== CATEGORIES DATA ===');
+    console.log('Categories (raw):', categoriesData);
+    console.log('Categories (parsed):', JSON.parse(JSON.stringify(categoriesData?.categories || [])));
+
+    console.log('\n=== TOOLKITS DATA ===');
+    if (allToolkits.length > 0) {
+      // Show the first toolkit's full structure
+      console.log('First Toolkit (full structure):', allToolkits[0]);
+
+      // Show categories from first few toolkits
+      console.log('\nToolkit Categories (first 5):');
+      allToolkits.slice(0, 5).forEach((toolkit, i) => {
+        console.log(`\nToolkit ${i + 1}: ${toolkit.name}`);
+        console.log('Categories:', toolkit.categories);
+        console.log('Categories type:', typeof toolkit.categories);
+        if (Array.isArray(toolkit.categories)) {
+          console.log('First category type:', toolkit.categories[0] ? typeof toolkit.categories[0] : 'undefined');
+        }
+      });
+    }
+
+    console.groupEnd();
+  }, [allToolkits, selectedCategory, categoriesData]);
+
+  // Filter toolkits by selected category and exclude connected apps
+  const filteredToolkits = useMemo(() => {
+    let result = allToolkits;
+
+    // First filter by category if selected
+    if (selectedCategory) {
+      console.log('=== FILTERING TOOLKITS BY CATEGORY ===');
+      console.log(`Selected category: ${selectedCategory}`);
+
+      result = allToolkits.filter(toolkit => {
+        if (!toolkit.categories) {
+          console.log(`- ${toolkit.name}: No categories`);
+          return false;
+        }
+
+        // Normalize categories to array
+        const categories = Array.isArray(toolkit.categories)
+          ? toolkit.categories
+          : [toolkit.categories];
+
+        // Check if any category matches
+        const hasMatch = categories.some(cat => {
+          if (!cat) return false;
+
+          // Extract category ID based on data structure
+          let categoryId: string | undefined;
+
+          if (typeof cat === 'string') {
+            categoryId = cat;
+          } else if (cat && typeof cat === 'object') {
+            // Try different possible property names
+            if ('id' in cat) categoryId = (cat as any).id;
+            else if ('name' in cat) categoryId = (cat as any).name;
+            else if ('slug' in cat) categoryId = (cat as any).slug;
+            else categoryId = String(cat);
+          } else {
+            categoryId = String(cat);
+          }
+
+          if (!categoryId) return false;
+
+          // Compare with selected category (case insensitive)
+          const matches = categoryId.toLowerCase() === selectedCategory.toLowerCase();
+
+          if (matches) {
+            console.log(`✓ ${toolkit.name}: Matched category "${categoryId}"`);
+          }
+
+          return matches;
+        });
+
+        if (!hasMatch) {
+          console.log(`✗ ${toolkit.name}: No matching categories in`, categories);
+        }
+
+        return hasMatch;
+      });
+
+      console.log(`Found ${result.length} matching toolkits after category filter`);
+    }
+
+    // Then filter out connected apps if we have an agent selected
+    if (currentAgentId && connectedApps.length > 0) {
+      console.log('=== FILTERING OUT CONNECTED APPS ===');
+      const connectedAppSlugs = new Set(
+        connectedApps
+          .map(app => app.toolkit?.slug)
+          .filter(Boolean) // Remove any undefined/null slugs
+      );
+      console.log(`Connected app slugs:`, Array.from(connectedAppSlugs));
+
+      const beforeCount = result.length;
+      result = result.filter(toolkit => {
+        if (!toolkit.slug) return true; // Keep apps without slugs (shouldn't happen but be safe)
+
+        const isConnected = connectedAppSlugs.has(toolkit.slug);
+        if (isConnected) {
+          console.log(`✗ ${toolkit.name} (${toolkit.slug}): Already connected to agent`);
+        }
+        return !isConnected;
+      });
+
+      console.log(`Filtered out ${beforeCount - result.length} connected apps, ${result.length} remaining`);
+    }
+
+    return result;
+  }, [allToolkits, selectedCategory, currentAgentId, connectedApps]);
+
+  // Reset loading state when toolkits are loaded
+  useEffect(() => {
+    if (!isLoading) {
+      setIsCategoryLoading(false);
+    }
+  }, [isLoading]);
 
   // pagination slice
   const startIdx = (page - 1) * PAGE_SIZE;
@@ -562,47 +689,170 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
     setShowToolsManager(true);
   };
 
-  const handleConnectionComplete = (profileId: string, appName: string, appSlug: string) => {
-    setShowConnector(false);
-    queryClient.invalidateQueries({ queryKey: ['composio', 'profiles'] });
-    if (currentAgentId) {
-      queryClient.invalidateQueries({ queryKey: ['agents', 'detail', currentAgentId] });
+  const handleConnectionComplete = async (profileId: string, appName: string, appSlug: string) => {
+    try {
+      // Invalidate both profiles and agent data to ensure fresh state
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['composio', 'profiles'],
+          refetchType: 'active'
+        }),
+        currentAgentId && queryClient.invalidateQueries({
+          queryKey: ['agents', 'detail', currentAgentId],
+          refetchType: 'active'
+        })
+      ]);
+
+      // Close the connector and reset state
+      setShowConnector(false);
+      setSelectedApp(null);
+
+      // Notify parent component about the successful connection
+      onToolsSelected?.(profileId, [], appName, appSlug);
+
+      toast.success(`Successfully connected to ${appName}`);
+    } catch (error) {
+      console.error('Error finalizing connection:', error);
+      toast.error('Failed to finalize connection. Please try again.');
     }
-    onToolsSelected?.(profileId, [], appName, appSlug);
+  };
+
+  // Reset category filter when component unmounts
+  useEffect(() => {
+    return () => {
+      setSelectedCategory('');
+    };
+  }, []);
+
+  // Handle category change
+  const handleCategoryChange = (categoryId: string) => {
+    setIsCategoryLoading(true);
+    setSelectedCategory(categoryId);
   };
 
   const handleCustomMCPSave = async (customConfig: any): Promise<void> => {
     if (!currentAgentId) throw new Error('Please select an agent first');
 
-    const mcpConfig = {
-      name: customConfig.name || 'Custom MCP',
-      type: customConfig.type || 'sse',
-      config: customConfig.config || {},
-      enabledTools: customConfig.enabledTools || [],
-    };
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
 
-    const currentCustomMcps = agent?.custom_mcps || [];
-    const updatedCustomMcps = [...currentCustomMcps, mcpConfig];
+      if (!session) {
+        throw new Error('You must be logged in to add custom MCP servers');
+      }
 
-    return new Promise((resolve, reject) => {
-      updateAgent(
-        { agentId: currentAgentId, custom_mcps: updatedCustomMcps },
-        {
-          onSuccess: () => {
-            toast.success(`Custom MCP "${customConfig.name}" added successfully`);
-            queryClient.invalidateQueries({ queryKey: ['agents', 'detail', currentAgentId] });
-            resolve();
-          },
-          onError: (error: any) => reject(new Error(error.message || 'Failed to add custom MCP')),
+      // Prepare profile data according to CreateProfileRequest
+      const profileData = {
+        toolkit_slug: customConfig.name.toLowerCase().replace(/\s+/g, '-'),
+        profile_name: customConfig.name,
+        display_name: customConfig.name,
+        mcp_server_name: customConfig.name,
+        is_default: false,
+        // Store the original config in initiation_fields for later use
+        initiation_fields: {
+          ...customConfig.config,
+          is_custom_mcp: 'true',
+          // Add default auth config to satisfy backend requirements
+          auth_config: JSON.stringify({
+            type: 'api_key',
+            config: {
+              api_key: '',
+              auth_type: 'bearer'
+            }
+          })
         }
-      );
-    });
+      };
+
+      console.log('Creating profile with data:', JSON.stringify(profileData, null, 2));
+
+      // Create a profile for the custom MCP
+      const profileResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/composio/profiles`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!profileResponse.ok) {
+        let errorMessage = 'Failed to create profile for custom MCP';
+        try {
+          const errorData = await profileResponse.text();
+          console.error('Profile creation error:', errorData);
+          const errorJson = JSON.parse(errorData);
+          errorMessage = errorJson.detail || errorJson.message || errorJson.error || errorMessage;
+        } catch (e) {
+          console.error('Error parsing error response:', e);
+          errorMessage = `HTTP ${profileResponse.status}: ${profileResponse.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const profile = await profileResponse.json();
+
+      const mcpConfig = {
+        name: customConfig.name || 'Custom MCP',
+        type: customConfig.type || 'http',
+        config: {
+          ...customConfig.config,
+          profile_id: profile.profile_id,
+          // Ensure auth_config is included in the config
+          auth_config: {
+            type: 'api_key',
+            config: {
+              api_key: '',
+              auth_type: 'bearer'
+            }
+          }
+        },
+        enabledTools: customConfig.enabledTools || [],
+      };
+
+      const currentCustomMcps = agent?.custom_mcps || [];
+      const updatedCustomMcps = [...currentCustomMcps, mcpConfig];
+
+      await new Promise<void>((resolve, reject) => {
+        updateAgent(
+          { agentId: currentAgentId, custom_mcps: updatedCustomMcps },
+          {
+            onSuccess: () => {
+              toast.success(`Custom MCP "${customConfig.name}" added successfully`);
+              queryClient.invalidateQueries({ queryKey: ['agents', 'detail', currentAgentId] });
+              queryClient.invalidateQueries({ queryKey: ['composio', 'profiles'] });
+              resolve();
+            },
+            onError: (error: any) => {
+              reject(new Error(error.message || 'Failed to add custom MCP'));
+            },
+          }
+        );
+      });
+
+      // Show the connector for authentication if needed
+      const toolkit: ComposioToolkit = {
+        slug: customConfig.name.toLowerCase().replace(/\s+/g, '-'),
+        name: customConfig.name,
+        description: `Custom MCP integration with ${customConfig.name}`,
+        logo: '',
+        tags: ['custom', 'mcp'],
+        categories: ['custom'],
+        auth_schemes: [],
+      };
+
+      setSelectedApp(toolkit);
+      setShowConnector(true);
+
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to add custom MCP');
+      throw error;
+    }
   };
 
   const categories = categoriesData?.categories || [];
 
   return (
-    <div className="h-full w-full overflow-hidden flex">
+    <div className="h-full w-full overflow-hidden flex rounded-4xl border bg-background shadow-lg">
       {/* Sidebar: Categories */}
       <div className="w-64 h-full overflow-hidden border-r bg-muted/20">
         <div className="h-full flex flex-col">
@@ -613,16 +863,22 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
             <ScrollArea className="h-full">
               <div className="p-3 space-y-1">
                 <button
-                  onClick={() => setSelectedCategory('')}
+                  onClick={() => handleCategoryChange('')}
+                  disabled={isLoading || isCategoryLoading}
                   className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left',
+                    'w-full flex items-center gap-3 px-4 py-2.5 rounded-3xl text-sm transition-all text-left border',
                     selectedCategory === ''
-                      ? 'bg-muted-foreground/20 text-foreground'
-                      : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                      ? 'bg-muted-foreground/10 text-foreground border-gray-300 hover:border-gray-400'
+                      : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground hover:border-gray-300',
+                    'border-transparent',
+                    (isLoading || isCategoryLoading) && 'opacity-50 cursor-not-allowed'
                   )}
                 >
-                  <span className="text-base">📁</span>
+                  {CATEGORY_ICONS.all}
                   <span>All Apps</span>
+                  {(isLoading || isCategoryLoading) && selectedCategory === '' && (
+                    <Loader2 className="ml-auto h-3 w-3 animate-spin" />
+                  )}
                 </button>
 
                 {isLoadingCategories ? (
@@ -635,21 +891,31 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                     ))}
                   </div>
                 ) : (
-                  categoriesData?.categories?.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={cn(
-                        'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left',
-                        selectedCategory === category.id
-                          ? 'bg-muted-foreground/20 text-foreground'
-                          : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-                      )}
-                    >
-                      <span className="text-base">{CATEGORY_EMOJIS[category.id] || '📁'}</span>
-                      <span className="truncate">{category.name}</span>
-                    </button>
-                  ))
+                  categoriesData?.categories?.map((category) => {
+                    const isSelected = selectedCategory === category.id;
+                    const isLoadingThisCategory = isSelected && (isLoading || isCategoryLoading);
+
+                    return (
+                      <button
+                        key={category.id}
+                        onClick={() => handleCategoryChange(category.id)}
+                        disabled={isLoading || isCategoryLoading}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-4 py-2.5 rounded-3xl text-sm transition-all text-left border border-transparent',
+                          isSelected
+                            ? 'bg-muted-foreground/10 text-foreground border-gray-300 hover:border-gray-400'
+                            : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground hover:border-gray-300',
+                          (isLoading || isCategoryLoading) && 'opacity-50 cursor-not-allowed'
+                        )}
+                      >
+                        {CATEGORY_ICONS[category.id] || CATEGORY_ICONS.default}
+                        <span className="truncate">{category.name}</span>
+                        {isLoadingThisCategory && (
+                          <Loader2 className="ml-auto h-3 w-3 animate-spin" />
+                        )}
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </ScrollArea>
@@ -688,14 +954,14 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                     placeholder="Search apps..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 h-10 rounded-3xl border-1 focus-visible:ring-transparent"
                   />
                 </div>
                 {mode !== 'profile-only' && currentAgentId && (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setShowCustomMCPDialog(true)} 
-                    className="flex items-center gap-2 whitespace-nowrap h-10"
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCustomMCPDialog(true)}
+                    className="flex items-center gap-2 whitespace-nowrap h-10 border-1 border-border/40 hover:border-border/60 focus-visible:ring-transparent relative z-10 bg-background/95 backdrop-blur-sm hover:bg-accent/50 transition-colors"
                   >
                     <Server className="h-4 w-4" />
                     Add Custom MCP
@@ -703,16 +969,35 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                 )}
               </div>
 
-              {selectedCategory && (
-                <div className="flex items-center gap-2">
+              {(selectedCategory || search) && (
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-xs text-muted-foreground">Filtered by:</span>
-                  <Badge variant="outline" className="gap-1 bg-muted-foreground/20 text-muted-foreground">
-                    <span>{CATEGORY_EMOJIS[selectedCategory] || '📁'}</span>
-                    <span>{categories.find((c: any) => c.id === selectedCategory)?.name}</span>
-                    <button onClick={() => setSelectedCategory('')} className="ml-1 hover:bg-muted rounded-full p-0.5">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
+                  {selectedCategory && (
+                    <Badge variant="outline" className="gap-1 bg-muted-foreground/20 text-muted-foreground border-0">
+                      {CATEGORY_ICONS[selectedCategory] || CATEGORY_ICONS.default}
+                      <span>{categories.find((c: any) => c.id === selectedCategory)?.name}</span>
+                      <button
+                        onClick={() => handleCategoryChange('')}
+                        className="ml-1 hover:bg-muted rounded-full p-0.5 border-1"
+                        disabled={isLoading || isCategoryLoading}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
+                  {search && (
+                    <Badge variant="outline" className="gap-1 bg-muted-foreground/20 text-muted-foreground">
+                      <Search className="h-3 w-3" />
+                      <span>"{search}"</span>
+                      <button
+                        onClick={() => setSearch('')}
+                        className="ml-1 hover:bg-muted rounded-full p-0.5 border-1"
+                        disabled={isLoading}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  )}
                 </div>
               )}
             </div>
@@ -760,13 +1045,14 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                           {connectedApps.map((connectedApp) => (
                             <ConnectedAppCard
-                              key={connectedApp.profile.profile_id}
+                              key={`${connectedApp.profile.profile_id}-${connectedApp.toolkit.name}`}
                               connectedApp={connectedApp}
                               onManageTools={handleManageTools}
+                              currentAgentId={selectedAgentId}
                               onDelete={async (profileId) => {
                                 await deleteProfile.mutateAsync(profileId);
                                 if (selectedAgentId) {
-                                  await queryClient.invalidateQueries({ 
+                                  await queryClient.invalidateQueries({
                                     queryKey: ['agents', 'detail', selectedAgentId],
                                     exact: true
                                   });
@@ -783,7 +1069,14 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
 
                 {/* Available Apps */}
                 <div>
-                  <h3 className="text-lg font-medium mb-4">{currentAgentId ? 'Available Apps' : 'Browse Apps'}</h3>
+                  <h3 className="text-lg font-medium mb-4">
+                    {currentAgentId ? 'Available Apps' : 'Browse Apps'}
+                    {/* {currentAgentId && connectedApps.length > 0 && (
+                      <span className="text-sm text-muted-foreground font-normal ml-2">
+                        (excluding {connectedApps.length} connected {connectedApps.length === 1 ? 'app' : 'apps'})
+                      </span>
+                    )} */}
+                  </h3>
 
                   {isLoading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -798,7 +1091,12 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                       </div>
                       <h3 className="text-lg font-medium mb-2">No apps found</h3>
                       <p className="text-muted-foreground">
-                        {search ? `No apps match "${search}"` : 'No apps available in this category'}
+                        {search
+                          ? `No apps match "${search}"`
+                          : currentAgentId && connectedApps.length > 0
+                            ? 'All available apps in this category are already connected to this agent'
+                            : 'No apps available in this category'
+                        }
                       </p>
                     </div>
                   ) : (
@@ -811,7 +1109,6 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                             profiles={profilesByToolkit[app.slug] || []}
                             onConnect={() => handleConnect(app)}
                             onConfigure={(profile) => handleConfigure(app, profile)}
-                            isConnectedToAgent={isAppConnectedToAgent(agent, app.slug, profiles || [])}
                             currentAgentId={currentAgentId}
                             mode={mode}
                           />
@@ -825,6 +1122,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                           <Button
                             variant="outline"
                             size="sm"
+                            className="rounded-3xl"
                             onClick={() => setPage((p) => Math.max(1, p - 1))}
                             disabled={page === 1}
                           >
@@ -833,6 +1131,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                           <Button
                             variant="default"
                             size="sm"
+                            className="rounded-3xl"
                             onClick={() => setPage((p) => p + 1)}
                             disabled={!canGoNext}
                           >

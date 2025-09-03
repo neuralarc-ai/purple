@@ -20,3 +20,58 @@
 .auth-button {
   background: linear-gradient(94.26deg, #61C95C 16.42%, #14679B 53.4%, #FAE74E 101.69%);
 }
+
+/* Remove autofill focus background color */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-text-fill-color: black !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Dark theme autofill styles */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px white inset !important;
+  -webkit-text-fill-color: black !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Firefox autofill styles */
+input:-moz-autofill,
+input:-moz-autofill:focus {
+  background-color: white !important;
+  color: black !important;
+}
+
+.dark input:-moz-autofill,
+.dark input:-moz-autofill:focus {
+  background-color: white !important;
+  color: black !important;
+}
+
+/* Text selection styles */
+input::selection {
+  background-color: #007acc;
+  color: white;
+}
+
+input::-moz-selection {
+  background-color: #007acc;
+  color: white;
+}
+
+/* Dark theme text selection */
+.dark input::selection {
+  background-color: #007acc;
+  color: white;
+}
+
+.dark input::-moz-selection {
+  background-color: #007acc;
+  color: white;
+}

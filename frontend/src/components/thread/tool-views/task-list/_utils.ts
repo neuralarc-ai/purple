@@ -64,8 +64,6 @@ export function extractTaskListData(
       return null;
     };
 
-
-  
     // Try tool content first, then assistant content
     return extractFromNewFormat(toolContent) || extractFromNewFormat(assistantContent);
   }

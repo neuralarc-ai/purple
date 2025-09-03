@@ -36,6 +36,12 @@ export async function POST(request: NextRequest) {
         const errorText = await response.text();
         console.error('Backend error response:', errorText);
         
+        // If backend is not found (404), use fallback immediately
+        if (response.status === 404) {
+          console.log('Backend endpoint not found, using Supabase fallback');
+          throw new Error('Backend not available');
+        }
+        
         try {
           const errorData = JSON.parse(errorText);
           return NextResponse.json(errorData, { status: response.status });

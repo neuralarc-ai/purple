@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         prompt,
-        model: model || 'openrouter/mistralai/mistral-small-3.2-24b-instruct:free',
+        model: model || 'vertex_ai/gemini-2.0-flash',
         system_message: systemMessage
       }),
     });

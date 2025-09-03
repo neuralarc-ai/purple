@@ -25,21 +25,21 @@ export const AgentCountLimitDialog: React.FC<AgentCountLimitDialogProps> = ({
   const getNextTierRecommendation = () => {
     if (tierName === 'free') {
       return {
-        name: 'Plus',
-        price: '$20/month',
+        name: 'Ridiculously Cheap',
+        price: '$24.99/month',
         agentLimit: 5,
       };
-    } else if (tierName.includes('tier_2_20')) {
+    } else if (tierName.includes('tier_ridiculously_cheap')) {
       return {
-        name: 'Pro',
-        price: '$50/month', 
-        agentLimit: 20,
-      };
-    } else if (tierName.includes('tier_6_50')) {
-      return {
-        name: 'Business',
-        price: '$200/month',
+        name: 'Serious Business',
+        price: '$94.99/month', 
         agentLimit: 100,
+      };
+    } else if (tierName.includes('tier_serious_business')) {
+      return {
+        name: 'Enterprise',
+        price: 'Contact Sales',
+        agentLimit: 'Unlimited',
       };
     }
     return null;

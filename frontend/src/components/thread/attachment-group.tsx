@@ -215,12 +215,12 @@ export function AttachmentGroup({
 
     // Now continue with the fully conditional rendering but with pre-computed values
     const renderContent = () => {
-        // Chat input mode - show all files in a grid with cross buttons
+        // Chat input mode - show all files in a horizontal scrollable row with consistent widths
         if (isChatInput) {
             return (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent pb-1">
                     {uniqueFiles.map((file, index) => (
-                        <div key={index} className="relative group">
+                        <div key={index} className="relative group flex-shrink-0 w-40">
                             <FileAttachment
                                 displayMode="grid"
                                 filepath={getFilePath(file)}
@@ -234,11 +234,11 @@ export function AttachmentGroup({
                             />
                             {onRemove && (
                                 <div
-                                    className="absolute top-2 right-2 h-4 w-4 rounded-full
-                                    bg-black/50
-                                    text-white flex items-center justify-center
-                                    z-30 cursor-pointer transition-colors
-                                    opacity-0 group-hover:opacity-100"
+                                    className="absolute top-1 right-1 h-4 w-4 rounded-full
+                                bg-black/50
+                                text-white flex items-center justify-center
+                                z-30 cursor-pointer transition-colors
+                                opacity-0 group-hover:opacity-100"
                                     onClick={() => onRemove(index)}
                                 >
                                     <TooltipProvider>
@@ -563,9 +563,9 @@ export function AttachmentGroup({
                             </DialogTitle>
                         </DialogHeader>
 
-                        <div className="grid grid-cols-4 gap-3">
+                        <div className="flex gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent pb-1">
                             {uniqueFiles.map((file, index) => (
-                                <div key={index} className="relative group">
+                                <div key={index} className="relative group flex-shrink-0 w-40">
                                     <FileAttachment
                                         displayMode="grid"
                                         filepath={getFilePath(file)}
@@ -576,13 +576,13 @@ export function AttachmentGroup({
                                         sandboxId={sandboxId}
                                         showPreview={false}
                                         localPreviewUrl={getLocalPreviewUrl(file)}
-                                        className="w-full h-[80px] rounded-lg bg-black/5"
+                                        className="w-full h-20 rounded-lg bg-black/5"
                                         collapsed={true}
                                         project={project}
                                     />
                                     {onRemove && (
                                         <div
-                                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full
+                                            className="absolute top-1 right-1 h-6 w-6 rounded-full
                                                 bg-black/30
                                                 text-white flex items-center justify-center
                                                 z-30 cursor-pointer transition-colors"

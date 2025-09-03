@@ -37,19 +37,25 @@ const getApiUrl = (endpoint: string) => {
 export const userProfilesApi = {
   async getProfile(): Promise<UserProfile> {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
     
-    if (!session?.access_token) {
-      throw new Error('No authentication token');
-    }
-
     try {
-      const response = await fetch(getApiUrl('/user-profiles/profile'), {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        console.error('No authentication token available');
+        throw new Error('No authentication token');
+      }
+
+      console.log('Making request to user profiles API with token:', session.access_token.substring(0, 20) + '...');
+      
+      const response = await fetch(`${API_BASE}/user-profiles/profile`, {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
           'Content-Type': 'application/json',
         },
       });
+
+      console.log('User profiles API response status:', response.status);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -69,9 +75,11 @@ export const userProfilesApi = {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      return response.json();
+      const data = await response.json();
+      console.log('User profiles API success:', data);
+      return data;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error('Error in getProfile:', error);
       throw error;
     }
   },

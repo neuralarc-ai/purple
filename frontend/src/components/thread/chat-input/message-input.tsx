@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ModeToggle } from './mode-toggle';
 import { BorderBeam } from '@/components/magicui/border-beam';
+import { isProductionMode } from '@/lib/config';
 
 interface MessageInputProps {
   value: string;
@@ -261,6 +262,10 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       if (!mounted) {
         return <div className="flex items-center gap-2 h-8" />; // Placeholder with same height
       }
+      // Hide unified config menu in production
+      if (isProductionMode()) {
+        return <div className="flex items-center gap-2 h-8" />; // Placeholder with same height
+      }
       // Unified compact menu for both logged and non-logged (non-logged shows only models subset via menu trigger)
       return (
         <div className="flex items-center gap-2">
@@ -298,18 +303,25 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             onPaste={handlePaste}
             placeholder={placeholder}
             className={cn(
-              "w-full bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-2 min-h-[100px] max-h-[200px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]",
+              "w-full bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-2 min-h-[100px] max-h-[200px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] scrollbar-hide",
               isDraggingOver ? 'opacity-40' : '',
             )}
             disabled={loading || (disabled && !isAgentRunning)}
             rows={1}
           />
           {/* Subtle gradient overlay at the bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-bg-white dark:from-bg-sidebar-accent to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-bg-white dark:from-bg-sidebar to-transparent pointer-events-none" />
         </div>
 
         <div className="flex items-center justify-between mt-0 mb-1 px-2">
           <div className="flex items-center gap-2">
+            {/* Mode Toggle */}
+            <ModeToggle
+              selectedMode={selectedMode}
+              onModeChange={onModeChange}
+              disabled={loading || (disabled && !isAgentRunning)}
+            />
+            
             {!hideAttachments && (
               <>
                 <DropdownMenu
@@ -325,7 +337,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                         'w-8 h-8 flex-shrink-0 bg-transparent dark:border-muted-foreground/30 shadow-none rounded-full transition-all duration-200',
                         isDropdownOpen
                           ? 'bg-background/50!'
-                          : 'bg-white dark:bg-sidebar-accent hover:bg-background/50!',
+                          : 'bg-white dark:bg-sidebar hover:bg-background/50!',
                       )}
                       disabled={
                         !isLoggedIn ||
@@ -391,11 +403,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                   onClick={handleImprovePrompt}
                   className={cn(
                     'h-8 w-8 bg-transparent dark:border-muted-foreground/30 shadow-none group transition-all duration-200 text-sm relative overflow-hidden',
-                    'border border-muted-foreground/20 rounded-full bg-white dark:bg-sidebar-accent hover:bg-background/50! ',
-                    (!isLoggedIn ||
-                      loading ||
-                      (disabled && !isAgentRunning) ||
-                      !value.trim()) && 'opacity-50',
+                    'border border-muted-foreground/20 rounded-full bg-white dark:bg-sidebar hover:bg-background/50! ',
+                    'disabled:opacity-100',
                     isImprovingPrompt && 'cursor-not-allowed border-none'
                   )}
                   disabled={
@@ -415,7 +424,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       className="from-helium-blue via-helium-green to-helium-yellow"
                     />
                   )}
-                  <Wand2 className="h-3.5! w-3.5! text-muted-foreground" strokeWidth={1.5} />
+                  <Wand2 className="h-4! w-4! text-muted-foreground" strokeWidth={1.5} />
                 </Button>
 
                 <input
@@ -427,13 +436,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                 />
               </>
             )}
-
-            {/* Mode Toggle */}
-            <ModeToggle
-              selectedMode={selectedMode}
-              onModeChange={onModeChange}
-              disabled={loading || (disabled && !isAgentRunning)}
-            />
+            
             {uploadedFiles.length > 0 && selectedMode !== 'agent' && (
               <span className="text-xs text-orange-600 dark:text-orange-400 font-medium">
                 Files require agent mode

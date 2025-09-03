@@ -243,7 +243,7 @@ export default function UsageLogs({ accountId }: Props) {
           </AlertDescription>
         </Alert>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.open('/settings/billing', '_blank')}>
+          <Button variant="outline">
             Upgrade Plan
           </Button>
         </div>
@@ -258,14 +258,7 @@ export default function UsageLogs({ accountId }: Props) {
         <CardHeader>
           <CardTitle>Daily Usage Logs</CardTitle>
           <CardDescription>
-            <div className='flex justify-between items-center'>
-              Your token usage organized by day, sorted by most recent.{" "}
-              <Button variant='outline' asChild className='text-sm ml-4'>
-                <Link href="/model-pricing">
-                  View Model Pricing <OpenInNewWindowIcon className='w-4 h-4' />
-                </Link>
-              </Button>
-            </div>
+            Your token usage organized by day, sorted by most recent.
           </CardDescription>
         </CardHeader>
         <CardContent>
