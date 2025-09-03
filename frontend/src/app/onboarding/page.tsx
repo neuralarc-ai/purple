@@ -424,13 +424,13 @@ export default function OnboardingPage() {
                       For privacy-related questions, contact us at: {" "}
                       <a
                         href="mailto:privacy@neuralarc.ai"
-                        className="text-blue-600 hover:underline"
+                        className="text-primary hover:underline"
                       >
                         privacy@neuralarc.ai
                       </a>
                     </p>
                   </div>
-                  <p className="text-xs text-gray-500 pt-4 border-t border-gray-200">
+                  <p className="text-xs text-muted-foreground pt-4 border-t border-border">
                     Last updated: May, 2025
                   </p>
                 </div>
@@ -498,13 +498,13 @@ export default function OnboardingPage() {
                       For questions, contact us at: {" "}
                       <a
                         href="mailto:support@neuralarc.ai"
-                        className="text-blue-600 hover:underline"
+                        className="text-primary hover:underline"
                       >
                         support@neuralarc.ai
                       </a>
                     </p>
                   </div>
-                  <p className="text-xs text-gray-500 pt-4 border-t border-gray-200">
+                  <p className="text-xs text-muted-foreground pt-4 border-t border-border">
                     Last updated: May, 2025
                   </p>
                 </div>
@@ -520,13 +520,13 @@ export default function OnboardingPage() {
             Let's start simple—your name?
             </h2>
             <div className="flex justify-start">
-              <Input
-                id="displayName"
-                placeholder="Enter your name"
-                value={data.displayName}
-                onChange={(e) => updateData({ displayName: e.target.value })}
-                className="text-xl h-16 w-80 border border-black dark:border-white dark:text-white dark:bg-gray-800"
-              />
+                              <Input
+                  id="displayName"
+                  placeholder="Enter your name"
+                  value={data.displayName}
+                  onChange={(e) => updateData({ displayName: e.target.value })}
+                  className="text-xl h-16 w-80"
+                />
             </div>
           </div>
         );
@@ -547,22 +547,22 @@ export default function OnboardingPage() {
                       ? "" 
                       : cn(
                           "hover:shadow-md rounded-lg border",
-                          data.role === role.id ? "border-primary bg-primary/5" : "border-gray-200 bg-white"
+                          data.role === role.id ? "border-primary bg-primary/5" : "border-border bg-card"
                         )
                   )}
                   onClick={() => updateData({ role: role.id })}
                 >
                   {role.id === 'other' && data.role === 'other' ? (
                     <div className="flex flex-col items-center justify-center h-full">
-                      <Label htmlFor="otherRole" className="text-sm font-medium text-center mb-2 text-black">
-                  Please specify your role <span className="text-red-500">*</span>
+                      <Label htmlFor="otherRole" className="text-sm font-medium text-center mb-2 text-foreground">
+                  Please specify your role <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="otherRole"
                   placeholder="Enter your role or job title"
                   value={data.otherRole}
                   onChange={(e) => updateData({ otherRole: e.target.value })}
-                        className="text-base h-12 w-full text-black border border-black dark:border-white dark:text-white dark:bg-gray-800"
+                        className="text-base h-12 w-full"
                         onClick={(e) => e.stopPropagation()}
                 />
               </div>
@@ -572,7 +572,7 @@ export default function OnboardingPage() {
                         {role.icon}
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="text-xs font-medium text-center">{role.name}</span>
+                        <span className="text-xs font-medium text-center text-foreground">{role.name}</span>
                         {data.role === role.id && (
                           <CheckCircle2 className="h-3 w-3 text-primary flex-shrink-0" />
                         )}
@@ -601,7 +601,7 @@ export default function OnboardingPage() {
                       ? "" 
                       : cn(
                           "hover:shadow-md rounded-lg border",
-                          data.referralSource === source.id ? "border-primary bg-primary/5" : "border-gray-200 bg-white"
+                          data.referralSource === source.id ? "border-primary bg-primary/5" : "border-border bg-card"
                         ),
                     // Center the last item (Others) below Social Media and News
                     index === referralSources.length - 1 && referralSources.length % 4 !== 0 ? "col-start-2 col-span-2" : ""
@@ -610,15 +610,15 @@ export default function OnboardingPage() {
                 >
                   {source.id === 'other' && data.referralSource === 'other' ? (
                     <div className="flex flex-col items-center justify-center h-full">
-                      <Label htmlFor="otherReferral" className="text-sm font-medium text-center mb-2 text-black">
-                        Please specify <span className="text-red-500">*</span>
+                      <Label htmlFor="otherReferral" className="text-sm font-medium text-center mb-2 text-foreground">
+                        Please specify <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="otherReferral"
                         placeholder="Enter how you found us"
                         value={data.otherReferral || ''}
                         onChange={(e) => updateData({ otherReferral: e.target.value })}
-                        className="text-base h-12 w-full text-black border border-black dark:border-white dark:text-white dark:bg-gray-800"
+                        className="text-base h-12 w-full"
                         onClick={(e) => e.stopPropagation()}
                       />
                     </div>
@@ -628,7 +628,7 @@ export default function OnboardingPage() {
                         {source.icon}
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="text-xs font-medium text-center">{source.name}</span>
+                        <span className="text-xs font-medium text-center text-foreground">{source.name}</span>
                       {data.referralSource === source.id && (
                           <CheckCircle2 className="h-3 w-3 text-primary flex-shrink-0" />
                       )}
@@ -648,7 +648,7 @@ export default function OnboardingPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Loading...</p>
@@ -659,7 +659,7 @@ export default function OnboardingPage() {
 
   if (hasCompletedOnboarding) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
           <p className="text-muted-foreground">Redirecting to dashboard...</p>
@@ -670,7 +670,7 @@ export default function OnboardingPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>Authentication Required</CardTitle>
@@ -691,7 +691,7 @@ export default function OnboardingPage() {
   // Show invitation step if not authenticated or if invite step is active
   if (showInviteStep) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">
@@ -705,10 +705,10 @@ export default function OnboardingPage() {
                 priority
               />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Float into Helium – Early Access
             </h1>
-            <p className="text-gray-600 dark:text-gray-300">
+            <p className="text-muted-foreground">
               Enter your invite code to unlock access. Don't have one? Join the waitlist to be first in line.
             </p>
           </div>
@@ -717,7 +717,7 @@ export default function OnboardingPage() {
           <div className="mb-6">
             <div className="pt-6">
               <div className="space-y-4">
-                <div className="space-y-2">
+                <div className="space-y-2 w-full mx-auto">
                   <Label htmlFor="inviteCode" className="text-sm font-medium">
                     Invite Code
                   </Label>
@@ -733,14 +733,14 @@ export default function OnboardingPage() {
                     className="text-5xl! h-14 text-center font-mono"
                   />
                   {inviteError && (
-                    <p className="text-sm text-red-500">{inviteError}</p>
+                    <p className="text-sm text-destructive">{inviteError}</p>
                   )}
                 </div>
 
                 <Button
                   onClick={handleInviteSubmit}
                   disabled={!inviteData.inviteCode.trim() || isSubmitting}
-                  className="w-48 mx-auto"
+                  className="w-full h-12 mx-auto"
                 >
                   {isSubmitting ? (
                     <>
@@ -757,16 +757,16 @@ export default function OnboardingPage() {
 
           {/* Divider */}
           <div className="flex items-center mb-6">
-            <div className="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
-            <span className="px-4 text-sm text-gray-500 dark:text-gray-400">OR</span>
-            <div className="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
+            <div className="flex-1 h-px bg-border"></div>
+            <span className="px-4 text-sm text-muted-foreground">OR</span>
+            <div className="flex-1 h-px bg-border"></div>
           </div>
 
           {/* Waitlist Button */}
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => setShowWaitlistModal(true)}
-            className="w-full"
+            className="w-full h-12 border border-border"
           >
             Join Waitlist
           </Button>
@@ -782,8 +782,8 @@ export default function OnboardingPage() {
             {waitlistSuccess ? (
               <div className="text-center py-8">
                 <div className="text-6xl mb-4">✅</div>
-                <h3 className="text-lg font-semibold mb-2">You're on the Helium list!</h3>
-                <p className="text-gray-600 dark:text-gray-300">
+                <h3 className="text-lg font-semibold mb-2 text-foreground">You're on the Helium list!</h3>
+                <p className="text-muted-foreground">
                   We'll notify you when it's your turn.
                 </p>
               </div>
@@ -846,16 +846,16 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
             
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Welcome to Helium
             </h1>
-            <p className="text-gray-600 dark:text-gray-300">
+            <p className="text-muted-foreground">
               Let's get you set up in just a few steps
             </p>
           </div>
@@ -884,7 +884,7 @@ export default function OnboardingPage() {
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 0 || isSubmitting}
-              className="flex items-center justify-center px-3 py-2 text-sm rounded-md h-10"
+              className="flex items-center justify-center px-3 py-2 text-sm rounded-md h-10 hover:bg-sidebar"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
