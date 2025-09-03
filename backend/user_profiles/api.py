@@ -5,6 +5,7 @@ from datetime import datetime
 from services.supabase import DBConnection
 from utils.auth_utils import get_current_user_id_from_jwt
 from utils.logger import logger
+from services.email_service import email_service
 
 router = APIRouter()
 
@@ -235,6 +236,7 @@ async def delete_user_profile(
 @router.post("/onboarding", response_model=OnboardingResponse)
 async def complete_onboarding(
     onboarding_data: OnboardingData,
+    request: Request,
     user_id: str = Depends(get_current_user_id_from_jwt),
     db: DBConnection = Depends(lambda: DBConnection())
 ):
@@ -297,6 +299,38 @@ async def complete_onboarding(
             
             profile_id = insert_result.data[0]['id']
             logger.info(f"Created new profile {profile_id} with onboarding data")
+            
+            # Send welcome email for new users
+            try:
+                # Get user email from JWT token
+                user_email = None
+                try:
+                    import jwt
+                    # Extract email from the user_id (which is actually the JWT token)
+                    # This is a simplified approach - in production, you might want to pass the token explicitly
+                    auth_header = request.headers.get('Authorization')
+                    if auth_header and auth_header.startswith('Bearer '):
+                        token = auth_header.split(' ')[1]
+                        payload = jwt.decode(token, options={"verify_signature": False})
+                        user_email = payload.get('email')
+                except Exception as e:
+                    logger.warning(f"Could not extract email from JWT for user {user_id}: {e}")
+                
+                if user_email:
+                    email_result = email_service.send_welcome_email(
+                        user_email=user_email,
+                        user_name=onboarding_data.display_name.strip()
+                    )
+                    
+                    if email_result['success']:
+                        logger.info(f"Welcome email sent successfully to {user_email} via {email_result.get('provider', 'unknown')}")
+                    else:
+                        logger.warning(f"Failed to send welcome email to {user_email}: {email_result.get('error', 'Unknown error')}")
+                else:
+                    logger.warning(f"No email found for user {user_id}, welcome email not sent")
+            except Exception as email_error:
+                logger.error(f"Error sending welcome email for user {user_id}: {str(email_error)}")
+                # Don't fail onboarding if email fails
         
         return OnboardingResponse(
             success=True,
@@ -310,8 +344,52 @@ async def complete_onboarding(
         logger.error(f"Error completing onboarding: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to complete onboarding: {str(e)}")
 
-@router.get("/test-auth")
-async def test_auth(request: Request):
+@router.post("/test-email")
+async def test_email(request: Request):
+    """Test endpoint to verify email functionality."""
+    try:
+        # Extract user email from JWT token
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return {"error": "No Bearer token found"}
+        
+        token = auth_header.split(' ')[1]
+        import jwt
+        payload = jwt.decode(token, options={"verify_signature": False})
+        user_email = payload.get('email')
+        
+        if not user_email:
+            return {"error": "Could not extract email from JWT"}
+        
+        # Test welcome email sending
+        test_name = "Test User"
+        
+        email_result = email_service.send_welcome_email(user_email, test_name)
+        
+        if email_result['success']:
+            logger.info(f"Test welcome email sent successfully to {user_email}")
+            return {
+                "success": True,
+                "message": "Test welcome email sent successfully",
+                "email": user_email,
+                "provider": email_result.get('provider', 'unknown')
+            }
+        else:
+            logger.error(f"Failed to send test welcome email to {user_email}")
+            return {
+                "success": False,
+                "message": "Failed to send test welcome email",
+                "email": user_email,
+                "error": email_result.get('error', 'Unknown error'),
+                "note": "Check email provider configuration in .env file"
+            }
+        
+    except Exception as e:
+        logger.error(f"Test email error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
+        }
     """Test endpoint to debug authentication issues."""
     try:
         auth_header = request.headers.get('Authorization')
@@ -535,4 +613,51 @@ async def test_insert():
             "message": "Insert test failed",
             "error": str(e),
             "error_type": type(e).__name__
+        }
+
+@router.post("/test-email")
+async def test_email(request: Request):
+    """Test endpoint to verify email functionality."""
+    try:
+        # Extract user email from JWT token
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return {"error": "No Bearer token found"}
+        
+        token = auth_header.split(' ')[1]
+        import jwt
+        payload = jwt.decode(token, options={"verify_signature": False})
+        user_email = payload.get('email')
+        
+        if not user_email:
+            return {"error": "Could not extract email from JWT"}
+        
+        # Test welcome email sending
+        test_name = "Test User"
+        
+        email_result = email_service.send_welcome_email(user_email, test_name)
+        
+        if email_result['success']:
+            logger.info(f"Test welcome email sent successfully to {user_email}")
+            return {
+                "success": True,
+                "message": "Test welcome email sent successfully",
+                "email": user_email,
+                "provider": email_result.get('provider', 'unknown')
+            }
+        else:
+            logger.error(f"Failed to send test welcome email to {user_email}")
+            return {
+                "success": False,
+                "message": "Failed to send test welcome email",
+                "email": user_email,
+                "error": email_result.get('error', 'Unknown error'),
+                "note": "Check email provider configuration in .env file"
+            }
+        
+    except Exception as e:
+        logger.error(f"Test email error: {e}")
+        return {
+            "success": False,
+            "error": str(e)
         }

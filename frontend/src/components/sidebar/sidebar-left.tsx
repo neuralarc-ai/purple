@@ -48,6 +48,8 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useFeatureFlags } from '@/lib/feature-flags';
 import posthog from 'posthog-js';
 import Image from 'next/image';
+import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
+
 // Custom Plus Icon component using the plus.svg
 const PlusIcon = ({ className }: { className?: string }) => (
   <svg
@@ -177,6 +179,7 @@ export function SidebarLeft({
   const searchParams = useSearchParams();
   const { flags, loading: flagsLoading } = useFeatureFlags(['custom_agents']);
   const customAgentsEnabled = flags.custom_agents;
+  const { preferredName } = useUserProfileWithFallback();
 
   // Close mobile menu on page navigation
   useEffect(() => {
@@ -193,6 +196,7 @@ export function SidebarLeft({
       if (data.user) {
         setUser({
           name:
+            preferredName ||
             data.user.user_metadata?.name ||
             data.user.email?.split('@')[0] ||
             'User',
@@ -203,7 +207,7 @@ export function SidebarLeft({
     };
 
     fetchUserData();
-  }, []);
+  }, [preferredName]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

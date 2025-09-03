@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -318,6 +319,31 @@ export default function OnboardingPage() {
       console.log('Frontend success response:', result);
       
       if (result.success) {
+        // Send welcome email
+        try {
+          console.log('Sending welcome email...');
+          const emailResponse = await fetch('/api/user-profiles/send-welcome-email', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              display_name: data.displayName.trim(),
+            }),
+          });
+
+          if (emailResponse.ok) {
+            const emailResult = await emailResponse.json();
+            console.log('Welcome email sent successfully:', emailResult);
+          } else {
+            console.warn('Failed to send welcome email, but onboarding completed');
+          }
+        } catch (emailError) {
+          console.warn('Error sending welcome email:', emailError);
+          // Don't fail onboarding if email fails
+        }
+
         // Redirect to dashboard
         console.log('Onboarding completed successfully, redirecting to dashboard');
         window.location.href = '/dashboard';
@@ -518,10 +544,20 @@ export default function OnboardingPage() {
   // Show invitation step if not authenticated or if invite step is active
   if (showInviteStep) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">
+          <div className="flex justify-center mb-16  p-4">
+              <Image
+                src="/logo-dark.svg"
+                alt="Helium Logo"
+                width={120}
+                height={120}
+                className="w-12 h-12"
+                priority
+              />
+            </div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               Float into Helium – Early Access
             </h1>
@@ -531,8 +567,8 @@ export default function OnboardingPage() {
           </div>
 
           {/* Invite Code Form */}
-          <Card className="mb-6">
-            <CardContent className="pt-6">
+          <div className="mb-6">
+            <div className="pt-6">
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="inviteCode" className="text-sm font-medium">
@@ -540,10 +576,14 @@ export default function OnboardingPage() {
                   </Label>
                   <Input
                     id="inviteCode"
-                    placeholder="Enter your invite code"
+                    placeholder=""
                     value={inviteData.inviteCode}
-                    onChange={(e) => updateInviteData({ inviteCode: e.target.value })}
-                    className="text-lg"
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^A-Za-z0-9]/g, '').slice(0, 7).toUpperCase();
+                      updateInviteData({ inviteCode: value });
+                    }}
+                    maxLength={7}
+                    className="text-5xl! h-14 text-center font-mono"
                   />
                   {inviteError && (
                     <p className="text-sm text-red-500">{inviteError}</p>
@@ -553,11 +593,11 @@ export default function OnboardingPage() {
                 <Button
                   onClick={handleInviteSubmit}
                   disabled={!inviteData.inviteCode.trim() || isSubmitting}
-                  className="w-full"
+                  className="w-48 mx-auto"
                 >
                   {isSubmitting ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader2 className="h-4 w-2 animate-spin mr-2" />
                       Validating...
                     </>
                   ) : (
@@ -565,8 +605,8 @@ export default function OnboardingPage() {
                   )}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Divider */}
           <div className="flex items-center mb-6">
@@ -664,11 +704,22 @@ export default function OnboardingPage() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
+          <div className="flex justify-center mb-16  p-4">
+              <Image
+                src="/logo-light.svg"
+                alt="Helium Logo"
+                width={120}
+                height={120}
+                className="w-12 h-12"
+                priority
+              />
+            </div>
+            
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome to Helium
+              Float into Helium – Early Access
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
-              Let's get you set up with your personalized experience
+              Enter your invite code to unlock access. Don't have one? Join the waitlist to be first in line.
             </p>
           </div>
 
