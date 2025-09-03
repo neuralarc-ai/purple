@@ -5,10 +5,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { isLocalMode, isProductionMode } from '@/lib/config';
 import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model';
 
-export const STORAGE_KEY_MODEL = 'suna-preferred-model-v5';
+export const STORAGE_KEY_MODEL = 'suna-preferred-model-v7';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
-export const DEFAULT_PREMIUM_MODEL_ID = 'vertex/gemini-2.5-pro';
-export const DEFAULT_FREE_MODEL_ID = 'vertex/gemini-2.5-pro';
+export const DEFAULT_PREMIUM_MODEL_ID = 'bedrock/anthropic.claude-sonnet-4-20250514-v1:0';
+export const DEFAULT_FREE_MODEL_ID = 'bedrock/anthropic.claude-sonnet-4-20250514-v1:0';
 
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
@@ -37,9 +37,15 @@ export const MODELS = {
     recommended: true,
     lowQuality: false
   },
+  'claude-sonnet-4-vertex': { 
+    tier: 'premium',
+    priority: 99, 
+    recommended: false,
+    lowQuality: false
+  },
   'gpt-5': { 
     tier: 'premium', 
-    priority: 99,
+    priority: 98,
     recommended: false,
     lowQuality: false
   },
@@ -64,13 +70,13 @@ export const MODELS = {
   // Vertex AI models removed
   'grok-4': { 
     tier: 'premium', 
-    priority: 94,
+    priority: 93,
     recommended: false,
     lowQuality: false
   },
   'sonnet-3.7': { 
     tier: 'premium', 
-    priority: 93, 
+    priority: 92, 
     recommended: false,
     lowQuality: false
   },
@@ -94,7 +100,7 @@ export const MODELS = {
     recommended: false,
     lowQuality: false
   },
-  'qwen3': { 
+  'qwen/qwen-2.5-72b-instruct:free': { 
     tier: 'free', 
     priority: 90,
     recommended: false,

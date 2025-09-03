@@ -56,6 +56,15 @@ function LoginContent() {
   const [mounted, setMounted] = useState(false);
   const isProduction = isProductionMode();
 
+  // Random auth image selection
+  const [randomAuthImage, setRandomAuthImage] = useState('/auth/login-bg.png');
+
+  useEffect(() => {
+    // Generate random number between 1 and 5
+    const randomNumber = Math.floor(Math.random() * 5) + 1;
+    setRandomAuthImage(`/auth/auth-${randomNumber}.jpeg`);
+  }, []);
+
   const { wasLastMethod: wasEmailLastMethod, markAsUsed: markEmailAsUsed } =
     useAuthMethodTracking('email');
 
@@ -298,7 +307,7 @@ function LoginContent() {
         >
           <div className="relative w-full h-full rounded-[24px] overflow-hidden">
             <Image
-              src="/auth/login-bg.png"
+              src={randomAuthImage}
               alt="Preview"
               layout="fill"
               objectFit="cover"
@@ -360,16 +369,12 @@ function LoginContent() {
               ease: [0.4, 0, 0.2, 1],
               delay: 0.4,
             }}
-            className={`bg-white rounded-[24px] shadow-lg flex flex-col justify-center w-full lg:w-[500px] ${isSignUp ? 'min-h-[654px] lg:h-[550px]' : 'min-h-[644px] lg:h-[540px]'}`}
-            style={{
-              paddingLeft: '16px',
-              paddingRight: '16px',
-            }}
+            className={`bg-white px-4 py-8 h-full min-h-0 rounded-[24px] shadow-lg flex flex-col justify-center w-full lg:w-[500px] ${isSignUp ? 'lg:h-full' : 'lg:h-full'}`}            
           >
-            <div className="w-full px-2 sm:px-4 lg:px-0">
-            <form
-  className={`${isSignUp ? 'space-y-3' : 'mb-[3rem] space-y-5'}`}
->
+            <div className="w-full px-2 sm:px-4 lg:px-4">
+              <form
+                className={`${isSignUp ? 'space-y-3' : 'mb-[3rem] space-y-5'}`}
+              >
                 <div className="space-y-3">
                   <label
                     htmlFor="email"
@@ -392,7 +397,7 @@ function LoginContent() {
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                                        <label
+                    <label
                       htmlFor="password"
                       className="text-sm font-normal text-black"
                     >
@@ -425,7 +430,7 @@ function LoginContent() {
                   <div className="space-y-3">
                     <label
                       htmlFor="confirmPassword"
-                      className="text-sm font-medium text-black mb-1.5 block"
+                      className="text-sm font-medium text-black block"
                     >
                       Confirm Password
                     </label>
@@ -497,7 +502,7 @@ function LoginContent() {
 
                   <div className="space-y-2.5">
                     <GoogleSignIn returnUrl={returnUrl || undefined} />
-                    <button className="w-full h-10 xs:h-11 sm:h-12 border border-gray-200 bg-white text-black rounded-full flex items-center justify-center gap-2 text-xs xs:text-sm sm:text-base hover:bg-gray-50 transition-colors">
+                    {/* <button className="w-full h-10 xs:h-11 sm:h-12 border border-gray-200 bg-white text-black rounded-full flex items-center justify-center gap-2 text-xs xs:text-sm sm:text-base hover:bg-gray-50 transition-colors">
                       <Image
                         src="/auth/apple-login.svg"
                         width="18"
@@ -518,7 +523,7 @@ function LoginContent() {
                       <span className="truncate">
                         Continue with Microsoft Account
                       </span>
-                    </button>
+                    </button> */}
                   </div>
                 </>
               }

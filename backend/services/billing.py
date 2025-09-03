@@ -31,41 +31,22 @@ CREDIT_MIN_START_DOLLARS = 0.20
 
 # Credit packages with Stripe price IDs
 CREDIT_PACKAGES = {
-    'credits_10': {'amount': 10, 'price': 10, 'stripe_price_id': config.STRIPE_CREDITS_10_PRICE_ID},
-    'credits_25': {'amount': 25, 'price': 25, 'stripe_price_id': config.STRIPE_CREDITS_25_PRICE_ID},
-    # Uncomment these when you create the additional price IDs in Stripe:
-    # 'credits_50': {'amount': 50, 'price': 50, 'stripe_price_id': config.STRIPE_CREDITS_50_PRICE_ID},
-    # 'credits_100': {'amount': 100, 'price': 100, 'stripe_price_id': config.STRIPE_CREDITS_100_PRICE_ID},
-    # 'credits_250': {'amount': 250, 'price': 250, 'stripe_price_id': config.STRIPE_CREDITS_250_PRICE_ID},
-    # 'credits_500': {'amount': 500, 'price': 500, 'stripe_price_id': config.STRIPE_CREDITS_500_PRICE_ID},
-    # 'credits_1000': {'amount': 1000, 'price': 1000, 'stripe_price_id': config.STRIPE_CREDITS_1000_PRICE_ID},
+    'credits_test': {'amount': 500, 'price': 1.00, 'stripe_price_id': config.STRIPE_CREDITS_TEST_PRICE_ID},
+    'credits_small': {'amount': 1000, 'price': 11.99, 'stripe_price_id': config.STRIPE_CREDITS_SMALL_PRICE_ID},
+    'credits_medium': {'amount': 2500, 'price': 28.99, 'stripe_price_id': config.STRIPE_CREDITS_MEDIUM_PRICE_ID},
+    'credits_large': {'amount': 5000, 'price': 55.99, 'stripe_price_id': config.STRIPE_CREDITS_LARGE_PRICE_ID},
 }
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
 def get_plan_info(price_id: str) -> dict:
     PLAN_TIERS = {
-        config.STRIPE_TIER_2_20_ID: {'tier': 1, 'type': 'monthly', 'name': '2h/$20'},
-        config.STRIPE_TIER_6_50_ID: {'tier': 2, 'type': 'monthly', 'name': '6h/$50'},
-        config.STRIPE_TIER_12_100_ID: {'tier': 3, 'type': 'monthly', 'name': '12h/$100'},
-        config.STRIPE_TIER_25_200_ID: {'tier': 4, 'type': 'monthly', 'name': '25h/$200'},
-        config.STRIPE_TIER_50_400_ID: {'tier': 5, 'type': 'monthly', 'name': '50h/$400'},
-        config.STRIPE_TIER_125_800_ID: {'tier': 6, 'type': 'monthly', 'name': '125h/$800'},
-        config.STRIPE_TIER_200_1000_ID: {'tier': 7, 'type': 'monthly', 'name': '200h/$1000'},
+        config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'tier': 1, 'type': 'monthly', 'name': 'Ridiculously Cheap - $24.99/month'},
+        config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'tier': 2, 'type': 'monthly', 'name': 'Serious Business - $94.99/month'},
         
         # Yearly plans
-        config.STRIPE_TIER_2_20_YEARLY_ID: {'tier': 1, 'type': 'yearly', 'name': '2h/$204/year'},
-        config.STRIPE_TIER_6_50_YEARLY_ID: {'tier': 2, 'type': 'yearly', 'name': '6h/$510/year'},
-        config.STRIPE_TIER_12_100_YEARLY_ID: {'tier': 3, 'type': 'yearly', 'name': '12h/$1020/year'},
-        config.STRIPE_TIER_25_200_YEARLY_ID: {'tier': 4, 'type': 'yearly', 'name': '25h/$2040/year'},
-        config.STRIPE_TIER_50_400_YEARLY_ID: {'tier': 5, 'type': 'yearly', 'name': '50h/$4080/year'},
-        config.STRIPE_TIER_125_800_YEARLY_ID: {'tier': 6, 'type': 'yearly', 'name': '125h/$8160/year'},
-        config.STRIPE_TIER_200_1000_YEARLY_ID: {'tier': 7, 'type': 'yearly', 'name': '200h/$10200/year'},
-        
-        # Yearly commitment plans
-        config.STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID: {'tier': 1, 'type': 'yearly_commitment', 'name': '2h/$17/month'},
-        config.STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID: {'tier': 2, 'type': 'yearly_commitment', 'name': '6h/$42.50/month'},
-        config.STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID: {'tier': 4, 'type': 'yearly_commitment', 'name': '25h/$170/month'},
+        config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'tier': 1, 'type': 'yearly', 'name': 'Ridiculously Cheap - $254.89/year'},
+        config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'tier': 2, 'type': 'yearly', 'name': 'Serious Business - $968.88/year'},
     }
     
     return PLAN_TIERS.get(price_id, {'tier': 0, 'type': 'unknown', 'name': 'Unknown'})
@@ -84,23 +65,15 @@ def is_plan_change_allowed(current_price_id: str, new_price_id: str) -> tuple[bo
     if current_price_id == new_price_id:
         return True, ""
     
-    # Restriction 1: Don't allow downgrade from monthly to lower monthly
+    # Restriction: Don't allow downgrade from monthly to lower monthly
     if current_plan['type'] == 'monthly' and new_plan['type'] == 'monthly' and new_plan['tier'] < current_plan['tier']:
         return False, "Downgrading to a lower monthly plan is not allowed. You can only upgrade to a higher tier or switch to yearly billing."
     
-    # Restriction 2: Don't allow downgrade from yearly commitment to monthly
-    if current_plan['type'] == 'yearly_commitment' and new_plan['type'] == 'monthly':
-        return False, "Downgrading from yearly commitment to monthly is not allowed. You can only upgrade within yearly commitment plans."
+    # Restriction: Don't allow downgrade from yearly to lower yearly
+    if current_plan['type'] == 'yearly' and new_plan['type'] == 'yearly' and new_plan['tier'] < current_plan['tier']:
+        return False, "Downgrading to a lower yearly plan is not allowed. You can only upgrade to higher yearly tiers."
     
-    # Restriction 2b: Don't allow downgrade within yearly commitment plans
-    if current_plan['type'] == 'yearly_commitment' and new_plan['type'] == 'yearly_commitment' and new_plan['tier'] < current_plan['tier']:
-        return False, "Downgrading to a lower yearly commitment plan is not allowed. You can only upgrade to higher commitment tiers."
-    
-    # Restriction 3: Only allow upgrade from monthly to yearly commitment on same level or above
-    if current_plan['type'] == 'monthly' and new_plan['type'] == 'yearly_commitment' and new_plan['tier'] < current_plan['tier']:
-        return False, "You can only upgrade to yearly commitment plans at the same tier level or higher."
-    
-    # Allow all other changes (upgrades, yearly to yearly, yearly commitment upgrades, etc.)
+    # Allow all other changes (upgrades, monthly to yearly, yearly to monthly, etc.)
     return True, ""
 
 # Simplified yearly commitment logic - no subscription schedules needed
@@ -122,26 +95,13 @@ def get_model_pricing(model: str) -> tuple[float, float] | None:
 
 
 SUBSCRIPTION_TIERS = {
-    config.STRIPE_FREE_TIER_ID: {'name': 'free', 'minutes': 60, 'cost': 500},
-    config.STRIPE_TIER_2_20_ID: {'name': 'tier_2_20', 'minutes': 120, 'cost': 20 + 500},  # 2 hours
-    config.STRIPE_TIER_6_50_ID: {'name': 'tier_6_50', 'minutes': 360, 'cost': 50 + 500},  # 6 hours
-    config.STRIPE_TIER_12_100_ID: {'name': 'tier_12_100', 'minutes': 720, 'cost': 100 + 500},  # 12 hours
-    config.STRIPE_TIER_25_200_ID: {'name': 'tier_25_200', 'minutes': 1500, 'cost': 200 + 500},  # 25 hours
-    config.STRIPE_TIER_50_400_ID: {'name': 'tier_50_400', 'minutes': 3000, 'cost': 400 + 500},  # 50 hours
-    config.STRIPE_TIER_125_800_ID: {'name': 'tier_125_800', 'minutes': 7500, 'cost': 800 + 500},  # 125 hours
-    config.STRIPE_TIER_200_1000_ID: {'name': 'tier_200_1000', 'minutes': 12000, 'cost': 1000 + 500},  # 200 hours
-    # Yearly tiers (same usage limits, different billing period)
-    config.STRIPE_TIER_2_20_YEARLY_ID: {'name': 'tier_2_20', 'minutes': 120, 'cost': 20 + 500},  # 2 hours/month, $204/year
-    config.STRIPE_TIER_6_50_YEARLY_ID: {'name': 'tier_6_50', 'minutes': 360, 'cost': 50 + 500},  # 6 hours/month, $510/year
-    config.STRIPE_TIER_12_100_YEARLY_ID: {'name': 'tier_12_100', 'minutes': 720, 'cost': 100 + 500},  # 12 hours/month, $1020/year
-    config.STRIPE_TIER_25_200_YEARLY_ID: {'name': 'tier_25_200', 'minutes': 1500, 'cost': 200 + 500},  # 25 hours/month, $2040/year
-    config.STRIPE_TIER_50_400_YEARLY_ID: {'name': 'tier_50_400', 'minutes': 3000, 'cost': 400 + 500},  # 50 hours/month, $4080/year
-    config.STRIPE_TIER_125_800_YEARLY_ID: {'name': 'tier_125_800', 'minutes': 7500, 'cost': 800 + 500},  # 125 hours/month, $8160/year
-    config.STRIPE_TIER_200_1000_YEARLY_ID: {'name': 'tier_200_1000', 'minutes': 12000, 'cost': 1000 + 500},  # 200 hours/month, $10200/year
-    # Yearly commitment tiers (15% discount, monthly payments with 12-month commitment via schedules)
-    config.STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID: {'name': 'tier_2_17_yearly_commitment', 'minutes': 120, 'cost': 20 + 500},  # 2 hours/month, $17/month (12-month commitment)
-    config.STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID: {'name': 'tier_6_42_yearly_commitment', 'minutes': 360, 'cost': 50 + 500},  # 6 hours/month, $42.50/month (12-month commitment)
-    config.STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID: {'name': 'tier_25_170_yearly_commitment', 'minutes': 1500, 'cost': 200 + 500},  # 25 hours/month, $170/month (12-month commitment)
+    config.STRIPE_FREE_TIER_ID: {'name': 'free', 'minutes': 60, 'cost': 7.99},  # 799 credits = $7.99
+    # Monthly tiers
+    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 30.00},  # 3,000 credits/month
+    config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 100.00},  # 10,000 credits/month
+    # Yearly tiers (same usage limits, different billing period) - displayed as monthly equivalent
+    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 360.00},  # 36,000 credits/month (billed yearly)
+    config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 1200.00},  # 120,000 credits/month (billed yearly)
 }
 
 # Pydantic models for request/response validation
@@ -150,7 +110,7 @@ class CreateCheckoutSessionRequest(BaseModel):
     success_url: str
     cancel_url: str
     tolt_referral: Optional[str] = None
-    commitment_type: Optional[str] = "monthly"  # "monthly", "yearly", or "yearly_commitment"
+    commitment_type: Optional[str] = "monthly"  # "monthly" or "yearly"
 
 class CreatePortalSessionRequest(BaseModel):
     return_url: str
@@ -175,6 +135,9 @@ class SubscriptionStatus(BaseModel):
     subscription: Optional[Dict] = None
     # Credit information
     credit_balance: Optional[float] = None
+    credit_balance_credits: Optional[int] = None
+    credit_total_purchased: Optional[float] = None
+    credit_total_used: Optional[float] = None
     can_purchase_credits: bool = False
 
 class PurchaseCreditsRequest(BaseModel):
@@ -184,6 +147,7 @@ class PurchaseCreditsRequest(BaseModel):
 
 class CreditBalance(BaseModel):
     balance_dollars: float
+    balance_credits: int  # Add credit amount (1 credit = $0.01)
     total_purchased: float
     total_used: float
     last_updated: Optional[datetime] = None
@@ -314,18 +278,9 @@ async def get_user_subscription(user_id: str) -> Optional[Dict]:
                 price_id = item.get('price', {}).get('id')
                 if price_id in [
                     config.STRIPE_FREE_TIER_ID,
-                    config.STRIPE_TIER_2_20_ID, config.STRIPE_TIER_6_50_ID, config.STRIPE_TIER_12_100_ID,
-                    config.STRIPE_TIER_25_200_ID, config.STRIPE_TIER_50_400_ID, config.STRIPE_TIER_125_800_ID,
-                    config.STRIPE_TIER_200_1000_ID,
+                    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID, config.STRIPE_TIER_SERIOUS_BUSINESS_ID,
                     # Yearly tiers
-                    config.STRIPE_TIER_2_20_YEARLY_ID, config.STRIPE_TIER_6_50_YEARLY_ID,
-                    config.STRIPE_TIER_12_100_YEARLY_ID, config.STRIPE_TIER_25_200_YEARLY_ID,
-                    config.STRIPE_TIER_50_400_YEARLY_ID, config.STRIPE_TIER_125_800_YEARLY_ID,
-                    config.STRIPE_TIER_200_1000_YEARLY_ID,
-                    # Yearly commitment tiers (monthly payments with 12-month commitment)
-                    config.STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID,
-                    config.STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID,
-                    config.STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID
+                    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID, config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID
                 ]:
                     our_subscriptions.append(sub)
         
@@ -384,7 +339,8 @@ async def calculate_monthly_usage(client, user_id: str) -> float:
         
         # Sum up the estimated costs from this page
         for log_entry in usage_result['logs']:
-            total_cost += log_entry['estimated_cost']
+            # Convert credits to dollars (1 credit = $0.01)
+            total_cost += log_entry['total_credits'] / 100
         
         # If there are no more pages, break
         if not usage_result['has_more']:
@@ -401,165 +357,136 @@ async def calculate_monthly_usage(client, user_id: str) -> float:
 
 
 async def get_usage_logs(client, user_id: str, page: int = 0, items_per_page: int = 1000) -> Dict:
-    """Get detailed usage logs for a user with pagination, including credit usage info."""
+    """Get detailed usage logs for a user with pagination, grouped by thread with combined credits."""
     # Get start of current month in UTC
     now = datetime.now(timezone.utc)
-    start_of_month = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     
-    # Use fixed cutoff date: June 26, 2025 midnight UTC
-    # Ignore all token counts before this date
-    cutoff_date = datetime(2025, 6, 30, 9, 0, 0, tzinfo=timezone.utc)
-    
+    # Get cutoff date (6 months ago)
+    cutoff_date = now - timedelta(days=180)
     start_of_month = max(start_of_month, cutoff_date)
     
-    # First get all threads for this user in batches
-    batch_size = 1000
-    offset = 0
-    all_threads = []
-    
-    while True:
-        threads_batch = await client.table('threads') \
-            .select('thread_id, agent_runs(thread_id)') \
-            .eq('account_id', user_id) \
-            .gte('agent_runs.created_at', start_of_month.isoformat()) \
-            .range(offset, offset + batch_size - 1) \
-            .execute()
-        
-        if not threads_batch.data:
-            break
-            
-        all_threads.extend(threads_batch.data)
-        
-        # If we got less than batch_size, we've reached the end
-        if len(threads_batch.data) < batch_size:
-            break
-            
-        offset += batch_size
-    
-    if not all_threads:
-        return {"logs": [], "has_more": False}
-    
-    thread_ids = [t['thread_id'] for t in all_threads]
-    
-    # Fetch usage messages with pagination, including thread project info
-    start_time = time.time()
-    messages_result = await client.table('messages') \
-        .select(
-            'message_id, thread_id, created_at, content, threads!inner(project_id)'
-        ) \
-        .in_('thread_id', thread_ids) \
-        .eq('type', 'assistant_response_end') \
+    # Get all threads for this user with their project information
+    threads_result = await client.table('threads') \
+        .select('''
+            thread_id,
+            project_id,
+            created_at
+        ''') \
+        .eq('account_id', user_id) \
         .gte('created_at', start_of_month.isoformat()) \
         .order('created_at', desc=True) \
         .range(page * items_per_page, (page + 1) * items_per_page - 1) \
         .execute()
     
-    end_time = time.time()
-    execution_time = end_time - start_time
-    logger.debug(f"Database query for usage logs took {execution_time:.3f} seconds")
-
-    if not messages_result.data:
+    if not threads_result.data:
         return {"logs": [], "has_more": False}
-
-    # Get the user's subscription tier info for credit checking
-    subscription = await get_user_subscription(user_id)
-    price_id = config.STRIPE_FREE_TIER_ID  # Default to free
-    if subscription and subscription.get('items'):
-        items = subscription['items'].get('data', [])
-        if items:
-            price_id = items[0]['price']['id']
     
-    tier_info = SUBSCRIPTION_TIERS.get(price_id, SUBSCRIPTION_TIERS[config.STRIPE_FREE_TIER_ID])
-    subscription_limit = tier_info['cost']
+    # Get project information for all threads
+    project_ids = [thread['project_id'] for thread in threads_result.data if thread.get('project_id')]
+    project_names = {}
     
-    # Get credit usage records for this month to match with messages
-    credit_usage_result = await client.table('credit_usage') \
-        .select('message_id, amount_dollars, created_at') \
-        .eq('user_id', user_id) \
-        .gte('created_at', start_of_month.isoformat()) \
-        .execute()
+    if project_ids:
+        projects_result = await client.table('projects') \
+            .select('project_id, name') \
+            .in_('project_id', project_ids) \
+            .execute()
+        
+        for project in projects_result.data:
+            project_names[project['project_id']] = project['name']
     
-    # Create a map of message_id to credit usage
-    credit_usage_map = {}
-    if credit_usage_result.data:
-        for usage in credit_usage_result.data:
-            if usage.get('message_id'):
-                credit_usage_map[usage['message_id']] = {
-                    'amount': float(usage['amount_dollars']),
-                    'created_at': usage['created_at']
-                }
-    
-    # Track cumulative usage to determine when credits started being used
-    cumulative_cost = 0.0
-    
-    # Process messages into usage log entries
+    # Process threads and get their usage
     processed_logs = []
     
-    for message in messages_result.data:
-        try:
-            # Safely extract usage data with defaults
-            content = message.get('content', {})
-            usage = content.get('usage', {})
-            
-            # Ensure usage has required fields with safe defaults
-            prompt_tokens = usage.get('prompt_tokens', 0)
-            completion_tokens = usage.get('completion_tokens', 0)
-            model = content.get('model', 'unknown')
-            
-            # Safely calculate total tokens
-            total_tokens = (prompt_tokens or 0) + (completion_tokens or 0)
-            
-            # Calculate estimated cost using the same logic as calculate_monthly_usage
-            estimated_cost = calculate_token_cost(
-                prompt_tokens,
-                completion_tokens,
-                model
-            )
-            
-            cumulative_cost += estimated_cost
-            
-            # Safely extract project_id from threads relationship
-            project_id = 'unknown'
-            if message.get('threads') and isinstance(message['threads'], list) and len(message['threads']) > 0:
-                project_id = message['threads'][0].get('project_id', 'unknown')
-            
-            # Check if credits were used for this message
-            message_id = message.get('message_id')
-            credit_used = credit_usage_map.get(message_id, {})
+    for thread in threads_result.data:
+        thread_id = thread['thread_id']
+        project_id = thread['project_id']
+        project_name = project_names.get(project_id, 'Unknown Project')
+        thread_created_at = thread['created_at']
+        
+        # Get all messages for this thread in the current month
+        messages_result = await client.table('messages') \
+            .select('''
+                message_id,
+                created_at,
+                content
+            ''') \
+            .eq('thread_id', thread_id) \
+            .eq('type', 'assistant_response_end') \
+            .gte('created_at', start_of_month.isoformat()) \
+            .execute()
+        
+        if not messages_result.data:
+            continue
+        
+        # Calculate total credits used for this thread
+        total_credits = 0
+        total_prompt_tokens = 0
+        total_completion_tokens = 0
+        total_tokens = 0
+        request_count = 0
+        latest_message_time = thread_created_at
+        models_used = set()
+        
+        for message in messages_result.data:
+            try:
+                content = message.get('content', {})
+                usage = content.get('usage', {})
+                
+                prompt_tokens = usage.get('prompt_tokens', 0)
+                completion_tokens = usage.get('completion_tokens', 0)
+                model = content.get('model', 'unknown')
+                
+                # Calculate estimated cost and convert to credits
+                estimated_cost = calculate_token_cost(prompt_tokens, completion_tokens, model)
+                credits = int(estimated_cost * 100)  # Convert dollars to credits
+                total_credits += credits
+                
+                # Accumulate token counts
+                total_prompt_tokens += prompt_tokens
+                total_completion_tokens += completion_tokens
+                total_tokens += prompt_tokens + completion_tokens
+                request_count += 1
+                models_used.add(model)
+                
+                # Track the latest message time
+                message_time = message.get('created_at')
+                if message_time and message_time > latest_message_time:
+                    latest_message_time = message_time
+                    
+            except Exception as e:
+                logger.warning(f"Error processing message {message.get('message_id', 'unknown')}: {str(e)}")
+                continue
+        
+        # Only include threads that have usage
+        if total_credits > 0:
+            # Get the most common model used in this thread
+            primary_model = max(models_used, key=lambda m: sum(1 for msg in messages_result.data if msg.get('content', {}).get('model') == m)) if models_used else 'unknown'
             
             log_entry = {
-                'message_id': message_id or 'unknown',
-                'thread_id': message.get('thread_id', 'unknown'),
-                'created_at': message.get('created_at', None),
-                'content': {
-                    'usage': {
-                        'prompt_tokens': prompt_tokens,
-                        'completion_tokens': completion_tokens
-                    },
-                    'model': model
-                },
-                'total_tokens': total_tokens,
-                'estimated_cost': estimated_cost,
+                'thread_id': thread_id,
                 'project_id': project_id,
-                # Add credit usage info
-                'credit_used': credit_used.get('amount', 0) if credit_used else 0,
-                'payment_method': 'credits' if credit_used else 'subscription',
-                'was_over_limit': cumulative_cost > subscription_limit if not credit_used else True
+                'project_name': project_name,
+                'created_at': latest_message_time,
+                'total_credits': total_credits,
+                'request_count': request_count,
+                'total_prompt_tokens': total_prompt_tokens,
+                'total_completion_tokens': total_completion_tokens,
+                'total_tokens': total_tokens,
+                'primary_model': primary_model,
+                'models_used': list(models_used)
             }
-            
             processed_logs.append(log_entry)
-        except Exception as e:
-            logger.warning(f"Error processing usage log entry for message {message.get('message_id', 'unknown')}: {str(e)}")
-            continue
+    
+    # Sort by latest activity (most recent first)
+    processed_logs.sort(key=lambda x: x['created_at'], reverse=True)
     
     # Check if there are more results
     has_more = len(processed_logs) == items_per_page
     
     return {
         "logs": processed_logs,
-        "has_more": has_more,
-        "subscription_limit": subscription_limit,
-        "cumulative_cost": cumulative_cost
+        "has_more": has_more
     }
 
 
@@ -745,17 +672,17 @@ async def check_billing_status(client, user_id: str) -> Tuple[bool, str, Optiona
         
         if credit_balance.balance_dollars >= CREDIT_MIN_START_DOLLARS:
             # User has enough credits cushion; they can continue
-            return True, f"Subscription limit reached, using credits. Balance: ${credit_balance.balance_dollars:.2f}", subscription
+            return True, f"Subscription limit reached, using credits. Balance: {credit_balance.balance_credits} credits", subscription
         else:
             # Not enough credits to safely start a new request
             if credit_balance.can_purchase_credits:
                 return False, (
-                    f"Monthly limit of ${tier_info['cost']} reached. You need at least ${CREDIT_MIN_START_DOLLARS:.2f} in credits to continue. "
-                    f"Current balance: ${credit_balance.balance_dollars:.2f}."
+                    f"Monthly limit of {int(tier_info['cost'] * 100)} credits reached. You need at least {int(CREDIT_MIN_START_DOLLARS * 100)} credits to continue. "
+                    f"Current balance: {credit_balance.balance_credits} credits."
                 ), subscription
             else:
                 return False, (
-                    f"Monthly limit of ${tier_info['cost']} reached and credits are unavailable. Please upgrade your plan or wait until next month."
+                    f"Monthly limit of {int(tier_info['cost'] * 100)} credits reached and credits are unavailable. Please upgrade your plan or wait until next month."
                 ), subscription
     
     return True, "OK", subscription
@@ -774,60 +701,7 @@ async def check_subscription_commitment(subscription_id: str) -> dict:
             price_id = subscription['items']['data'][0]['price']['id']
         
         # Check if subscription has commitment metadata OR uses a yearly commitment price ID
-        commitment_type = subscription.metadata.get('commitment_type')
-        
-        # Yearly commitment price IDs
-        yearly_commitment_price_ids = [
-            config.STRIPE_TIER_2_17_YEARLY_COMMITMENT_ID,
-            config.STRIPE_TIER_6_42_YEARLY_COMMITMENT_ID,
-            config.STRIPE_TIER_25_170_YEARLY_COMMITMENT_ID
-        ]
-        
-        is_yearly_commitment = (
-            commitment_type == 'yearly_commitment' or 
-            price_id in yearly_commitment_price_ids
-        )
-        
-        if is_yearly_commitment:
-            # Calculate commitment period: 1 year from subscription creation
-            subscription_start = subscription.created
-            current_time = int(time.time())
-            start_date = datetime.fromtimestamp(subscription_start, tz=timezone.utc)
-            commitment_end_date = start_date.replace(year=start_date.year + 1)
-            commitment_end_timestamp = int(commitment_end_date.timestamp())
-            
-            if current_time < commitment_end_timestamp:
-                # Still in commitment period
-                current_date = datetime.fromtimestamp(current_time, tz=timezone.utc)
-                months_remaining = (commitment_end_date.year - current_date.year) * 12 + (commitment_end_date.month - current_date.month)
-                if current_date.day > commitment_end_date.day:
-                    months_remaining -= 1
-                months_remaining = max(0, months_remaining)
-                
-                logger.debug(f"Subscription {subscription_id} has active yearly commitment: {months_remaining} months remaining")
-                
-                return {
-                    'has_commitment': True,
-                    'commitment_type': 'yearly_commitment',
-                    'months_remaining': months_remaining,
-                    'can_cancel': False,
-                    'commitment_end_date': commitment_end_date.isoformat(),
-                    'subscription_start_date': start_date.isoformat(),
-                    'price_id': price_id
-                }
-            else:
-                # Commitment period has ended
-                logger.debug(f"Subscription {subscription_id} yearly commitment period has ended")
-                return {
-                    'has_commitment': False,
-                    'commitment_type': 'yearly_commitment',
-                    'commitment_completed': True,
-                    'can_cancel': True,
-                    'subscription_start_date': start_date.isoformat(),
-                    'price_id': price_id
-                }
-        
-        # No commitment
+        # Since we no longer have yearly commitment plans, all subscriptions are cancelable
         return {
             'has_commitment': False,
             'can_cancel': True,
@@ -842,7 +716,7 @@ async def check_subscription_commitment(subscription_id: str) -> dict:
         }
 
 async def is_user_on_highest_tier(user_id: str) -> bool:
-    """Check if user is on the highest subscription tier (200h/$1000)."""
+    """Check if user is on the highest subscription tier (Serious Business)."""
     try:
         subscription = await get_user_subscription(user_id)
         if not subscription:
@@ -856,14 +730,10 @@ async def is_user_on_highest_tier(user_id: str) -> bool:
         
         logger.info(f"User {user_id} subscription price_id: {price_id}")
         
-        # Check if it's one of the highest tier price IDs (200h/$1000 only)
+        # Check if it's the highest tier price ID (Serious Business only)
         highest_tier_price_ids = [
-            config.STRIPE_TIER_200_1000_ID,  # Monthly highest tier
-            config.STRIPE_TIER_200_1000_YEARLY_ID,  # Yearly highest tier
-            config.STRIPE_TIER_25_200_ID_STAGING,
-            config.STRIPE_TIER_25_200_YEARLY_ID_STAGING,
-            config.STRIPE_TIER_2_20_ID_STAGING,
-            config.STRIPE_TIER_2_20_YEARLY_ID_STAGING,
+            config.STRIPE_TIER_SERIOUS_BUSINESS_ID,  # Monthly highest tier
+            config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID,  # Yearly highest tier
         ]
         
         is_highest = price_id in highest_tier_price_ids
@@ -886,30 +756,32 @@ async def get_user_credit_balance(client: SupabaseClient, user_id: str) -> Credi
         
         if result.data and len(result.data) > 0:
             data = result.data[0]
-            is_highest_tier = await is_user_on_highest_tier(user_id)
+            balance_dollars = float(data.get('balance_dollars', 0))
             return CreditBalance(
-                balance_dollars=float(data.get('balance_dollars', 0)),
+                balance_dollars=balance_dollars,
+                balance_credits=int(balance_dollars * 100),  # Convert to credits
                 total_purchased=float(data.get('total_purchased', 0)),
                 total_used=float(data.get('total_used', 0)),
                 last_updated=data.get('last_updated'),
-                can_purchase_credits=is_highest_tier
+                can_purchase_credits=True
             )
         else:
             # No balance record exists yet - this is normal for users who haven't purchased credits
-            is_highest_tier = await is_user_on_highest_tier(user_id)
             return CreditBalance(
                 balance_dollars=0.0,
+                balance_credits=0,
                 total_purchased=0.0,
                 total_used=0.0,
-                can_purchase_credits=is_highest_tier
+                can_purchase_credits=True
             )
     except Exception as e:
         logger.error(f"Error getting credit balance for user {user_id}: {str(e)}")
         return CreditBalance(
             balance_dollars=0.0,
+            balance_credits=0,
             total_purchased=0.0,
             total_used=0.0,
-            can_purchase_credits=False
+            can_purchase_credits=True
         )
 
 async def add_credits_to_balance(client: SupabaseClient, user_id: str, amount: float, purchase_id: str = None) -> float:
@@ -1011,14 +883,14 @@ async def handle_usage_with_credits(
                 )
                 
                 if success:
-                    logger.debug(f"Used ${overage_amount:.4f} credits for user {user_id} overage")
-                    return True, f"Used ${overage_amount:.4f} from credits (Balance: ${credit_balance.balance_dollars - overage_amount:.2f})"
+                    logger.debug(f"Used {int(overage_amount * 100)} credits for user {user_id} overage")
+                    return True, f"Used {int(overage_amount * 100)} credits from balance (Balance: {credit_balance.balance_credits - int(overage_amount * 100)} credits)"
                 else:
                     return False, "Failed to deduct credits"
             else:
                 # Insufficient credits
                 if credit_balance.can_purchase_credits:
-                    return False, f"Insufficient credits. Balance: ${credit_balance.balance_dollars:.2f}, Required: ${overage_amount:.4f}. Purchase more credits to continue."
+                    return False, f"Insufficient credits. Balance: {credit_balance.balance_credits} credits, Required: {int(overage_amount * 100)} credits. Purchase more credits to continue."
                 else:
                     return False, f"Monthly limit exceeded and no credits available. Upgrade to the highest tier to purchase credits."
         
@@ -1057,8 +929,16 @@ async def create_checkout_session(
         except stripe.error.InvalidRequestError:
             raise HTTPException(status_code=400, detail=f"Invalid price ID: {request.price_id}")
             
-        # Verify the price belongs to our product
-        if product_id != config.STRIPE_PRODUCT_ID:
+        # Verify the price belongs to our subscription product or credits product
+        # Allow both subscription and credits products
+        valid_product_ids = [
+            config.STRIPE_SUBSCRIPTION_PRODUCT_ID, 
+            config.STRIPE_CREDITS_PRODUCT_ID,
+            config.STRIPE_PRODUCT_ID  # Legacy support
+        ]
+        
+        if product_id not in valid_product_ids:
+            logger.error(f"Price {request.price_id} belongs to product {product_id}, but expected one of: {valid_product_ids}")
             raise HTTPException(status_code=400, detail="Price ID does not belong to the correct product.")
             
         # Check for existing subscription for our product
@@ -1260,7 +1140,7 @@ async def create_checkout_session(
                         except Exception as invoice_error:
                             logger.error(f"Error processing invoice for immediate payment: {str(invoice_error)}")
                             # Don't fail the entire operation if invoice processing fails
-                    
+                        
                     return {
                         "subscription_id": updated_subscription.id,
                         "status": "updated",
@@ -1482,7 +1362,10 @@ async def get_subscription(
                 cost_limit=free_tier_info.get('cost') if free_tier_info else 0,
                 current_usage=current_usage,
                 credit_balance=credit_balance_info.balance_dollars,
-                can_purchase_credits=credit_balance_info.can_purchase_credits
+                credit_balance_credits=credit_balance_info.balance_credits,
+                credit_total_purchased=credit_balance_info.total_purchased,
+                credit_total_used=credit_balance_info.total_used,
+                can_purchase_credits=True
             )
         
         # Extract current plan details
@@ -1500,7 +1383,7 @@ async def get_subscription(
             price_id=current_price_id,
             current_period_end=datetime.fromtimestamp(current_item['current_period_end'], tz=timezone.utc),
             cancel_at_period_end=subscription['cancel_at_period_end'],
-            trial_end=datetime.fromtimestamp(subscription['trial_end'], tz=timezone.utc) if subscription.get('trial_end') else None,
+            trial_end=datetime.fromtimestamp(subscription.get('trial_end'), tz=timezone.utc) if subscription.get('trial_end') else None,
             minutes_limit=current_tier_info['minutes'],
             cost_limit=current_tier_info['cost'],
             current_usage=current_usage,
@@ -1514,7 +1397,10 @@ async def get_subscription(
                 'current_period_end': current_item['current_period_end']
             },
             credit_balance=credit_balance_info.balance_dollars,
-            can_purchase_credits=credit_balance_info.can_purchase_credits
+            credit_balance_credits=credit_balance_info.balance_credits,
+            credit_total_purchased=credit_balance_info.total_purchased,
+            credit_total_used=credit_balance_info.total_used,
+            can_purchase_credits=True
         )
 
         # Check for an attached schedule (indicates pending downgrade)
@@ -1873,12 +1759,12 @@ async def get_available_models(
                             input_cost, output_cost = cost_per_token(model_name, 1000000, 1000000)
                             if input_cost is not None and output_cost is not None:
                                 input_cost_per_token = input_cost
-                                output_cost_per_token = output_cost
+                                output_cost_per_million = output_cost
                                 break
                         except Exception:
                             continue
                     
-                    if input_cost_per_token is not None and output_cost_per_token is not None:
+                    if input_cost_per_token is not None and output_cost_per_million is not None:
                         pricing_info = {
                             "input_cost_per_million_tokens": input_cost_per_token * TOKEN_PRICE_MULTIPLIER,
                             "output_cost_per_million_tokens": output_cost_per_million * TOKEN_PRICE_MULTIPLIER,
@@ -2201,20 +2087,12 @@ async def purchase_credits(
 ):
     """
     Create a Stripe checkout session for purchasing credits.
-    Only available for users on the highest subscription tier.
+    Available for all users (no subscription required).
     """
     try:
-        # Check if user is on the highest tier
-        is_highest_tier = await is_user_on_highest_tier(current_user_id)
-        if not is_highest_tier:
-            raise HTTPException(
-                status_code=403,
-                detail="Credit purchases are only available for users on the highest subscription tier ($1000/month)."
-            )
-        
         # Validate amount
-        if request.amount_dollars < 10:
-            raise HTTPException(status_code=400, detail="Minimum credit purchase is $10")
+        if request.amount_dollars < 1:
+            raise HTTPException(status_code=400, detail="Minimum credit purchase is $1")
         
         if request.amount_dollars > 5000:
             raise HTTPException(status_code=400, detail="Maximum credit purchase is $5000")
@@ -2241,6 +2119,15 @@ async def purchase_credits(
                 matching_package = package_info
                 break
         
+        # Map specific known package prices to fixed credits
+        FIXED_CREDIT_PACKAGES = {
+            11.99: 1000,  # $11.99 → 1,000 credits
+            28.99: 2500,  # $28.99 → 2,500 credits
+            55.99: 5000,  # $55.99 → 5,000 credits
+        }
+        
+        fixed_credits = FIXED_CREDIT_PACKAGES.get(round(request.amount_dollars, 2))
+        
         # Create a checkout session
         if matching_package and matching_package['stripe_price_id']:
             # Use pre-configured price ID
@@ -2256,7 +2143,8 @@ async def purchase_credits(
                 cancel_url=request.cancel_url,
                 metadata={
                     'user_id': current_user_id,
-                    'credit_amount': str(request.amount_dollars),
+                    # Store the credit amount in DOLLARS so webhook can add precisely credits/100 dollars
+                    'credit_amount': str((fixed_credits / 100) if fixed_credits else request.amount_dollars),
                     'type': 'credit_purchase'
                 }
             )
@@ -2280,7 +2168,7 @@ async def purchase_credits(
                 cancel_url=request.cancel_url,
                 metadata={
                     'user_id': current_user_id,
-                    'credit_amount': str(request.amount_dollars),
+                    'credit_amount': str((fixed_credits / 100) if fixed_credits else request.amount_dollars),
                     'type': 'credit_purchase'
                 }
             )
@@ -2397,15 +2285,12 @@ async def get_credit_history(
 async def can_purchase_credits(
     current_user_id: str = Depends(get_current_user_id_from_jwt)
 ):
-    """Check if the current user can purchase credits (must be on highest tier)."""
+    """Check if the current user can purchase credits (now available for all users)."""
     try:
-        is_highest_tier = await is_user_on_highest_tier(current_user_id)
-        
         return {
-            "can_purchase": is_highest_tier,
-            "reason": "Credit purchases are available" if is_highest_tier else "Must be on the highest subscription tier ($1000/month) to purchase credits"
+            "can_purchase": True,
+            "reason": "Credit purchases are available for all users"
         }
-        
     except Exception as e:
         logger.error(f"Error checking credit purchase eligibility: {str(e)}")
         raise HTTPException(status_code=500, detail="Error checking eligibility")

@@ -127,44 +127,7 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                             </div>
                         )}
 
-                        {subscriptionData && (
-                            <div className="mb-6">
-                                <div className="rounded-lg border bg-background p-4">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-sm font-medium text-foreground/90">
-                                            Agent Usage This Month
-                                        </span>
-                                        <span className="text-sm font-medium">
-                                            ${subscriptionData.current_usage?.toFixed(2) || '0'} /{' '}
-                                            ${subscriptionData.cost_limit || '0'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Credit Balance Display - Only show for users who can purchase credits */}
-                        {subscriptionData?.can_purchase_credits && (
-                            <div className="mb-6">
-                                <CreditBalanceDisplay 
-                                    balance={subscriptionData.credit_balance || 0}
-                                    canPurchase={subscriptionData.can_purchase_credits}
-                                    onPurchaseClick={() => setShowCreditPurchaseModal(true)}
-                                />
-                            </div>
-                        )}
-
                         <PricingSection returnUrl={returnUrl} showTitleAndTabs={false} />
-
-                        {subscriptionData && (
-                            <Button
-                                onClick={handleManageSubscription}
-                                disabled={isManaging}
-                                className="max-w-xs mx-auto w-full bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all mt-4"
-                            >
-                                {isManaging ? 'Loading...' : 'Manage Subscription'}
-                            </Button>
-                        )}
                     </>
                 )}
             </DialogContent>
@@ -173,8 +136,8 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
             <CreditPurchaseModal
                 open={showCreditPurchaseModal}
                 onOpenChange={setShowCreditPurchaseModal}
-                currentBalance={subscriptionData?.credit_balance || 0}
-                canPurchase={subscriptionData?.can_purchase_credits || false}
+                currentBalance={subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)}
+                canPurchase={true} // Temporarily enable for all users for testing
                 onPurchaseComplete={() => {
                     // Refresh subscription data
                     getSubscription().then(setSubscriptionData);

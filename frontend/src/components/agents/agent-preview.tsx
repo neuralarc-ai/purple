@@ -14,6 +14,9 @@ import { useStartAgentMutation, useStopAgentMutation } from '@/hooks/react-query
 import { BillingError } from '@/lib/api';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
 import { HeliumLogo } from '../sidebar/helium-logo';
+import { SecurityPopup } from '@/components/thread/chat-input/security-popup';
+import { useSecurityInterception } from '@/hooks/useSecurityInterception';
+import { SECURITY_ALERT_VARIANTS, HARM_ALERT_VARIANT } from '@/lib/security-database';
 
 interface Agent {
   agent_id: string;
@@ -42,7 +45,20 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
   const [agentRunId, setAgentRunId] = useState<string | null>(null);
   const [agentStatus, setAgentStatus] = useState<'idle' | 'running' | 'connecting' | 'error'>('idle');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
   const [hasStartedConversation, setHasStartedConversation] = useState(false);
+
+  // Security interception hook
+  const {
+    showPopup: showSecurityPopup,
+    popupMessage: securityPopupMessage,
+    popupType: securityPopupType,
+    shouldBlock: shouldBlockRequest,
+    closePopup: closeSecurityPopup,
+    shouldProceedWithRequest,
+    openPopup,
+    isHarmfulContent,
+  } = useSecurityInterception();
 
   const isHeliumAgent = agentMetadata?.is_helium_default || false;
 
@@ -164,6 +180,56 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
     }
   }, [streamingTextContent]);
 
+  // Detect assistant denial message and show as popup
+  useEffect(() => {
+    const DENIAL_TEXT = "I cannot comply with this request. It appears to be a security violation or unsafe instruction. I'm designed to help with legitimate tasks while maintaining safety and ethical boundaries.";
+
+    const extractText = (raw: any): string => {
+      if (typeof raw === 'string') {
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed.content === 'string') return parsed.content;
+        } catch {}
+        return raw;
+      }
+      return '';
+    };
+
+    const pickVariant = (seedSource: string): string => {
+      // Check if this is harmful content to use specific variant
+      const isHarmful = isHarmfulContent(seedSource || '');
+      
+      if (isHarmful) {
+        return HARM_ALERT_VARIANT;
+      }
+      
+      // Use randomized variant for general security issues
+      const pool = SECURITY_ALERT_VARIANTS;
+      if (!pool || pool.length === 0) return DENIAL_TEXT;
+      let seed = 0;
+      const basis = seedSource || '';
+      for (let i = 0; i < basis.length; i++) seed = (seed * 31 + basis.charCodeAt(i)) >>> 0;
+      return pool[seed % pool.length] || DENIAL_TEXT;
+    };
+
+    // Check latest assistant message
+    const lastAssistant = [...messages].reverse().find(m => m.type === 'assistant');
+    const lastAssistantText = lastAssistant ? extractText(lastAssistant.content) : '';
+
+    const matchesDenial = (text: string) =>
+      !!text && text.toLowerCase().includes(DENIAL_TEXT.toLowerCase());
+
+    if (matchesDenial(lastAssistantText)) {
+      openPopup(pickVariant(lastAssistantText), 'error', true);
+      return;
+    }
+
+    // Also check streaming text while it is coming in
+    if (matchesDenial(streamingTextContent || '')) {
+      openPopup(pickVariant(streamingTextContent || ''), 'error', true);
+    }
+  }, [messages, streamingTextContent, openPopup]);
+
   const handleSubmitFirstMessage = async (
     message: string,
     options?: {
@@ -172,31 +238,53 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       reasoning_effort?: string;
       stream?: boolean;
       enable_context_manager?: boolean;
+      mode?: 'default' | 'agent';
     },
   ) => {
     if (!message.trim() && !chatInputRef.current?.getPendingFiles().length) return;
+    
+    // Check for security concerns on submission only
+    if (!shouldProceedWithRequest(message)) {
+      // Security popup is already shown by the hook
+      return;
+    }
 
+    // Set loading state immediately
     setIsSubmitting(true);
+    setLocalLoading(true); // Set local loading state for instant feedback
     setHasStartedConversation(true);
 
     try {
+      // Process files asynchronously to avoid blocking
       const files = chatInputRef.current?.getPendingFiles() || [];
 
+      // Create FormData asynchronously
       const formData = new FormData();
       formData.append('prompt', message);
       formData.append('agent_id', agent.agent_id);
 
+      // Process files asynchronously
       files.forEach((file, index) => {
         const normalizedName = normalizeFilenameToNFC(file.name);
         formData.append('files', file, normalizedName);
       });
 
-      if (options?.model_name) formData.append('model_name', options.model_name);
-      formData.append('enable_thinking', String(options?.enable_thinking ?? false));
-      formData.append('reasoning_effort', options?.reasoning_effort ?? 'low');
-      formData.append('stream', String(options?.stream ?? true));
-      formData.append('enable_context_manager', String(options?.enable_context_manager ?? false));
+      // Handle mode-based configuration asynchronously
+      if (options?.mode) {
+        const modeConfig = getModeConfiguration(options.mode, options.enable_thinking);
+        formData.append('enable_thinking', String(options.enable_thinking ?? false));
+        formData.append('reasoning_effort', modeConfig.reasoning_effort);
+        formData.append('enable_context_manager', String(modeConfig.enable_context_manager));
+      } else {
+        // Fallback to direct options
+        if (options?.model_name) formData.append('model_name', options.model_name);
+        formData.append('enable_thinking', String(options?.enable_thinking ?? false));
+        formData.append('reasoning_effort', options?.reasoning_effort ?? 'low');
+        formData.append('stream', String(options?.stream ?? true));
+        formData.append('enable_context_manager', String(options?.enable_context_manager ?? false));
+      }
 
+      // Submit the request
       const result = await initiateAgentMutation.mutateAsync(formData);
 
       if (result.thread_id) {
@@ -240,6 +328,69 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       setHasStartedConversation(false);
     } finally {
       setIsSubmitting(false);
+      setLocalLoading(false); // Clear local loading state
+    }
+  };
+
+  // Helper function to get mode-based configuration
+  const getModeConfiguration = (mode: string, thinkingEnabled: boolean) => {
+    switch(mode) {
+      case 'default':
+        return {
+          enable_context_manager: false,
+          reasoning_effort: 'minimal',
+          enable_thinking: false,
+          max_tokens: 100, // Reduced for faster response
+          temperature: 0.5, // Lower temperature for more focused responses
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 5000, // 5 seconds timeout for ultra-fast response
+          chunk_size: 25, // Ultra-small chunks for immediate streaming
+          buffer_size: 50, // Smaller buffer for instant display
+          // Additional ultra-fast optimizations
+          enable_parallel_processing: true,
+          skip_initial_validation: true,
+          use_fast_model: true,
+          cache_responses: true
+        };
+      case 'agent':
+        return {
+          enable_context_manager: true,
+          reasoning_effort: thinkingEnabled ? 'medium' : 'low', // Reduced reasoning effort
+          enable_thinking: thinkingEnabled,
+          max_tokens: 500, // Reduced for faster response
+          temperature: 0.3,
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 15000, // 15 seconds for faster complex tasks
+          chunk_size: 75, // Smaller chunks for faster streaming
+          buffer_size: 150, // Smaller buffer for faster display
+          // Additional optimizations
+          enable_parallel_processing: true,
+          skip_initial_validation: false,
+          use_fast_model: false,
+          cache_responses: true
+        };
+      default:
+        return {
+          enable_context_manager: false,
+          reasoning_effort: 'minimal',
+          enable_thinking: false,
+          max_tokens: 100,
+          temperature: 0.5,
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 5000,
+          chunk_size: 25,
+          buffer_size: 50,
+          enable_parallel_processing: true,
+          skip_initial_validation: true,
+          use_fast_model: true,
+          cache_responses: true
+        };
     }
   };
 
@@ -249,6 +400,13 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       options?: { model_name?: string; enable_thinking?: boolean },
     ) => {
       if (!message.trim() || !threadId) return;
+      
+      // Check for security concerns on submission only
+      if (!shouldProceedWithRequest(message)) {
+        // Security popup is already shown by the hook
+        return;
+      }
+
       setIsSubmitting(true);
 
       const optimisticUserMessage: UnifiedMessage = {
@@ -371,24 +529,35 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       </div>
       <div className="flex-shrink-0">
         <div className="px-8 md:pb-4">
-          <ChatInput
-            ref={chatInputRef}
-            onSubmit={threadId ? handleSubmitMessage : handleSubmitFirstMessage}
-            loading={isSubmitting}
-            placeholder={`Message ${agent.name || 'agent'}...`}
-            value={inputValue}
-            onChange={setInputValue}
-            disabled={isSubmitting}
-            isAgentRunning={agentStatus === 'running' || agentStatus === 'connecting'}
-            onStopAgent={handleStopAgent}
-            agentName={agent.name}
-            hideAttachments={false}
-            bgColor='bg-muted-foreground/10'
-            selectedAgentId={agent.agent_id}
-            onAgentSelect={() => {
-              toast.info("You can only test the agent you are currently configuring");
-            }}
-          />
+          <div className="w-full">
+            {/* Security Popup - Positioned above the input */}
+            <SecurityPopup
+              isVisible={showSecurityPopup}
+              onClose={closeSecurityPopup}
+              message={securityPopupMessage}
+              type={securityPopupType}
+              showCloseButton={true}
+            />
+            
+            <ChatInput
+              ref={chatInputRef}
+              onSubmit={threadId ? handleSubmitMessage : handleSubmitFirstMessage}
+              loading={isSubmitting || localLoading} // Use local loading state for immediate feedback
+              placeholder={`Message ${agent.name || 'agent'}...`}
+              value={inputValue}
+              onChange={setInputValue}
+              disabled={isSubmitting}
+              isAgentRunning={agentStatus === 'running' || agentStatus === 'connecting'}
+              onStopAgent={handleStopAgent}
+              agentName={agent.name}
+              hideAttachments={false}
+              bgColor='bg-muted-foreground/10'
+              selectedAgentId={agent.agent_id}
+              onAgentSelect={() => {
+                toast.info("You can only test the agent you are currently configuring");
+              }}
+            />
+          </div>
         </div>
       </div>
     </div>

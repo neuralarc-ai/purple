@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { BarChart3 } from 'lucide-react';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,6 +10,7 @@ import { useAccountBySlug } from '@/hooks/react-query';
 import { useSharedSubscription } from '@/contexts/SubscriptionContext';
 import { isLocalMode } from '@/lib/config';
 import Link from 'next/link';
+import { CreditBalanceDisplay, CreditPurchaseModal } from '@/components/billing/credit-purchase';
 
 const returnUrl = process.env.NEXT_PUBLIC_URL as string;
 
@@ -24,6 +26,7 @@ export default function TeamBillingPage({
   const unwrappedParams = React.use(params);
   const { accountSlug } = unwrappedParams;
   const [showBillingModal, setShowBillingModal] = useState(false);
+  const [showCreditPurchaseModal, setShowCreditPurchaseModal] = useState(false);
 
   const { 
     data: teamAccount, 
@@ -95,6 +98,16 @@ export default function TeamBillingPage({
         onOpenChange={setShowBillingModal}
         returnUrl={`${returnUrl}/${accountSlug}/settings/billing`}
       />
+      <CreditPurchaseModal
+        open={showCreditPurchaseModal}
+        onOpenChange={setShowCreditPurchaseModal}
+        currentBalance={subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)}
+        canPurchase={subscriptionData?.can_purchase_credits || false}
+        onPurchaseComplete={() => {
+          // Optionally refresh subscription data here
+          window.location.reload();
+        }}
+      />
       
       <div>
         <h3 className="text-lg font-medium text-card-title">Team Billing</h3>
@@ -131,17 +144,43 @@ export default function TeamBillingPage({
           <>
             {subscriptionData && (
               <div className="mb-6">
-                <div className="rounded-lg border bg-background p-4">
-                  <div className="flex justify-between items-center gap-4">
-                    <span className="text-sm font-medium text-foreground/90">
-                      Agent Usage This Month
-                    </span>
-                    <span className="text-sm font-medium">
-                      ${subscriptionData.current_usage?.toFixed(2) || '0'} /{' '}
-                      ${subscriptionData.cost_limit || '0'}
-                    </span>
-                    <Button variant='outline' asChild className='text-sm'>
-                      <Link href="/settings/usage-logs">
+                <div className="rounded-lg border bg-gradient-to-br from-background to-muted/20 p-5">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                    <div className="flex flex-col gap-3 flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                          <BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <span className="text-base font-semibold text-foreground">
+                          Usage This Month
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg border border-primary/10">
+                          <span className="text-sm font-medium text-foreground">Total Used</span>
+                          <span className="text-lg font-bold text-primary">
+                            {Math.round((subscriptionData.current_usage || 0) * 100)} credits
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 px-3 bg-muted/30 rounded-md">
+                          <span className="text-sm text-muted-foreground">From subscription</span>
+                          <span className="text-sm font-medium">
+                            {Math.min(Math.round((subscriptionData.current_usage || 0) * 100), Math.round((subscriptionData.cost_limit || 0) * 100))} / {Math.round((subscriptionData.cost_limit || 0) * 100)} credits
+                          </span>
+                        </div>
+                        {subscriptionData.current_usage && subscriptionData.cost_limit && 
+                         (subscriptionData.current_usage * 100) > (subscriptionData.cost_limit * 100) && (
+                          <div className="flex justify-between items-center py-2 px-3 bg-muted/30 rounded-md">
+                            <span className="text-sm text-muted-foreground">From add-on balance</span>
+                            <span className="text-sm font-medium">
+                              {Math.round(((subscriptionData.current_usage || 0) - (subscriptionData.cost_limit || 0)) * 100)} credits
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <Button variant='outline' asChild className='text-xs h-8 px-3 flex-shrink-0'>
+                      <Link href={`/${accountSlug}/settings/usage-logs`}>
                         Usage logs
                       </Link>
                     </Button>
@@ -150,16 +189,19 @@ export default function TeamBillingPage({
               </div>
             )}
 
+            {/* Credit Balance Display - Only show for users who can purchase credits */}
+            {subscriptionData?.can_purchase_credits && (
+              <div className="mb-6">
+                <CreditBalanceDisplay 
+                  balance={subscriptionData.credit_balance_credits || Math.round((subscriptionData.credit_balance || 0) * 100)}
+                  canPurchase={subscriptionData.can_purchase_credits}
+                  onPurchaseClick={() => setShowCreditPurchaseModal(true)}
+                  subscriptionData={subscriptionData}
+                />
+              </div>
+            )}
+
             <div className='flex justify-center items-center gap-4'>
-              <Button
-                variant="outline"
-                className="border-border hover:bg-muted/50 shadow-sm hover:shadow-md transition-all whitespace-nowrap flex items-center"
-                asChild
-              >
-                <Link href="/model-pricing">
-                  View Model Pricing
-                </Link>
-              </Button>
               <Button
                 onClick={() => setShowBillingModal(true)}
                 className="bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all"

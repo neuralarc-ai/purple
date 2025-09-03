@@ -19,6 +19,7 @@ from agent.tools.sb_files_tool import SandboxFilesTool
 from agent.tools.data_providers_tool import DataProvidersTool
 from agent.tools.expand_msg_tool import ExpandMessageTool
 from agent.prompt import get_system_prompt
+from utils.security_prompt import get_security_prompt, should_use_security_prompt, get_security_response_type, log_security_event
 
 from utils.logger import logger
 from utils.auth_utils import get_account_id_from_thread
@@ -248,8 +249,21 @@ class PromptManager:
     async def build_system_prompt(model_name: str, agent_config: Optional[dict], 
                                   thread_id: str, 
                                   mcp_wrapper_instance: Optional[MCPToolWrapper],
-                                  client=None) -> dict:
+                                  client=None, user_input: Optional[str] = None) -> dict:
         
+        # Check if security prompt should be used based on user input
+        if user_input and should_use_security_prompt(user_input):
+            logger.warning(f"Security prompt triggered for thread {thread_id} due to suspicious input")
+            
+            # Log the security event
+            response_type = get_security_response_type(user_input)
+            log_security_event(user_input, response_type, "security_prompt_activated")
+            
+            # Return security prompt
+            security_content = get_security_prompt()
+            return {"role": "system", "content": security_content, "is_security_prompt": True}
+        
+        # Continue with normal system prompt logic
         default_system_content = get_system_prompt()
         
         if "anthropic" not in model_name.lower():
@@ -258,35 +272,15 @@ class PromptManager:
                 sample_response = file.read()
             default_system_content = default_system_content + "\n\n <sample_assistant_response>" + sample_response + "</sample_assistant_response>"
         
-        # Check if agent has builder tools enabled - use agent builder prompt only when needed
+        # Check if agent has builder tools enabled - use agent builder prompt ONLY when explicitly configured
         if agent_config:
-            agentpress_tools = agent_config.get('agentpress_tools', {})
-            has_builder_tools = any(
-                agentpress_tools.get(tool, False) 
-                for tool in ['agent_config_tool', 'mcp_search_tool', 'credential_profile_tool', 'workflow_tool', 'trigger_tool']
-            )
-            
-            # Start with regular system prompt for normal conversation
-            if agent_config.get('system_prompt'):
+            # Only use agent builder prompt if explicitly set in system_prompt or if this is a dedicated builder agent
+            if agent_config.get('system_prompt') and 'builder' in agent_config.get('system_prompt', '').lower():
+                system_content = get_agent_builder_prompt()
+            elif agent_config.get('system_prompt'):
                 system_content = agent_config['system_prompt'].strip()
             else:
                 system_content = default_system_content
-            
-            # Add builder tool instructions only when builder tools are available
-            if has_builder_tools:
-                builder_instructions = """
-
-=== AGENT BUILDER TOOLS AVAILABLE ===
-You have access to agent configuration and building tools. When users want to:
-- Configure their agent settings
-- Add new integrations or tools
-- Create workflows or triggers
-- Manage credentials or profiles
-
-You can switch to builder mode by using the appropriate tools. For normal conversation, continue using your regular capabilities.
-=== END BUILDER TOOLS INFO ===
-"""
-                system_content += builder_instructions
         else:
             system_content = default_system_content
         
@@ -397,18 +391,18 @@ class MessageManager:
         """Build temporary message based on configuration and context."""
         system_message = None
         
-        # Start with agent config system prompt (not builder prompt)
-        if self.agent_config and 'system_prompt' in self.agent_config:
+        # Add agent builder system prompt if agent is explicitly configured as a builder
+        if self.agent_config:
+            # Only use agent builder prompt if explicitly set in system_prompt
+            if self.agent_config.get('system_prompt') and 'builder' in self.agent_config.get('system_prompt', '').lower():
+                from agent.agent_builder_prompt import AGENT_BUILDER_SYSTEM_PROMPT
+                system_message = AGENT_BUILDER_SYSTEM_PROMPT
+        
+        # Add agent config system prompt
+        if not system_message and self.agent_config and 'system_prompt' in self.agent_config:
             system_prompt = self.agent_config['system_prompt']
             if system_prompt:
                 system_message = system_prompt
-        
-        # Only use agent builder prompt when explicitly needed for configuration
-        # For normal conversation, use the regular system prompt
-        if not system_message:
-            # Fall back to default system prompt if no custom prompt configured
-            from agent.prompt import get_system_prompt
-            system_message = get_system_prompt()
         
         # Build and return the temporary message if we have content
         if system_message:
@@ -541,22 +535,37 @@ class AgentRunner:
         await self.setup_tools()
         mcp_wrapper_instance = await self.setup_mcp_tools()
         
+        # Get the latest user message for security validation
+        latest_user_message = await self.client.table('messages').select('*').eq('thread_id', self.config.thread_id).eq('type', 'user').order('created_at', desc=True).limit(1).execute()
+        user_input = None
+        if latest_user_message.data and len(latest_user_message.data) > 0:
+            data = latest_user_message.data[0]['content']
+            if isinstance(data, str):
+                try:
+                    data = json.loads(data)
+                    user_input = data.get('content', '')
+                except json.JSONDecodeError:
+                    user_input = data
+        
         system_message = await PromptManager.build_system_prompt(
             self.config.model_name, self.config.agent_config, 
             self.config.thread_id, 
-            mcp_wrapper_instance, self.client
+            mcp_wrapper_instance, self.client, user_input
         )
 
         iteration_count = 0
         continue_execution = True
 
-        latest_user_message = await self.client.table('messages').select('*').eq('thread_id', self.config.thread_id).eq('type', 'user').order('created_at', desc=True).limit(1).execute()
         if latest_user_message.data and len(latest_user_message.data) > 0:
             data = latest_user_message.data[0]['content']
             if isinstance(data, str):
-                data = json.loads(data)
-            if self.config.trace:
-                self.config.trace.update(input=data['content'])
+                try:
+                    data = json.loads(data)
+                    if self.config.trace:
+                        self.config.trace.update(input=data.get('content', ''))
+                except json.JSONDecodeError:
+                    if self.config.trace:
+                        self.config.trace.update(input=data)
 
         message_manager = MessageManager(self.client, self.config.thread_id, self.config.model_name, self.config.trace, 
                                          agent_config=self.config.agent_config, enable_context_manager=self.config.enable_context_manager)
@@ -583,6 +592,36 @@ class AgentRunner:
 
             temporary_message = await message_manager.build_temporary_message()
             max_tokens = self.get_max_tokens()
+            
+            # Check if this is a security prompt response
+            is_security_prompt = system_message.get('is_security_prompt', False)
+            
+            # If this is a security prompt, provide a direct security response
+            if is_security_prompt:
+                from utils.security_prompt import get_security_response_type, get_security_response_template
+                response_type = get_security_response_type(user_input or "")
+                security_response = get_security_response_template(response_type)
+                
+                # Log the security event
+                log_security_event(user_input or "", response_type, "security_response_generated")
+                
+                # Yield the security response
+                yield {
+                    "type": "assistant",
+                    "content": json.dumps({
+                        "content": security_response,
+                        "is_security_response": True,
+                        "security_type": response_type
+                    })
+                }
+                
+                # End the generation if we have tracing
+                if generation:
+                    generation.end(output=security_response, status_message="security_response_complete")
+                
+                # Stop execution after security response
+                continue_execution = False
+                break
             
             generation = self.config.trace.generation(name="thread_manager.run_thread") if self.config.trace else None
             try:
@@ -737,8 +776,18 @@ async def run_agent(
     elif model_name != "openai/gpt-5-mini":
         logger.debug(f"Using user-selected model: {effective_model}")
     else:
-        logger.debug(f"Using default model: {effective_model}")
+        # In production, force Vertex Claude Sonnet 4 for default
+        env_mode = os.getenv("ENV_MODE", "local").lower()
+        if env_mode == "production" and model_name == "openai/gpt-5-mini":
+            effective_model = "vertex_ai/claude-sonnet-4@20250514"
+            logger.debug(f"Production environment: using fixed model: {effective_model}")
+        else:
+            logger.debug(f"Using default model: {effective_model}")
     
+    # Hard override: in production, always force Vertex Claude Sonnet 4
+    if os.getenv("ENV_MODE", "local").lower() == "production":
+        effective_model = "vertex_ai/claude-sonnet-4@20250514"
+
     config = AgentConfig(
         thread_id=thread_id,
         project_id=project_id,

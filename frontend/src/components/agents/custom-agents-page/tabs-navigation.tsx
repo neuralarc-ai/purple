@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Bot, ShoppingBag, Plus } from 'lucide-react';
+import { Plus, PackageSearch, Bot } from 'lucide-react';
 import { FancyTabs, TabConfig } from '@/components/ui/fancy-tabs';
 import { Button } from '@/components/ui/button';
 
@@ -14,7 +14,7 @@ interface TabsNavigationProps {
 const agentTabs: TabConfig[] = [
   {
     value: 'explore',
-    icon: ShoppingBag,
+    icon: PackageSearch,
     label: 'Explore',
     shortLabel: 'Explore',
   },
@@ -23,7 +23,7 @@ const agentTabs: TabConfig[] = [
     icon: Bot,
     label: 'My Agents',
   },
-]; 
+];
 
 export const TabsNavigation = ({ activeTab, onTabChange, onCreateAgent }: TabsNavigationProps) => {
   return (
@@ -36,11 +36,11 @@ export const TabsNavigation = ({ activeTab, onTabChange, onCreateAgent }: TabsNa
           className="max-w-xs"
         />
       </div>
-      
+
       <div className="flex-shrink-0">
-        <Button 
+        <Button
           onClick={onCreateAgent}
-          className="flex items-center gap-1 rounded-full px-4 py-2 font-bold"
+          className="flex items-center gap-1 rounded-4xl px-4 h-12 font-bold"
         >
           <Plus className="h-4 w-4" />
           Create

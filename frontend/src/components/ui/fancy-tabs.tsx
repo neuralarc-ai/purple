@@ -29,14 +29,14 @@ interface TabButtonProps {
 const TabButton = ({ value, isActive, onClick, children }: TabButtonProps) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  
+
   return (
     <button
       onClick={onClick}
       className={cn(
-        "relative flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-300 ease-out cursor-pointer",
+        "relative flex items-center justify-center gap-2 rounded-4xl px-4 h-10 text-sm font-medium transition-all duration-300 ease-out cursor-pointer",
         !isActive && (isDark ? "hover:bg-white/8" : "hover:bg-muted/60"),
-        isActive 
+        isActive
           ? isDark ? "text-white bg-sidebar/70" : "text-foreground bg-sidebar border border-border/50"
           : isDark ? "text-white/60 hover:text-white/85" : "text-muted-foreground hover:text-foreground"
       )}
@@ -49,11 +49,11 @@ const TabButton = ({ value, isActive, onClick, children }: TabButtonProps) => {
 export const FancyTabs = ({ tabs, activeTab, onTabChange, className }: FancyTabsProps) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  
+
   return (
-    <div 
+    <div
       className={cn(
-        "overflow-hidden grid w-full max-w-lg rounded-full p-1.5 gap-1.5",
+        "overflow-hidden grid w-full max-w-lg rounded-4xl h-12 p-1 gap-1",
         isDark ? "border-white/5" : "border-border/20 bg-muted",
         className
       )}
@@ -68,13 +68,13 @@ export const FancyTabs = ({ tabs, activeTab, onTabChange, className }: FancyTabs
       {tabs.map((tab) => {
         const Icon = tab.icon;
         return (
-          <TabButton 
+          <TabButton
             key={tab.value}
-            value={tab.value} 
+            value={tab.value}
             isActive={activeTab === tab.value}
             onClick={() => onTabChange(tab.value)}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-4 w-4" style={{ strokeWidth: '1.5px' }} />
             <span className="hidden sm:inline">{tab.label}</span>
             {tab.shortLabel && (
               <span className="sm:hidden">{tab.shortLabel}</span>

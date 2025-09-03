@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useBillingError } from '@/hooks/useBillingError';
 import { BillingErrorAlert } from '@/components/billing/usage-limit-alert';
 import { useAccounts } from '@/hooks/use-accounts';
+import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
 import { config, isLocalMode, isStagingMode } from '@/lib/config';
 import { useInitiateAgentWithInvalidation } from '@/hooks/react-query/dashboard/use-initiate-agent';
 
@@ -23,18 +24,42 @@ import { BillingModal } from '@/components/billing/billing-modal';
 import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 import { useThreadQuery } from '@/hooks/react-query/threads/use-threads';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
+
 import { AgentRunLimitDialog } from '@/components/thread/agent-run-limit-dialog';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { CustomAgentsSection } from './custom-agents-section';
 import { toast } from 'sonner';
 import { ReleaseBadge } from '../auth/release-badge';
 
+import { AnimatedThemeToggler } from '@/components/magicui/animated-theme-toggler';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+import { UseCases } from './use-cases';
+
+import { SecurityPopup } from '@/components/thread/chat-input/security-popup';
+import { useSecurityInterception } from '@/hooks/useSecurityInterception';
+import { TokenUsage } from './token-usage';
+
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
 export function DashboardContent() {
+  const searchParams = useSearchParams();
   const [inputValue, setInputValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
   const [autoSubmit, setAutoSubmit] = useState(false);
+  const chatInputRef = useRef<ChatInputHandles>(null);
+  const router = useRouter();
+  const isMobile = useIsMobile();
+  const { data: accounts } = useAccounts();
+  const { preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
+  const personalAccount = accounts?.find((account) => account.personal_account);
   const { 
     selectedAgentId, 
     setSelectedAgent, 
@@ -42,49 +67,60 @@ export function DashboardContent() {
     getCurrentAgent
   } = useAgentSelection();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
-  const { billingError, handleBillingError, clearBillingError } =
-    useBillingError();
+  const { billingError, handleBillingError, clearBillingError } = useBillingError();
   const [showAgentLimitDialog, setShowAgentLimitDialog] = useState(false);
   const [agentLimitData, setAgentLimitData] = useState<{
     runningCount: number;
     runningThreadIds: string[];
   } | null>(null);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const isMobile = useIsMobile();
-  const { data: accounts } = useAccounts();
-  const personalAccount = accounts?.find((account) => account.personal_account);
-  const chatInputRef = useRef<ChatInputHandles>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  // Fixed welcome message - use useMemo to prevent regeneration on every render
-  const welcomeMessages = [
-    "What do we tackle first, {name}?",
-    "Let's lock in - what's the focus, {name}?",
-    "What's the game plan, {name}?",
-    "Time to go higher, {name} — what's the move?",
-    "Ready to lift off, {name}?",
-    "Let's rise above the noise, {name}."
-  ];
+  // Handle prompt from URL
+  useEffect(() => {
+    const promptParam = searchParams?.get('prompt');
+    if (promptParam) {
+      // Decode but don't set the input value
+      const decodedPrompt = decodeURIComponent(promptParam);
+      // Just focus the input without setting the value
+      setTimeout(() => {
+        chatInputRef.current?.focus();
+      }, 100);
+    }
+  }, [searchParams]);
+  
+  // Security interception hook
+  const {
+    showPopup: showSecurityPopup,
+    popupMessage: securityPopupMessage,
+    popupType: securityPopupType,
+    shouldBlock: shouldBlockRequest,
+    closePopup: closeSecurityPopup,
+    shouldProceedWithRequest,
+  } = useSecurityInterception();
   
   const welcomeMessage = useMemo(() => {
-    // Get cached message or generate new one
+    // Check if we have a cached welcome message
     const cachedMessage = localStorage.getItem('cached_welcome_message');
     if (cachedMessage) {
       return cachedMessage;
     }
     
-    // Generate new random message and cache it
-    const randomMessage = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-    localStorage.setItem('cached_welcome_message', randomMessage);
-    return randomMessage;
-  }, []); // Empty dependency array - only runs once
+    // Use the specific message and cache it
+    const message = "Let's rise above the noise, {name}.";
+    localStorage.setItem('cached_welcome_message', message);
+    return message;
+  }, []); // Empty dependency array - uses cached message
 
   const [currentWelcomeMessage, setCurrentWelcomeMessage] = useState('');
 
-  // Cache user's name to avoid repeated processing
+  // Get user's preferred name or fallback to account name
   const cachedUserName = useMemo(() => {
+    // If we have a preferred name from the profile, use it
+    if (preferredName && !profileLoading) {
+      return preferredName;
+    }
+    
     // Check localStorage first for cached name
     const cachedName = localStorage.getItem('cached_user_name');
     
@@ -106,7 +142,7 @@ export function DashboardContent() {
     }
     
     return 'there';
-  }, [personalAccount?.name]);
+  }, [preferredName, profileLoading, personalAccount?.name]);
 
   // Set welcome message with cached user's name - only when dependencies change
   useEffect(() => {
@@ -134,8 +170,6 @@ export function DashboardContent() {
   const isHeliumAgent = selectedAgent?.metadata?.is_helium_default || false;
 
   const threadQuery = useThreadQuery(initiatedThreadId || '');
-
-  const enabledEnvironment = isStagingMode() || isLocalMode();
 
   useEffect(() => {
     console.log('🚀 Dashboard effect:', { 
@@ -180,6 +214,7 @@ export function DashboardContent() {
       reasoning_effort?: string;
       stream?: boolean;
       enable_context_manager?: boolean;
+      mode?: 'default' | 'agent';
     },
   ) => {
     if (
@@ -188,12 +223,24 @@ export function DashboardContent() {
     )
       return;
 
+    // Set local loading state immediately for instant feedback
+    setLocalLoading(true);
+    
+    // Set loading state immediately
+    // Check for security concerns on submission only
+    if (!shouldProceedWithRequest(message)) {
+      // Security popup is already shown by the hook
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      // Process files asynchronously to avoid blocking
       const files = chatInputRef.current?.getPendingFiles() || [];
       localStorage.removeItem(PENDING_PROMPT_KEY);
 
+      // Create FormData asynchronously
       const formData = new FormData();
       formData.append('prompt', message);
 
@@ -202,17 +249,28 @@ export function DashboardContent() {
         formData.append('agent_id', selectedAgentId);
       }
 
+      // Process files asynchronously
       files.forEach((file, index) => {
         const normalizedName = normalizeFilenameToNFC(file.name);
         formData.append('files', file, normalizedName);
       });
 
-      if (options?.model_name) formData.append('model_name', options.model_name);
-      formData.append('enable_thinking', String(options?.enable_thinking ?? false));
-      formData.append('reasoning_effort', options?.reasoning_effort ?? 'low');
-      formData.append('stream', String(options?.stream ?? true));
-      formData.append('enable_context_manager', String(options?.enable_context_manager ?? false));
+      // Handle mode-based configuration asynchronously
+      if (options?.mode) {
+        const modeConfig = getModeConfiguration(options.mode, options.enable_thinking);
+        formData.append('enable_thinking', String(options.enable_thinking ?? false));
+        formData.append('reasoning_effort', modeConfig.reasoning_effort);
+        formData.append('enable_context_manager', String(modeConfig.enable_context_manager));
+      } else {
+        // Fallback to direct options
+        if (options?.model_name) formData.append('model_name', options.model_name);
+        formData.append('enable_thinking', String(options?.enable_thinking ?? false));
+        formData.append('reasoning_effort', options?.reasoning_effort ?? 'low');
+        formData.append('stream', String(options?.stream ?? true));
+        formData.append('enable_context_manager', String(options?.enable_context_manager ?? false));
+      }
 
+      // Submit the request
       const result = await initiateAgentMutation.mutateAsync(formData);
 
       if (result.thread_id) {
@@ -238,17 +296,76 @@ export function DashboardContent() {
       }
     } finally {
       setIsSubmitting(false);
+      setLocalLoading(false); // Clear local loading state
+    }
+  };
+
+  // Helper function to get mode-based configuration
+  const getModeConfiguration = (mode: string, thinkingEnabled: boolean) => {
+    switch(mode) {
+      case 'default':
+        return {
+          enable_context_manager: false,
+          reasoning_effort: 'low',
+          enable_thinking: false,
+          max_tokens: 100, // Reduced for faster response
+          temperature: 0.3, // Lower temperature for more focused responses
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 5000, // 5 seconds timeout for ultra-fast response
+          chunk_size: 25, // Ultra-small chunks for immediate streaming
+          buffer_size: 50, // Smaller buffer for instant display
+          // Additional ultra-fast optimizations
+          enable_parallel_processing: true,
+          skip_initial_validation: true,
+          use_fast_model: true,
+          cache_responses: true
+        };
+      case 'agent':
+        return {
+          enable_context_manager: true,
+          reasoning_effort: thinkingEnabled ? 'high' : 'medium', // Reduced reasoning effort
+          enable_thinking: thinkingEnabled,
+          max_tokens: 500, // Reduced for faster response
+          temperature: 0.3,
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 15000, // 15 seconds for faster complex tasks
+          chunk_size: 75, // Smaller chunks for faster streaming
+          buffer_size: 150, // Smaller buffer for faster display
+          // Additional optimizations
+          enable_parallel_processing: true,
+          skip_initial_validation: false,
+          use_fast_model: false,
+          cache_responses: true
+        };
+      default:
+        return {
+          enable_context_manager: false,
+          reasoning_effort: 'low',
+          enable_thinking: false,
+          max_tokens: 100,
+          temperature: 0.3,
+          stream: true,
+          enable_tools: true,
+          enable_search: true,
+          response_timeout: 5000,
+          chunk_size: 25,
+          buffer_size: 50,
+          enable_parallel_processing: true,
+          skip_initial_validation: true,
+          use_fast_model: true,
+          cache_responses: true
+        };
     }
   };
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const pendingPrompt = localStorage.getItem(PENDING_PROMPT_KEY);
-
-      if (pendingPrompt) {
-        setInputValue(pendingPrompt);
-        setAutoSubmit(true);
-      }
+      // Clear any pending prompts from localStorage without setting them
+      localStorage.removeItem(PENDING_PROMPT_KEY);
     }, 200);
 
     return () => clearTimeout(timer);
@@ -273,6 +390,26 @@ export function DashboardContent() {
         showUsageLimitAlert={true}
       />
       <div className="flex flex-col h-screen w-full overflow-hidden">
+        {/* Top Right Controls */}
+        <div className="absolute py-4 right-12 z-10 flex items-center gap-3">
+          {/* Token Usage */}
+          <TokenUsage onUpgradeClick={() => setShowPaymentModal(true)} />
+          
+          {/* Theme Toggle Button */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="h-9 w-9 flex items-center justify-center rounded-full">
+                  <AnimatedThemeToggler className="h-4 w-4 cursor-pointer" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle theme</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        
         <div className="flex-1 overflow-y-auto">
           <div className="min-h-full flex flex-col">
             {/* {customAgentsEnabled && (
@@ -283,7 +420,7 @@ export function DashboardContent() {
             <div className="flex-1 flex items-center justify-center px-4 py-8">
               <div className="w-full max-w-[800px] flex flex-col items-center justify-center space-y-1 md:space-y-2">
                 <div className="flex flex-col items-center text-center w-full">
-                  <div className="tracking-tight text-2xl md:text-3xl font-normal text-foreground/90 libre-baskerville-regular">
+                  <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground/80 libre-baskerville-regular">
                     {currentWelcomeMessage.split('{name}').map((part, index, array) => {
                       if (index === array.length - 1) {
                         return part;
@@ -291,17 +428,26 @@ export function DashboardContent() {
                       return (
                         <span key={index}>
                           {part}
-                          <span className="libre-baskerville-bold">{cachedUserName}</span>
+                          <span>{cachedUserName}</span>
                         </span>
                       );
                     })}
                   </div>
                 </div>
                 <div className="w-full">
+                  {/* Security Popup - Positioned above the input */}
+                  <SecurityPopup
+                    isVisible={showSecurityPopup}
+                    onClose={closeSecurityPopup}
+                    message={securityPopupMessage}
+                    type={securityPopupType}
+                    showCloseButton={true}
+                  />
+                  
                   <ChatInput
                     ref={chatInputRef}
                     onSubmit={handleSubmit}
-                    loading={isSubmitting}
+                    loading={isSubmitting || localLoading} // Use local loading state for immediate feedback
                     placeholder="Assign a task or ask anything..."
                     value={inputValue}
                     onChange={setInputValue}
@@ -310,6 +456,22 @@ export function DashboardContent() {
                     onAgentSelect={setSelectedAgent}
                     enableAdvancedConfig={true}
                     onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
+                  />
+                  <UseCases 
+                    router={router}
+                    onUseCaseSelect={(prompt) => {
+                      setInputValue(prompt);
+                      // Focus the input and set cursor to the end
+                      setTimeout(() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) {
+                          textarea.focus();
+                          // Move cursor to the end of the text
+                          const length = prompt.length;
+                          textarea.setSelectionRange(length, length);
+                        }
+                      }, 0);
+                    }} 
                   />
                 </div>
               </div>
@@ -324,6 +486,13 @@ export function DashboardContent() {
               </div>
             )} */}
           </div>
+        </div>
+        
+        {/* Disclaimer text at bottom */}
+        <div className="flex-shrink-0 px-4 py-2 text-center">
+          <p className="text-xs text-muted-foreground">
+            Helium can make mistakes. Check important info. See Cookie Preferences.
+          </p>
         </div>
         
         <BillingErrorAlert

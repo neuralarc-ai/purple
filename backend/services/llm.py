@@ -10,17 +10,20 @@ This module provides a unified interface for making API calls to different LLM p
 - Comprehensive error handling and logging
 """
 
+import os
 from typing import Union, Dict, Any, Optional, AsyncGenerator, List
 import os
 import litellm
 from litellm.files.main import ModelResponse
 from utils.logger import logger
 from utils.config import config
+from utils.constants import MODEL_NAME_ALIASES
+
 
 # litellm.set_verbose=True
 # Let LiteLLM auto-adjust params and drop unsupported ones (e.g., GPT-5 temperature!=1)
-litellm.modify_params = True
-litellm.drop_params = True
+# litellm.modify_params = True
+# litellm.drop_params = True
 
 # Constants
 MAX_RETRIES = 3
@@ -30,7 +33,7 @@ class LLMError(Exception):
 
 def setup_api_keys() -> None:
     """Set up API keys from environment variables."""
-    providers = ['OPENAI', 'ANTHROPIC', 'GROQ', 'OPENROUTER', 'XAI', 'MORPH', 'GEMINI']
+    providers = ['OPENROUTER', 'GEMINI']
     for provider in providers:
         key = getattr(config, f'{provider}_API_KEY')
         if key:
@@ -39,23 +42,23 @@ def setup_api_keys() -> None:
             logger.warning(f"No API key found for provider: {provider}")
 
     # Set up OpenRouter API base if not already set
-    if config.OPENROUTER_API_KEY and config.OPENROUTER_API_BASE:
-        os.environ['OPENROUTER_API_BASE'] = config.OPENROUTER_API_BASE
-        logger.debug(f"Set OPENROUTER_API_BASE to {config.OPENROUTER_API_BASE}")
+    # if config.OPENROUTER_API_KEY and config.OPENROUTER_API_BASE:
+    #     os.environ['OPENROUTER_API_BASE'] = config.OPENROUTER_API_BASE
+    #     logger.debug(f"Set OPENROUTER_API_BASE to {config.OPENROUTER_API_BASE}")
 
     # Set up AWS Bedrock credentials
-    aws_access_key = config.AWS_ACCESS_KEY_ID
-    aws_secret_key = config.AWS_SECRET_ACCESS_KEY
-    aws_region = config.AWS_REGION_NAME
+    # aws_access_key = config.AWS_ACCESS_KEY_ID
+    # aws_secret_key = config.AWS_SECRET_ACCESS_KEY
+    # aws_region = config.AWS_REGION_NAME
 
-    if aws_access_key and aws_secret_key and aws_region:
-        logger.debug(f"AWS credentials set for Bedrock in region: {aws_region}")
-        # Configure LiteLLM to use AWS credentials
-        os.environ['AWS_ACCESS_KEY_ID'] = aws_access_key
-        os.environ['AWS_SECRET_ACCESS_KEY'] = aws_secret_key
-        os.environ['AWS_REGION_NAME'] = aws_region
-    else:
-        logger.warning(f"Missing AWS credentials for Bedrock integration - access_key: {bool(aws_access_key)}, secret_key: {bool(aws_secret_key)}, region: {aws_region}")
+    # if aws_access_key and aws_secret_key and aws_region:
+    #     logger.debug(f"AWS credentials set for Bedrock in region: {aws_region}")
+    #     # Configure LiteLLM to use AWS credentials
+    #     os.environ['AWS_ACCESS_KEY_ID'] = aws_access_key
+    #     os.environ['AWS_SECRET_ACCESS_KEY'] = aws_secret_key
+    #     os.environ['AWS_REGION_NAME'] = aws_region
+    # else:
+    #     logger.warning(f"Missing AWS credentials for Bedrock integration - access_key: {bool(aws_access_key)}, secret_key: {bool(aws_secret_key)}, region: {aws_region}")
 
     # Vertex AI / Gemini via LiteLLM
     # Prefer explicit VERTEXAI_*; fall back to GOOGLE_CLOUD_* if present
@@ -64,42 +67,46 @@ def setup_api_keys() -> None:
 
     if effective_vertex_project:
         os.environ['VERTEXAI_PROJECT'] = effective_vertex_project
+        logger.debug(f"Vertex AI project set to: {effective_vertex_project}")
     if effective_vertex_location:
         os.environ['VERTEXAI_LOCATION'] = effective_vertex_location
+        logger.debug(f"Vertex AI location set to: {effective_vertex_location}")
     if config.GOOGLE_APPLICATION_CREDENTIALS:
         os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = config.GOOGLE_APPLICATION_CREDENTIALS
+        logger.debug(f"Google credentials set to: {config.GOOGLE_APPLICATION_CREDENTIALS}")
 
 
 def get_openrouter_fallback(model_name: str) -> Optional[str]:
     """Get OpenRouter fallback model for a given model name."""
     # Skip if already using OpenRouter
-    if model_name.startswith("openrouter/"):
-        return None
+    # if model_name.startswith("openrouter/"):
+    #     return None
     
-    # Map models to their OpenRouter equivalents
-    fallback_mapping = {
-        "anthropic/claude-3-7-sonnet-latest": "openrouter/anthropic/claude-3.7-sonnet",
-        "anthropic/claude-sonnet-4-20250514": "openrouter/anthropic/claude-sonnet-4",
-        "xai/grok-4": "openrouter/x-ai/grok-4",
-        "gemini/gemini-2.5-pro": "openrouter/google/gemini-2.5-pro",
-        "gemini/gemini-2.5-flash": "openrouter/google/gemini-2.5-flash",
-        "gemini/gemini-2.0-flash": "openrouter/google/gemini-2.0-flash",
-    }
+    # # Map models to their OpenRouter equivalents
+    # fallback_mapping = {
+    #     # "anthropic/claude-3-7-sonnet-latest": "openrouter/anthropic/claude-3.7-sonnet",
+    #     # "anthropic/claude-sonnet-4-20250514": "openrouter/anthropic/claude-sonnet-4",
+    #     # "vertex_ai/claude-3-5-sonnet@20240620": "openrouter/anthropic/claude-sonnet-4",
+    #     # "xai/grok-4": "openrouter/x-ai/grok-4",
+    #     # "gemini/gemini-2.5-pro": "openrouter/google/gemini-2.5-pro",
+    #     # "gemini/gemini-2.5-flash": "openrouter/google/gemini-2.5-flash",
+    #     "z-ai/glm-4.5:free": "openrouter/z-ai/glm-4.5-air:free",
+    # }
     
-    # Check for exact match first
-    if model_name in fallback_mapping:
-        return fallback_mapping[model_name]
+    # # Check for exact match first
+    # if model_name in fallback_mapping:
+    #     return fallback_mapping[model_name]
     
-    # Check for partial matches (e.g., bedrock models)
-    for key, value in fallback_mapping.items():
-        if key in model_name:
-            return value
+    # # Check for partial matches (e.g., bedrock models)
+    # for key, value in fallback_mapping.items():
+    #     if key in model_name:
+    #         return value
     
-    # Default fallbacks by provider
-    if "claude" in model_name.lower() or "anthropic" in model_name.lower():
-        return "openrouter/anthropic/claude-sonnet-4"
-    elif "xai" in model_name.lower() or "grok" in model_name.lower():
-        return "openrouter/x-ai/grok-4"
+    # # Default fallbacks by provider
+    # if "claude" in model_name.lower() or "anthropic" in model_name.lower():
+    #     return "openrouter/anthropic/claude-sonnet-4"
+    # elif "xai" in model_name.lower() or "grok" in model_name.lower():
+    #     return "openrouter/x-ai/grok-4"
     
     return None
 
@@ -108,10 +115,10 @@ def _configure_token_limits(params: Dict[str, Any], model_name: str, max_tokens:
     if max_tokens is None:
         return
     
-    if model_name.startswith("bedrock/") and "claude-3-7" in model_name:
+    if model_name.startswith("bedrock/") and "claude-4" in model_name:
         # For Claude 3.7 in Bedrock, do not set max_tokens or max_tokens_to_sample
         # as it causes errors with inference profiles
-        logger.debug(f"Skipping max_tokens for Claude 3.7 model: {model_name}")
+        logger.debug(f"Skipping max_tokens for Claude 4 model: {model_name}")
         return
     
     is_openai_o_series = 'o1' in model_name
@@ -145,6 +152,20 @@ def _apply_anthropic_caching(messages: List[Dict[str, Any]]) -> None:
                     item["cache_control"] = {"type": "ephemeral"}
                     cache_control_count += 1
 
+def _apply_vertex_claude_caching(messages: List[Dict[str, Any]]) -> None:
+    """Apply Vertex AI Claude caching to the messages (same as Anthropic)."""
+    # Vertex AI Claude uses the same caching mechanism as Anthropic
+    _apply_anthropic_caching(messages)
+
+def _apply_gemini_caching(params: Dict[str, Any]) -> None:
+    """Apply Gemini caching parameters."""
+    # Gemini 2.5+ supports implicit caching by default
+    # We can enable explicit caching for better control
+    if "gemini" in params.get("model", "").lower():
+        # Enable caching for Gemini models
+        params["cache"] = True
+        logger.debug("Enabled Gemini caching")
+
 def _configure_anthopic(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
     """Configure Anthropic-specific parameters."""
     if not ("claude" in model_name.lower() or "anthropic" in model_name.lower()):
@@ -154,7 +175,7 @@ def _configure_anthopic(params: Dict[str, Any], model_name: str, messages: List[
         "anthropic-beta": "output-128k-2025-02-19"
     }
     logger.debug("Added Anthropic-specific headers")
-    _apply_anthropic_caching(messages)
+    # Caching is now handled centrally in _configure_caching
 
 def _configure_openrouter(params: Dict[str, Any], model_name: str) -> None:
     """Configure OpenRouter-specific parameters."""
@@ -175,72 +196,118 @@ def _configure_openrouter(params: Dict[str, Any], model_name: str) -> None:
         params["extra_headers"] = extra_headers
         logger.debug(f"Added OpenRouter site URL and app name to headers")
 
-def _configure_bedrock(params: Dict[str, Any], model_name: str, model_id: Optional[str]) -> None:
-    """Configure Bedrock-specific parameters."""
-    if not model_name.startswith("bedrock/"):
-        return
+# def _configure_bedrock(params: Dict[str, Any], model_name: str, model_id: Optional[str]) -> None:
+#     """Configure Bedrock-specific parameters."""
+#     if not model_name.startswith("bedrock/"):
+#         return
     
-    logger.debug(f"Preparing AWS Bedrock parameters for model: {model_name}")
+#     logger.debug(f"Preparing AWS Bedrock parameters for model: {model_name}")
 
-    # Auto-set model_id for Claude 3.7 Sonnet if not provided
-    if not model_id and "anthropic.claude-3-7-sonnet" in model_name:
-        params["model_id"] = "arn:aws:bedrock:us-west-2:935064898258:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0"
-        logger.debug(f"Auto-set model_id for Claude 3.7 Sonnet: {params['model_id']}")
+#     # Auto-set model_id for Claude 3.7 Sonnet if not provided
+#     if not model_id and "anthropic.claude-3-7-sonnet" in model_name:
+#         params["model_id"] = "arn:aws:bedrock:us-west-2:935064898258:inference-profile/us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+#         logger.debug(f"Auto-set model_id for Claude 3.7 Sonnet: {params['model_id']}")
 
-def _configure_openai_gpt5(params: Dict[str, Any], model_name: str) -> None:
-    """Configure OpenAI GPT-5 specific parameters."""
-    if "gpt-5" not in model_name:
-        return
+# def _configure_openai_gpt5(params: Dict[str, Any], model_name: str) -> None:
+#     """Configure OpenAI GPT-5 specific parameters."""
+#     if "gpt-5" not in model_name:
+#         return
     
 
-    # Drop unsupported temperature param (only default 1 allowed)
-    if "temperature" in params and params["temperature"] != 1:
-        params.pop("temperature", None)
+#     # Drop unsupported temperature param (only default 1 allowed)
+#     if "temperature" in params and params["temperature"] != 1:
+#         params.pop("temperature", None)
 
-    # Request priority service tier when calling OpenAI directly
+#     # Request priority service tier when calling OpenAI directly
 
-    # Pass via both top-level and extra_body for LiteLLM compatibility
-    if not model_name.startswith("openrouter/"):
-        params["service_tier"] = "priority"
-        extra_body = params.get("extra_body", {})
-        if "service_tier" not in extra_body:
-            extra_body["service_tier"] = "priority"
-        params["extra_body"] = extra_body
+#     # Pass via both top-level and extra_body for LiteLLM compatibility
+#     if not model_name.startswith("openrouter/"):
+#         params["service_tier"] = "priority"
+#         extra_body = params.get("extra_body", {})
+#         if "service_tier" not in extra_body:
+#             extra_body["service_tier"] = "priority"
+#         params["extra_body"] = extra_body
 
-def _configure_kimi_k2(params: Dict[str, Any], model_name: str) -> None:
-    """Configure Kimi K2-specific parameters."""
-    is_kimi_k2 = "kimi-k2" in model_name.lower() or model_name.startswith("moonshotai/kimi-k2")
-    if not is_kimi_k2:
-        return
+# def _configure_kimi_k2(params: Dict[str, Any], model_name: str) -> None:
+#     """Configure Kimi K2-specific parameters."""
+#     is_kimi_k2 = "kimi-k2" in model_name.lower() or model_name.startswith("moonshotai/kimi-k2")
+#     if not is_kimi_k2:
+#         return
     
-    params["provider"] = {
-        "order": ["groq", "moonshotai"] #, "groq", "together/fp8", "novita/fp8", "baseten/fp8", 
-    }
+#     params["provider"] = {
+#         "order": ["groq", "moonshotai"] #, "groq", "together/fp8", "novita/fp8", "baseten/fp8", 
+#     }
 
 def _configure_vertex_ai(params: Dict[str, Any], model_name: str) -> None:
-    """Configure Vertex AI-specific parameters for Gemini models via LiteLLM."""
+    """Configure Vertex AI-specific parameters for Gemini and Claude models via LiteLLM."""
     is_vertex_route = model_name.startswith("vertex_ai/")
+    is_vertex_legacy = model_name.startswith("vertex/")  # Handle legacy vertex/ prefix
     is_gemini_direct = model_name.startswith("gemini/")
-    if not (is_vertex_route or is_gemini_direct):
+    if not (is_vertex_route or is_vertex_legacy or is_gemini_direct):
         return
 
+    # Extract region from model name if specified (e.g., vertex_ai/claude-sonnet-4@20250514-us-east5)
+    model_region = None
+    if (is_vertex_route or is_vertex_legacy) and "-" in model_name:
+        # Check if model name contains region specification
+        parts = model_name.split("-")
+        if len(parts) >= 2:
+            potential_region = parts[-1]
+            # Validate if it looks like a region (e.g., us-east5, us-central1)
+            if potential_region.startswith("us-") or potential_region.startswith("europe-") or potential_region.startswith("asia-"):
+                model_region = potential_region
+
     # If calling Vertex route, pass dynamic params when available
-    if is_vertex_route:
+    if is_vertex_route or is_vertex_legacy:
         # Credentials could be json string or path
         if config.VERTEXAI_CREDENTIALS:
             params["vertex_credentials"] = config.VERTEXAI_CREDENTIALS
         if config.VERTEXAI_PROJECT:
             params["vertex_project"] = config.VERTEXAI_PROJECT
-        if config.VERTEXAI_LOCATION:
-            params["vertex_location"] = config.VERTEXAI_LOCATION
+        
+        # Determine the appropriate region based on model type
+        if model_region:
+            # Use explicit region from model name if specified
+            params["vertex_location"] = model_region
+            logger.debug(f"Using model-specific Vertex AI region: {model_region}")
+        else:
+            # Auto-detect region based on model type
+            if "claude" in model_name.lower():
+                # Claude models use us-east5
+                params["vertex_location"] = "us-east5"
+                logger.debug(f"Claude model detected, using us-east5 region")
+            elif "gemini" in model_name.lower():
+                # Gemini models use us-central1
+                params["vertex_location"] = "us-central1"
+                logger.debug(f"Gemini model detected, using us-central1 region")
+            else:
+                # Fall back to config or default
+                if config.VERTEXAI_LOCATION:
+                    params["vertex_location"] = config.VERTEXAI_LOCATION
+                elif config.GOOGLE_CLOUD_LOCATION:
+                    params["vertex_location"] = config.GOOGLE_CLOUD_LOCATION
+                else:
+                    # Default to us-east5 for unknown models
+                    params["vertex_location"] = "us-east5"
+                    logger.debug(f"Unknown model type, defaulting to us-east5 region")
 
+    # Check if this is a Claude model on Vertex AI
+    is_vertex_claude = (is_vertex_route or is_vertex_legacy) and "claude" in model_name.lower()
+    
     # Support reasoning mapping for Gemini per LiteLLM docs using reasoning_effort
+    # For Claude models on Vertex AI, we use the thinking parameter
     # (Handled centrally in _configure_thinking for other providers. For Vertex, we keep effort on params)
 
     # Ensure token param compatibility
     if "max_tokens" in params:
-        # For Gemini unified or vertex routes, LiteLLM handles this but we align to max_output_tokens if needed
-        params["max_output_tokens"] = params.pop("max_tokens")
+        if is_vertex_claude:
+            # For Claude models on Vertex AI, keep max_tokens as is
+            # LiteLLM will handle the mapping to the appropriate parameter
+            pass
+
+        else:
+            # For Gemini unified or vertex routes, LiteLLM handles this but we align to max_output_tokens if needed
+            params["max_output_tokens"] = params.pop("max_tokens")
 
 def _configure_thinking(params: Dict[str, Any], model_name: str, enable_thinking: Optional[bool], reasoning_effort: Optional[str]) -> None:
     """Configure reasoning/thinking parameters for supported models."""
@@ -251,29 +318,35 @@ def _configure_thinking(params: Dict[str, Any], model_name: str, enable_thinking
     effort_level = reasoning_effort or 'low'
     is_anthropic = "anthropic" in model_name.lower() or "claude" in model_name.lower()
     is_xai = "xai" in model_name.lower() or model_name.startswith("xai/")
-    is_vertex_gemini = model_name.startswith("vertex_ai/") or model_name.startswith("gemini/")
+    is_vertex_gemini = model_name.startswith("vertex_ai/") or model_name.startswith("vertex/") or model_name.startswith("gemini/")
+    is_vertex_claude = (model_name.startswith("vertex_ai/") or model_name.startswith("vertex/")) and "claude" in model_name.lower()
     
-    if is_anthropic:
+    if is_anthropic and not is_vertex_claude:
+        # Standard Anthropic models (not on Vertex AI)
         params["reasoning_effort"] = effort_level
         params["temperature"] = 1.0  # Required by Anthropic when reasoning_effort is used
         logger.info(f"Anthropic thinking enabled with reasoning_effort='{effort_level}'")
-    elif is_xai:
-        params["reasoning_effort"] = effort_level
-        logger.info(f"xAI thinking enabled with reasoning_effort='{effort_level}'")
-    elif is_vertex_gemini:
+    elif is_vertex_claude:
+        # Claude models on Vertex AI use the thinking parameter
+        params["thinking"] = {"type": "enabled", "budget_tokens": 1024}
+        logger.info(f"Vertex AI Claude thinking enabled with thinking parameter")
+    # elif is_xai:
+    #     params["reasoning_effort"] = effort_level
+    #     logger.info(f"xAI thinking enabled with reasoning_effort='{effort_level}'")
+    elif is_vertex_gemini and not is_vertex_claude:
         # LiteLLM maps OpenAI-style reasoning_effort to Gemini thinking budget
         params["reasoning_effort"] = effort_level
         logger.info(f"Vertex Gemini thinking enabled with reasoning_effort='{effort_level}'")
 
-def _add_fallback_model(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
-    """Add fallback model to the parameters."""
-    fallback_model = get_openrouter_fallback(model_name)
-    if fallback_model:
-        params["fallbacks"] = [{
-            "model": fallback_model,
-            "messages": messages,
-        }]
-        logger.debug(f"Added OpenRouter fallback for model: {model_name} to {fallback_model}")
+# def _add_fallback_model(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
+#     """Add fallback model to the parameters."""
+#     fallback_model = get_openrouter_fallback(model_name)
+#     if fallback_model:
+#         params["fallbacks"] = [{
+#             "model": fallback_model,
+#             "messages": messages,
+#         }]
+#         logger.debug(f"Added OpenRouter fallback for model: {model_name} to {fallback_model}")
 
 def _add_tools_config(params: Dict[str, Any], tools: Optional[List[Dict[str, Any]]], tool_choice: str) -> None:
     """Add tools configuration to parameters."""
@@ -286,10 +359,29 @@ def _add_tools_config(params: Dict[str, Any], tools: Optional[List[Dict[str, Any
     })
     logger.debug(f"Added {len(tools)} tools to API parameters")
 
+def _configure_caching(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
+    """Configure caching for supported models."""
+    is_anthropic = "anthropic" in model_name.lower() or "claude" in model_name.lower()
+    is_vertex_claude = (model_name.startswith("vertex_ai/") or model_name.startswith("vertex/")) and "claude" in model_name.lower()
+    is_gemini = "gemini" in model_name.lower()
+    
+    if is_anthropic and not is_vertex_claude:
+        # Standard Anthropic models
+        _apply_anthropic_caching(messages)
+        logger.debug("Applied Anthropic caching")
+    elif is_vertex_claude:
+        # Vertex AI Claude models
+        _apply_vertex_claude_caching(messages)
+        logger.debug("Applied Vertex AI Claude caching")
+    elif is_gemini:
+        # Gemini models
+        _apply_gemini_caching(params)
+        logger.debug("Applied Gemini caching")
+
 def prepare_params(
     messages: List[Dict[str, Any]],
     model_name: str,
-    temperature: float = 0,
+    temperature: float = 0.3,
     max_tokens: Optional[int] = None,
     response_format: Optional[Any] = None,
     tools: Optional[List[Dict[str, Any]]] = None,
@@ -325,20 +417,21 @@ def prepare_params(
     # Add tools if provided
     _add_tools_config(params, tools, tool_choice)
     # Add Anthropic-specific parameters
-    _configure_anthopic(params, model_name, params["messages"])
+    # _configure_anthopic(params, model_name, params["messages"])
     # Add OpenRouter-specific parameters
     _configure_openrouter(params, model_name)
-    # Add Bedrock-specific parameters
-    _configure_bedrock(params, model_name, model_id)
+    # # Add Bedrock-specific parameters
+    # _configure_bedrock(params, model_name, model_id)
     
-    _add_fallback_model(params, model_name, messages)
+    # _add_fallback_model(params, model_name, messages)
     # Add OpenAI GPT-5 specific parameters
-    _configure_openai_gpt5(params, model_name)
+    # _configure_openai_gpt5(params, model_name)
     # Add Kimi K2-specific parameters
-    _configure_kimi_k2(params, model_name)
+    # _configure_kimi_k2(params, model_name)
     # Add Vertex/Gemini-specific parameters
     _configure_vertex_ai(params, model_name)
     _configure_thinking(params, model_name, enable_thinking, reasoning_effort)
+    _configure_caching(params, model_name, messages)
 
     return params
 
@@ -346,7 +439,7 @@ async def make_llm_api_call(
     messages: List[Dict[str, Any]],
     model_name: str,
     response_format: Optional[Any] = None,
-    temperature: float = 0,
+    temperature: float = 0.3,
     max_tokens: Optional[int] = None,
     tools: Optional[List[Dict[str, Any]]] = None,
     tool_choice: str = "auto",
@@ -384,12 +477,15 @@ async def make_llm_api_call(
         LLMRetryError: If API call fails after retries
         LLMError: For other API-related errors
     """
+    # Resolve model alias if present
+    resolved_model_name = MODEL_NAME_ALIASES.get(model_name, model_name)
+    
     # debug <timestamp>.json messages
-    logger.debug(f"Making LLM API call to model: {model_name} (Thinking: {enable_thinking}, Effort: {reasoning_effort})")
-    logger.debug(f"📡 API Call: Using model {model_name}")
+    logger.debug(f"Making LLM API call to model: {resolved_model_name} (original: {model_name}, Thinking: {enable_thinking}, Effort: {reasoning_effort})")
+    logger.debug(f"📡 API Call: Using model {resolved_model_name}")
     params = prepare_params(
         messages=messages,
-        model_name=model_name,
+        model_name=resolved_model_name,
         temperature=temperature,
         max_tokens=max_tokens,
         response_format=response_format,
@@ -406,7 +502,7 @@ async def make_llm_api_call(
     try:
         # Use LiteLLM for models
         response = await litellm.acompletion(**params)
-        logger.debug(f"Successfully received API response from {model_name}")
+        logger.debug(f"Successfully received API response from {resolved_model_name}")
         # logger.debug(f"Response: {response}")
         return response
 

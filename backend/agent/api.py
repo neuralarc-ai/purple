@@ -24,6 +24,7 @@ from services.llm import make_llm_api_call
 from run_agent_background import run_agent_background, _cleanup_redis_response_list, update_agent_run_status
 from utils.constants import MODEL_NAME_ALIASES
 from flags.flags import is_enabled
+from utils.security import is_malicious_input
 
 from .config_helper import extract_agent_config, build_unified_config
 from .utils import check_agent_run_limit
@@ -327,7 +328,11 @@ async def start_agent(
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
     logger.debug(f"Resolved model name: {resolved_model}")
 
-    # Update model_name to use the resolved version
+    # Hard override: in production, always force Vertex Claude Sonnet 4
+    if os.getenv("ENV_MODE", "local").lower() == "production":
+        resolved_model = "vertex_ai/claude-sonnet-4@20250514"
+
+    # Update model_name to use the resolved version (or forced one)
     model_name = resolved_model
 
     logger.debug(f"Starting new agent for thread: {thread_id} with config: model={model_name}, thinking={body.enable_thinking}, effort={body.reasoning_effort}, stream={body.stream}, context_manager={body.enable_context_manager} (Instance: {instance_id})")
@@ -528,6 +533,99 @@ async def stop_agent(agent_run_id: str, user_id: str = Depends(get_current_user_
     await get_agent_run_with_access_check(client, agent_run_id, user_id)
     await stop_agent_run(agent_run_id)
     return {"status": "stopped"}
+
+async def _publish_control_signal(agent_run_id: str, signal: str):
+    """Publish a control signal to the agent run control channels."""
+    global_control_channel = f"agent_run:{agent_run_id}:control"
+    try:
+        await redis.publish(global_control_channel, signal)
+        logger.debug(f"Published {signal} to {global_control_channel}")
+    except Exception as e:
+        logger.error(f"Failed to publish {signal} to {global_control_channel}: {str(e)}")
+    # Also broadcast to instance-specific channels for immediate delivery
+    try:
+        instance_keys = await redis.keys(f"active_run:*:{agent_run_id}")
+        for key in instance_keys:
+            parts = key.split(":")
+            if len(parts) == 3:
+                instance_id_from_key = parts[1]
+                instance_control_channel = f"agent_run:{agent_run_id}:control:{instance_id_from_key}"
+                try:
+                    await redis.publish(instance_control_channel, signal)
+                except Exception as e:
+                    logger.warning(f"Failed to publish {signal} to {instance_control_channel}: {str(e)}")
+    except Exception as e:
+        logger.warning(f"Failed to enumerate instance keys for {agent_run_id}: {str(e)}")
+
+@router.post("/agent-run/{agent_run_id}/pause")
+async def pause_agent(agent_run_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
+    """Cooperatively pause a running agent."""
+    structlog.contextvars.bind_contextvars(agent_run_id=agent_run_id)
+    client = await db.client
+    await get_agent_run_with_access_check(client, agent_run_id, user_id)
+    await _publish_control_signal(agent_run_id, "PAUSE")
+    return {"status": "pausing"}
+
+@router.post("/agent-run/{agent_run_id}/resume")
+async def resume_agent(agent_run_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
+    """Resume a paused agent."""
+    structlog.contextvars.bind_contextvars(agent_run_id=agent_run_id)
+    client = await db.client
+    await get_agent_run_with_access_check(client, agent_run_id, user_id)
+    await _publish_control_signal(agent_run_id, "RESUME")
+    return {"status": "resuming"}
+
+@router.post("/agent-run/{agent_run_id}/takeover")
+async def takeover_agent(agent_run_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
+    """Signal UI manual takeover; pauses run and switches control mode."""
+    structlog.contextvars.bind_contextvars(agent_run_id=agent_run_id)
+    client = await db.client
+    await get_agent_run_with_access_check(client, agent_run_id, user_id)
+    await _publish_control_signal(agent_run_id, "TAKEOVER")
+    return {"status": "takeover"}
+
+@router.post("/agent-run/{agent_run_id}/release")
+async def release_agent(agent_run_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
+    """Release manual takeover and allow automation to continue."""
+    structlog.contextvars.bind_contextvars(agent_run_id=agent_run_id)
+    client = await db.client
+    await get_agent_run_with_access_check(client, agent_run_id, user_id)
+    await _publish_control_signal(agent_run_id, "RELEASE")
+    return {"status": "released"}
+
+class ManualEvent(BaseModel):
+    type: str
+    data: Dict[str, Any]
+
+@router.post("/agent-run/{agent_run_id}/manual-event")
+async def log_manual_event(
+    agent_run_id: str,
+    event: ManualEvent,
+    user_id: str = Depends(get_current_user_id_from_jwt)
+):
+    """Append a manual event to the unified event stream for this run."""
+    structlog.contextvars.bind_contextvars(agent_run_id=agent_run_id)
+    client = await db.client
+    await get_agent_run_with_access_check(client, agent_run_id, user_id)
+
+    response_list_key = f"agent_run:{agent_run_id}:responses"
+    response_channel = f"agent_run:{agent_run_id}:new_response"
+
+    payload = {
+        "type": "manual_event",
+        "event_type": event.type,
+        "data": event.data,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "source": "manual",
+        "user_id": user_id,
+    }
+    try:
+        await redis.rpush(response_list_key, json.dumps(payload))
+        await redis.publish(response_channel, "new")
+    except Exception as e:
+        logger.error(f"Failed to append manual event for {agent_run_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to record manual event")
+    return {"status": "ok"}
 
 @router.get("/thread/{thread_id}/agent-runs")
 async def get_agent_runs(thread_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
@@ -860,7 +958,8 @@ async def stream_agent_run(
                     elif queue_item["type"] == "error":
                         logger.error(f"Listener error for {agent_run_id}: {queue_item['data']}")
                         terminate_stream = True
-                        yield f"data: {json.dumps({'type': 'status', 'status': 'error'})}\n\n"
+                        # Include a descriptive message so clients don't receive an empty object
+                        yield f"data: {json.dumps({'type': 'status', 'status': 'error', 'message': str(queue_item.get('data') or 'Stream listener error')})}\n\n"
                         break
 
                 except asyncio.CancelledError:
@@ -958,6 +1057,9 @@ async def initiate_agent_with_files(
     files: List[UploadFile] = File(default=[]),
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
+    # Security check: block prompt injection or malware content
+    if is_malicious_input(prompt or ""):
+        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     """
     Initiate a new agent session with optional file attachments.
 
@@ -971,8 +1073,14 @@ async def initiate_agent_with_files(
     logger.debug(f"Original model_name from request: {model_name}")
 
     if model_name is None:
-        model_name = "vertex_ai/gemini-2.5-flash"
-        logger.debug(f"Using default model: {model_name}")
+        # In production, force Vertex Claude Sonnet 4
+        env_mode = os.getenv("ENV_MODE", "local").lower()
+        if env_mode == "production":
+            model_name = "vertex_ai/claude-sonnet-4@20250514"
+            logger.debug(f"Production environment: using fixed model: {model_name}")
+        else:
+            model_name = "vertex_ai/gemini-2.5-flash"
+            logger.debug(f"Non-production environment: using default model: {model_name}")
 
     # Log the model name after alias resolution
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
@@ -1390,16 +1498,16 @@ async def get_agents(
 
                 for row in (versions_result.data or []):
                     config = row.get('config') or {}
-                    tools = config.get('tools') or {}
+                    agent_tools_config = config.get('tools') or {}
                     version_dict = {
                         'version_id': row['version_id'],
                         'agent_id': row['agent_id'],
                         'version_number': row['version_number'],
                         'version_name': row['version_name'],
                         'system_prompt': config.get('system_prompt', ''),
-                        'configured_mcps': tools.get('mcp', []),
-                        'custom_mcps': tools.get('custom_mcp', []),
-                        'agentpress_tools': tools.get('agentpress', {}),
+                        'configured_mcps': agent_tools_config.get('mcp', []),
+                        'custom_mcps': agent_tools_config.get('custom_mcp', []),
+                        'agentpress_tools': agent_tools_config.get('agentpress', {}),
                         'is_active': row.get('is_active', False),
                         'created_at': row.get('created_at'),
                         'updated_at': row.get('updated_at') or row.get('created_at'),
@@ -1933,9 +2041,14 @@ async def create_agent(
         
         try:
             version_service = await _get_version_service()
-            from agent.helium_config import HELIUM_CONFIG
             from agent.config_helper import _get_default_agentpress_tools
-            system_prompt = HELIUM_CONFIG["system_prompt"]
+            
+            # Use user-provided system prompt or basic default, not Helium's prompt
+            if agent_data.system_prompt:
+                system_prompt = agent_data.system_prompt
+            else:
+                # Basic default prompt for new agents
+                system_prompt = "You are a helpful AI assistant. You can help users with various tasks including answering questions, providing information, and assisting with problem-solving."
             
             # Use default tools if none specified, ensuring builder tools are included
             agentpress_tools = agent_data.agentpress_tools if agent_data.agentpress_tools else _get_default_agentpress_tools()
@@ -3253,6 +3366,8 @@ async def add_message_to_thread(
     user_id: str = Depends(get_current_user_id_from_jwt),
 ):
     """Add a message to a thread"""
+    if is_malicious_input(message or ""):
+        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     logger.debug(f"Adding message to thread: {thread_id}")
     client = await db.client
     await verify_thread_access(client, thread_id, user_id)
@@ -3279,6 +3394,8 @@ async def create_message(
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
     """Create a new message in a thread."""
+    if is_malicious_input(getattr(message_data, 'content', '') or ""):
+        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     logger.debug(f"Creating message in thread: {thread_id}")
     client = await db.client
     

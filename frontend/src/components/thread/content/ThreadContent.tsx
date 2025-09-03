@@ -1,14 +1,16 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { CircleDashed, CheckCircle, AlertTriangle } from 'lucide-react';
+import { CircleDashed, CheckCircle, AlertTriangle, Copy, ThumbsUp, ThumbsDown, RotateCcw, Check, Pencil, X } from 'lucide-react';
 import {
   UnifiedMessage,
   ParsedContent,
   ParsedMetadata,
 } from '@/components/thread/types';
-import { FileAttachmentGrid } from '@/components/thread/file-attachment';
+import { toast } from 'sonner';
+import { FileAttachmentGrid, ThreadFilesDisplay } from '@/components/thread/file-attachment';
 import { useFilePreloader } from '@/hooks/react-query/files';
 import { useAuth } from '@/components/AuthProvider';
 import { Project } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import {
   extractPrimaryParam,
   getToolIcon,
@@ -18,6 +20,14 @@ import {
 import { HeliumLogo } from '@/components/sidebar/helium-logo';
 import { AgentLoader } from './loader';
 import { AgentAvatar, AgentName } from './agent-avatar';
+import { AnimatedLoader } from './AnimatedLoader';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   parseXmlToolCalls,
   isNewXmlFormat,
@@ -26,6 +36,8 @@ import { ShowToolStream } from './ShowToolStream';
 import { ComposioUrlDetector } from './composio-url-detector';
 import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
+import { SECURITY_ALERT_VARIANTS, HARM_ALERT_VARIANT, HARM_CONTENT_PATTERNS } from '@/lib/security-database';
+
 
 // Helper function to render all attachments as standalone messages
 export function renderStandaloneAttachments(
@@ -45,15 +57,23 @@ export function renderStandaloneAttachments(
 
   return (
     <div className="w-full my-4">
-      <FileAttachmentGrid
-        attachments={validAttachments}
-        onFileClick={fileViewerHandler}
-        showPreviews={true}
-        sandboxId={sandboxId}
-        project={project}
-        // standalone={true}
-        // alignRight={alignRight}
-      />
+      <div className={cn(
+        "flex",
+        alignRight ? "justify-end" : "justify-start"
+      )}>
+        <div className={cn(
+          alignRight ? "max-w-[70%]" : "max-w-[90%]"
+        )}>
+          <ThreadFilesDisplay
+            attachments={validAttachments}
+            onFileClick={fileViewerHandler}
+            showPreviews={true}
+            sandboxId={sandboxId}
+            project={project}
+            rightAlignGrid={alignRight}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -154,6 +174,7 @@ export function renderMarkdownContent(
             fileViewerHandler,
             sandboxId,
             project,
+            false, // Assistant messages should align left
           );
           if (standaloneAttachments) {
             contentParts.push(
@@ -196,6 +217,7 @@ export function renderMarkdownContent(
             fileViewerHandler,
             sandboxId,
             project,
+            false, // Assistant messages should align left
           );
           if (standaloneAttachments) {
             contentParts.push(
@@ -339,6 +361,7 @@ export function renderMarkdownContent(
         fileViewerHandler,
         sandboxId,
         project,
+        false, // Assistant messages should align left
       );
       if (standaloneAttachments) {
         contentParts.push(
@@ -382,6 +405,7 @@ export function renderMarkdownContent(
         fileViewerHandler,
         sandboxId,
         project,
+        false, // Assistant messages should align left
       );
       if (standaloneAttachments) {
         contentParts.push(
@@ -440,7 +464,7 @@ export interface ThreadContentProps {
   messages: UnifiedMessage[];
   streamingTextContent?: string;
   streamingToolCall?: any;
-  agentStatus: 'idle' | 'running' | 'connecting' | 'error';
+  agentStatus: 'idle' | 'running' | 'connecting' | 'paused' | 'error';
   handleToolClick: (
     assistantMessageId: string | null,
     toolName: string,
@@ -463,7 +487,221 @@ export interface ThreadContentProps {
   scrollContainerRef?: React.RefObject<HTMLDivElement>; // Add scroll container ref prop
   agentMetadata?: any; // Add agent metadata prop
   agentData?: any; // Add full agent data prop
+  onSubmit?: (message: string, options?: { model_name?: string; enable_thinking?: boolean }) => void;
+  setInputValue?: (value: string) => void;
+  scrollToBottom?: (behavior?: ScrollBehavior) => void;
+  finalGroupedMessages?: any[];
 }
+
+// Component for action buttons that appear on assistant messages
+type ContentType = string | { text?: string; content?: string; [key: string]: any };
+
+const ActionButtons: React.FC<{
+  content: ContentType;
+  onRetry?: () => void;
+  groupIndex?: number;
+  onSubmit?: (message: string) => void;
+  setInputValue?: (value: string) => void;
+  finalGroupedMessages?: any[];
+  scrollToBottom?: (behavior?: ScrollBehavior) => void;
+}> = ({ content, onRetry, groupIndex = 0, onSubmit, setInputValue, finalGroupedMessages = [], scrollToBottom = () => {} }) => {
+  const [isCopied, setIsCopied] = React.useState<number | null>(null);
+  const [feedback, setFeedback] = React.useState<'good' | 'bad' | null>(null);
+  const [showFeedback, setShowFeedback] = React.useState(false);
+  
+  // Ensure content is a string before copying
+  const getCleanContent = () => {
+    if (typeof content === 'string') {
+      // Try to parse as JSON first to extract just the content field
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed && typeof parsed.content === 'string') {
+          return parsed.content;
+        }
+      } catch (e) {
+        // If parsing fails, return the original string
+        return content;
+      }
+      return content;
+    }
+    if (content?.text) return content.text;
+    if (content?.content) return content.content;
+    return JSON.stringify(content);
+  };
+
+  const handleGoodFeedback = () => {
+    if (feedback === 'good') {
+      setFeedback(null);
+      setShowFeedback(false);
+      toast.success('Feedback removed');
+    } else {
+      setFeedback('good');
+      setShowFeedback(true);
+      toast.success('Good response');
+      setTimeout(() => setShowFeedback(false), 2000);
+    }
+  };
+
+  const handleBadFeedback = () => {
+    if (feedback === 'bad') {
+      setFeedback(null);
+      setShowFeedback(false);
+      toast.success('Feedback removed');
+    } else {
+      setFeedback('bad');
+      setShowFeedback(true);
+      toast.success('Thanks for your feedback');
+      setTimeout(() => setShowFeedback(false), 2000);
+    }
+  };
+  
+  // Disable opposite feedback button when one is selected
+  const isGoodDisabled = feedback === 'bad';
+  const isBadDisabled = feedback === 'good';
+
+  return (
+    <div className="flex items-center justify-end gap-2 relative">
+      {/* Copy Button */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"              
+              className="h-6 w-6 rounded-sm hover:bg-muted"
+              onClick={async () => {
+                try {
+                  const textToCopy = getCleanContent();
+                  await navigator.clipboard.writeText(textToCopy);
+                  setIsCopied(groupIndex);
+                  toast.success('Copied to clipboard');
+                  setTimeout(() => setIsCopied(null), 1500);
+                } catch (err) {
+                  console.error('Failed to copy text: ', err);
+                  toast.error('Failed to copy text');
+                }
+              }}
+            >
+              {isCopied === groupIndex ? (
+                <Check className="h-3.5 w-3.5 text-foreground" />
+              ) : (
+                <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+              )}
+              <span className="sr-only">Copy</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{isCopied ? 'Copied!' : 'Copy to clipboard'}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Good Response Button */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"              
+              className={`h-6 w-6 p-0 rounded-sm ${
+                feedback === 'good' ? 'bg-muted' : ''
+              } ${isGoodDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={handleGoodFeedback}
+              disabled={isGoodDisabled}
+            >
+              <ThumbsUp className={`h-3.5 w-3.5 ${feedback === 'good' ? 'fill-foreground text-foreground' : 'text-muted-foreground'}`} />
+              <span className="sr-only">Good response</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{feedback === 'good' ? 'Remove feedback' : 'Good response'}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Bad Response Button */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"          
+              className={`h-6 w-6 p-0 rounded-sm ${
+                feedback === 'bad' ? 'bg-muted' : ''
+              } ${isBadDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={handleBadFeedback}
+              disabled={isBadDisabled}
+            >
+              <ThumbsDown className={`h-3.5 w-3.5 ${feedback === 'bad' ? 'fill-foreground text-foreground' : 'text-muted-foreground'}`} />
+              <span className="sr-only">Bad response</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{feedback === 'bad' ? 'Remove feedback' : 'Bad response'}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Retry Button - only shown on the last message */}
+      {(onRetry || onSubmit) && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                className="h-6 w-6 p-0 rounded-sm text-muted-foreground"
+                onClick={() => {
+                  if (onRetry) {
+                    onRetry();
+                    return;
+                  }
+                  
+                  if (!onSubmit) return;
+                  
+                  // Find the user group just before this assistant group
+                  const userGroup = finalGroupedMessages
+                    .slice(0, groupIndex)
+                    .reverse()
+                    .find((g: any) => g.type === 'user');
+                  if (!userGroup) return;
+                  
+                  const userMessage = userGroup.messages[0];
+                  let prompt = typeof userMessage.content === 'string' 
+                    ? userMessage.content 
+                    : '';
+                  
+                  try {
+                    const parsed = JSON.parse(prompt);
+                    if (parsed && typeof parsed.content === 'string') {
+                      prompt = parsed.content;
+                    }
+                  } catch (e) {}
+                  
+                  // Remove attachment info from prompt
+                  prompt = prompt.replace(/\[Uploaded File: .*?\]/g, '').trim();
+                  
+                  if (typeof setInputValue === 'function') {
+                    setInputValue(prompt);
+                  }
+                  
+                  toast.success('Retrying previous prompt...');
+                  onSubmit(prompt);
+                  
+                  // Auto-scroll to bottom after retry
+                  setTimeout(() => scrollToBottom('smooth'), 100);
+                }}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span className="sr-only">Retry</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Retry</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      
+    </div>
+  );
+};
 
 export const ThreadContent: React.FC<ThreadContentProps> = ({
   messages,
@@ -487,6 +725,9 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
   emptyStateComponent,
   threadMetadata,
   scrollContainerRef,
+  onSubmit,
+  setInputValue,
+  finalGroupedMessages,
   agentMetadata,
   agentData,
 }) => {
@@ -495,9 +736,35 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const [shouldJustifyToTop, setShouldJustifyToTop] = useState(false);
   const { session } = useAuth();
-
+  const [copiedPromptIdx, setCopiedPromptIdx] = useState<number | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+  const [originalDimensions, setOriginalDimensions] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   // React Query file preloader
   const { preloadFiles } = useFilePreloader();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  }, []);
+
+  // Auto-scroll to bottom when new messages arrive or agent status changes
+  React.useEffect(() => {
+    if (agentStatus === 'running' || agentStatus === 'connecting') {
+      scrollToBottom('smooth');
+    }
+  }, [agentStatus, scrollToBottom]);
+
+  React.useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.type === 'user') {
+        scrollToBottom('smooth');
+      }
+    }
+  }, [messages, scrollToBottom]);
 
   const containerClassName = isPreviewMode
     ? 'flex-1 overflow-y-auto scrollbar-none py-4 pb-0'
@@ -886,7 +1153,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                         )}
 
                         <div className="flex justify-end">
-                          <div className="flex max-w-[85%] rounded-3xl rounded-br-lg bg-card border px-4 py-3 break-words overflow-hidden">
+                          <div className="flex max-w-[85%] rounded-2xl rounded-br-sm bg-sidebar dark:bg-sidebar border px-4 py-3 pb-2 break-words overflow-hidden">
                             <div className="space-y-3 min-w-0 flex-1">
                               {cleanContent && (
                                 <ComposioUrlDetector
@@ -924,29 +1191,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                         }
                       >
                         <div className="flex flex-col gap-2">
-                          <div className="flex items-center">
-                            <div className="rounded-md flex items-center justify-center relative">
-                              {groupAgentId ? (
-                                <AgentAvatar
-                                  agentId={groupAgentId}
-                                  size={16}
-                                  className="h-5 w-5"
-                                />
-                              ) : (
-                                getAgentInfo().avatar
-                              )}
-                            </div>
-                            <p className="ml-2 text-base text-muted-foreground">
-                              {groupAgentId ? (
-                                <AgentName
-                                  agentId={groupAgentId}
-                                  fallback={getAgentInfo().name}
-                                />
-                              ) : (
-                                getAgentInfo().name
-                              )}
-                            </p>
-                          </div>
+                          {/* Agent avatar and name are now only shown above the loader, not above messages */}
 
                           {/* Message content - ALL messages in the group */}
                           <div className="flex max-w-[90%] text-sm xl:text-base break-words overflow-hidden">
@@ -1028,6 +1273,52 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
 
                                     if (!parsedContent.content) return;
 
+                                    // Detect standard denial message and render as boxed notice
+                                    const denialKeyPhrases = [
+                                      'cannot comply with this request',
+                                      'security violation',
+                                      'unsafe instruction',
+                                      'safety and ethical boundaries',
+                                    ];
+                                    const isDenialNotice = typeof parsedContent.content === 'string'
+                                      && denialKeyPhrases.every(k => parsedContent.content.toLowerCase().includes(k));
+
+                                    if (isDenialNotice) {
+                                      // Check if this is harmful content to use specific variant
+                                      const isHarmful = HARM_CONTENT_PATTERNS.some(pattern => 
+                                        parsedContent.content.toLowerCase().includes(pattern.toLowerCase())
+                                      );
+                                      
+                                      let variant;
+                                      if (isHarmful) {
+                                        variant = HARM_ALERT_VARIANT;
+                                      } else {
+                                        // Deterministic variant pick based on message id/content to avoid flicker
+                                        const basis = `${message.message_id || ''}|${parsedContent.content}`;
+                                        let seed = 0;
+                                        for (let i = 0; i < basis.length; i++) seed = (seed * 31 + basis.charCodeAt(i)) >>> 0;
+                                        variant = SECURITY_ALERT_VARIANTS[(seed % SECURITY_ALERT_VARIANTS.length) || 0] || parsedContent.content;
+                                      }
+
+                                      elements.push(
+                                        <div
+                                          key={msgKey}
+                                          className={
+                                            assistantMessageCount > 0
+                                              ? 'mt-4'
+                                              : ''
+                                          }
+                                        >
+                                          <div className="border-2 rounded-lg p-3 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800 shadow-sm">
+                                            <div className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1 flex items-center gap-1.5"><AlertTriangle className="h-4 w-4 text-red-500" /> Security Alert</div>
+                                            <div className="text-sm text-gray-800 dark:text-gray-300 leading-relaxed">{variant}</div>
+                                          </div>
+                                        </div>,
+                                      );
+                                      assistantMessageCount++;
+                                      return;
+                                    }
+
                                     const renderedContent =
                                       renderMarkdownContent(
                                         parsedContent.content,
@@ -1043,9 +1334,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                       <div
                                         key={msgKey}
                                         className={
-                                          assistantMessageCount > 0
-                                            ? 'mt-4'
-                                            : ''
+                                          `group relative ${assistantMessageCount > 0 ? 'mt-4' : ''}`
                                         }
                                       >
                                         <div className="prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-hidden">
@@ -1060,6 +1349,40 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
 
                                 return elements;
                               })()}
+
+                              {/* Action buttons for assistant messages */}
+                              {!readOnly &&
+                                !(
+                                  groupIndex ===
+                                    finalGroupedMessages.length - 1 &&
+                                  (streamHookStatus === 'streaming' ||
+                                    streamHookStatus === 'connecting')
+                                ) &&
+                                group.messages.some(
+                                  (msg) => msg.type === 'assistant',
+                                ) && (
+                                  <div className="flex items-center justify-between">
+                                    {/* Agent info on the left */}
+                                    <div className="flex items-center">
+                                      <div className="rounded-md flex items-center justify-center">
+                                        {getAgentInfo().avatar}
+                                      </div>
+                                      <p className="ml-1.5 text-base font-semibold text-muted-foreground">
+                                        {getAgentInfo().name}
+                                      </p>
+                                    </div>
+                                    
+                                    {/* Action buttons on the right */}
+                                    <ActionButtons
+                                      content={group.messages.find(m => m.type === 'assistant')?.content || ''}
+                                      groupIndex={groupIndex}
+                                      finalGroupedMessages={finalGroupedMessages}
+                                      onSubmit={onSubmit}
+                                      setInputValue={setInputValue}
+                                      scrollToBottom={scrollToBottom}
+                                    />
+                                  </div>
+                                )}
 
                               {groupIndex === finalGroupedMessages.length - 1 &&
                                 !readOnly &&
@@ -1117,7 +1440,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                         <>
                                           <StreamingText
                                             content={textBeforeTag}
-                                            className="text-sm prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere"
+                                            className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere"
                                           />
 
                                           {detectedTag && (
@@ -1226,6 +1549,18 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                     })()}
                                   </div>
                                 )}
+
+                              {/* Show AnimatedLoader when agent is running and this is the last assistant group */}
+                              {!readOnly &&
+                                groupIndex === finalGroupedMessages.length - 1 &&
+                                (agentStatus === 'running' || agentStatus === 'connecting') &&
+                                group.messages.some(
+                                  (msg) => msg.type === 'assistant',
+                                ) && (
+                                  <div className="mt-4 overflow-visible pb-8 flex ml-2">
+                                    <AnimatedLoader />
+                                  </div>
+                                )}
                             </div>
                           </div>
                         </div>
@@ -1242,19 +1577,19 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                   messages[messages.length - 1].type === 'user') && (
                   <div ref={latestMessageRef} className="w-full h-22 rounded">
                     <div className="flex flex-col gap-2">
-                      {/* Logo positioned above the loader */}
-                      <div className="flex items-center">
+                      {/* Agent avatar and name above the loader */}
+                      {/* <div className="flex items-center">
                         <div className="rounded-md flex items-center justify-center">
                           {getAgentInfo().avatar}
                         </div>
                         <p className="ml-2 text-base text-muted-foreground">
                           {getAgentInfo().name}
                         </p>
-                      </div>
+                      </div> */}
 
                       {/* Loader content */}
-                      <div className="space-y-2 w-full h-12">
-                        <AgentLoader />
+                      <div className="space-y-2 w-full h-12 ml-2">
+                        <AnimatedLoader />
                       </div>
                     </div>
                   </div>
@@ -1297,7 +1632,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                         <div className="rounded-md flex items-center justify-center">
                           {getAgentInfo().avatar}
                         </div>
-                        <p className="ml-2 text-base text-muted-foreground">
+                        <p className="ml-2 text-base font-semibold text-muted-foreground">
                           {getAgentInfo().name}
                         </p>
                       </div>

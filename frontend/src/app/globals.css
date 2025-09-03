@@ -64,7 +64,7 @@
   --exitToLeft: exitToLeft 250ms ease;
   --exitToRight: exitToRight 250ms ease;
   --animate-elliptical-orbit: elliptical-orbit 20s linear infinite;
-  --animate-shiny-text: shiny-text 8s infinite;
+  --animate-shiny-text: shiny-text 2s infinite;
   @keyframes orbit {
     0% {
       transform: rotate(calc(var(--angle) * 1deg))
@@ -229,16 +229,29 @@
   }
 
   @keyframes shiny-text {
-    0%,
-    90%,
-    100% {
-      background-position: calc(-100% - var(--shiny-width)) 0;
+    0% {
+      background-position: -100% center;
     }
-    30%,
-    60% {
-      background-position: calc(100% + var(--shiny-width)) 0;
+    100% {
+      background-position: 100% center;
     }
   }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -100% center;
+  }
+  100% {
+    background-position: 100% center;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 :root {
@@ -282,7 +295,7 @@
 }
 
 .dark {
-  --background: oklch(0.1872 0.002 286.2);
+  --background: oklch(0.2072 0.002 286.2);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.2 0.005 285.823);
   --card-foreground: oklch(0.985 0 0);
@@ -294,7 +307,7 @@
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.31 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.274 0.006 286.033);
+  --accent: oklch(0.1974 0 0);
   --accent-foreground: oklch(98.46% 0.002 247.84);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
@@ -306,11 +319,11 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.1638 0 0);
+  --sidebar: oklch(0.269 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent: oklch(0.1669 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
@@ -318,6 +331,24 @@
   --helium-blue: oklch(0.5608 0.2416 270.34);
   --helium-green: oklch(0.9024 0.2346 134.77);
   --helium-teal: oklch(0.7197 0.1217 174.92);
+}
+
+/* Custom scrollbar hiding utilities */
+.scrollbar-hide {
+  /* Firefox */
+  scrollbar-width: none;
+  /* IE and Edge */
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  /* Chrome, Safari and Opera */
+  display: none;
+}
+
+/* Ensure scrollbar-hide works with overflow-y-auto */
+.scrollbar-hide.overflow-y-auto {
+  overflow-y: auto;
 }
 
 @layer base {
@@ -757,16 +788,13 @@
 }
 
 @theme inline {
-  --animate-shiny-text: shiny-text 5s infinite;
- 
+  --animate-shiny-text: shiny-text 2s infinite;
+
   @keyframes shiny-text {
-    0%,
-    90%,
-    100% {
+    0% {
       background-position: calc(-100% - var(--shiny-width)) 0;
     }
-    30%,
-    60% {
+    100% {
       background-position: calc(100% + var(--shiny-width)) 0;
     }
   }
@@ -778,3 +806,34 @@
   pre.shiki {
     background: transparent !important;
   }
+
+/* Dark theme shimmer colors */
+.dark [style*="--shimmer-color-1"] {
+  --shimmer-color-1: var(--helium-blue) !important;
+  --shimmer-color-2: var(--helium-green) !important;
+  --shimmer-color-3: var(--helium-yellow) !important;
+}
+
+::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+
+@media (max-width: 512px) {
+  .project-ellipsis {
+    max-width: 160px;  /* adjust as needed */
+    min-width: 0;      /* allows text to shrink below content size */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;    /* ensures proper truncation */
+  }
+}
+
+@media (max-width: 430px) {
+  .wrap-bottom-text {
+   font-size: 10px;
+  }
+}
+

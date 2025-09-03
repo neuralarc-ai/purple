@@ -315,14 +315,14 @@ export function FileOperationToolView({
             <TabsList className="h-7 bg-muted/50 backdrop-blur-3xl p-0.5 gap-x-1 rounded-md flex items-center">
               <TabsTrigger
                 value="code"
-                className="cursor-pointer flex items-center px-3 sm:py-1 text-xs font-medium rounded-sm transition-all [&[data-state=active]]:bg-white [&[data-state=active]]:text-black [&[data-state=inactive]]:bg-transparent [&[data-state=inactive]]:text-muted-foreground hover:bg-white/20 text-muted-foreground shadow-none"
+                className="cursor-pointer flex items-center px-3 sm:py-1 text-xs font-medium rounded-sm transition-all [&[data-state=active]]:bg-background [&[data-state=active]]:text-foreground [&[data-state=inactive]]:bg-transparent [&[data-state=inactive]]:text-muted-foreground hover:bg-muted/20 text-muted-foreground shadow-none"
               >
                 Source
               </TabsTrigger>
               {showPreview && (
                 <TabsTrigger
                   value="preview"
-                  className="cursor-pointer flex items-center px-3 sm:py-1 text-xs font-medium rounded-sm transition-all [&[data-state=active]]:bg-white [&[data-state=active]]:text-black [&[data-state=inactive]]:bg-transparent [&[data-state=inactive]]:text-muted-foreground hover:bg-white/20 text-muted-foreground shadow-none"
+                  className="cursor-pointer flex items-center px-3 sm:py-1 text-xs font-medium rounded-sm transition-all [&[data-state=active]]:bg-background [&[data-state=active]]:text-foreground [&[data-state=inactive]]:bg-transparent [&[data-state=inactive]]:text-muted-foreground hover:bg-muted/20 text-muted-foreground shadow-none"
                 >
                   Preview
                 </TabsTrigger>
@@ -402,7 +402,7 @@ export function FileOperationToolView({
           </TabsContent>
         </CardContent>
 
-        <div className="px-4 py-2 h-fit bg-white dark:bg-zinc-900 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
+        <div className="px-4 py-2 h-fit bg-gradient-to-r from-zinc-50/90 to-zinc-100/90 dark:from-zinc-900/90 dark:to-zinc-800/90 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
           <div className="h-full flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
             <Badge variant="outline" className="py-0.5 h-6">
               <FileIcon className="h-3 w-3" />

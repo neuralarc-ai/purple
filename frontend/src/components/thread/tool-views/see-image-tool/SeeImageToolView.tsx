@@ -352,12 +352,12 @@ export function SeeImageToolView({
           </div>
         ) : (
           <div className="flex flex-col">
-            <div className="relative w-full overflow-hidden p-6 flex items-center justify-center">
+            <div className="relative w-full h-full overflow-hidden p-6 flex items-center justify-center">
               <SafeImage
                 src={imageUrl}
                 alt={description || filename}
                 filePath={filePath}
-                className="max-w-full max-h-[500px] object-contain"
+                className="max-w-full max-h-[600px] object-contain"
               />
             </div>
           </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
-import { Icons } from './home/icons';
+// Removed unused Icons import
 import { FaGithub } from "react-icons/fa";
 import { useAuthMethodTracking } from '@/lib/stores/auth-tracking';
 import { Loader2 } from 'lucide-react';

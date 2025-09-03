@@ -29,6 +29,7 @@ import sys
 from services import email_api
 from triggers import api as triggers_api
 from services import api_keys_api
+from auth import api as auth_api
 
 
 if sys.platform == "win32":
@@ -161,6 +162,7 @@ api_router.include_router(sandbox_api.router)
 api_router.include_router(billing_api.router)
 api_router.include_router(feature_flags_api.router)
 api_router.include_router(api_keys_api.router)
+api_router.include_router(auth_api.router)
 
 from mcp_module import api as mcp_api
 from credentials import api as credentials_api
@@ -183,13 +185,98 @@ api_router.include_router(pipedream_api.router)
 
 # MFA functionality moved to frontend
 
-
-
 from admin import api as admin_api
 api_router.include_router(admin_api.router)
 
+from user_profiles import api as user_profiles_api
+from invite_codes import api as invite_codes_api
+api_router.include_router(user_profiles_api.router, prefix="/user-profiles")
+api_router.include_router(invite_codes_api.router, prefix="/invite-codes")
+
 from composio_integration import api as composio_api
 api_router.include_router(composio_api.router)
+
+# Add prompt generation API
+from prompt_generation import api as prompt_generation_api
+api_router.include_router(prompt_generation_api.router)
+
+# Prompt improvement endpoint
+@api_router.post("/improve-prompt")
+async def improve_prompt(request: Request):
+    """Improve a user prompt using Vertex AI Gemini 2.0 Flash model"""
+    try:
+        from services.llm import make_llm_api_call, setup_api_keys
+        
+        # Ensure API keys are set up
+        setup_api_keys()
+        
+        body = await request.json()
+        prompt = body.get('prompt', '').strip()
+        model = body.get('model', 'vertex_ai/gemini-2.0-flash')  # Default to Gemini 2.0 Flash
+        system_message = body.get('system_message', '')
+        
+        if not prompt:
+            raise HTTPException(status_code=400, detail="Prompt is required")
+        
+        # Prepare messages for the LLM
+        messages = [
+            {
+                "role": "system",
+                "content": system_message
+            },
+            {
+                "role": "user", 
+                "content": f"Improve this prompt: {prompt}"
+            }
+        ]
+        
+        logger.info(f"Improving prompt with model: {model}")
+        logger.debug(f"Original prompt: {prompt}")
+        logger.debug(f"System message: {system_message}")
+        logger.debug(f"Messages: {messages}")
+        
+        # Make the API call to the selected model
+        response = await make_llm_api_call(
+            messages=messages,
+            model_name=model,
+            temperature=0.3,
+            max_tokens=1000
+        )
+        
+        logger.debug(f"Raw LLM response: {response}")
+        
+        # Extract the improved prompt from the response
+        if hasattr(response, 'choices') and len(response.choices) > 0:
+            improved_prompt = response.choices[0].message.content.strip()
+            
+            # Ensure we don't return empty content
+            if not improved_prompt.strip():
+                improved_prompt = prompt
+        else:
+            logger.error(f"Unexpected response format: {response}")
+            raise Exception("Invalid response format from LLM")
+        
+        logger.debug(f"Improved prompt: {improved_prompt}")
+        
+        return {
+            "improved_prompt": improved_prompt,
+            "success": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Error improving prompt: {e}")
+        logger.error(f"Error type: {type(e)}")
+        
+        # Provide more specific error messages for common issues
+        error_message = str(e)
+        if "vertex" in error_message.lower():
+            error_message = f"Vertex AI error: {error_message}"
+        elif "authentication" in error_message.lower():
+            error_message = f"Authentication error: {error_message}"
+        elif "quota" in error_message.lower():
+            error_message = f"API quota exceeded: {error_message}"
+        
+        raise HTTPException(status_code=500, detail=error_message)
 
 @api_router.get("/health")
 async def health_check():
@@ -219,7 +306,6 @@ async def health_check():
     except Exception as e:
         logger.error(f"Failed health docker check: {e}")
         raise HTTPException(status_code=500, detail="Health check failed")
-
 
 app.include_router(api_router, prefix="/api")
 

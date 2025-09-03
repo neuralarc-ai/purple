@@ -124,8 +124,17 @@ async def run_agent_background(
         if model_name != "openai/gpt-5-mini":
             logger.debug(f"Using user-selected model: {model_name} -> {effective_model}")
         else:
-            logger.debug(f"Using default model: {effective_model}")
+            # In production, force Vertex Claude Sonnet 4 for default
+            env_mode = os.getenv("ENV_MODE", "local").lower()
+            if env_mode == "production" and model_name == "openai/gpt-5-mini":
+                effective_model = "vertex_ai/claude-sonnet-4@20250514"
+                logger.debug(f"Production environment: using fixed model for background run: {effective_model}")
+            else:
+                logger.debug(f"Using default model: {effective_model}")
     
+    # Hard override: in production, always force Vertex Claude Sonnet 4
+    if os.getenv("ENV_MODE", "local").lower() == "production":
+        effective_model = "vertex_ai/claude-sonnet-4@20250514"
     logger.debug(f"🚀 Using model: {effective_model} (thinking: {enable_thinking}, reasoning_effort: {reasoning_effort})")
     if agent_config:
         logger.debug(f"Using custom agent: {agent_config.get('name', 'Unknown')}")
@@ -144,8 +153,10 @@ async def run_agent_background(
     global_control_channel = f"agent_run:{agent_run_id}:control"
     instance_active_key = f"active_run:{instance_id}:{agent_run_id}"
 
+    # Cooperative pause state shared with listener and main loop
+    paused = False
     async def check_for_stop_signal():
-        nonlocal stop_signal_received
+        nonlocal stop_signal_received, paused
         if not pubsub: return
         try:
             while not stop_signal_received:
@@ -157,6 +168,14 @@ async def run_agent_background(
                         logger.debug(f"Received STOP signal for agent run {agent_run_id} (Instance: {instance_id})")
                         stop_signal_received = True
                         break
+                    elif data in ["PAUSE", "TAKEOVER"]:
+                        if not paused:
+                            paused = True
+                            logger.debug(f"Received {data} signal; pausing agent run {agent_run_id}")
+                    elif data in ["RESUME", "RELEASE"]:
+                        if paused:
+                            paused = False
+                            logger.debug(f"Received {data} signal; resuming agent run {agent_run_id}")
                 # Periodically refresh the active run key TTL
                 if total_responses % 50 == 0: # Refresh every 50 responses or so
                     try: await redis.expire(instance_active_key, redis.REDIS_KEY_TTL)
@@ -199,6 +218,7 @@ async def run_agent_background(
         error_message = None
 
         pending_redis_operations = []
+        paused_announced = False
 
         async for response in agent_gen:
             if stop_signal_received:
@@ -206,6 +226,20 @@ async def run_agent_background(
                 final_status = "stopped"
                 trace.span(name="agent_run_stopped").end(status_message="agent_run_stopped", level="WARNING")
                 break
+
+            # If paused, block advancing the generator until resumed
+            while paused and not stop_signal_received:
+                # Emit a status message once when entering paused state
+                if not paused_announced:
+                    pause_message = {"type": "status", "status": "paused", "message": "Agent run paused"}
+                    pending_redis_operations.append(asyncio.create_task(redis.rpush(response_list_key, json.dumps(pause_message))))
+                    pending_redis_operations.append(asyncio.create_task(redis.publish(response_channel, "new")))
+                    paused_announced = True
+                await asyncio.sleep(0.2)
+                # Loop continues until paused becomes False by control signal
+            if not paused and paused_announced:
+                # Clear the announcement flag on resume so future pauses can announce again
+                paused_announced = False
 
             # Store response in Redis list and publish notification
             response_json = json.dumps(response)

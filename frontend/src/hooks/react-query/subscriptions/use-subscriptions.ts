@@ -16,11 +16,13 @@ export const useSubscription = createQueryHook(
   subscriptionKeys.details(),
   getSubscription,
   {
-    staleTime: 1000 * 60 * 10, // 10 minutes - subscription status doesn't change frequently
+    staleTime: 1000 * 30, // 30 seconds - much shorter stale time for better real-time updates
     gcTime: 1000 * 60 * 15, // 15 minutes cache time
-    refetchOnWindowFocus: false, // Don't refetch on every window focus
-    refetchOnMount: false, // Don't refetch on every component mount if data exists
-    refetchOnReconnect: true, // Only refetch when network reconnects
+    refetchOnWindowFocus: true, // Refetch when window gains focus
+    refetchOnMount: true, // Always refetch on mount for fresh data
+    refetchOnReconnect: true, // Refetch when network reconnects
+    refetchInterval: 45 * 1000, // Refetch every 45 seconds for real-time updates
+    refetchIntervalInBackground: false, // Only refetch when tab is active
   },
 );
 

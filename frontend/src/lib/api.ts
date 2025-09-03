@@ -787,7 +787,7 @@ export const startAgent = async (
       throw networkError;
     }
 
-    handleApiError(error, { operation: 'start agent', resource: 'AI assistant' });
+    // Re-throw other errors so callers can handle appropriately
     throw error;
   }
 };
@@ -827,6 +827,195 @@ export const stopAgent = async (agentRunId: string): Promise<void> => {
     const stopError = new Error(`Error stopping agent: ${response.statusText}`);
     handleApiError(stopError, { operation: 'stop agent', resource: 'AI assistant' });
     throw stopError;
+  }
+};
+
+// Agent control helpers (pause/resume/takeover/release and manual-event)
+export const pauseAgentRun = async (agentRunId: string): Promise<void> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      const authError = new NoAccessTokenAvailableError();
+      handleApiError(authError, { operation: 'pause agent', resource: 'AI assistant' });
+      throw authError;
+    }
+
+    const response = await fetch(`${API_URL}/agent-run/${agentRunId}/pause`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const err = new Error(`Error pausing agent: ${response.statusText}`);
+      handleApiError(err, { operation: 'pause agent', resource: 'AI assistant' });
+      throw err;
+    }
+  } catch (error) {
+    handleApiError(error, { operation: 'pause agent', resource: 'AI assistant' });
+    throw error;
+  }
+};
+
+export const resumeAgentRun = async (agentRunId: string): Promise<void> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      const authError = new NoAccessTokenAvailableError();
+      handleApiError(authError, { operation: 'resume agent', resource: 'AI assistant' });
+      throw authError;
+    }
+
+    const response = await fetch(`${API_URL}/agent-run/${agentRunId}/resume`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const err = new Error(`Error resuming agent: ${response.statusText}`);
+      handleApiError(err, { operation: 'resume agent', resource: 'AI assistant' });
+      throw err;
+    }
+  } catch (error) {
+    handleApiError(error, { operation: 'resume agent', resource: 'AI assistant' });
+    throw error;
+  }
+};
+
+export const takeoverAgentRun = async (agentRunId: string): Promise<void> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      const authError = new NoAccessTokenAvailableError();
+      handleApiError(authError, { operation: 'takeover agent', resource: 'AI assistant' });
+      throw authError;
+    }
+
+    const response = await fetch(`${API_URL}/agent-run/${agentRunId}/takeover`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const err = new Error(`Error taking over agent: ${response.statusText}`);
+      handleApiError(err, { operation: 'take over agent', resource: 'AI assistant' });
+      throw err;
+    }
+  } catch (error) {
+    handleApiError(error, { operation: 'take over agent', resource: 'AI assistant' });
+    throw error;
+  }
+};
+
+export const releaseAgentRun = async (agentRunId: string): Promise<void> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      const authError = new NoAccessTokenAvailableError();
+      handleApiError(authError, { operation: 'release agent', resource: 'AI assistant' });
+      throw authError;
+    }
+
+    const response = await fetch(`${API_URL}/agent-run/${agentRunId}/release`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const err = new Error(`Error releasing agent: ${response.statusText}`);
+      handleApiError(err, { operation: 'release agent', resource: 'AI assistant' });
+      throw err;
+    }
+  } catch (error) {
+    handleApiError(error, { operation: 'release agent', resource: 'AI assistant' });
+    throw error;
+  }
+};
+
+export type ManualEventPayload = {
+  event_type: string; // preferred client-side field
+  data?: Record<string, any>;
+  description?: string;
+  // Accept legacy/alternate shape just in case callers pass `type`
+  // This keeps the function resilient without changing callers.
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  type?: string;
+};
+
+export const logManualEvent = async (
+  agentRunId: string,
+  event: ManualEventPayload,
+): Promise<void> => {
+  try {
+    const supabase = createClient();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      const authError = new NoAccessTokenAvailableError();
+      handleApiError(authError, { operation: 'log manual event', resource: 'AI assistant' });
+      throw authError;
+    }
+
+    const response = await fetch(`${API_URL}/agent-run/${agentRunId}/manual-event`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      // Backend expects { type: string, data: object }
+      body: JSON.stringify({
+        type: (event as any).type ?? event.event_type,
+        data: {
+          ...(event.data || {}),
+          ...(event.description ? { description: event.description } : {}),
+        },
+      }),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '');
+      const err = new Error(`Error logging manual event: ${response.statusText}${errText ? ` - ${errText}` : ''}`);
+      handleApiError(err, { operation: 'log manual event', resource: 'AI assistant' });
+      throw err;
+    }
+  } catch (error) {
+    handleApiError(error, { operation: 'log manual event', resource: 'AI assistant' });
+    throw error;
   }
 };
 
@@ -1006,7 +1195,9 @@ export const streamAgent = (
           try {
             const jsonData = JSON.parse(rawData);
             if (jsonData.status === 'error') {
-              console.error(`[STREAM] Error status received for ${agentRunId}:`, jsonData);
+              // Ensure we always have something meaningful to log/show
+              const safeError = jsonData && Object.keys(jsonData).length > 0 ? jsonData : { message: 'Unknown stream error', raw: rawData };
+              console.error(`[STREAM] Error status received for ${agentRunId}:`, safeError);
               
               // Pass the error message to the callback
               callbacks.onError(jsonData.message || 'Unknown error occurred');
@@ -1566,7 +1757,7 @@ export interface CreateCheckoutSessionRequest {
   success_url: string;
   cancel_url: string;
   referral_id?: string;
-  commitment_type?: 'monthly' | 'yearly' | 'yearly_commitment';
+  commitment_type?: 'monthly' | 'yearly';
 }
 
 export interface CreatePortalSessionRequest {
@@ -1598,6 +1789,9 @@ export interface SubscriptionStatus {
   };
   // Credit information
   credit_balance?: number;
+  credit_balance_credits?: number; // Add credit amount (1 credit = $0.01)
+  credit_total_purchased?: number; // Total purchased in dollars
+  credit_total_used?: number; // Total used in dollars
   can_purchase_credits?: boolean;
 }
 
@@ -1655,23 +1849,17 @@ export interface UserSubscriptionResponse {
 
 // Usage log entry interface
 export interface UsageLogEntry {
-  message_id: string;
   thread_id: string;
-  created_at: string;
-  content: {
-    usage: {
-      prompt_tokens: number;
-      completion_tokens: number;
-    };
-    model: string;
-  };
-  total_tokens: number;
-  estimated_cost: number | string;
   project_id: string;
-  // Credit usage fields
-  credit_used?: number;
-  payment_method?: 'credits' | 'subscription';
-  was_over_limit?: boolean;
+  project_name: string;
+  created_at: string;
+  total_credits: number;
+  request_count: number;
+  total_prompt_tokens: number;
+  total_completion_tokens: number;
+  total_tokens: number;
+  primary_model: string;
+  models_used: string[];
 }
 
 // Usage logs response interface
@@ -2131,54 +2319,3 @@ export const reactivateSubscription = async (): Promise<ReactivateSubscriptionRe
   }
 };
 
-// Transcription API Types
-export interface TranscriptionResponse {
-  text: string;
-}
-
-// Transcription API Functions
-export const transcribeAudio = async (audioFile: File): Promise<TranscriptionResponse> => {
-  try {
-    const supabase = createClient();
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session?.access_token) {
-      throw new NoAccessTokenAvailableError();
-    }
-
-    const formData = new FormData();
-    formData.append('audio_file', audioFile);
-
-    const response = await fetch(`${API_URL}/transcription`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorText = await response
-        .text()
-        .catch(() => 'No error details available');
-      console.error(
-        `Error transcribing audio: ${response.status} ${response.statusText}`,
-      );
-      throw new Error(
-        `Error transcribing audio: ${response.statusText} (${response.status})`,
-      );
-    }
-
-    return response.json();
-  } catch (error) {
-    if (error instanceof NoAccessTokenAvailableError) {
-      throw error;
-    }
-
-    console.error('Failed to transcribe audio:', error);
-    handleApiError(error, { operation: 'transcribe audio', resource: 'speech-to-text' });
-    throw error;
-  }
-};

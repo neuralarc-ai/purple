@@ -6,9 +6,9 @@ from utils.logger import logger
 from utils.config import config
 import os
 import json
-import litellm
 import asyncio
 from typing import Optional
+from services.llm import make_llm_api_call
 
 class SandboxFilesTool(SandboxToolsBase):
     """Tool for executing file system operations in a Daytona sandbox. All operations are performed relative to the /workspace directory."""
@@ -300,119 +300,70 @@ class SandboxFilesTool(SandboxToolsBase):
         except Exception as e:
             return self.fail_response(f"Error rewriting file: {str(e)}")
 
-    @openapi_schema({
-        "type": "function",
-        "function": {
-            "name": "delete_file",
-            "description": "Delete a file at the given path. The path must be relative to /workspace (e.g., 'src/main.py' for /workspace/src/main.py)",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "file_path": {
-                        "type": "string",
-                        "description": "Path to the file to be deleted, relative to /workspace (e.g., 'src/main.py')"
-                    }
-                },
-                "required": ["file_path"]
-            }
-        }
-    })
-    @usage_example('''
-        <function_calls>
-        <invoke name="delete_file">
-        <parameter name="file_path">src/main.py</parameter>
-        </invoke>
-        </function_calls>
-        ''')
-    async def delete_file(self, file_path: str) -> ToolResult:
-        try:
-            # Ensure sandbox is initialized
-            await self._ensure_sandbox()
-            
-            file_path = self.clean_path(file_path)
-            full_path = f"{self.workspace_path}/{file_path}"
-            if not await self._file_exists(full_path):
-                return self.fail_response(f"File '{file_path}' does not exist")
-            
-            await self.sandbox.fs.delete_file(full_path)
-            return self.success_response(f"File '{file_path}' deleted successfully.")
-        except Exception as e:
-            return self.fail_response(f"Error deleting file: {str(e)}")
-
-    async def _call_vertex_ai_api(self, file_content: str, code_edit: str, instructions: str, file_path: str) -> tuple[Optional[str], Optional[str]]:
+    async def _call_vertex_gemini_api(self, file_content: str, code_edit: str, instructions: str, file_path: str) -> tuple[Optional[str], Optional[str]]:
         """
-        Call Vertex AI Gemini API to apply edits to file content.
+        Call Vertex AI Gemini 2.5 Flash via LiteLLM to apply edits to file content.
         Returns a tuple (new_content, error_message).
-        On success, error_message is None.
-        On failure, new_content is None.
+        On success, error_message is None. On failure, new_content is None.
         """
         try:
-            # Check if Vertex AI is properly configured
-            if not config.VERTEXAI_PROJECT:
-                error_msg = "Vertex AI project not configured. Please set VERTEXAI_PROJECT environment variable."
-                logger.warning(error_msg)
-                return None, error_msg
-            
-            if not config.VERTEXAI_LOCATION:
-                error_msg = "Vertex AI location not configured. Please set VERTEXAI_LOCATION environment variable."
-                logger.warning(error_msg)
-                return None, error_msg
-            
-            messages = [{
-                "role": "user", 
-                "content": f"<instruction>{instructions}</instruction>\n<code>{file_content}</code>\n<update>{code_edit}</update>"
-            }]
+            model_name = "vertex_ai/gemini-2.5-flash"
+            prompt = (
+                f"<instruction>{instructions}</instruction>\n"
+                f"<code>{file_content}</code>\n"
+                f"<update>{code_edit}</update>"
+            )
+            messages = [{"role": "user", "content": prompt}]
 
-            logger.debug("Using Vertex AI Gemini API for file editing.")
-            
-            # Prepare parameters for Vertex AI call
-            params = {
-                "model": "vertexai/gemini-2.0-flash",
-                "messages": messages,
-                "temperature": 0.0,
-                "timeout": 30.0
-            }
-            
-            # Add Vertex AI specific configuration
-            if config.VERTEXAI_CREDENTIALS:
-                params["vertex_credentials"] = config.VERTEXAI_CREDENTIALS
-            if config.VERTEXAI_PROJECT:
-                params["vertex_project"] = config.VERTEXAI_PROJECT
-            if config.VERTEXAI_LOCATION:
-                params["vertex_location"] = config.VERTEXAI_LOCATION
-            
-            response = await litellm.acompletion(**params)
-            
-            if response and response.choices and len(response.choices) > 0:
-                content = response.choices[0].message.content.strip()
+            logger.debug("Using Vertex AI Gemini 2.5 Flash via LiteLLM for file editing.")
+            response = await make_llm_api_call(
+                messages=messages,
+                model_name=model_name,
+                temperature=0.0,
+                max_tokens=None,
+                response_format=None,
+                tools=None,
+                tool_choice="none",
+                api_key=None,
+                api_base=None,
+                stream=False,
+                top_p=None,
+                model_id=None,
+                enable_thinking=False,
+                reasoning_effort='low'
+            )
 
-                # Extract code block if wrapped in markdown
-                if content.startswith("```") and content.endswith("```"):
-                    lines = content.split('\n')
-                    if len(lines) > 2:
-                        content = '\n'.join(lines[1:-1])
-                
-                return content, None
-            else:
-                error_msg = f"Invalid response from Vertex AI Gemini API: {response}"
-                logger.error(error_msg)
-                return None, error_msg
-                
+            # LiteLLM ModelResponse: extract message content
+            content = None
+            try:
+                if hasattr(response, 'choices') and response.choices:
+                    content = response.choices[0].message.content
+                elif isinstance(response, dict):
+                    content = response.get('choices', [{}])[0].get('message', {}).get('content')
+            except Exception:
+                content = None
+
+            if not content:
+                return None, f"Invalid response from Gemini 2.5 Flash API: {response}"
+
+            # Extract code block if wrapped in markdown
+            content_str = content.strip() if isinstance(content, str) else str(content).strip()
+            if content_str.startswith("```") and content_str.endswith("```"):
+                lines = content_str.split('\n')
+                if len(lines) > 2:
+                    content_str = '\n'.join(lines[1:-1])
+
+            return content_str, None
         except Exception as e:
             error_message = f"AI model call for file edit failed. Exception: {str(e)}"
-            # Try to get more details from the exception if it's an API error
-            if hasattr(e, 'response') and hasattr(e.response, 'text'):
-                error_message += f"\n\nAPI Response Body:\n{e.response.text}"
-            elif hasattr(e, 'body'): # litellm sometimes puts it in body
-                error_message += f"\n\nAPI Response Body:\n{e.body}"
-            logger.error(f"Error calling Vertex AI Gemini API: {error_message}", exc_info=True)
+            logger.error(f"Error calling Vertex AI Gemini 2.5 Flash: {error_message}", exc_info=True)
             return None, error_message
 
     @openapi_schema({
         "type": "function",
         "function": {
             "name": "edit_file",
-            "description": "Use this tool to make an edit to an existing file.\n\nThis will be read by a less intelligent model, which will quickly apply the edit. You should make it clear what the edit is, while also minimizing the unchanged code you write.\nWhen writing the edit, you should specify each edit in sequence, with the special comment // ... existing code ... to represent unchanged code in between edited lines.\n\nFor example:\n\n// ... existing code ...\nFIRST_EDIT\n// ... existing code ...\nSECOND_EDIT\n// ... existing code ...\nTHIRD_EDIT\n// ... existing code ...\n\nYou should still bias towards repeating as few lines of the original file as possible to convey the change.\nBut, each edit should contain sufficient context of unchanged lines around the code you're editing to resolve ambiguity.\nDO NOT omit spans of pre-existing code (or comments) without using the // ... existing code ... comment to indicate its absence. If you omit the existing code comment, the model may inadvertently delete these lines.\nIf you plan on deleting a section, you must provide context before and after to delete it. If the initial code is ```code \\n Block 1 \\n Block 2 \\n Block 3 \\n code```, and you want to remove Block 2, you would output ```// ... existing code ... \\n Block 1 \\n  Block 3 \\n // ... existing code ...```.\nMake sure it is clear what the edit should be, and where it should be applied.\nALWAYS make all edits to a file in a single edit_file instead of multiple edit_file calls to the same file. The apply model can handle many distinct edits at once.",
+            "description": "Use this tool to make an edit to an existing file.\n\nThis will be read by a less intelligent model, which will quickly apply the edit. You should make it clear what the edit is, while also minimizing the unchanged code you write.\nWhen writing the edit, you should specify each edit in sequence, with the special comment // ... existing code ... to represent unchanged code in between edited lines.\n\nFor example:\n\n// ... existing code ...\nFIRST_EDIT\n// ... existing code ...\nSECOND_EDIT\n// ... existing code ...\nTHIRD_EDIT\n// ... existing code ...\n\nYou should still bias towards repeating as few lines of the original file as possible to convey the change.\nBut, each edit should contain sufficient context of unchanged code around the code you're editing to resolve ambiguity.\nDO NOT omit spans of pre-existing code (or comments) without using the // ... existing code ... comment to indicate its absence. If you omit the existing code comment, the model may inadvertently delete these lines.\nIf you plan on deleting a section, you must provide context before and after to delete it. If the initial code is ```code \\n Block 1 \\n Block 2 \\n Block 3 \\n code```, and you want to remove Block 2, you would output ```// ... existing code ... \\n Block 1 \\n  Block 3 \\n // ... existing code ...```.\nMake sure it is clear what the edit should be, and where it should be applied.\nALWAYS make all edits to a file in a single edit_file instead of multiple edit_file calls to the same file. The apply model can handle many distinct edits at once.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -480,7 +431,7 @@ def authenticate_user(username, password):
         </function_calls>
         ''')
     async def edit_file(self, target_file: str, instructions: str, code_edit: str) -> ToolResult:
-        """Edit a file using AI-powered intelligent editing with fallback to string replacement"""
+        """Edit a file using AI-powered intelligent editing with Vertex AI Gemini 2.5 Flash"""
         try:
             # Ensure sandbox is initialized
             await self._ensure_sandbox()
@@ -493,13 +444,13 @@ def authenticate_user(username, password):
             # Read current content
             original_content = (await self.sandbox.fs.download_file(full_path)).decode()
             
-            # Try Vertex AI Gemini editing first
+            # Try Vertex AI Gemini 2.5 Flash editing
             logger.debug(f"Attempting AI-powered edit for file '{target_file}' with instructions: {instructions[:100]}...")
-            new_content, error_message = await self._call_vertex_ai_api(original_content, code_edit, instructions, target_file)
+            new_content, error_message = await self._call_vertex_gemini_api(original_content, code_edit, instructions, target_file)
 
             if error_message:
                 return ToolResult(success=False, output=json.dumps({
-                    "message": f"Vertex AI Gemini editing failed: {error_message}",
+                    "message": f"Vertex AI Gemini 2.5 Flash editing failed: {error_message}",
                     "file_path": target_file,
                     "original_content": original_content,
                     "updated_content": None
@@ -507,7 +458,7 @@ def authenticate_user(username, password):
 
             if new_content is None:
                 return ToolResult(success=False, output=json.dumps({
-                    "message": "Vertex AI Gemini editing failed for an unknown reason. The model returned no content.",
+                    "message": "AI editing failed for an unknown reason. The model returned no content.",
                     "file_path": target_file,
                     "original_content": original_content,
                     "updated_content": None
@@ -521,12 +472,12 @@ def authenticate_user(username, password):
                     "updated_content": original_content
                 }))
 
-            # Vertex AI Gemini editing successful
+            # AI editing successful
             await self.sandbox.fs.upload_file(new_content.encode(), full_path)
             
             # Return rich data for frontend diff view
             return ToolResult(success=True, output=json.dumps({
-                "message": f"File '{target_file}' edited successfully using Vertex AI Gemini.",
+                "message": f"File '{target_file}' edited successfully.",
                 "file_path": target_file,
                 "original_content": original_content,
                 "updated_content": new_content

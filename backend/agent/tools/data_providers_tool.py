@@ -15,11 +15,11 @@ class DataProvidersTool(Tool):
         super().__init__()
 
         self.register_data_providers = {
-            "linkedin": LinkedinProvider(),
-            "yahoo_finance": YahooFinanceProvider(),
-            "amazon": AmazonProvider(),
-            "zillow": ZillowProvider(),
-            "twitter": TwitterProvider()
+            # "linkedin": LinkedinProvider(),
+            # "yahoo_finance": YahooFinanceProvider(),
+            # "amazon": AmazonProvider(),
+            # "zillow": ZillowProvider(),
+            # "twitter": TwitterProvider()
         }
 
     @openapi_schema({
