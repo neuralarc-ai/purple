@@ -852,12 +852,18 @@ export function ThreadFilesDisplay({
     const getGridPosition = (index: number, total: number, isRightAligned: boolean) => {
         if (total === 1) {
             // Single file: [][1] for user messages, [1][] for assistant messages
-            return isRightAligned ? "col-start-1" : "col-start-2";
+            return isRightAligned ? "col-start-2" : "col-start-1";
+        } else if (total === 2) {
+            // Two files: [1][2] for both user and assistant messages
+            return "";
         } else if (total === 3) {
-            // Three files: [1][2] and [][3] for user messages, [1][2] and [3][] for assistant messages
+            // Three files: [1][2] and [3][] for assistant messages, [1][2] and [][3] for user messages
             if (index === 2) { // Third file
-                return isRightAligned ? "col-start-1" : "col-start-2";
+                return isRightAligned ? "col-start-2" : "col-start-1";
             }
+        } else if (total === 4) {
+            // Four files: [1][2] and [3][4] for both user and assistant messages
+            return "";
         }
         // Default positioning for other cases
         return "";
@@ -868,7 +874,7 @@ export function ThreadFilesDisplay({
             <div className={cn("w-full mt-4", className)}>
                 <div className={cn(
                     "grid grid-cols-2 gap-2",
-                    rightAlignGrid ? "justify-items-end" : "justify-items-start"
+                    rightAlignGrid ? "justify-items-start" : "justify-items-end"
                 )}>
                     {visibleAttachments.map((filepath, index) => (
                         <div 

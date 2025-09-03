@@ -174,6 +174,7 @@ export function renderMarkdownContent(
             fileViewerHandler,
             sandboxId,
             project,
+            false, // Assistant messages should align left
           );
           if (standaloneAttachments) {
             contentParts.push(
@@ -216,6 +217,7 @@ export function renderMarkdownContent(
             fileViewerHandler,
             sandboxId,
             project,
+            false, // Assistant messages should align left
           );
           if (standaloneAttachments) {
             contentParts.push(
@@ -359,6 +361,7 @@ export function renderMarkdownContent(
         fileViewerHandler,
         sandboxId,
         project,
+        false, // Assistant messages should align left
       );
       if (standaloneAttachments) {
         contentParts.push(
@@ -402,6 +405,7 @@ export function renderMarkdownContent(
         fileViewerHandler,
         sandboxId,
         project,
+        false, // Assistant messages should align left
       );
       if (standaloneAttachments) {
         contentParts.push(
