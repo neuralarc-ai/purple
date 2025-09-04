@@ -7,8 +7,8 @@ import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model'
 
 export const STORAGE_KEY_MODEL = 'suna-preferred-model-v7';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
-export const DEFAULT_PREMIUM_MODEL_ID = 'bedrock/anthropic.claude-sonnet-4-20250514-v1:0';
-export const DEFAULT_FREE_MODEL_ID = 'bedrock/anthropic.claude-sonnet-4-20250514-v1:0';
+export const DEFAULT_PREMIUM_MODEL_ID = 'vertex_ai/gemini-2.5-pro';
+export const DEFAULT_FREE_MODEL_ID = 'vertex_ai/gemini-2.5-pro';
 
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
@@ -51,9 +51,29 @@ export const MODELS = {
     recommended: false,
     lowQuality: false
   },
+
+  // Vertex AI Claude Models
   'vertex_ai/claude-sonnet-4@20250514': { 
     tier: 'premium', 
     priority: 97,
+    recommended: false,
+    lowQuality: false
+  },
+  'vertex_ai/claude-3-5-sonnet@20241022': { 
+    tier: 'premium', 
+    priority: 96,
+    recommended: false,
+    lowQuality: false
+  },
+  'vertex_ai/claude-3-7-sonnet@20250219': { 
+    tier: 'premium', 
+    priority: 95,
+    recommended: false,
+    lowQuality: false
+  },
+  'vertex_ai/claude-3-5-haiku@20241022': { 
+    tier: 'premium', 
+    priority: 94,
     recommended: false,
     lowQuality: false
   },
@@ -61,79 +81,33 @@ export const MODELS = {
   // Bedrock Models - Claude Sonnet Series
   'bedrock/anthropic.claude-sonnet-4-20250514-v1:0': { 
     tier: 'premium',
-    priority: 96, 
+    priority: 91, 
     recommended: false,
     lowQuality: false
   },
   'bedrock/anthropic.claude-sonnet-4-20250514-v1:1': { 
     tier: 'premium',
-    priority: 95, 
+    priority: 90, 
     recommended: false,
     lowQuality: false
   },
   'bedrock/anthropic.claude-sonnet-4-20250514-v1:2': { 
     tier: 'premium',
-    priority: 94, 
+    priority: 89, 
     recommended: false,
     lowQuality: false
   },
   'bedrock/anthropic.claude-sonnet-4-20250514-v1:3': { 
     tier: 'premium',
-    priority: 93, 
-    recommended: false,
-    lowQuality: false
-  },
-
-  // Bedrock Models - Claude Opus Series
-  'bedrock/anthropic.claude-opus-3-20240229-v1:0': { 
-    tier: 'premium',
-    priority: 92, 
-    recommended: false,
-    lowQuality: false
-  },
-  'bedrock/anthropic.claude-opus-3-20240229-v1:1': { 
-    tier: 'premium',
-    priority: 91, 
-    recommended: false,
-    lowQuality: false
-  },
-  'bedrock/anthropic.claude-opus-3-20240229-v1:2': { 
-    tier: 'premium',
-    priority: 90, 
-    recommended: false,
-    lowQuality: false
-  },
-
-  // Bedrock Models - Claude Haiku Series
-  'bedrock/anthropic.claude-haiku-3-20240307-v1:0': { 
-    tier: 'premium',
-    priority: 89, 
-    recommended: false,
-    lowQuality: false
-  },
-  'bedrock/anthropic.claude-haiku-3-20240307-v1:1': { 
-    tier: 'premium',
     priority: 88, 
     recommended: false,
     lowQuality: false
   },
-  'bedrock/anthropic.claude-haiku-3-20240307-v1:2': { 
+
+  // Bedrock Models - Claude 3.7 Sonnet Series
+  'bedrock/anthropic.claude-3-7-sonnet-20250219-v1:0': { 
     tier: 'premium',
     priority: 87, 
-    recommended: false,
-    lowQuality: false
-  },
-
-  // Bedrock Models - Claude Instant Series
-  'bedrock/anthropic.claude-instant-1-20240620-v1:0': { 
-    tier: 'premium',
-    priority: 86, 
-    recommended: false,
-    lowQuality: false
-  },
-  'bedrock/anthropic.claude-instant-1-20240620-v1:1': { 
-    tier: 'premium',
-    priority: 85, 
     recommended: false,
     lowQuality: false
   },
@@ -141,13 +115,13 @@ export const MODELS = {
   // Bedrock Models - Claude 3.5 Sonnet Series
   'bedrock/anthropic.claude-3-5-sonnet-20241022-v1:0': { 
     tier: 'premium',
-    priority: 84, 
+    priority: 86, 
     recommended: false,
     lowQuality: false
   },
   'bedrock/anthropic.claude-3-5-sonnet-20241022-v1:1': { 
     tier: 'premium',
-    priority: 83, 
+    priority: 85, 
     recommended: false,
     lowQuality: false
   },
@@ -155,55 +129,7 @@ export const MODELS = {
   // Bedrock Models - Claude 3.5 Haiku Series
   'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0': { 
     tier: 'premium',
-    priority: 82, 
-    recommended: false,
-    lowQuality: false
-  },
-  'bedrock/anthropic.claude-3-5-haiku-20241022-v1:1': { 
-    tier: 'premium',
-    priority: 81, 
-    recommended: false,
-    lowQuality: false
-  },
-
-  // Bedrock Models - Claude 3 Opus Series
-  'bedrock/anthropic.claude-3-opus-20240229-v1:0': { 
-    tier: 'premium',
-    priority: 80, 
-    recommended: false,
-    lowQuality: false
-  },
-  'bedrock/anthropic.claude-3-opus-20240229-v1:1': { 
-    tier: 'premium',
-    priority: 79, 
-    recommended: false,
-    lowQuality: false
-  },
-
-  // Bedrock Models - Claude 3 Sonnet Series
-  'bedrock/anthropic.claude-3-sonnet-20240229-v1:0': { 
-    tier: 'premium',
-    priority: 78, 
-    recommended: false,
-    lowQuality: false
-  },
-  'bedrock/anthropic.claude-3-sonnet-20240229-v1:1': { 
-    tier: 'premium',
-    priority: 77, 
-    recommended: false,
-    lowQuality: false
-  },
-
-  // Bedrock Models - Claude 3 Haiku Series
-  'bedrock/anthropic.claude-3-haiku-20240307-v1:0': { 
-    tier: 'premium',
-    priority: 76, 
-    recommended: false,
-    lowQuality: false
-  },
-  'bedrock/anthropic.claude-3-haiku-20240307-v1:1': { 
-    tier: 'premium',
-    priority: 75, 
+    priority: 84, 
     recommended: false,
     lowQuality: false
   },
@@ -221,7 +147,7 @@ export const MODELS = {
     recommended: false,
     lowQuality: false
   },
-  'bedrock/anthropic.claude-haiku-3-20240307-v1:0-free': { 
+  'vertex_ai/claude-3-5-haiku@20241022-free': { 
     tier: 'free', 
     priority: 90,
     recommended: false,
