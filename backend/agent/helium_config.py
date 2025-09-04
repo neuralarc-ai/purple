@@ -7,7 +7,7 @@ HELIUM_CONFIG = {
     "description": "Meet Helium - the God mode agent that transforms how you work with AI. Powered by the brilliant Helio o1 model, Helium delivers human-like understanding with superhuman capabilities, making complex tasks feel effortless.",
     "avatar": "⚡",
     "avatar_color": "#F59E0B",
-    "model": "vertexai/gemini-2.5-pro",  # Default fallback, will be overridden in production
+    "model": "vertex_ai/gemini-2.5-pro",  # Default fallback, will be overridden in production
     "system_prompt": SYSTEM_PROMPT,
     "configured_mcps": [],
     "custom_mcps": [],
