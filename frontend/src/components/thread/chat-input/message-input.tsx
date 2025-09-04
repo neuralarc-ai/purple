@@ -315,12 +315,12 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
         <div className="flex items-center justify-between mt-0 mb-1 px-2">
           <div className="flex items-center gap-2">
-            {/* Mode Toggle */}
-            <ModeToggle
+            {/* Mode Toggle - Hidden for now */}
+            {/* <ModeToggle
               selectedMode={selectedMode}
               onModeChange={onModeChange}
               disabled={loading || (disabled && !isAgentRunning)}
-            />
+            /> */}
             
             {!hideAttachments && (
               <>
