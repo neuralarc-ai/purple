@@ -3231,53 +3231,17 @@ async def create_thread(
         project_id = project.data[0]['project_id']
         logger.debug(f"Created new project: {project_id}")
 
-        # 2. Create Sandbox
+        # 2. Create Sandbox (lazy): only create when needed
+        # Sandbox will be created lazily when tools require it via _ensure_sandbox()
         sandbox_id = None
-        try:
-            sandbox_pass = str(uuid.uuid4())
-            sandbox = await create_sandbox(sandbox_pass, project_id)
-            sandbox_id = sandbox.id
-            logger.debug(f"Created new sandbox {sandbox_id} for project {project_id}")
-            
-            # Get preview links
-            vnc_link = await sandbox.get_preview_link(6080)
-            website_link = await sandbox.get_preview_link(8080)
-            vnc_url = vnc_link.url if hasattr(vnc_link, 'url') else str(vnc_link).split("url='")[1].split("'")[0]
-            website_url = website_link.url if hasattr(website_link, 'url') else str(website_link).split("url='")[1].split("'")[0]
-            token = None
-            if hasattr(vnc_link, 'token'):
-                token = vnc_link.token
-            elif "token='" in str(vnc_link):
-                token = str(vnc_link).split("token='")[1].split("'")[0]
-        except Exception as e:
-            logger.error(f"Error creating sandbox: {str(e)}")
-            await client.table('projects').delete().eq('project_id', project_id).execute()
-            if sandbox_id:
-                try: 
-                    await delete_sandbox(sandbox_id)
-                except Exception as e: 
-                    logger.error(f"Error deleting sandbox: {str(e)}")
-            raise Exception("Failed to create sandbox")
+        sandbox = None
+        sandbox_pass = None
+        vnc_url = None
+        website_url = None
+        token = None
 
-        # Update project with sandbox info
-        update_result = await client.table('projects').update({
-            'sandbox': {
-                'id': sandbox_id, 
-                'pass': sandbox_pass, 
-                'vnc_preview': vnc_url,
-                'sandbox_url': website_url, 
-                'token': token
-            }
-        }).eq('project_id', project_id).execute()
-
-        if not update_result.data:
-            logger.error(f"Failed to update project {project_id} with new sandbox {sandbox_id}")
-            if sandbox_id:
-                try: 
-                    await delete_sandbox(sandbox_id)
-                except Exception as e: 
-                    logger.error(f"Error deleting sandbox: {str(e)}")
-            raise Exception("Database update failed")
+        # Don't create sandbox automatically - let it be created when needed
+        # This saves resources and only creates sandbox when tools actually require it
 
         # 3. Create Thread
         thread_data = {
