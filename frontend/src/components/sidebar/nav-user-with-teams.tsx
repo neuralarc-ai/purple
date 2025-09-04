@@ -419,7 +419,7 @@ export function NavUserWithTeams({
               </DropdownMenuLabel>
               
               {/* Credit Usage Section */}
-              <div className="px-1.5 py-2">
+              {/* <div className="px-1.5 py-2">
                 <div className="flex items-center justify-between mb-2">
                   <div className="text-xs text-muted-foreground">
                     {subscriptionData ? (
@@ -465,7 +465,7 @@ export function NavUserWithTeams({
                     }}
                   />
                 </div>
-              </div>
+              </div> */}
               
               
 

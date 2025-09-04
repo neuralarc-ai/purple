@@ -394,7 +394,7 @@ export const AgentCard: React.FC<AgentCardProps> = ({
   const isHeliumAgent = mode === 'agent' && (data as AgentData).metadata?.is_helium_default === true;
   const isOwner = currentUserId && mode === 'marketplace' && (data as MarketplaceData).creator_id === currentUserId;
   
-  const cardClassName = `group relative bg-accent/50 rounded-4xl overflow-hidden transition-all duration-300 cursor-pointer flex flex-col min-h-[280px] max-h-[320px] hover:bg-accent/70`;
+  const cardClassName = `group relative bg-accent/50 dark:bg-sidebar rounded-4xl overflow-hidden transition-all duration-300 cursor-pointer flex flex-col min-h-[280px] max-h-[320px] hover:bg-accent/70`;
   
   const renderBadge = () => {
     switch (mode) {

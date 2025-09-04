@@ -37,7 +37,7 @@ const TabButton = ({ value, isActive, onClick, children }: TabButtonProps) => {
         "relative flex items-center justify-center gap-2 rounded-4xl px-4 h-10 text-sm font-medium transition-all duration-300 ease-out cursor-pointer",
         !isActive && (isDark ? "hover:bg-white/8" : "hover:bg-muted/60"),
         isActive
-          ? isDark ? "text-white bg-sidebar/70" : "text-foreground bg-sidebar border border-border/50"
+          ? isDark ? "text-white bg-sidebar dark:bg-sidebar-accent/90" : "text-foreground bg-sidebar border border-border/50"
           : isDark ? "text-white/60 hover:text-white/85" : "text-muted-foreground hover:text-foreground"
       )}
     >
