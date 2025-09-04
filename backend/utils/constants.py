@@ -1,32 +1,5 @@
 # Master model configuration - single source of truth
-MODELS = {    
-    "openrouter/moonshotai/kimi-k2": {
-        "aliases": ["moonshotai/kimi-k2"],
-        "pricing": {
-            "input_cost_per_million_tokens": 1.00,
-            "output_cost_per_million_tokens": 3.00
-        },
-        "context_window": 200_000,  # 200k tokens
-        "tier_availability": ["free", "paid"]
-    },
-    "openrouter/z-ai/glm-4.5-air:free": {
-        "aliases": ["z-ai/glm-4.5-air:free"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.00,
-            "output_cost_per_million_tokens": 0.00
-        },
-        "context_window": 128_000,  # 128k tokens
-        "tier_availability": ["free", "paid"]
-    },
-    "openrouter/anthropic/claude-sonnet-4": {
-        "aliases": ["openrouter/claude-sonnet-4"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 200_000,  # 200k tokens
-        "tier_availability": ["free", "paid"]
-    },
+MODELS = {        
     "openrouter/qwen/qwen3-coder:free": {
         "aliases": ["qwen/qwen3-coder:free"],
         "pricing": {
@@ -53,46 +26,8 @@ MODELS = {
         },
         "context_window": 32_768,  # 32k tokens
         "tier_availability": ["free"]
-    },
-    "openrouter/deepseek/deepseek-r1-0528:free": {
-        "aliases": ["deepseek/deepseek-r1-0528:free"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.00,
-            "output_cost_per_million_tokens": 0.00
-        },
-        "context_window": 32_768,  # 32k tokens
-        "tier_availability": ["free"]
-    },
-    
-    # All models available for all tiers
-    "gemini/gemini-2.5-pro": {
-        "aliases": ["google/gemini-2.5-pro"],
-        "pricing": {
-            "input_cost_per_million_tokens": 1.25,
-            "output_cost_per_million_tokens": 10.00
-        },
-        "context_window": 2_000_000,  # 2M tokens
-        "tier_availability": ["free", "paid"]
-    },
-    "gemini/gemini-2.5-flash": {
-        "aliases": ["google/gemini-2.5-flash"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.15,
-            "output_cost_per_million_tokens": 0.60
-        },
-        "context_window": 2_000_000,  # 2M tokens
-        "tier_availability": ["free", "paid"]
-    },
-    "gemini/gemini-2.0-flash": {
-        "aliases": ["google/gemini-2.0-flash"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.15,
-            "output_cost_per_million_tokens": 0.60
-        },
-        "context_window": 1_000_000,  # 1M tokens
-        "tier_availability": ["free", "paid"]
-    },
-    # Vertex AI routes for Gemini (same pricing/tier)
+    },    
+    # Vertex AI Models
     "vertex_ai/gemini-2.5-pro": {
         "aliases": ["gemini-2.5-pro-vertex", "vertex/gemini-2.5-pro"],
         "pricing": {
@@ -119,10 +54,9 @@ MODELS = {
         },
         "context_window": 1_000_000,  # 1M tokens
         "tier_availability": ["free", "paid"]
-    },           
-    # Vertex AI Claude Sonnet 4 (using LiteLLM vertex_ai route)
+    },
     
-    # Vertex AI Claude Sonnet 4 (using LiteLLM vertex_ai route)
+    # Vertex AI Claude Models
     "vertex_ai/claude-sonnet-4@20250514": {
         "aliases": ["claude-sonnet-4-vertex", "vertex/claude-sonnet-4@20250514", "claude-sonnet-4@20250514"],
         "pricing": {
@@ -131,7 +65,114 @@ MODELS = {
         },
         "context_window": 1_000_000,  # 1M tokens for Claude Sonnet 4
         "tier_availability": ["paid"]
-    }                    
+    },
+    "vertex_ai/claude-3-5-sonnet@20241022": {
+        "aliases": ["claude-3-5-sonnet-vertex", "vertex/claude-3-5-sonnet@20241022"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+    "vertex_ai/claude-3-7-sonnet@20250219": {
+        "aliases": ["claude-3-7-sonnet-vertex", "vertex/claude-3-7-sonnet@20250219"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+    "vertex_ai/claude-3-5-haiku@20241022": {
+        "aliases": ["claude-3-5-haiku-vertex", "vertex/claude-3-5-haiku@20241022"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.25,
+            "output_cost_per_million_tokens": 1.25
+        },
+        "context_window": 200_000,
+        "tier_availability": ["free", "paid"]
+    },
+
+    # Bedrock Models - Claude Sonnet Series
+    "bedrock/anthropic.claude-sonnet-4-20250514-v1:0": {
+        "aliases": ["claude-sonnet-4-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 1_000_000,  # 1M tokens for Claude Sonnet 4
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-sonnet-4-20250514-v1:1": {
+        "aliases": ["claude-sonnet-4-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 1_000_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-sonnet-4-20250514-v1:2": {
+        "aliases": ["claude-sonnet-4-bedrock-v1-2"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 1_000_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-sonnet-4-20250514-v1:3": {
+        "aliases": ["claude-sonnet-4-bedrock-v1-3"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 1_000_000,
+        "tier_availability": ["paid"]
+    },
+    
+    # Bedrock Models - Claude 3.7 Sonnet Series
+    "bedrock/anthropic.claude-3-7-sonnet-20250219-v1:0": {
+        "aliases": ["claude-3-7-sonnet-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+    
+    # Bedrock Models - Claude 3.5 Sonnet Series
+    "bedrock/anthropic.claude-3-5-sonnet-20241022-v1:0": {
+        "aliases": ["claude-3-5-sonnet-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-3-5-sonnet-20241022-v1:1": {
+        "aliases": ["claude-3-5-sonnet-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+
+    # Bedrock Models - Claude 3.5 Haiku Series
+    "bedrock/anthropic.claude-3-5-haiku-20241022-v1:0": {
+        "aliases": ["claude-3-5-haiku-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.25,
+            "output_cost_per_million_tokens": 1.25
+        },
+        "context_window": 200_000,
+        "tier_availability": ["free", "paid"]
+    },
 }
 
 # Derived structures (auto-generated from MODELS)

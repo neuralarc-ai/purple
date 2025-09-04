@@ -273,9 +273,9 @@ def _configure_vertex_ai(params: Dict[str, Any], model_name: str) -> None:
         else:
             # Auto-detect region based on model type
             if "claude" in model_name.lower():
-                # Claude models use us-east5
-                params["vertex_location"] = "us-east5"
-                logger.debug(f"Claude model detected, using us-east5 region")
+                # Claude models use us-central1 (all models available here)
+                params["vertex_location"] = "us-central1"
+                logger.debug(f"Claude model detected, using us-central1 region")
             elif "gemini" in model_name.lower():
                 # Gemini models use us-central1
                 params["vertex_location"] = "us-central1"
@@ -287,9 +287,9 @@ def _configure_vertex_ai(params: Dict[str, Any], model_name: str) -> None:
                 elif config.GOOGLE_CLOUD_LOCATION:
                     params["vertex_location"] = config.GOOGLE_CLOUD_LOCATION
                 else:
-                    # Default to us-east5 for unknown models
-                    params["vertex_location"] = "us-east5"
-                    logger.debug(f"Unknown model type, defaulting to us-east5 region")
+                    # Default to us-central1 for unknown models
+                    params["vertex_location"] = "us-central1"
+                    logger.debug(f"Unknown model type, defaulting to us-central1 region")
 
     # Check if this is a Claude model on Vertex AI
     is_vertex_claude = (is_vertex_route or is_vertex_legacy) and "claude" in model_name.lower()
