@@ -40,13 +40,13 @@ class ComposioRegistry:
             AppCategory(id="popular", name="Popular", description="Most commonly used integrations", priority=1),
             AppCategory(id="productivity", name="Productivity", description="Tools to boost productivity", priority=2),
             AppCategory(id="communication", name="Communication", description="Chat, email, and messaging tools", priority=3),
-            AppCategory(id="crm", name="CRM", description="Customer relationship management", priority=4),
-            AppCategory(id="project-management", name="Project Management", description="Task and project tracking", priority=5),
-            AppCategory(id="marketing", name="Marketing", description="Marketing automation and analytics", priority=6),
-            AppCategory(id="analytics", name="Analytics", description="Data analysis and reporting", priority=7),
-            AppCategory(id="scheduling", name="Scheduling", description="Calendar and appointment tools", priority=8),
-            # AppCategory(id="finance", name="Finance", description="Financial and accounting tools", priority=9),
-            # AppCategory(id="social-media", name="Social Media", description="Social media management", priority=10),
+            AppCategory(id="social-media", name="Social Media", description="Social media platforms and management tools", priority=4),
+            AppCategory(id="crm", name="CRM", description="Customer relationship management", priority=5),
+            AppCategory(id="project-management", name="Project Management", description="Task and project tracking", priority=6),
+            AppCategory(id="marketing", name="Marketing", description="Marketing automation and analytics", priority=7),
+            AppCategory(id="analytics", name="Analytics", description="Data analysis and reporting", priority=8),
+            AppCategory(id="scheduling", name="Scheduling", description="Calendar and appointment tools", priority=9),
+            # AppCategory(id="finance", name="Finance", description="Financial and accounting tools", priority=10),
             # AppCategory(id="development", name="Development", description="Developer tools and platforms", priority=11),
             # AppCategory(id="storage", name="Storage", description="File storage and sharing", priority=12),
             # AppCategory(id="ecommerce", name="E-commerce", description="Online store and payment tools", priority=13),
@@ -57,29 +57,20 @@ class ComposioRegistry:
     def _initialize_popular_apps(self) -> List[str]:
         """Define which apps should be marked as popular"""
         return [
-            # Google Suite
-            "gmail", "googlesheets", "googledrive", "googlecalendar", "googledocs", "googlesuper", "googleclassroom",
+            # Microsoft Suite - All Microsoft related apps first
+            "outlook",
             
-            # Communication & Collaboration
-            "slack", "discord", "zoom", "microsoftteams", "telegram", "whatsapp",
+            # Google Suite - All Google related apps
+            "gmail", "googledrive", "googlesheets", "googlecalendar", "googledocs", "googlesuper", "googleclassroom", "googletasks", "googlemaps", "googlemeet",
             
-            # Productivity & Note-taking
-            "notion", "airtable", "evernote", "onenote", "obsidian", "roam",
+            # Additional Microsoft Suite apps
+            "excel",
             
-            # Project Management
-            "trello", "asana", "jira", "linear", "monday", "clickup", "basecamp", "todoist",
+            # Other popular apps
+            "notion", "github", "perplexityai", "supabase", "figma", "salesforce", "freshdesk", "zoho", "dropbox",
             
-            # CRM & Sales
-            "hubspot", "salesforce", "pipedrive", "intercom", "zendesk", "freshworks", "crm",
-            
-            # Marketing & Email
-            "mailchimp", "sendgrid", "constantcontact", "campaignmonitor", "convertkit",
-            
-            # Scheduling & Calendar
-            "calendly", "acuityscheduling", "bookingcom", "when2meet", "doodle",
-            
-            # Analytics & Tracking
-            "googleanalytics", "mixpanel", "amplitude", "hotjar", "segment"
+            # Social Media & Communication
+            "twitter", "linkedin", "reddit"
         ]
     
     def _initialize_category_mappings(self) -> Dict[str, str]:
@@ -93,14 +84,15 @@ class ComposioRegistry:
             "googledocs": "productivity",
             "googlesuper": "productivity",
             "googleclassroom": "productivity",
+            "googletasks": "productivity",
+            "googlemaps": "productivity",
+            "googlemeet": "communication",
             
             # Communication
             "slack": "communication",
-            "discord": "communication",
+            "outlook": "communication",
             "microsoftteams": "communication",
             "zoom": "communication",
-            "telegram": "communication",
-            "whatsapp": "communication",
             
             # Productivity
             "notion": "productivity",
@@ -112,6 +104,8 @@ class ComposioRegistry:
             "dropbox": "productivity",  # Changed from storage to productivity
             "onedrive": "productivity",  # Changed from storage to productivity
             "box": "productivity",  # Changed from storage to productivity
+            "excel": "productivity",
+            "sharepoint": "productivity",
             
             # Project Management
             "trello": "project-management",
@@ -134,6 +128,7 @@ class ComposioRegistry:
             
             # Marketing
             "mailchimp": "marketing",
+            "klaviyo": "marketing",
             "sendgrid": "marketing",
             "constantcontact": "marketing",
             "campaignmonitor": "marketing",
@@ -172,13 +167,14 @@ class ComposioRegistry:
             "magento": "marketing",
             "bigcommerce": "marketing",
             
-            # Social Media -> Marketing
-            "twitter": "marketing",
-            "facebook": "marketing",
-            "instagram": "marketing",
-            "linkedin": "marketing",
-            "youtube": "marketing",
-            "tiktok": "marketing",
+            # Social Media
+            "twitter": "social-media",
+            "facebook": "social-media",
+            "instagram": "social-media",
+            "linkedin": "social-media",
+            "youtube": "social-media",
+            "discord": "social-media",
+            "reddit": "social-media",
             
             # Development -> Productivity
             "github": "productivity",
@@ -189,6 +185,11 @@ class ComposioRegistry:
             "netlify": "productivity",
             "aws": "productivity",
             "docker": "productivity",
+            "supabase": "productivity",
+            "perplexityai": "productivity",
+            "dropbox": "productivity",
+            "zoho": "productivity",
+            "freshdesk": "crm",
             
             # HR -> CRM (customer/employee relationship management)
             "bamboohr": "crm",
@@ -222,13 +223,14 @@ class ComposioRegistry:
         
         # Check if app name contains category keywords
         category_keywords = {
-            "communication": ["chat", "message", "mail", "email", "call", "video", "meeting"],
+            "communication": ["chat", "message", "mail", "email", "call", "video", "meeting", "outlook"],
+            "social-media": ["social", "twitter", "facebook", "instagram", "linkedin", "youtube", "discord", "reddit", "social media", "social network"],
             "crm": ["crm", "customer", "sales", "lead", "contact", "hr", "human", "employee", "recruitment", "hiring", "payroll"],
             "project-management": ["project", "task", "kanban", "scrum", "agile", "board"],
-            "marketing": ["marketing", "campaign", "newsletter", "email marketing", "automation", "payment", "billing", "invoice", "shop", "store", "ecommerce", "commerce", "cart", "product", "social", "twitter", "facebook", "instagram", "linkedin"],
+            "marketing": ["marketing", "campaign", "newsletter", "email marketing", "automation", "payment", "billing", "invoice", "shop", "store", "ecommerce", "commerce", "cart", "product", "klaviyo", "mailchimp"],
             "analytics": ["analytics", "tracking", "metrics", "dashboard", "report"],
             "scheduling": ["calendar", "schedule", "appointment", "booking", "meeting"],
-            "productivity": ["productivity", "note", "document", "office", "workspace", "storage", "drive", "cloud", "file", "code", "git", "deploy", "api", "developer", "programming", "accounting", "finance"]
+            "productivity": ["productivity", "note", "document", "office", "workspace", "storage", "drive", "cloud", "file", "code", "git", "deploy", "api", "developer", "programming", "accounting", "finance", "github", "notion", "onedrive"]
         }
         
         # Check app name and tags against keywords
@@ -263,8 +265,14 @@ class ComposioRegistry:
             category_id = self.categorize_app(app_slug, app_name, app_tags)
             is_popular = self.is_popular_app(app_slug)
             
-            # If app is popular, also add it to the popular category
+            # If app is popular, also add it to the popular category with priority based on popular_apps list order
             if is_popular:
+                # Get the priority based on position in popular_apps list
+                try:
+                    priority = self.popular_apps.index(app_slug.lower())
+                except ValueError:
+                    priority = 999  # fallback for apps not in list
+                
                 popular_app = CategorizedApp(
                     slug=app_slug,
                     name=app_name,
@@ -275,7 +283,7 @@ class ComposioRegistry:
                     tags=app_tags,
                     auth_schemes=app.get("auth_schemes", []),
                     is_popular=True,
-                    priority=1
+                    priority=priority
                 )
                 categorized["popular"].append(popular_app)
             
@@ -296,9 +304,14 @@ class ComposioRegistry:
                 )
                 categorized[category_id].append(categorized_app)
         
-        # Sort apps within each category (popular first, then alphabetical)
+        # Sort apps within each category
         for category_id in categorized:
-            categorized[category_id].sort(key=lambda x: (x.priority, x.name.lower()))
+            if category_id == "popular":
+                # For popular category, sort by the priority (order in popular_apps list)
+                categorized[category_id].sort(key=lambda x: x.priority)
+            else:
+                # For other categories, sort by priority first, then alphabetical
+                categorized[category_id].sort(key=lambda x: (x.priority, x.name.lower()))
         
         # Remove empty categories
         categorized = {k: v for k, v in categorized.items() if v}
