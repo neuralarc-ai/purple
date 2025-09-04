@@ -255,15 +255,9 @@ export const useModelSelection = () => {
         if (!modelsData?.models || isLoadingModels) {
                       models = [
               { 
-                id: DEFAULT_FREE_MODEL_ID, 
-                label: 'Gemini 2.5 Flash', 
-                requiresSubscription: false,
-                priority: MODELS[DEFAULT_FREE_MODEL_ID]?.priority || 100
-              },
-              { 
                 id: DEFAULT_PREMIUM_MODEL_ID, 
                 label: 'Gemini 2.5 Pro', 
-                requiresSubscription: true, 
+                requiresSubscription: false,
                 priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
               },
             ];
@@ -411,23 +405,19 @@ export const useModelSelection = () => {
         }
       }
       
-      // Fallback to default model
-      const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-        (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
+      // Fallback to default model - always use Gemini 2.5 Pro
+      const defaultModel = DEFAULT_PREMIUM_MODEL_ID;
       console.log('🔧 useModelSelection: Using default model:', defaultModel);
-      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Gemini 2.5 Pro)' : 
-        `Subscription status: ${subscriptionStatus} -> Default: ${subscriptionStatus === 'active' ? 'PREMIUM (Gemini 2.5 Pro)' : 'FREE (Gemini 2.5 Flash)'}`);
+      console.log('🔧 useModelSelection: Environment: Using Gemini 2.5 Pro as default');
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       setHasInitialized(true);
       
     } catch (error) {
       console.warn('❌ useModelSelection: Failed to load preferences from localStorage:', error);
-      const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-        (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
+      const defaultModel = DEFAULT_PREMIUM_MODEL_ID;
       console.log('🔧 useModelSelection: Using fallback default model:', defaultModel);
-      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Gemini 2.5 Pro)' : 
-        `Subscription status: ${subscriptionStatus} -> Fallback: ${subscriptionStatus === 'active' ? 'PREMIUM (Gemini 2.5 Pro)' : 'FREE (Gemini 2.5 Flash)'}`);
+      console.log('🔧 useModelSelection: Environment: Using Gemini 2.5 Pro as fallback default');
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       setHasInitialized(true);
@@ -446,24 +436,22 @@ export const useModelSelection = () => {
     const modelOption = MODEL_OPTIONS.find(option => option.id === savedModel);
     const isCustomModel = isLocalMode() && customModels.some(model => model.id === savedModel);
     
-    // If the saved model is now invalid, switch to default
-    if (!modelOption && !isCustomModel) {
-      console.warn('⚠️ useModelSelection: Saved model is invalid after loading, switching to default');
-      const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-        (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
-      setSelectedModel(defaultModel);
-      saveModelPreference(defaultModel);
-    } else if (modelOption && !isLocalMode()) {
-      // Check subscription access for non-custom models
-      const isAccessible = canAccessModel(subscriptionStatus, modelOption.requiresSubscription);
-      if (!isAccessible) {
-        console.warn('⚠️ useModelSelection: Saved model not accessible after subscription check, switching to default');
-        const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-          (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
+          // If the saved model is now invalid, switch to default
+      if (!modelOption && !isCustomModel) {
+        console.warn('⚠️ useModelSelection: Saved model is invalid after loading, switching to default');
+        const defaultModel = DEFAULT_PREMIUM_MODEL_ID;
         setSelectedModel(defaultModel);
         saveModelPreference(defaultModel);
+      } else if (modelOption && !isLocalMode()) {
+        // Check subscription access for non-custom models
+        const isAccessible = canAccessModel(subscriptionStatus, modelOption.requiresSubscription);
+        if (!isAccessible) {
+          console.warn('⚠️ useModelSelection: Saved model not accessible after subscription check, switching to default');
+          const defaultModel = DEFAULT_PREMIUM_MODEL_ID;
+          setSelectedModel(defaultModel);
+          saveModelPreference(defaultModel);
+        }
       }
-    }
   }, [isLoadingModels, hasInitialized, MODEL_OPTIONS, customModels, subscriptionStatus]);
 
   // Re-validate current model when subscription status changes
@@ -486,10 +474,8 @@ export const useModelSelection = () => {
       
       if (!isAccessible) {
         console.warn('⚠️ useModelSelection: Current model no longer accessible, switching to default');
-        const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-          (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
-              console.log('🔧 useModelSelection: Subscription-based default switch:', isProductionMode() ? 'PRODUCTION (Gemini 2.5 Pro)' : 
-        `${subscriptionStatus === 'active' ? 'PREMIUM (Gemini 2.5 Pro)' : 'FREE (Gemini 2.5 Flash)'}`);
+        const defaultModel = DEFAULT_PREMIUM_MODEL_ID;
+        console.log('🔧 useModelSelection: Switching to Gemini 2.5 Pro as default');
         setSelectedModel(defaultModel);
         saveModelPreference(defaultModel);
       } else {
@@ -522,8 +508,7 @@ export const useModelSelection = () => {
       console.warn('🔧 useModelSelection: Model not found in options:', modelId, MODEL_OPTIONS, isCustomModel, customModels);
       
       // Reset to default model when the selected model is not found
-      const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-        (isLocalMode() ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
+      const defaultModel = DEFAULT_PREMIUM_MODEL_ID;
       console.log('🔧 useModelSelection: Resetting to default model:', defaultModel);
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
@@ -576,8 +561,7 @@ export const useModelSelection = () => {
       console.log('  subscriptionStatus:', subscriptionStatus);
       console.log('  isLoadingModels:', isLoadingModels);
       console.log('  localStorage value:', localStorage.getItem(STORAGE_KEY_MODEL));
-      console.log('🔧 useModelSelection: defaultModel would be:', isProductionMode() ? `${DEFAULT_PREMIUM_MODEL_ID} (Gemini 2.5 Pro)` : 
-        `${subscriptionStatus === 'active' ? `${DEFAULT_PREMIUM_MODEL_ID} (Gemini 2.5 Pro)` : `${DEFAULT_FREE_MODEL_ID} (Gemini 2.5 Flash)`}`);
+      console.log('🔧 useModelSelection: defaultModel would be:', `${DEFAULT_PREMIUM_MODEL_ID} (Gemini 2.5 Pro)`);
       console.log('🔧 useModelSelection: availableModels:', availableModels.map(m => ({ id: m.id, requiresSubscription: m.requiresSubscription })));
     }
   };
