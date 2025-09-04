@@ -25,7 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-// import { ModeToggle } from './mode-toggle';
+import { ModeToggle } from './mode-toggle';
 import { BorderBeam } from '@/components/magicui/border-beam';
 import { isProductionMode } from '@/lib/config';
 
@@ -315,7 +315,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
         <div className="flex items-center justify-between mt-0 mb-1 px-2">
           <div className="flex items-center gap-2">
-            {/* Mode Toggle - Commented out to default to agent mode */}
+            {/* Mode Toggle - Hidden for now */}
             {/* <ModeToggle
               selectedMode={selectedMode}
               onModeChange={onModeChange}

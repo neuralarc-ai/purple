@@ -78,8 +78,7 @@ class SessionManager:
             "created_at": datetime.now(timezone.utc).isoformat()
         }).execute()
         
-        # Don't create sandbox automatically - let it be created when needed
-        # await self._create_sandbox_for_project(project_id)
+        await self._create_sandbox_for_project(project_id)
         
         await client.table('threads').insert({
             "thread_id": thread_id,
@@ -109,8 +108,7 @@ class SessionManager:
             "created_at": datetime.now(timezone.utc).isoformat()
         }).execute()
         
-        # Don't create sandbox automatically - let it be created when needed
-        # await self._create_sandbox_for_project(project_id)
+        await self._create_sandbox_for_project(project_id)
         
         await client.table('threads').insert({
             "thread_id": thread_id,
