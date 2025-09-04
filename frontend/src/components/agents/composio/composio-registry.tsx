@@ -28,6 +28,7 @@ import {
   Palette,
   File,
   Folder,
+  Share2,
 } from 'lucide-react';
 import {
   useComposioCategories,
@@ -65,6 +66,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   marketing: <Megaphone className="h-4 w-4" />,
   analytics: <LineChart className="h-4 w-4" />,
   communication: <MessageSquare className="h-4 w-4" />,
+  'social-media': <Share2 className="h-4 w-4" />,
   'project-management': <ClipboardList className="h-4 w-4" />,
   scheduling: <Calendar className="h-4 w-4" />,
   'Design & creative tools': <Palette className="h-4 w-4" />,
