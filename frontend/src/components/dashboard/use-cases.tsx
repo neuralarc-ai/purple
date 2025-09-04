@@ -24,12 +24,14 @@ interface UseCaseItem {
 interface UseCasesProps {
   onUseCaseSelect: (prompt: string) => void;
   router: any;
+  onLoad?: () => void;
 }
 
-export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router }) => {
+export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onLoad }) => {
   const { user } = useAuth();
   const [userWorkDescription, setUserWorkDescription] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
 
   // Load user's work description on component mount and when user changes
   useEffect(() => {
@@ -64,11 +66,19 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router }) =
         if (isMounted) {
           setUserWorkDescription(null);
         }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
+              } finally {
+          if (isMounted) {
+            setIsLoading(false);
+            // Trigger slide-in animation after loading
+            setTimeout(() => {
+              setIsVisible(true);
+              // Call onLoad callback when component becomes visible
+              if (onLoad) {
+                onLoad();
+              }
+            }, 100);
+          }
         }
-      }
     };
 
     // Initial load
@@ -686,10 +696,16 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router }) =
     filteredCategories.length === 0;
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-6">
+    <div 
+      className={`w-full max-w-6xl h-full flex flex-col justify-between mx-auto px-4 py-6 transition-all duration-700 ease-out ${
+        isVisible 
+          ? 'translate-y-0 opacity-100' 
+          : 'translate-y-8 opacity-0'
+      }`}
+    >
       {/* Original Use Cases - Always show these */}
       <div className="mb-10">
-        <h2 className="text-2xl font-bold mb-4">Quick Actions</h2>
+        {/* <h2 className="text-2xl font-bold mb-4">Quick Actions</h2> */}
         <div className="flex flex-col items-center gap-2">
           {renderOriginalUseCaseRow(firstRow)}
           {secondRow.length > 0 && renderOriginalUseCaseRow(secondRow)}
@@ -699,22 +715,22 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router }) =
       {/* Categorized Use Cases */}
       {!shouldShowAllCategories && (
         <div className="mt-10">
-          <h2 className="text-2xl font-bold mb-6">Use Cases for {userWorkDescription}</h2>
+          {/* <h2 className="text-2xl font-bold mb-6">Use Cases for {userWorkDescription}</h2> */}
           <div className="space-y-6">
             {filteredCategories.map((category) => (
-              <div key={category.id} className="border rounded-lg overflow-hidden">
-                <div className="w-full flex items-center justify-between p-4 bg-muted/50">
+              <div key={category.id} className="border rounded-2xl overflow-hidden">
+                {/* <div className="w-full flex items-center justify-between p-4 bg-muted/50">
                   <div className="flex items-center">
                     {category.icon}
                     <h3 className="font-medium">{category.name}</h3>
                   </div>
-                </div>
+                </div> */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted/10">
                   {category.items.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => handleUseCaseClick(item)}
-                      className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
                     >
                       <div className="flex items-center mb-2">
                         {item.icon}
@@ -738,7 +754,7 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router }) =
           <h2 className="text-2xl font-bold mb-6">Use Cases by Category</h2>
           <div className="space-y-6">
             {categories.map((category) => (
-              <div key={category.id} className="border rounded-lg overflow-hidden">
+              <div key={category.id} className="border rounded-2xl overflow-hidden">
                 <button
                   onClick={() => toggleCategory(category.name)}
                   className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
@@ -760,7 +776,7 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router }) =
                       <div
                         key={item.id}
                         onClick={() => handleUseCaseClick(item)}
-                        className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                        className="p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
                       >
                         <div className="flex items-center mb-2">
                           {item.icon}
