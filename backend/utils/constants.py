@@ -131,6 +131,222 @@ MODELS = {
         },
         "context_window": 1_000_000,  # 1M tokens for Claude Sonnet 4
         "tier_availability": ["paid"]
+    },
+
+    # Bedrock Models - Claude Sonnet Series
+    "bedrock/anthropic.claude-sonnet-4-20250514-v1:0": {
+        "aliases": ["claude-sonnet-4-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 1_000_000,  # 1M tokens for Claude Sonnet 4
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-sonnet-4-20250514-v1:1": {
+        "aliases": ["claude-sonnet-4-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 1_000_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-sonnet-4-20250514-v1:2": {
+        "aliases": ["claude-sonnet-4-bedrock-v1-2"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 1_000_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-sonnet-4-20250514-v1:3": {
+        "aliases": ["claude-sonnet-4-bedrock-v1-3"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 1_000_000,
+        "tier_availability": ["paid"]
+    },
+
+    # Bedrock Models - Claude Opus Series
+    "bedrock/anthropic.claude-opus-3-20240229-v1:0": {
+        "aliases": ["claude-opus-3-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 15.00,
+            "output_cost_per_million_tokens": 75.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-opus-3-20240229-v1:1": {
+        "aliases": ["claude-opus-3-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 15.00,
+            "output_cost_per_million_tokens": 75.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-opus-3-20240229-v1:2": {
+        "aliases": ["claude-opus-3-bedrock-v1-2"],
+        "pricing": {
+            "input_cost_per_million_tokens": 15.00,
+            "output_cost_per_million_tokens": 75.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+
+    # Bedrock Models - Claude Haiku Series
+    "bedrock/anthropic.claude-haiku-3-20240307-v1:0": {
+        "aliases": ["claude-haiku-3-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.25,
+            "output_cost_per_million_tokens": 1.25
+        },
+        "context_window": 200_000,
+        "tier_availability": ["free", "paid"]
+    },
+    "bedrock/anthropic.claude-haiku-3-20240307-v1:1": {
+        "aliases": ["claude-haiku-3-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.25,
+            "output_cost_per_million_tokens": 1.25
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-haiku-3-20240307-v1:2": {
+        "aliases": ["claude-haiku-3-bedrock-v1-2"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.25,
+            "output_cost_per_million_tokens": 1.25
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+
+    # Bedrock Models - Claude Instant Series
+    "bedrock/anthropic.claude-instant-1-20240620-v1:0": {
+        "aliases": ["claude-instant-1-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.15,
+            "output_cost_per_million_tokens": 0.60
+        },
+        "context_window": 100_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-instant-1-20240620-v1:1": {
+        "aliases": ["claude-instant-1-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.15,
+            "output_cost_per_million_tokens": 0.60
+        },
+        "context_window": 100_000,
+        "tier_availability": ["paid"]
+    },
+
+    # Bedrock Models - Claude 3.5 Sonnet Series
+    "bedrock/anthropic.claude-3-5-sonnet-20241022-v1:0": {
+        "aliases": ["claude-3-5-sonnet-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-3-5-sonnet-20241022-v1:1": {
+        "aliases": ["claude-3-5-sonnet-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+
+    # Bedrock Models - Claude 3.5 Haiku Series
+    "bedrock/anthropic.claude-3-5-haiku-20241022-v1:0": {
+        "aliases": ["claude-3-5-haiku-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.25,
+            "output_cost_per_million_tokens": 1.25
+        },
+        "context_window": 200_000,
+        "tier_availability": ["free", "paid"]
+    },
+    "bedrock/anthropic.claude-3-5-haiku-20241022-v1:1": {
+        "aliases": ["claude-3-5-haiku-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.25,
+            "output_cost_per_million_tokens": 1.25
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+
+    # Bedrock Models - Claude 3 Opus Series
+    "bedrock/anthropic.claude-3-opus-20240229-v1:0": {
+        "aliases": ["claude-3-opus-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 15.00,
+            "output_cost_per_million_tokens": 75.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-3-opus-20240229-v1:1": {
+        "aliases": ["claude-3-opus-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 15.00,
+            "output_cost_per_million_tokens": 75.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+
+    # Bedrock Models - Claude 3 Sonnet Series
+    "bedrock/anthropic.claude-3-sonnet-20240229-v1:0": {
+        "aliases": ["claude-3-sonnet-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+    "bedrock/anthropic.claude-3-sonnet-20240229-v1:1": {
+        "aliases": ["claude-3-sonnet-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 3.00,
+            "output_cost_per_million_tokens": 15.00
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
+    },
+
+    # Bedrock Models - Claude 3 Haiku Series
+    "bedrock/anthropic.claude-3-haiku-20240307-v1:0": {
+        "aliases": ["claude-3-haiku-bedrock"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.25,
+            "output_cost_per_million_tokens": 1.25
+        },
+        "context_window": 200_000,
+        "tier_availability": ["free", "paid"]
+    },
+    "bedrock/anthropic.claude-3-haiku-20240307-v1:1": {
+        "aliases": ["claude-3-haiku-bedrock-v1-1"],
+        "pricing": {
+            "input_cost_per_million_tokens": 0.25,
+            "output_cost_per_million_tokens": 1.25
+        },
+        "context_window": 200_000,
+        "tier_availability": ["paid"]
     }                    
 }
 
