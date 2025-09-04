@@ -776,17 +776,15 @@ async def run_agent(
     elif model_name != "openai/gpt-5-mini":
         logger.debug(f"Using user-selected model: {effective_model}")
     else:
-        # In production, force Vertex Claude Sonnet 4 for default
-        env_mode = os.getenv("ENV_MODE", "local").lower()
-        if env_mode == "production" and model_name == "openai/gpt-5-mini":
-            effective_model = "vertex_ai/claude-sonnet-4@20250514"
-            logger.debug(f"Production environment: using fixed model: {effective_model}")
+        # Use Vertex Gemini 2.5 Pro for both local and production environments
+        if model_name == "openai/gpt-5-mini":
+            effective_model = "vertex_ai/gemini-2.5-pro"
+            logger.debug(f"Using default model: {effective_model}")
         else:
             logger.debug(f"Using default model: {effective_model}")
     
-    # Hard override: in production, always force Vertex Claude Sonnet 4
-    if os.getenv("ENV_MODE", "local").lower() == "production":
-        effective_model = "vertex_ai/claude-sonnet-4@20250514"
+    # Use Vertex Gemini 2.5 Pro for both local and production environments
+    effective_model = "vertex_ai/gemini-2.5-pro"
 
     config = AgentConfig(
         thread_id=thread_id,

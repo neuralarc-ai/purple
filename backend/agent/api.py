@@ -328,9 +328,9 @@ async def start_agent(
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
     logger.debug(f"Resolved model name: {resolved_model}")
 
-    # Hard override: in production, always force Vertex Claude Sonnet 4
+    # Use Vertex Gemini 2.5 Pro for both local and production environments
     if os.getenv("ENV_MODE", "local").lower() == "production":
-        resolved_model = "vertex_ai/claude-sonnet-4@20250514"
+        resolved_model = "vertex_ai/gemini-2.5-pro"
 
     # Update model_name to use the resolved version (or forced one)
     model_name = resolved_model
@@ -1073,14 +1073,9 @@ async def initiate_agent_with_files(
     logger.debug(f"Original model_name from request: {model_name}")
 
     if model_name is None:
-        # In production, force Vertex Claude Sonnet 4
-        env_mode = os.getenv("ENV_MODE", "local").lower()
-        if env_mode == "production":
-            model_name = "vertex_ai/claude-sonnet-4@20250514"
-            logger.debug(f"Production environment: using fixed model: {model_name}")
-        else:
-            model_name = "vertex_ai/gemini-2.5-flash"
-            logger.debug(f"Non-production environment: using default model: {model_name}")
+        # Use Vertex Gemini 2.5 Pro for both local and production environments
+        model_name = "vertex_ai/gemini-2.5-pro"
+        logger.debug(f"Using default model: {model_name}")
 
     # Log the model name after alias resolution
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)

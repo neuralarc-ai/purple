@@ -589,7 +589,7 @@ class WorkflowExecutor:
         from services.billing import check_billing_status, can_use_model
         
         client = await self._db.client
-        model_name = "openai/gpt-5-mini"
+        model_name = "vertex_ai/gemini-2.5-pro"
         
         can_use, model_message, _ = await can_use_model(client, account_id, model_name)
         if not can_use:

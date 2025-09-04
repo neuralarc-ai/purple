@@ -37,12 +37,6 @@ HELIUM_CONFIG = {
 def get_helium_model() -> str:
     """
     Get the appropriate model for Helium based on environment.
-    In production, always use Vertex Claude Sonnet 4.
-    In other environments, use the default model.
+    Use Vertex Gemini 2.5 Pro for both local and production environments.
     """
-    env_mode = os.getenv("ENV_MODE", "local").lower()
-    
-    if env_mode == "production":
-        return "vertex_ai/claude-sonnet-4@20250514"
-    
-    return HELIUM_CONFIG["model"]
+    return "vertex_ai/gemini-2.5-pro"
