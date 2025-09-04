@@ -292,7 +292,7 @@ class EmailService:
                     <div style="margin-top: 30px;">
                         <div class="signature">Cheers,</div>
                         <div class="signature">Team Helium</div>
-                        <div class="website-link">www.he2.ai</div>
+                        <div class="website-link">https://he2.ai</div>
                     </div>
                 </div>
                 
@@ -325,7 +325,7 @@ Let's make this amazing together. Welcome to Helium OS
 
 Cheers,
 Team Helium
-www.he2.ai
+https://he2.ai
         """
 
 

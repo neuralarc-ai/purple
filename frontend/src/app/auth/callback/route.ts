@@ -48,9 +48,9 @@ export async function GET(request: NextRequest) {
             .single()
 
           if (profileError && profileError.code === 'PGRST116') {
-            // No profile found - user needs onboarding
-            console.log('🆕 New user detected, redirecting to onboarding')
-            return NextResponse.redirect(`${baseUrl}/onboarding`)
+            // No profile found - user needs invite code validation
+            console.log('🆕 New user detected, redirecting to invite')
+            return NextResponse.redirect(`${baseUrl}/invite`)
           } else if (profileError) {
             console.error('❌ Error checking user profile:', profileError)
             // On error, redirect to dashboard as fallback
