@@ -181,7 +181,7 @@ export function ConfigurationTab({
               <button
                 onClick={() => setCurrentStep(step.id as any)}
                 disabled={isLoading}
-                className={`relative z-10 transition-all ${currentStep === step.id
+                className={`relative flex-shrink-0 z-10 transition-all ${currentStep === step.id
                   ? 'flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium bg-foreground text-background'
                   : 'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
@@ -200,7 +200,7 @@ export function ConfigurationTab({
 
               {/* Connecting Line */}
               {index < steps.length - 1 && (
-                <div className="flex-1 h-0.5 bg-muted mx-2 min-w-8" />
+                <div className="flex-1 h-0.5 bg-muted mx-2 min-w-0 w-full 2xl:min-w-8" />
               )}
             </React.Fragment>
           ))}
