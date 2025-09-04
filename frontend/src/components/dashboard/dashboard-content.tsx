@@ -75,6 +75,7 @@ export function DashboardContent() {
   } | null>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [useCasesLoaded, setUseCasesLoaded] = useState(false);
 
   // Handle prompt from URL
   useEffect(() => {
@@ -417,7 +418,7 @@ export function DashboardContent() {
                 <ReleaseBadge text="Custom Agents, Playbooks, and more!" link="/agents?tab=my-agents" />
               </div>
             )} */}
-            <div className="flex-1 flex items-center justify-center px-4 py-8">
+            <div className="flex-1 flex items-center justify-center px-4 pt-8">
               <div className="w-full max-w-[800px] flex flex-col items-center justify-center space-y-1 md:space-y-2">
                 <div className="flex flex-col items-center text-center w-full">
                   <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground/80 libre-baskerville-regular">
@@ -434,7 +435,7 @@ export function DashboardContent() {
                     })}
                   </div>
                 </div>
-                <div className="w-full">
+                <div className="w-full transition-all duration-700 ease-out">
                   {/* Security Popup - Positioned above the input */}
                   <SecurityPopup
                     isVisible={showSecurityPopup}
@@ -444,19 +445,21 @@ export function DashboardContent() {
                     showCloseButton={true}
                   />
                   
-                  <ChatInput
-                    ref={chatInputRef}
-                    onSubmit={handleSubmit}
-                    loading={isSubmitting || localLoading} // Use local loading state for immediate feedback
-                    placeholder="Assign a task or ask anything..."
-                    value={inputValue}
-                    onChange={setInputValue}
-                    hideAttachments={false}
-                    selectedAgentId={selectedAgentId}
-                    onAgentSelect={setSelectedAgent}
-                    enableAdvancedConfig={true}
-                    onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
-                  />
+                  <div className={`transition-all duration-700 ease-out ${useCasesLoaded ? 'translate-y-0' : 'translate-y-4'}`}>
+                    <ChatInput
+                      ref={chatInputRef}
+                      onSubmit={handleSubmit}
+                      loading={isSubmitting || localLoading} // Use local loading state for immediate feedback
+                      placeholder="Assign a task or ask anything..."
+                      value={inputValue}
+                      onChange={setInputValue}
+                      hideAttachments={false}
+                      selectedAgentId={selectedAgentId}
+                      onAgentSelect={setSelectedAgent}
+                      enableAdvancedConfig={true}
+                      onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
+                    />
+                  </div>
                   <UseCases 
                     router={router}
                     onUseCaseSelect={(prompt) => {
@@ -471,7 +474,8 @@ export function DashboardContent() {
                           textarea.setSelectionRange(length, length);
                         }
                       }, 0);
-                    }} 
+                    }}
+                    onLoad={() => setUseCasesLoaded(true)}
                   />
                 </div>
               </div>
