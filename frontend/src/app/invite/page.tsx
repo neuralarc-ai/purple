@@ -263,21 +263,21 @@ export default function InvitePage() {
           <DialogHeader className="sr-only">
             <DialogTitle>Welcome to Helium!</DialogTitle>
           </DialogHeader>
-          <div className="flex">
+          <div className="flex  ">
             {/* Left Section - Image */}
-            <div className="flex-1 hidden md:block bg-gray-100 dark:bg-gray-800 p-8 flex items-center justify-center">
+            <div className="flex-1 hidden md:block bg-gray-100 dark:bg-gray-800 rounded-l-3xl flex items-center justify-center">
               <Image
                 src="/images/Benefit.png"
                 alt="Helium Benefits"
                 width={400}
                 height={300}
-                className="rounded-lg"
+                className="w-full h-full object-center rounded-l-3xl object-cover"
                 priority
               />
             </div>
 
             {/* Right Section - Content */}
-            <div className="flex-1 p-8 bg-background">
+            <div className="flex-1 p-8 rounded-r-3xl bg-background">
               <div className="space-y-6">
                 {/* Title */}
                 <h2 className="text-3xl font-bold text-foreground">
