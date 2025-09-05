@@ -1,14 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { userProfilesApi, UserProfile } from '@/lib/api/user-profiles';
+import { useAuth } from '@/components/AuthProvider';
 
 export function useUserProfile() {
+  const { user } = useAuth();
+  
   return useQuery({
     queryKey: ['user-profile'],
     queryFn: userProfilesApi.getProfile,
     retry: false, // Don't retry on 404 (profile doesn't exist) or 401 (auth failed)
     staleTime: 0, // Always refetch when invalidated
     gcTime: 10 * 60 * 1000, // 10 minutes
-    enabled: false, // Disable automatic fetching - we'll handle this manually
+    enabled: !!user, // Enable fetching when user is authenticated
   });
 }
 

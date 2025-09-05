@@ -37,6 +37,7 @@ export async function middleware(request: NextRequest) {
   const protectedRoutes = ['/dashboard', '/agents', '/projects', '/settings', '/invitation']
   const authRoutes = ['/auth', '/login', '/signup']
   const onboardingRoute = '/onboarding'
+  const inviteRoute = '/invite'
   
   const isProtectedRoute = protectedRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
@@ -45,6 +46,7 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(route)
   )
   const isOnboardingRoute = request.nextUrl.pathname === onboardingRoute
+  const isInviteRoute = request.nextUrl.pathname === inviteRoute
   
   // Check if user is accessing the root path (homepage)
   const isRootPath = request.nextUrl.pathname === '/'
@@ -67,8 +69,8 @@ export async function middleware(request: NextRequest) {
         .single()
 
       if (profileError && profileError.code === 'PGRST116') {
-        // No profile found - user needs onboarding
-        return NextResponse.redirect(new URL('/onboarding', request.url))
+        // No profile found - user needs invite code validation
+        return NextResponse.redirect(new URL('/invite', request.url))
       } else if (profileData) {
         // User has profile - redirect to dashboard
         return NextResponse.redirect(new URL('/dashboard', request.url))
@@ -102,6 +104,31 @@ export async function middleware(request: NextRequest) {
 
   // Redirect unauthenticated users from onboarding
   if (isOnboardingRoute && !user) {
+    return NextResponse.redirect(new URL('/auth', request.url))
+  }
+
+  // Handle invite route access
+  if (isInviteRoute && user) {
+    // Check if user has already completed onboarding
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (profileData && !profileError) {
+        // User has already completed onboarding - redirect to dashboard
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    } catch (error) {
+      console.error('Error checking user profile in middleware:', error)
+      // On error, allow access to invite
+    }
+  }
+
+  // Redirect unauthenticated users from invite
+  if (isInviteRoute && !user) {
     return NextResponse.redirect(new URL('/auth', request.url))
   }
 

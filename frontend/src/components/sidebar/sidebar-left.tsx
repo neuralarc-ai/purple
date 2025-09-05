@@ -166,7 +166,7 @@ export function SidebarLeft({
   const searchParams = useSearchParams();
   const { flags, loading: flagsLoading } = useFeatureFlags(['custom_agents']);
   const customAgentsEnabled = flags.custom_agents;
-  const { preferredName } = useUserProfileWithFallback();
+  const { preferredName, profile } = useUserProfileWithFallback();
 
   // Close mobile menu on page navigation
   useEffect(() => {

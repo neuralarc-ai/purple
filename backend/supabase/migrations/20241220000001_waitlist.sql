@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS public.waitlist (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
+    company_name VARCHAR(255),
     joined_at TIMESTAMPTZ DEFAULT NOW(),
     notified_at TIMESTAMPTZ,
     is_notified BOOLEAN DEFAULT FALSE,

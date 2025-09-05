@@ -6,6 +6,7 @@ import uuid
 from utils.auth_utils import get_optional_user_id
 from utils.logger import logger
 from services.supabase import DBConnection
+from services.email_service import email_service
 
 router = APIRouter()
 
@@ -20,6 +21,7 @@ class InviteCodeResponse(BaseModel):
 class WaitlistRequest(BaseModel):
     full_name: str
     email: str
+    company_name: Optional[str] = None
 
 class WaitlistResponse(BaseModel):
     success: bool
@@ -121,6 +123,9 @@ async def join_waitlist(
         full_name = request.full_name.strip()
         email = request.email.strip().lower()
         
+        logger.info(f"Received waitlist request: full_name={full_name}, email={email}, company_name={request.company_name}")
+        logger.info(f"Company name type: {type(request.company_name)}, value: '{request.company_name}'")
+        
         if not full_name or not email:
             return WaitlistResponse(
                 success=False,
@@ -140,15 +145,46 @@ async def join_waitlist(
             )
         
         # Insert into waitlist
+        company_name = None
+        if request.company_name is not None and request.company_name.strip():
+            company_name = request.company_name.strip()
+            
+        logger.info(f"Processed company_name: '{company_name}' (type: {type(company_name)})")
+            
         waitlist_data = {
             'full_name': full_name,
             'email': email,
             'joined_at': datetime.utcnow().isoformat()
         }
         
-        await client.table('waitlist').insert(waitlist_data).execute()
+        # Only include company_name if it's not None/empty
+        if company_name:
+            waitlist_data['company_name'] = company_name
         
-        logger.info(f"User joined waitlist", email=email, full_name=full_name)
+        logger.info(f"Attempting to insert waitlist data: {waitlist_data}")
+        
+        result = await client.table('waitlist').insert(waitlist_data).execute()
+        
+        logger.info(f"Insert result: {result}")
+        
+        if not result.data or len(result.data) == 0:
+            logger.error(f"Failed to insert waitlist entry - no data returned")
+            return WaitlistResponse(
+                success=False,
+                message="Failed to join waitlist. Please try again."
+            )
+        
+        logger.info(f"User joined waitlist successfully", email=email, full_name=full_name, waitlist_id=result.data[0].get('id'))
+        
+        # Send waitlist confirmation email
+        try:
+            email_result = email_service.send_waitlist_email(email, full_name)
+            if email_result['success']:
+                logger.info(f"Waitlist confirmation email sent to {email}")
+            else:
+                logger.warning(f"Failed to send waitlist email to {email}: {email_result.get('error', 'Unknown error')}")
+        except Exception as email_error:
+            logger.error(f"Error sending waitlist email to {email}: {str(email_error)}")
         
         return WaitlistResponse(
             success=True,
@@ -157,6 +193,11 @@ async def join_waitlist(
         
     except Exception as e:
         logger.error(f"Error joining waitlist: {e}", exc_info=True)
+        # Check if it's a specific database error
+        if hasattr(e, 'details') and e.details:
+            logger.error(f"Database error details: {e.details}")
+        if hasattr(e, 'hint') and e.hint:
+            logger.error(f"Database error hint: {e.hint}")
         return WaitlistResponse(
             success=False,
             message="An error occurred while joining the waitlist. Please try again."

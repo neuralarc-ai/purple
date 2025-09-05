@@ -91,3 +91,4 @@ The welcome email includes:
 Check logs for email sending status:
 - Success: "Welcome email sent successfully to [email] via [provider]"
 - Failure: "Failed to send welcome email to [email]: [error]"
+
