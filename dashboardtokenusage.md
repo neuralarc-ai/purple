@@ -75,7 +75,7 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
         
         {/* Credit Count */}
         <span className="text-sm font-medium text-foreground flex-shrink-0">
-          {(subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)).toLocaleString()}
+          {totalCreditsUsed.toLocaleString()}
         </span>
         
         {/* Vertical Separator - Only show when hovered */}
@@ -127,49 +127,19 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
             {/* Divider */}
             <div className="border-t border-border" />
             
-            {/* Total credits left */}
+            {/* Credits Remaining */}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Total credits left</span>
-              <span className="text-sm font-medium text-foreground">
-                {(subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)).toLocaleString()}
-              </span>
+              <span className="text-sm text-muted-foreground">Credits remaining</span>
+              <span className="text-sm font-medium text-foreground">{creditsRemaining.toLocaleString()}</span>
             </div>
             
-            {subscriptionData?.plan_name === 'free' ? (
-              <>
-                {/* Free credits left */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Free credits left</span>
-                  <span className="text-sm font-medium text-foreground">
-                    {creditsRemaining.toLocaleString()} / {totalCreditsLimit.toLocaleString()}
-                  </span>
-                </div>
-                
-                {/* Monthly credits left */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Monthly credits left</span>
-                  <span className="text-sm font-medium text-foreground">0</span>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Monthly credits left */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Monthly credits left</span>
-                  <span className="text-sm font-medium text-foreground">
-                    {creditsRemaining.toLocaleString()}
-                  </span>
-                </div>
-                
-                {/* Add on credits left */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Add on credits left</span>
-                  <span className="text-sm font-medium text-foreground">
-                    {(subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)).toLocaleString()}
-                  </span>
-                </div>
-              </>
-            )}
+            {/* Credits Used */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Credits Used</span>
+              <span className="text-sm font-medium text-foreground">
+                {totalCreditsUsed.toLocaleString()} out of {totalCreditsLimit.toLocaleString()}
+              </span>
+            </div>
             
             <div className="border-t border-border pt-3">
               {/* View Usage Button */}

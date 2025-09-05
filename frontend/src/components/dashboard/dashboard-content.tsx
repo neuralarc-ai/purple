@@ -45,6 +45,7 @@ import { UseCases } from './use-cases';
 import { SecurityPopup } from '@/components/thread/chat-input/security-popup';
 import { useSecurityInterception } from '@/hooks/useSecurityInterception';
 import { TokenUsage } from './token-usage';
+import { SettingsModal } from '@/components/settings/settings-modal';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -75,6 +76,7 @@ export function DashboardContent() {
   } | null>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [useCasesLoaded, setUseCasesLoaded] = useState(false);
 
   // Handle prompt from URL
@@ -390,11 +392,19 @@ export function DashboardContent() {
         onOpenChange={setShowPaymentModal}
         showUsageLimitAlert={true}
       />
+      <SettingsModal 
+        open={showSettingsModal} 
+        onOpenChange={setShowSettingsModal}
+        defaultSection="billing"
+      />
       <div className="flex flex-col h-screen w-full overflow-hidden">
         {/* Top Right Controls */}
         <div className="absolute py-4 right-12 z-10 flex items-center gap-3">
           {/* Token Usage */}
-          <TokenUsage onUpgradeClick={() => setShowPaymentModal(true)} />
+          <TokenUsage 
+            onUpgradeClick={() => setShowPaymentModal(true)} 
+            onViewUsageClick={() => setShowSettingsModal(true)}
+          />
           
           {/* Theme Toggle Button */}
           <TooltipProvider>
