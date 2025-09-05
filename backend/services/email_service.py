@@ -5,9 +5,11 @@ Supports both Resend and Nodemailer (SMTP) providers.
 """
 
 import os
+import base64
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 from typing import Optional, Dict, Any
 import httpx
 from utils.logger import logger
@@ -34,6 +36,68 @@ class EmailService:
         if not self.use_resend and not self.use_smtp:
             logger.warning("No email provider configured. Emails will not be sent.")
     
+    def _get_image_path(self, image_path: str) -> Optional[str]:
+        """
+        Get the full path to an image file.
+        
+        Args:
+            image_path: Path to the image file
+            
+        Returns:
+            Full path to the image file or None if not found
+        """
+        try:
+            # Get the absolute path relative to the script location
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            full_image_path = os.path.join(script_dir, image_path)
+            
+            # Try relative to project root if not found
+            if not os.path.exists(full_image_path):
+                project_root = os.path.dirname(os.path.dirname(script_dir))  # Go up two levels from backend/services/
+                full_image_path = os.path.join(project_root, image_path)
+            
+            if os.path.exists(full_image_path):
+                return full_image_path
+            else:
+                logger.warning(f"Image not found at path: {image_path}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error finding image {image_path}: {str(e)}")
+            return None
+
+    def _get_image_base64(self, image_path: str) -> Optional[str]:
+        """
+        Convert image to base64 string for embedding in email.
+        
+        Args:
+            image_path: Path to the image file
+            
+        Returns:
+            Base64 encoded string or None if image not found
+        """
+        try:
+            # Get the absolute path relative to the script location
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            full_image_path = os.path.join(script_dir, image_path)
+            
+            # Try relative to project root if not found
+            if not os.path.exists(full_image_path):
+                project_root = os.path.dirname(os.path.dirname(script_dir))  # Go up two levels from backend/services/
+                full_image_path = os.path.join(project_root, image_path)
+            
+            if os.path.exists(full_image_path):
+                with open(full_image_path, "rb") as image_file:
+                    encoded_string = base64.b64encode(image_file.read()).decode()
+                    return encoded_string
+            else:
+                logger.warning(f"Image not found at path: {image_path}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error encoding image {image_path}: {str(e)}")
+            return None
+
     def send_welcome_email(self, user_email: str, user_name: str) -> Dict[str, Any]:
         """
         Send welcome email to newly onboarded user.
@@ -136,19 +200,39 @@ class EmailService:
             }
     
     def _send_via_smtp(self, to_email: str, subject: str, html_content: str, text_content: str) -> Dict[str, Any]:
-        """Send email via SMTP."""
+        """Send email via SMTP with proper image attachment."""
         try:
-            # Create message
-            msg = MIMEMultipart('alternative')
+            # Create message with mixed content for attachments
+            msg = MIMEMultipart('mixed')
             msg['From'] = f"{self.from_name} <{self.from_email}>"
             msg['To'] = to_email
             msg['Subject'] = subject
+            msg['Reply-To'] = self.from_email
+            msg['Return-Path'] = self.from_email
+            msg['Message-ID'] = f"<{os.urandom(16).hex()}@he2.ai>"
             
-            # Attach parts
+            # Create alternative container for text and html
+            msg_alternative = MIMEMultipart('alternative')
+            
+            # Attach text and html parts
             text_part = MIMEText(text_content, 'plain')
             html_part = MIMEText(html_content, 'html')
-            msg.attach(text_part)
-            msg.attach(html_part)
+            msg_alternative.attach(text_part)
+            msg_alternative.attach(html_part)
+            
+            # Attach the alternative container
+            msg.attach(msg_alternative)
+            
+            # Add image as attachment with Content-ID
+            image_path = self._get_image_path("frontend/public/images/Mail.png")
+            if image_path and os.path.exists(image_path):
+                with open(image_path, 'rb') as f:
+                    img_data = f.read()
+                
+                image = MIMEImage(img_data)
+                image.add_header('Content-ID', '<welcome_image>')
+                image.add_header('Content-Disposition', 'inline', filename='welcome.png')
+                msg.attach(image)
             
             # Send email
             with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
@@ -175,6 +259,27 @@ class EmailService:
         """Create HTML version of welcome email with custom template."""
         first_name = user_name.split()[0] if user_name else "there"
         
+        # Create image HTML using Content-ID reference
+        image_html = """
+                <div class="header-image" style="text-align: center; margin-bottom: 30px;">
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
+                        <tr>
+                            <td>
+                                <img src="cid:welcome_image" 
+                                     alt="Welcome to Helium" 
+                                     style="max-width: 100%; 
+                                            height: auto; 
+                                            display: block; 
+                                            border: none;
+                                            outline: none;
+                                            width: 533px;
+                                            height: 179px;" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            """
+        
         return f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -200,6 +305,10 @@ class EmailService:
                     background-color: #D4D5D0;
                     padding: 40px;
                     text-align: left;
+                }}
+                .header-image {{
+                    text-align: center;
+                    margin-bottom: 30px;
                 }}
                 .greeting {{
                     font-size: 18px;
@@ -263,6 +372,8 @@ class EmailService:
         <body>
             <div class="email-container">
                 <div class="content-wrapper">
+                    {image_html}
+                    
                     <div class="greeting">Dear {first_name},</div>
                     
                     <div class="welcome-text">Welcome aboard!</div>
