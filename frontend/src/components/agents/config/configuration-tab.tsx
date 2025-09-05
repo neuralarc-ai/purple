@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Wrench, Server, BookOpen, Workflow, Zap } from 'lucide-react';
+import { Settings, Wrench, Server, BookOpen, Workflow, Zap, Check } from 'lucide-react';
 import { ExpandableMarkdownEditor } from '@/components/ui/expandable-markdown-editor';
 import { AgentToolsConfiguration } from '../agent-tools-configuration';
 import { AgentMCPConfiguration } from '../agent-mcp-configuration';
@@ -145,65 +145,107 @@ export function ConfigurationTab({
   ];
 
   const handleContinue = () => {
+    if (isLoading) return; // Prevent navigation while loading
+    
     const currentIndex = steps.findIndex(step => step.id === currentStep);
     if (currentIndex < steps.length - 1) {
       setCurrentStep(steps[currentIndex + 1].id as any);
+      // Scroll to top when changing steps for better UX
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   const handleSaveAndContinue = () => {
-    // Save current step data
-    Object.keys(formData).forEach(key => {
-      if (formData[key as keyof typeof formData] !== displayData[key as keyof typeof displayData]) {
-        onFieldChange(key, formData[key as keyof typeof formData]);
+    if (isLoading) return; // Prevent multiple saves
+    
+    try {
+      // Save current step data
+      Object.keys(formData).forEach(key => {
+        if (formData[key as keyof typeof formData] !== displayData[key as keyof typeof displayData]) {
+          onFieldChange(key, formData[key as keyof typeof formData]);
+        }
+      });
+
+      // If we're on the last step (triggers), complete the configuration
+      if (currentStep === 'triggers') {
+        toast.success('Agent configuration completed successfully!');
+        return;
       }
-    });
 
-    // If we're on the last step (triggers), complete the configuration
-    if (currentStep === 'triggers') {
-      // Configuration is complete - you can add any completion logic here
-      toast.success('Agent configuration completed successfully!');
-      return;
+      handleContinue();
+    } catch (error) {
+      console.error('Error saving step:', error);
+      toast.error('Failed to save changes. Please try again.');
     }
-
-    handleContinue();
   };
 
-  return (
-    <div className="h-full flex flex-col bg-background">
-      {/* Header */}
-      <div className="px-8 py-6 border-b">
-        {/* Step Navigation */}
-        <div className="flex items-center justify-center w-full max-w-4xl mx-auto">
-          {steps.map((step, index) => (
-            <React.Fragment key={step.id}>
-              {/* Step Button */}
-              <button
-                onClick={() => setCurrentStep(step.id as any)}
-                disabled={isLoading}
-                className={`relative z-10 transition-all ${currentStep === step.id
-                  ? 'flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium bg-foreground text-background'
-                  : 'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-              >
-                {currentStep === step.id ? (
-                  <>
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-background text-foreground">
-                      {step.number}
-                    </div>
-                    {step.label}
-                  </>
-                ) : (
-                  step.number
-                )}
-              </button>
+  // Get the current step index for progress tracking
+  const currentStepIndex = steps.findIndex(step => step.id === currentStep);
 
-              {/* Connecting Line */}
-              {index < steps.length - 1 && (
-                <div className="flex-1 h-0.5 bg-muted mx-2 min-w-8" />
-              )}
-            </React.Fragment>
-          ))}
+  return (
+    <div className="flex flex-col h-full transition-all duration-300 ease-in-out">
+      {/* Steps Navigation */}
+      <div className="border-b transition-all duration-300">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center h-16">
+            <div className="flex items-center w-full max-w-4xl mx-auto">
+              {steps.map((step, index) => {
+                const isCompleted = index < currentStepIndex;
+                const isActive = currentStep === step.id;
+                const isClickable = !isLoading && !isActive;
+                
+                return (
+                  <React.Fragment key={step.id}>
+                    {/* Step Button */}
+                    <div className="flex-shrink-0 flex flex-col items-center">
+                      <button
+                        onClick={() => {
+                          if (isClickable) {
+                            setCurrentStep(step.id as any);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }
+                        }}
+                        disabled={!isClickable}
+                        className={`relative z-10 transition-all flex items-center justify-center ${
+                          isActive
+                            ? 'px-4 py-2 rounded-full text-sm font-medium bg-foreground text-background h-10 w-auto min-w-[120px] transform hover:scale-105'
+                            : 'w-8 h-8 rounded-full text-sm font-bold hover:bg-muted/80 flex items-center justify-center ' + 
+                              (isCompleted ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground')
+                        } ${
+                          isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                        }`}
+                        aria-label={`Go to ${step.label} step`}
+                      >
+                        {isLoading && isActive ? (
+                          <div className="w-5 h-5 flex items-center justify-center">
+                            <div className="w-3 h-3 border-2 border-background border-t-transparent rounded-full animate-spin"></div>
+                          </div>
+                        ) : isActive ? (
+                          <>
+                            <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold bg-background text-foreground relative -top-px">
+                              {step.number}
+                            </div>
+                            <span className="ml-2 whitespace-nowrap">{step.label}</span>
+                          </>
+                        ) : (
+                          <span className={isCompleted ? 'text-background' : ''}>
+                            {step.number}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Connecting Line */}
+                    {index < steps.length - 1 && (
+                      <div className={`flex-1 h-0.5 mx-2 min-w-4 transition-colors duration-300 ${
+                        isCompleted ? 'bg-foreground' : 'bg-muted'
+                      }`} />
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
 
