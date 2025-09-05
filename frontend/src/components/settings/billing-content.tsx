@@ -108,10 +108,18 @@ export function PersonalAccountBillingPage({ onTabChange }: PersonalAccountBilli
               <div className="rounded-lg bg-white dark:bg-background p-3">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                   <div className="flex flex-col gap-3 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2">
                       <span className="text-base font-semibold text-foreground">
                         Usage This Month
                       </span>
+                      <Button 
+                        variant='outline' 
+                        size="sm"
+                        className='text-xs h-8 px-3 flex-shrink-0'
+                        onClick={() => onTabChange?.('usage-logs')}
+                      >
+                        Usage logs
+                      </Button>
                     </div>
                     <div className="space-y-2">
                       <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg border border-primary/10">
@@ -137,14 +145,6 @@ export function PersonalAccountBillingPage({ onTabChange }: PersonalAccountBilli
                       )}
                     </div>
                   </div>
-                  <Button 
-                    variant='outline' 
-                    size="sm"
-                    className='text-xs h-8 px-3 flex-shrink-0'
-                    onClick={() => onTabChange?.('usage-logs')}
-                  >
-                    Usage logs
-                  </Button>
                 </div>
               </div>
             </div>

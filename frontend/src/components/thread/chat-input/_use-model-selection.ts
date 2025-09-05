@@ -5,10 +5,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { isLocalMode, isProductionMode } from '@/lib/config';
 import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model';
 
-export const STORAGE_KEY_MODEL = 'suna-preferred-model-v7';
+export const STORAGE_KEY_MODEL = 'suna-preferred-model-v8';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
-export const DEFAULT_PREMIUM_MODEL_ID = 'bedrock/anthropic.claude-sonnet-4-20250514-v1:0';
-export const DEFAULT_FREE_MODEL_ID = 'bedrock/anthropic.claude-sonnet-4-20250514-v1:0';
+export const DEFAULT_PREMIUM_MODEL_ID = 'vertex_ai/gemini-2.5-pro';
+export const DEFAULT_FREE_MODEL_ID = 'vertex_ai/gemini-2.5-pro';
 
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
@@ -30,83 +30,130 @@ export interface CustomModel {
 
 // SINGLE SOURCE OF TRUTH for all model data - aligned with backend constants
 export const MODELS = {
-  // Premium tier models (require subscription) - using aliases from backend
-  'claude-sonnet-4': { 
+  // Premium tier models (require subscription) - Vertex AI and Bedrock only
+  
+  // Vertex AI Models
+  'vertex_ai/gemini-2.5-pro': { 
     tier: 'premium',
     priority: 100, 
     recommended: true,
     lowQuality: false
   },
-  'claude-sonnet-4-vertex': { 
+  'vertex_ai/gemini-2.5-flash': { 
     tier: 'premium',
     priority: 99, 
     recommended: false,
     lowQuality: false
   },
-  'gpt-5': { 
+  'vertex_ai/gemini-2.0-flash': { 
     tier: 'premium', 
     priority: 98,
     recommended: false,
     lowQuality: false
   },
-  'google/gemini-2.5-pro': { 
+
+  // Vertex AI Claude Models
+  'vertex_ai/claude-sonnet-4@20250514': { 
+    tier: 'premium', 
+    priority: 97,
+    recommended: false,
+    lowQuality: false
+  },
+  'vertex_ai/claude-3-5-sonnet@20241022': { 
     tier: 'premium', 
     priority: 96,
     recommended: false,
     lowQuality: false
   },
-  'google/gemini-2.5-flash': { 
+  'vertex_ai/claude-3-7-sonnet@20250219': { 
     tier: 'premium', 
     priority: 95,
     recommended: false,
     lowQuality: false
   },
-  'google/gemini-2.0-flash': { 
+  'vertex_ai/claude-3-5-haiku@20241022': { 
     tier: 'premium', 
     priority: 94,
     recommended: false,
     lowQuality: false
   },
-  // Vertex AI models removed
-  'grok-4': { 
-    tier: 'premium', 
-    priority: 93,
+
+  // Bedrock Models - Claude Sonnet Series
+  'bedrock/anthropic.claude-sonnet-4-20250514-v1:0': { 
+    tier: 'premium',
+    priority: 91, 
     recommended: false,
     lowQuality: false
   },
-  'sonnet-3.7': { 
-    tier: 'premium', 
-    priority: 92, 
+  'bedrock/anthropic.claude-sonnet-4-20250514-v1:1': { 
+    tier: 'premium',
+    priority: 90, 
     recommended: false,
     lowQuality: false
   },
-  'sonnet-3.5': { 
-    tier: 'premium', 
-    priority: 90,
+  'bedrock/anthropic.claude-sonnet-4-20250514-v1:2': { 
+    tier: 'premium',
+    priority: 89, 
+    recommended: false,
+    lowQuality: false
+  },
+  'bedrock/anthropic.claude-sonnet-4-20250514-v1:3': { 
+    tier: 'premium',
+    priority: 88, 
     recommended: false,
     lowQuality: false
   },
 
-  // Free tier models (available to all users)
-  'moonshotai/kimi-k2': { 
+  // Bedrock Models - Claude 3.7 Sonnet Series
+  'bedrock/anthropic.claude-3-7-sonnet-20250219-v1:0': { 
+    tier: 'premium',
+    priority: 87, 
+    recommended: false,
+    lowQuality: false
+  },
+
+  // Bedrock Models - Claude 3.5 Sonnet Series
+  'bedrock/anthropic.claude-3-5-sonnet-20241022-v1:0': { 
+    tier: 'premium',
+    priority: 86, 
+    recommended: false,
+    lowQuality: false
+  },
+  'bedrock/anthropic.claude-3-5-sonnet-20241022-v1:1': { 
+    tier: 'premium',
+    priority: 85, 
+    recommended: false,
+    lowQuality: false
+  },
+
+  // Bedrock Models - Claude 3.5 Haiku Series
+  'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0': { 
+    tier: 'premium',
+    priority: 84, 
+    recommended: false,
+    lowQuality: false
+  },
+
+  // Free tier models (available to all users) - Only Vertex AI and Bedrock
+  'vertex_ai/gemini-2.5-flash-free': { 
     tier: 'free', 
     priority: 100,
     recommended: true,
     lowQuality: false
   },
-  'deepseek': { 
+  'vertex_ai/gemini-2.0-flash-free': { 
     tier: 'free', 
     priority: 95,
     recommended: false,
     lowQuality: false
   },
-  'qwen/qwen-2.5-72b-instruct:free': { 
+  'vertex_ai/claude-3-5-haiku@20241022-free': { 
     tier: 'free', 
     priority: 90,
     recommended: false,
     lowQuality: false
   },
-  'gpt-5-mini': { 
+  'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0-free': { 
     tier: 'free', 
     priority: 85,
     recommended: false,
@@ -206,20 +253,20 @@ export const useModelSelection = () => {
     
             // Default models if API data not available
         if (!modelsData?.models || isLoadingModels) {
-          models = [
-            { 
-              id: DEFAULT_FREE_MODEL_ID, 
-              label: 'Gemini 2.5 Pro', 
-              requiresSubscription: false,
-              priority: MODELS[DEFAULT_FREE_MODEL_ID]?.priority || 100
-            },
-            { 
-              id: DEFAULT_PREMIUM_MODEL_ID, 
-              label: 'Gemini 2.5 Pro', 
-              requiresSubscription: true, 
-              priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
-            },
-          ];
+                      models = [
+              { 
+                id: DEFAULT_FREE_MODEL_ID, 
+                label: 'Gemini 2.5 Flash', 
+                requiresSubscription: false,
+                priority: MODELS[DEFAULT_FREE_MODEL_ID]?.priority || 100
+              },
+              { 
+                id: DEFAULT_PREMIUM_MODEL_ID, 
+                label: 'Gemini 2.5 Pro', 
+                requiresSubscription: true, 
+                priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
+              },
+            ];
     } else {
       // Process API-provided models
       models = modelsData.models.map(model => {
@@ -368,8 +415,8 @@ export const useModelSelection = () => {
       const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
         (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
       console.log('🔧 useModelSelection: Using default model:', defaultModel);
-      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Claude Sonnet 4)' : 
-        `Subscription status: ${subscriptionStatus} -> Default: ${subscriptionStatus === 'active' ? 'PREMIUM (Claude Sonnet 4)' : 'FREE (KIMi K2)'}`);
+      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Gemini 2.5 Pro)' : 
+        `Subscription status: ${subscriptionStatus} -> Default: ${subscriptionStatus === 'active' ? 'PREMIUM (Gemini 2.5 Pro)' : 'FREE (Gemini 2.5 Flash)'}`);
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       setHasInitialized(true);
@@ -379,8 +426,8 @@ export const useModelSelection = () => {
       const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
         (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
       console.log('🔧 useModelSelection: Using fallback default model:', defaultModel);
-      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Claude Sonnet 4)' : 
-        `Subscription status: ${subscriptionStatus} -> Fallback: ${subscriptionStatus === 'active' ? 'PREMIUM (Claude Sonnet 4)' : 'FREE (KIMi K2)'}`);
+      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Gemini 2.5 Pro)' : 
+        `Subscription status: ${subscriptionStatus} -> Fallback: ${subscriptionStatus === 'active' ? 'PREMIUM (Gemini 2.5 Pro)' : 'FREE (Gemini 2.5 Flash)'}`);
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       setHasInitialized(true);
@@ -441,8 +488,8 @@ export const useModelSelection = () => {
         console.warn('⚠️ useModelSelection: Current model no longer accessible, switching to default');
         const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
           (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
-        console.log('🔧 useModelSelection: Subscription-based default switch:', isProductionMode() ? 'PRODUCTION (Claude Sonnet 4)' : 
-          `${subscriptionStatus === 'active' ? 'PREMIUM (Claude Sonnet 4)' : 'FREE (KIMi K2)'}`);
+              console.log('🔧 useModelSelection: Subscription-based default switch:', isProductionMode() ? 'PRODUCTION (Gemini 2.5 Pro)' : 
+        `${subscriptionStatus === 'active' ? 'PREMIUM (Gemini 2.5 Pro)' : 'FREE (Gemini 2.5 Flash)'}`);
         setSelectedModel(defaultModel);
         saveModelPreference(defaultModel);
       } else {
@@ -530,7 +577,7 @@ export const useModelSelection = () => {
       console.log('  isLoadingModels:', isLoadingModels);
       console.log('  localStorage value:', localStorage.getItem(STORAGE_KEY_MODEL));
       console.log('🔧 useModelSelection: defaultModel would be:', isProductionMode() ? `${DEFAULT_PREMIUM_MODEL_ID} (Gemini 2.5 Pro)` : 
-        `${subscriptionStatus === 'active' ? `${DEFAULT_PREMIUM_MODEL_ID} (Claude Sonnet 4)` : `${DEFAULT_FREE_MODEL_ID} (Gemini 2.5 pro)`}`);
+        `${subscriptionStatus === 'active' ? `${DEFAULT_PREMIUM_MODEL_ID} (Gemini 2.5 Pro)` : `${DEFAULT_FREE_MODEL_ID} (Gemini 2.5 Flash)`}`);
       console.log('🔧 useModelSelection: availableModels:', availableModels.map(m => ({ id: m.id, requiresSubscription: m.requiresSubscription })));
     }
   };
