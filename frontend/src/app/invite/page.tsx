@@ -20,6 +20,7 @@ interface InviteData {
   inviteCode: string;
   fullName: string;
   email: string;
+  companyName: string;
 }
 
 export default function InvitePage() {
@@ -30,10 +31,12 @@ export default function InvitePage() {
   const [showWaitlistModal, setShowWaitlistModal] = useState(false);
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
   const [inviteError, setInviteError] = useState('');
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [inviteData, setInviteData] = useState<InviteData>({
     inviteCode: '',
     fullName: '',
     email: '',
+    companyName: '',
   });
 
   useEffect(() => {
@@ -94,9 +97,9 @@ export default function InvitePage() {
       const result = await response.json();
 
       if (result.valid) {
-        // Invite code is valid, proceed to onboarding
+        // Invite code is valid, show welcome modal
         toast.success('Invite code validated successfully!');
-        router.push('/onboarding');
+        setShowWelcomeModal(true);
       } else {
         setInviteError(result.message || 'Invalid invite code. Please try again or join the waitlist.');
       }
@@ -124,6 +127,7 @@ export default function InvitePage() {
         body: JSON.stringify({
           full_name: inviteData.fullName.trim(),
           email: inviteData.email.trim(),
+          ...(inviteData.companyName.trim() && { company_name: inviteData.companyName.trim() }),
         }),
       });
 
@@ -136,7 +140,7 @@ export default function InvitePage() {
         setTimeout(() => {
           setShowWaitlistModal(false);
           setWaitlistSuccess(false);
-          setInviteData({ inviteCode: '', fullName: '', email: '' });
+          setInviteData({ inviteCode: '', fullName: '', email: '', companyName: '' });
         }, 3000);
       } else {
         toast.error(result.message || 'Failed to join waitlist. Please try again.');
@@ -253,6 +257,97 @@ export default function InvitePage() {
         </Button>
       </div>
 
+      {/* Welcome Modal */}
+      <Dialog open={showWelcomeModal} onOpenChange={setShowWelcomeModal}>
+        <DialogContent className="sm:max-w-4xl p-0">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Welcome to Helium!</DialogTitle>
+          </DialogHeader>
+          <div className="flex">
+            {/* Left Section - Image */}
+            <div className="flex-1 hidden md:block bg-gray-100 dark:bg-gray-800 p-8 flex items-center justify-center">
+              <Image
+                src="/images/Benefit.png"
+                alt="Helium Benefits"
+                width={400}
+                height={300}
+                className="rounded-lg"
+                priority
+              />
+            </div>
+
+            {/* Right Section - Content */}
+            <div className="flex-1 p-8 bg-background">
+              <div className="space-y-6">
+                {/* Title */}
+                <h2 className="text-3xl font-bold text-foreground">
+                  Welcome to Helium!
+                </h2>
+
+                {/* Welcome Message */}
+                <p className="text-muted-foreground text-lg">
+                  You are part of our exclusive invite group, and we have prepared a special offer just for you:
+                </p>
+
+                {/* Benefits List */}
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">
+                      30% Off Annual Subscription:
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Renew your free one-month subscription within the first month to unlock half-price access for the entire year.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">
+                      Team Sharing Included:
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Invite up to 3 team members to share this subscription with you.
+                    </p>
+                  </div>
+
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">
+                      Bonus Credits:
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Receive 10% extra credits every month for the whole year compared to the standard package.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowWelcomeModal(false);
+                      router.push('/onboarding');
+                    }}
+                    className="flex-1 hover:bg-transparent hover:text-current"
+                  >
+                    Remind me Later
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowWelcomeModal(false);
+                      router.push('/onboarding');
+                    }}
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    disabled
+                  >
+                    Activate now
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Waitlist Modal */}
       <Dialog open={showWaitlistModal} onOpenChange={setShowWaitlistModal}>
         <DialogContent className="sm:max-w-md">
@@ -292,6 +387,18 @@ export default function InvitePage() {
                   placeholder="Enter your email address"
                   value={inviteData.email}
                   onChange={(e) => updateInviteData({ email: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="companyName" className="text-sm font-medium">
+                  Company Name <span className="text-muted-foreground">(Optional)</span>
+                </Label>
+                <Input
+                  id="companyName"
+                  placeholder="Enter your company name"
+                  value={inviteData.companyName}
+                  onChange={(e) => updateInviteData({ companyName: e.target.value })}
                 />
               </div>
 

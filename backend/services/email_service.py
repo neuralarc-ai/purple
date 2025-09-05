@@ -328,6 +328,183 @@ Team Helium
 https://he2.ai
         """
 
+    def send_waitlist_email(self, user_email: str, user_name: str) -> Dict[str, Any]:
+        """
+        Send waitlist confirmation email to user who joined the waitlist.
+        
+        Args:
+            user_email: User's email address
+            user_name: User's display name
+            
+        Returns:
+            Dict with success status and details
+        """
+        try:
+            # Create email content
+            subject = "Thank you for joining the Helium AI waitlist"
+            html_content = self._create_waitlist_email_html(user_name)
+            text_content = self._create_waitlist_email_text(user_name)
+            
+            # Try Resend first, fallback to SMTP
+            if self.use_resend:
+                result = self._send_via_resend(user_email, subject, html_content)
+                if result['success']:
+                    return result
+            
+            if self.use_smtp:
+                result = self._send_via_smtp(user_email, subject, html_content, text_content)
+                if result['success']:
+                    return result
+            
+            # If no providers available
+            if not self.use_resend and not self.use_smtp:
+                logger.warning(f"Waitlist email not sent to {user_email} - no email provider configured")
+                return {
+                    'success': False,
+                    'error': 'No email provider configured',
+                    'email': user_email
+                }
+            
+            return {
+                'success': False,
+                'error': 'All email providers failed',
+                'email': user_email
+            }
+            
+        except Exception as e:
+            logger.error(f"Error sending waitlist email to {user_email}: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'email': user_email
+            }
+
+    def _create_waitlist_email_html(self, user_name: str) -> str:
+        """Create HTML version of waitlist email with custom template."""
+        first_name = user_name.split()[0] if user_name else "there"
+        
+        return f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Thank you for joining the Helium AI waitlist</title>
+            <style>
+                body {{
+                    margin: 0;
+                    padding: 0;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+                    background-color: #D4D5D0;
+                    line-height: 1.6;
+                }}
+                .email-container {{
+                    max-width: 600px;
+                    margin: 0 auto;
+                    background-color: #D4D5D0;
+                    padding: 40px 20px;
+                }}
+                .content-wrapper {{
+                    background-color: #D4D5D0;
+                    padding: 40px;
+                    text-align: left;
+                }}
+                .greeting {{
+                    font-size: 18px;
+                    color: #333;
+                    margin-bottom: 20px;
+                    font-weight: normal;
+                }}
+                .content-text {{
+                    font-size: 16px;
+                    color: #333;
+                    margin-bottom: 20px;
+                    line-height: 1.6;
+                }}
+                .closing {{
+                    font-size: 16px;
+                    color: #333;
+                    margin-top: 30px;
+                    margin-bottom: 10px;
+                }}
+                .signature {{
+                    font-size: 16px;
+                    color: #333;
+                    margin-bottom: 5px;
+                }}
+                .website-link {{
+                    font-size: 16px;
+                    color: #333;
+                    text-decoration: underline;
+                }}
+                .footer {{
+                    text-align: center;
+                    margin-top: 50px;
+                    padding-top: 20px;
+                    font-size: 14px;
+                    color: #666;
+                }}
+                @media only screen and (max-width: 600px) {{
+                    .email-container {{
+                        padding: 20px 10px;
+                    }}
+                    .content-wrapper {{
+                        padding: 20px;
+                    }}
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="email-container">
+                <div class="content-wrapper">
+                    <div class="greeting">Hello {first_name},</div>
+                    
+                    <div class="content-text">
+                        Thank you for joining the Helium AI waitlist and for your patience while we build something extraordinary. Your enthusiasm means the world to us.
+                    </div>
+                    
+                    <div class="content-text">
+                        We are working hard to ensure that your first experience with Helium is smooth, powerful, and unforgettable. Your invite code will be landing in your inbox very soon, and you will be among the first to explore how Helium can transform your workflows and supercharge productivity.
+                    </div>
+                    
+                    <div class="content-text">
+                        Stay tuned. The future of AI for business is closer than ever, and you are part of it.
+                    </div>
+                    
+                    <div class="closing">Warm regards,</div>
+                    <div class="signature">Team Helium</div>
+                    <div class="website-link">https://he2.ai</div>
+                </div>
+                
+                <div class="footer">
+                    Helium AI by Neural Arc Inc. https://neuralarc.ai
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+    def _create_waitlist_email_text(self, user_name: str) -> str:
+        """Create text version of waitlist email."""
+        first_name = user_name.split()[0] if user_name else "there"
+        
+        return f"""
+Hello {first_name},
+
+Thank you for joining the Helium AI waitlist and for your patience while we build something extraordinary. Your enthusiasm means the world to us.
+
+We are working hard to ensure that your first experience with Helium is smooth, powerful, and unforgettable. Your invite code will be landing in your inbox very soon, and you will be among the first to explore how Helium can transform your workflows and supercharge productivity.
+
+Stay tuned. The future of AI for business is closer than ever, and you are part of it.
+
+Warm regards,
+Team Helium
+
+https://he2.ai
+
+Helium AI by Neural Arc Inc. https://neuralarc.ai
+        """
+
 
 # Create global instance
 email_service = EmailService()

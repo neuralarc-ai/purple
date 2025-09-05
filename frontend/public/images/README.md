@@ -29,3 +29,4 @@ If you prefer to host the image externally, you can:
 1. Upload Mail.png to your domain or CDN
 2. Update the email template to use a URL instead of attachment
 3. Replace `cid:mail-illustration` with the actual image URL
+
