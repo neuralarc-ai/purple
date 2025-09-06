@@ -26,7 +26,7 @@ from utils.constants import MODEL_NAME_ALIASES
 # litellm.drop_params = True
 
 # Constants
-MAX_RETRIES = 3
+MAX_RETRIES = 5
 class LLMError(Exception):
     """Base exception for LLM-related errors."""
     pass
