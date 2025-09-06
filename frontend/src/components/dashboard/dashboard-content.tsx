@@ -410,7 +410,7 @@ export function DashboardContent() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="h-9 w-9 flex items-center justify-center rounded-full">
+                <div className="h-9 w-9 flex items-center justify-center cursor-pointer rounded-full border border-black/10 dark:border-muted">
                   <AnimatedThemeToggler className="h-4 w-4 cursor-pointer" />
                 </div>
               </TooltipTrigger>

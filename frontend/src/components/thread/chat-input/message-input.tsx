@@ -338,7 +338,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       }
                       onClick={handleFileUpload}
                     >
-                      <Paperclip className="h-4 w-4 text-muted-foreground" />
+                      <Paperclip className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
