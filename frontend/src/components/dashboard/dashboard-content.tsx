@@ -422,13 +422,13 @@ export function DashboardContent() {
         </div>
         
         <div className="flex-1 overflow-y-auto">
-          <div className="min-h-full flex flex-col">
+          <div className="flex flex-col">
             {/* {customAgentsEnabled && (
               <div className="flex justify-center px-4 pt-4 md:pt-8">
                 <ReleaseBadge text="Custom Agents, Playbooks, and more!" link="/agents?tab=my-agents" />
               </div>
             )} */}
-            <div className="flex-1 flex items-center justify-center px-4 pt-8">
+            <div className="flex-1 flex items-center justify-center px-4 pt-8 mt-[12rem]">
               <div className="w-full max-w-[800px] flex flex-col items-start justify-center space-y-1 md:space-y-2">
                 <div className="flex flex-col items-start text-left w-full">
                   {/* Hello, {user's name} */}

@@ -244,7 +244,7 @@ export function SidebarLeft({
             )}
           </div>
         </div>
-        {state === 'collapsed' && (
+        {state === 'collapsed' && !isMobile &&  (
           <div className="mt-2 flex justify-center">
             <Tooltip>
               <TooltipTrigger asChild>

@@ -1168,7 +1168,7 @@ export function ToolCallSidePanel({
             }
           }}
           className={cn(
-            'fixed top-3 right-2 bottom-6 shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border rounded-[22px] flex flex-col z-[51] md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
+            'fixed top-1 bottom-1 md:top-3 right-2 md:bottom-6  shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border rounded-[22px] flex flex-col z-[51] md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
             widthClass,
           )}  
           style={{

@@ -141,24 +141,44 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
 
   // Render function for original use cases
   const renderOriginalUseCaseRow = (rowItems: typeof originalUseCases) => (
-    <div className="flex justify-center gap-2 w-full mb-2">
-      {rowItems.map((useCase) => (
-        <button
-          key={useCase.id}
-          onClick={() => {
-            if (useCase.isNavigation) {
-              router.push(useCase.navigateTo);
-            } else {
-              onUseCaseSelect(useCase.prompt);
-            }
-          }}
-          className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full border border-border hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-2"
-        >
-          {useCase.icon}
+    <div className="flex justify-center gap-2 w-full mb-2 flex-wrap">
+    {rowItems.map((useCase) => (
+      <button
+        key={useCase.id}
+        onClick={() => {
+          if (useCase.isNavigation) {
+            router.push(useCase.navigateTo);
+          } else {
+            onUseCaseSelect(useCase.prompt);
+          }
+        }}
+        className="
+        inline-flex items-center px-3 py-1.5 text-sm font-medium border border-border 
+    hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-2
+    rounded-[12px] min-[489px]:rounded-full
+        "
+      >
+        {/* 👇 Mobile (<488px): square buttons, stacked layout */}
+        <span className="flex flex-col items-center justify-center w-20 h-20 min-[489px]:hidden">
+          {React.cloneElement(useCase.icon as React.ReactElement, {
+            className:
+              "h-6 w-6 text-muted-foreground group-hover:text-foreground transition-colors",
+          })}
+          <span className="text-xs mt-1 text-center">{useCase.title}</span>
+        </span>
+  
+        {/* 👇 Desktop (≥489px): normal inline layout */}
+        <span className="hidden min-[489px]:inline-flex items-center">
+          {React.cloneElement(useCase.icon as React.ReactElement, {
+            className:
+              "h-4 w-4 mr-1.5 text-muted-foreground group-hover:text-foreground transition-colors",
+          })}
           {useCase.title}
-        </button>
-      ))}
-    </div>
+        </span>
+      </button>
+    ))}
+  </div>
+  
   );
 
   // Categorized use cases state
