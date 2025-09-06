@@ -26,9 +26,10 @@ interface BillingModalProps {
     onOpenChange: (open: boolean) => void;
     returnUrl?: string;
     showUsageLimitAlert?: boolean;
+    showPromotionalMessage?: boolean;
 }
 
-export function BillingModal({ open, onOpenChange, returnUrl = typeof window !== 'undefined' ? window?.location?.href || '/' : '/', showUsageLimitAlert = false }: BillingModalProps) {
+export function BillingModal({ open, onOpenChange, returnUrl = typeof window !== 'undefined' ? window?.location?.href || '/' : '/', showUsageLimitAlert = false, showPromotionalMessage = false }: BillingModalProps) {
     const { session, isLoading: authLoading } = useAuth();
     const [subscriptionData, setSubscriptionData] = useState<SubscriptionStatus | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -126,6 +127,22 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                                                 Your current plan has been exhausted for this billing period.
                                             </p>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Promotional Message */}
+                        {showPromotionalMessage && (
+                            <div className="mb-6">
+                                <div className="flex items-center justify-center p-3 sm:p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                                    <div className="text-center">
+                                        <p className="text-sm font-semibold text-primary">
+                                            Exclusive to Annual Plans Only*
+                                        </p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Get 30% off + Early Access with our annual subscription
+                                        </p>
                                     </div>
                                 </div>
                             </div>

@@ -45,6 +45,8 @@ import { UseCases } from './use-cases';
 import { SecurityPopup } from '@/components/thread/chat-input/security-popup';
 import { useSecurityInterception } from '@/hooks/useSecurityInterception';
 import { TokenUsage } from './token-usage';
+import { PromotionalBanner } from './promotional-banner';
+import { useInviteCodeUsage } from '@/hooks/use-invite-code-usage';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -75,7 +77,11 @@ export function DashboardContent() {
   } | null>(null);
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPromotionalMessage, setShowPromotionalMessage] = useState(false);
   const [useCasesLoaded, setUseCasesLoaded] = useState(false);
+
+  // Check if user used an invite code
+  const { data: inviteCodeUsage, isLoading: inviteCodeLoading } = useInviteCodeUsage();
 
   // Handle prompt from URL
   useEffect(() => {
@@ -387,8 +393,14 @@ export function DashboardContent() {
     <>
       <BillingModal 
         open={showPaymentModal} 
-        onOpenChange={setShowPaymentModal}
+        onOpenChange={(open) => {
+          setShowPaymentModal(open);
+          if (!open) {
+            setShowPromotionalMessage(false);
+          }
+        }}
         showUsageLimitAlert={true}
+        showPromotionalMessage={showPromotionalMessage}
       />
       <div className="flex flex-col h-screen w-full overflow-hidden">
         {/* Top Right Controls */}
@@ -413,6 +425,14 @@ export function DashboardContent() {
         
         <div className="flex-1 overflow-y-auto">
           <div className="min-h-full flex flex-col">
+            {/* Promotional Banner - Only show for users who used invite codes */}
+            {!inviteCodeLoading && inviteCodeUsage?.has_used_invite_code && (
+              <PromotionalBanner onUpgradeClick={() => {
+                setShowPromotionalMessage(true);
+                setShowPaymentModal(true);
+              }} />
+            )}
+            
             {/* {customAgentsEnabled && (
               <div className="flex justify-center px-4 pt-4 md:pt-8">
                 <ReleaseBadge text="Custom Agents, Playbooks, and more!" link="/agents?tab=my-agents" />
