@@ -47,6 +47,7 @@ import { useSecurityInterception } from '@/hooks/useSecurityInterception';
 import { TokenUsage } from './token-usage';
 import { PromotionalBanner } from './promotional-banner';
 import { useInviteCodeUsage } from '@/hooks/use-invite-code-usage';
+import { SettingsModal } from '@/components/settings/settings-modal';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -78,6 +79,7 @@ export function DashboardContent() {
   const initiateAgentMutation = useInitiateAgentWithInvalidation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPromotionalMessage, setShowPromotionalMessage] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [useCasesLoaded, setUseCasesLoaded] = useState(false);
 
   // Check if user used an invite code
@@ -114,7 +116,7 @@ export function DashboardContent() {
     }
     
     // Use the specific message and cache it
-    const message = "Let's rise above the noise, {name}.";
+    const message = "Hello, {name}\nLet's rise above the noise";
     localStorage.setItem('cached_welcome_message', message);
     return message;
   }, []); // Empty dependency array - uses cached message
@@ -402,11 +404,19 @@ export function DashboardContent() {
         showUsageLimitAlert={true}
         showPromotionalMessage={showPromotionalMessage}
       />
+      <SettingsModal 
+        open={showSettingsModal} 
+        onOpenChange={setShowSettingsModal}
+        defaultSection="billing"
+      />
       <div className="flex flex-col h-screen w-full overflow-hidden">
         {/* Top Right Controls */}
         <div className="absolute py-4 right-12 z-10 flex items-center gap-3">
           {/* Token Usage */}
-          <TokenUsage onUpgradeClick={() => setShowPaymentModal(true)} />
+          <TokenUsage 
+            onUpgradeClick={() => setShowPaymentModal(true)} 
+            onViewUsageClick={() => setShowSettingsModal(true)}
+          />
           
           {/* Theme Toggle Button */}
           <TooltipProvider>
@@ -438,21 +448,17 @@ export function DashboardContent() {
                 <ReleaseBadge text="Custom Agents, Playbooks, and more!" link="/agents?tab=my-agents" />
               </div>
             )} */}
-            <div className="flex-1 flex items-center justify-center px-4 pt-8">
-              <div className="w-full max-w-[800px] flex flex-col items-center justify-center space-y-1 md:space-y-2">
-                <div className="flex flex-col items-center text-center w-full">
-                  <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground/80 libre-baskerville-regular">
-                    {currentWelcomeMessage.split('{name}').map((part, index, array) => {
-                      if (index === array.length - 1) {
-                        return part;
-                      }
-                      return (
-                        <span key={index}>
-                          {part}
-                          <span>{cachedUserName}</span>
-                        </span>
-                      );
-                    })}
+            <div className="flex-1 flex items-center justify-center px-4 pt-8 mt-[12rem]">
+              <div className="w-full max-w-[800px] flex flex-col items-start justify-center space-y-1 md:space-y-2">
+                <div className="flex flex-col items-start text-left w-full">
+                  {/* Hello, {user's name} */}
+                  <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground libre-baskerville-bold mb-1">
+                    Hello, {cachedUserName}
+                  </div>
+                  
+                  {/* Let's rise above the noise */}
+                  <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-muted-foreground libre-baskerville-regular">
+                    Let's rise above the noise.
                   </div>
                 </div>
                 <div className="w-full transition-all duration-700 ease-out">

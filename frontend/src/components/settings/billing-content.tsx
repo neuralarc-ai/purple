@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { BillingModal } from '@/components/billing/billing-modal';
 import {
   CreditBalanceDisplay,
@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { useSharedSubscription } from '@/contexts/SubscriptionContext';
 import { isLocalMode } from '@/lib/config';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
+import UsageLogs from '@/components/billing/usage-logs';
 
 const returnUrl = process.env.NEXT_PUBLIC_URL as string;
 
@@ -24,12 +26,30 @@ export function PersonalAccountBillingPage({ onTabChange }: PersonalAccountBilli
   const { data: accounts, isLoading, error } = useAccounts();
   const [showBillingModal, setShowBillingModal] = useState(false);
   const [showCreditPurchaseModal, setShowCreditPurchaseModal] = useState(false);
+  const [accountId, setAccountId] = useState<string | null>(null);
 
   const {
     data: subscriptionData,
     isLoading: subscriptionLoading,
     error: subscriptionError,
   } = useSharedSubscription();
+
+  // Load account ID for usage logs
+  useEffect(() => {
+    const loadAccountId = async () => {
+      try {
+        const supabaseClient = createClient();
+        const { data: personalAccount } = await supabaseClient.rpc(
+          'get_personal_account',
+        );
+        setAccountId(personalAccount.account_id);
+      } catch (error) {
+        console.error('Error loading account ID:', error);
+      }
+    };
+
+    loadAccountId();
+  }, []);
 
   const personalAccount = useMemo(
     () => accounts?.find((account) => account.personal_account),
@@ -106,65 +126,56 @@ export function PersonalAccountBillingPage({ onTabChange }: PersonalAccountBilli
           {subscriptionData && (
             <div className="mb-3">
               <div className="rounded-lg bg-white dark:bg-background p-3">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-                  <div className="flex flex-col gap-3 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-base font-semibold text-foreground">
-                        Usage This Month
-                      </span>
-                      <Button 
-                        variant='outline' 
-                        size="sm"
-                        className='text-xs h-8 px-3 flex-shrink-0'
-                        onClick={() => onTabChange?.('usage-logs')}
-                      >
-                        Usage logs
-                      </Button>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg border border-primary/10">
-                        <span className="text-sm font-medium text-foreground">Total Used</span>
-                        <span className="text-lg font-bold text-primary">
-                          {Math.round((subscriptionData.current_usage || 0) * 100)} credits
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center py-2 px-3 bg-muted/30 rounded-md">
-                        <span className="text-sm text-muted-foreground">From subscription</span>
-                        <span className="text-sm font-medium">
-                          {Math.min(Math.round((subscriptionData.current_usage || 0) * 100), Math.round((subscriptionData.cost_limit || 0) * 100))} / {Math.round((subscriptionData.cost_limit || 0) * 100)} credits
-                        </span>
-                      </div>
-                      {subscriptionData.current_usage && subscriptionData.cost_limit && 
-                       (subscriptionData.current_usage * 100) > (subscriptionData.cost_limit * 100) && (
-                        <div className="flex justify-between items-center py-2 px-3 bg-muted/30 rounded-md">
-                          <span className="text-sm text-muted-foreground">From add-on balance</span>
-                          <span className="text-sm font-medium">
-                            {Math.round(((subscriptionData.current_usage || 0) - (subscriptionData.cost_limit || 0)) * 100)} credits
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                <div className="space-y-3">
+                  <h3 className="text-base font-semibold text-foreground">
+                    Usage This Month
+                  </h3>
+                  <div className="space-y-2">
+                    {(() => {
+                      const totalCredits = subscriptionData.credit_balance_credits || Math.round((subscriptionData.credit_balance || 0) * 100);
+                      const costLimit = Math.round((subscriptionData.cost_limit || 0) * 100);
+                      const currentUsage = Math.round((subscriptionData.current_usage || 0) * 100);
+                      const freeCreditsUsed = Math.min(currentUsage, costLimit);
+                      const freeCreditsLeft = Math.max(0, costLimit - freeCreditsUsed);
+                      const addOnCreditsLeft = Math.max(0, totalCredits - freeCreditsLeft);
+                      
+                      return (
+                        <>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Total credits left</span>
+                            <span className="text-sm font-medium">{totalCredits} credits</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Free credits left</span>
+                            <span className="text-sm font-medium">{freeCreditsLeft} / {costLimit}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Monthly credits left</span>
+                            <span className="text-sm font-medium">0</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Add on credits left</span>
+                            <span className="text-sm font-medium">{addOnCreditsLeft} credits</span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Credit Balance Display - Only show for users who can purchase credits */}
-          {subscriptionData?.can_purchase_credits && (
-            <div className="mb-3">
-              <div className="rounded-lg bg-white dark:bg-background p-3">
-                <CreditBalanceDisplay
-                  balance={subscriptionData.credit_balance_credits || Math.round((subscriptionData.credit_balance || 0) * 100)}
-                  canPurchase={subscriptionData.can_purchase_credits}
-                  onPurchaseClick={() => setShowCreditPurchaseModal(true)}
-                  subscriptionData={subscriptionData}
-                />
-              </div>
-            </div>
-          )}
-
           <div className='flex justify-center items-center gap-3'>
+            {subscriptionData?.can_purchase_credits && (
+              <Button
+                size="sm"
+                onClick={() => setShowCreditPurchaseModal(true)}
+                className="bg-primary hover:bg-primary/90 shadow-md hover:shadow-lg transition-all h-8 px-4"
+              >
+                Add Credits
+              </Button>
+            )}
             <Button
               size="sm"
               onClick={() => setShowBillingModal(true)}
@@ -173,6 +184,13 @@ export function PersonalAccountBillingPage({ onTabChange }: PersonalAccountBilli
               Manage Subscription
             </Button>
           </div>
+
+          {/* Usage Logs Section */}
+          {accountId && (
+            <div className="mt-6">
+              <UsageLogs accountId={accountId} compact={true} />
+            </div>
+          )}
         </>
       )}
 

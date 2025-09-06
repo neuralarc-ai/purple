@@ -2,13 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
   Table,
   TableBody,
   TableCell,
@@ -46,9 +39,10 @@ interface DailyUsage {
 
 interface Props {
   accountId: string;
+  compact?: boolean;
 }
 
-export default function UsageLogs({ accountId }: Props) {
+export default function UsageLogs({ accountId, compact = false }: Props) {
   const [page, setPage] = useState(0);
   const [allLogs, setAllLogs] = useState<UsageLogEntry[]>([]);
   const [hasMore, setHasMore] = useState(true);
@@ -252,16 +246,18 @@ export default function UsageLogs({ accountId }: Props) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Usage Logs Accordion */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Daily Usage Logs</CardTitle>
-          <CardDescription>
-            Your token usage organized by day, sorted by most recent.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className={compact ? "space-y-3" : "space-y-6"}>
+      {/* Usage Logs Header - Fixed */}
+      <div className="space-y-1">
+        <h3 className={compact ? "text-lg font-semibold" : "text-xl font-semibold"}>Daily Usage Logs</h3>
+        <p className={compact ? "text-sm text-muted-foreground" : "text-muted-foreground"}>
+          Your token usage organized by day, sorted by most recent.
+        </p>
+      </div>
+      
+      {/* Usage Logs Content - Scrollable */}
+      <div className="max-h-120 overflow-y-auto border rounded-lg">
+        <div className="p-4">
           {groupedLogs.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No usage logs found.</p>
@@ -359,8 +355,8 @@ export default function UsageLogs({ accountId }: Props) {
               )}
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

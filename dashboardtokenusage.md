@@ -28,8 +28,6 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
     : 0;
   
   const creditsRemaining = Math.max(0, totalCreditsLimit - totalCreditsUsed);
-  const purchasedCreditsLeft = subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100);
-  const totalRemainingCredits = creditsRemaining + purchasedCreditsLeft;
   
   const isFreePlan = subscriptionData?.plan_name === 'free';
 
@@ -77,24 +75,24 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
         
         {/* Credit Count */}
         <span className="text-sm font-medium text-foreground flex-shrink-0">
-          {totalRemainingCredits.toLocaleString()}
+          {totalCreditsUsed.toLocaleString()}
         </span>
         
-        {/* Vertical Separator - Show when hovered or when total remaining credits is 0 */}
+        {/* Vertical Separator - Only show when hovered */}
         <div className={cn(
           "w-px h-4 bg-border flex-shrink-0 transition-all duration-300",
-          (isHovered || totalRemainingCredits === 0) ? "opacity-100" : "opacity-0 w-0"
+          isHovered ? "opacity-100" : "opacity-0 w-0"
         )} />
         
         {/* Upgrade Text - Animated sliding from right */}
         <div className={cn(
           "relative overflow-hidden transition-all duration-300",
-          (isHovered || totalRemainingCredits === 0) ? "w-16" : "w-0"
+          isHovered ? "w-16" : "w-0"
         )}>
           <span 
             className={cn(
               "text-sm font-medium text-primary transition-transform duration-300 block whitespace-nowrap",
-              (isHovered || totalRemainingCredits === 0)
+              isHovered 
                 ? "translate-x-0" 
                 : "translate-x-full"
             )}
@@ -107,7 +105,7 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
       {/* Dropdown on Hover */}
       {isHovered && (
         <div 
-          className="token-usage-container absolute top-full right-0 mt-1 w-64 bg-sidebar border dark:border-border rounded-2xl shadow-lg z-50 p-4 animate-in slide-in-from-right-4 fade-in duration-300"
+          className="token-usage-container absolute top-full right-0 mt-1 w-64 bg-background border border-border rounded-lg shadow-lg z-50 p-4"
           onMouseLeave={() => setIsHovered(false)}
         >
           <div className="space-y-3">
@@ -119,7 +117,7 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
               <Button
                 variant="default"
                 size="sm"
-                className="text-xs h-6 px-2 dark:bg-white dark:text-black hover:bg-black/80 dark:hover:bg-gray-100 rounded-full"
+                className="text-xs h-6 px-2 bg-white text-black hover:bg-gray-100 rounded"
                 onClick={handleAddCredits}
               >
                 Add Credits
@@ -129,49 +127,19 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
             {/* Divider */}
             <div className="border-t border-border" />
             
-            {/* Total credits left */}
+            {/* Credits Remaining */}
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Total credits left</span>
-              <span className="text-sm font-medium text-foreground">
-                {(subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)).toLocaleString()}
-              </span>
+              <span className="text-sm text-muted-foreground">Credits remaining</span>
+              <span className="text-sm font-medium text-foreground">{creditsRemaining.toLocaleString()}</span>
             </div>
             
-            {subscriptionData?.plan_name === 'free' ? (
-              <>
-                {/* Free credits left */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Free credits left</span>
-                  <span className="text-sm font-medium text-foreground">
-                    {creditsRemaining.toLocaleString()} / {totalCreditsLimit.toLocaleString()}
-                  </span>
-                </div>
-                
-                {/* Monthly credits left */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Monthly credits left</span>
-                  <span className="text-sm font-medium text-foreground">0</span>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Monthly credits left */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Monthly credits left</span>
-                  <span className="text-sm font-medium text-foreground">
-                    {creditsRemaining.toLocaleString()}
-                  </span>
-                </div>
-                
-                {/* Add on credits left */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Add on credits left</span>
-                  <span className="text-sm font-medium text-foreground">
-                    {(subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)).toLocaleString()}
-                  </span>
-                </div>
-              </>
-            )}
+            {/* Credits Used */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Credits Used</span>
+              <span className="text-sm font-medium text-foreground">
+                {totalCreditsUsed.toLocaleString()} out of {totalCreditsLimit.toLocaleString()}
+              </span>
+            </div>
             
             <div className="border-t border-border pt-3">
               {/* View Usage Button */}

@@ -902,7 +902,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
         >
           <div
             ref={contentRef}
-            className="mx-auto min-w-0 w-full max-w-4xl px-4 md:px-6 lg:px-12"
+            className="mx-auto min-w-0 w-full max-w-4xl px-8 md:px-12 lg:px-12"
           >
             <div className="space-y-8 min-w-0">
               {(() => {
