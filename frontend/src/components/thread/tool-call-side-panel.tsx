@@ -301,7 +301,7 @@ export function ToolCallSidePanel({
 
   const [panelWidth, setPanelWidth] = React.useState<number | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
-  const minWidth = 360;
+  const minWidth = 560;
   const maxWidth = typeof window !== 'undefined' ? Math.floor(window.innerWidth * 0.7) : 1000; // 70% of viewport width
   const defaultWidth = 480;
 
