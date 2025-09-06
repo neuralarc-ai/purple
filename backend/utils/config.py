@@ -97,8 +97,8 @@ class Configuration:
     # Credentials API feature flag
     ENABLE_CREDENTIALS_API: bool = True
     
-    # Suna default agent feature flag
-    ENABLE_SUNA_DEFAULT_AGENT: bool = True
+    # Helium default agent feature flag
+    ENABLE_HELIUM_DEFAULT_AGENT: bool = True
     
     # Computed subscription tier IDs based on environment
     @property

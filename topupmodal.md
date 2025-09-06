@@ -324,4 +324,4 @@ export function CreditBalanceDisplay({ balance, canPurchase, onPurchaseClick, su
             </p>
         </div>
     );
-}
+} 
