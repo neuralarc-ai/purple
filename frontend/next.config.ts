@@ -5,6 +5,7 @@ const nextConfig = (): NextConfig => ({
   env: {
     TAVILY_API_KEY: process.env.TAVILY_API_KEY,
     BACKEND_URL: process.env.BACKEND_URL,
+    KORTIX_ADMIN_API_KEY: process.env.KORTIX_ADMIN_API_KEY,
   },
   async rewrites() {
     return [
