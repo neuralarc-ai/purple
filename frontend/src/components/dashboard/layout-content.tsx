@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SidebarLeft, FloatingMobileMenuButton } from '@/components/sidebar/sidebar-left';
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarInset, SidebarProvider, ToolCallSidePanelProvider, useSidebar, useToolCallSidePanel } from '@/components/ui/sidebar';
 // import { PricingAlert } from "@/components/billing/pricing-alert"
 import { MaintenanceAlert } from '@/components/maintenance-alert';
 import { useAccounts } from '@/hooks/use-accounts';
@@ -25,6 +25,38 @@ import { useUsageRealtime } from '@/hooks/useUsageRealtime';
 
 interface DashboardLayoutContentProps {
   children: React.ReactNode;
+}
+
+export const LayoutContext = React.createContext({ isSidebarOverlaying: false });
+
+function LayoutContentInner({ children, mantenanceBanner }: { children: React.ReactNode, mantenanceBanner: React.ReactNode }) {
+  const { state: sidebarState } = useSidebar();
+  const { isExpanded: isToolCallSidePanelExpanded } = useToolCallSidePanel();
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const [isMediumScreen, setIsMediumScreen] = useState(false);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      const width = window.innerWidth;
+      setIsLargeScreen(width > 1024);
+      setIsMediumScreen(width >= 768 && width <= 1024);
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  const isSidebarOverlaying = (isLargeScreen || isMediumScreen) && sidebarState === 'expanded' && isToolCallSidePanelExpanded;
+
+  return (
+    <LayoutContext.Provider value={{ isSidebarOverlaying }}>
+      <SidebarLeft />
+      <SidebarInset>
+        {mantenanceBanner}
+        <div className="bg-background">{children}</div>
+      </SidebarInset>
+    </LayoutContext.Provider>
+  );
 }
 
 export default function DashboardLayoutContent({
@@ -132,12 +164,11 @@ export default function DashboardLayoutContent({
   return (
     <DeleteOperationProvider>
       <SubscriptionProvider>
-        <SidebarProvider>
-          <SidebarLeft />
-          <SidebarInset>
-            {mantenanceBanner}
-            <div className="bg-background">{children}</div>
-          </SidebarInset>
+        <ToolCallSidePanelProvider>
+          <SidebarProvider>
+            <LayoutContentInner mantenanceBanner={mantenanceBanner}>
+              {children}
+            </LayoutContentInner>
 
           {/* <PricingAlert 
           open={showPricingAlert} 
@@ -146,18 +177,17 @@ export default function DashboardLayoutContent({
           accountId={personalAccount?.account_id}
           /> */}
 
-          <MaintenanceAlert
-            open={showMaintenanceAlert}
-            onOpenChange={setShowMaintenanceAlert}
-            closeable={true}
-          />
+            <MaintenanceAlert
+              open={showMaintenanceAlert}
+              onOpenChange={setShowMaintenanceAlert}
+              closeable={true}
+            />
 
           {/* Status overlay for deletion operations */}
-          <StatusOverlay />
-          
-          {/* Floating mobile menu button */}
-          <FloatingMobileMenuButton />
-        </SidebarProvider>
+            <StatusOverlay />
+            <FloatingMobileMenuButton />
+          </SidebarProvider>
+        </ToolCallSidePanelProvider>
       </SubscriptionProvider>
     </DeleteOperationProvider>
   );

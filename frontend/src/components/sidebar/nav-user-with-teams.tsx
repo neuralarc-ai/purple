@@ -7,7 +7,6 @@ import Image from 'next/image';
 import {
   Command,  
   AudioWaveform,
-  SquarePen,
   ChevronsUpDown,
 } from 'lucide-react';
 import { useAccounts } from '@/hooks/use-accounts';
@@ -42,7 +41,6 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { useTheme } from 'next-themes';
 import { useFeatureFlag } from '@/lib/feature-flags';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useSubscriptionData } from '@/contexts/SubscriptionContext';
@@ -103,17 +101,9 @@ export function NavUserWithTeams({
   }, [profile]);
   
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
-  const [showEditNameDialog, setShowEditNameDialog] = React.useState(false);
   const [showBillingModal, setShowBillingModal] = React.useState(false);
   const [showSettingsModal, setShowSettingsModal] = React.useState(false);
-  const [editName, setEditName] = React.useState(user.name);
   
-  // Update editName when preferredName changes
-  React.useEffect(() => {
-    if (preferredName && !profileLoading) {
-      setEditName(preferredName);
-    }
-  }, [preferredName, profileLoading]);
   const [editLoading, setEditLoading] = React.useState(false);
   const [tokenUsage, setTokenUsage] = React.useState(0);
   const [totalTokens, setTotalTokens] = React.useState(500);
@@ -243,49 +233,6 @@ export function NavUserWithTeams({
     fetchTokenUsage();
   }, [fetchTokenUsage]);
 
-  // Handle name editing
-  const handleEditName = async () => {
-    const currentName = preferredName || user.name;
-    if (!editName.trim() || editName === currentName) {
-      setShowEditNameDialog(false);
-      return;
-    }
-    
-    setEditLoading(true);
-    try {
-      const supabase = createClient();
-      
-      // Update the user profile with the new preferred name
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/user-profiles/profile`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          preferred_name: editName.trim(),
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to update profile: ${response.statusText}`);
-      }
-      
-      // Invalidate the user profile query to refresh the data
-      // This will trigger a refetch and update the UI
-      toast.success('Preferred name updated successfully!');
-      setShowEditNameDialog(false);
-      
-      // Force a refetch of the user profile
-      window.location.reload();
-    } catch (err) {
-      console.error('Error updating preferred name:', err);
-      toast.error('Failed to update preferred name. Please try again.');
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
   if (!activeTeam) {
     return null;
   }
@@ -394,38 +341,6 @@ export function NavUserWithTeams({
             >
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1.5 py-1.5 text-left text-sm">
-                  {profile?.avatar ? (
-                    <div className="h-8 w-8 rounded-lg overflow-hidden">
-                      {profile.avatar.startsWith('{') ? (
-                        <BoringAvatar
-                          name={preferredName || user.name}
-                          colors={JSON.parse(profile.avatar).colors}
-                          variant="beam"
-                          size={32}
-                        />
-                      ) : (
-                        <Avatar className="h-8 w-8 rounded-lg">
-                          <AvatarImage src={profile.avatar} alt={preferredName || user.name} />
-                          <AvatarFallback className="rounded-lg">
-                            {getInitials(preferredName || user.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                  ) : user.avatar ? (
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarImage src={user.avatar} alt={preferredName || user.name} />
-                      <AvatarFallback className="rounded-lg">
-                        {getInitials(preferredName || user.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  ) : (
-                    <Avatar className="h-8 w-8 rounded-lg">
-                      <AvatarFallback className="rounded-lg">
-                        {getInitials(preferredName || user.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <div className="flex items-center gap-2 group">
                       <span className="truncate font-medium">
@@ -435,18 +350,6 @@ export function NavUserWithTeams({
                           preferredName || user.name
                         )}
                       </span>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setEditName(preferredName || user.name);
-                          setShowEditNameDialog(true);
-                        }}
-                        className="text-muted-foreground hover:text-foreground transition-colors duration-200"
-                        aria-label="Edit name"
-                      >
-                        <SquarePen className="h-3 w-3" />
-                      </button>
                     </div>
                     <span className="truncate text-xs">{user.email}</span>
                   </div>
@@ -647,36 +550,6 @@ export function NavUserWithTeams({
             </DialogDescription>
           </DialogHeader>
           <NewTeamForm />
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Name Dialog */}
-      <Dialog open={showEditNameDialog} onOpenChange={setShowEditNameDialog}>
-        <DialogContent className="sm:max-w-[400px] bg-background border border-border rounded-lg shadow-lg p-0">
-          <DialogHeader className="p-4 border-b border-border">
-            <DialogTitle className="text-lg font-semibold text-foreground">
-              Edit Preferred Name
-            </DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <Input
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              placeholder="Enter your preferred name"
-              disabled={editLoading}
-              autoFocus
-              className="mb-4"
-            />
-            <div className="flex justify-end">
-              <Button 
-                onClick={handleEditName} 
-                disabled={editLoading || !editName.trim() || editName === (preferredName || user.name)}
-                size="sm"
-              >
-                {editLoading ? 'Saving...' : 'Save'}
-              </Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 

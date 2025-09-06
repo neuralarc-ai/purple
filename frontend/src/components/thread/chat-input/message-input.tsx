@@ -266,7 +266,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       }
       // Unified compact menu for both logged and non-logged (non-logged shows only models subset via menu trigger)
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 agent-selector ">
           <UnifiedConfigMenu
             isLoggedIn={isLoggedIn}
             selectedAgentId={
@@ -338,7 +338,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       }
                       onClick={handleFileUpload}
                     >
-                      <Paperclip className="h-4 w-4 text-muted-foreground" />
+                      <Paperclip className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Cpu, Code, GitBranch, FileText as FileTextIcon, BarChart2, Shield, 
-  Target, ClipboardList, Search, Users, Lightbulb, Brain, LineChart, 
+import {
+  Cpu, Code, GitBranch, FileText as FileTextIcon, BarChart2, Shield,
+  Target, ClipboardList, Search, Users, Lightbulb, Brain, LineChart,
   TrendingDown, FileCheck, PieChart, Zap, Calendar, Megaphone, MessageSquare,
   Mail, TrendingUp, BookOpen, Package, Database, LayoutGrid, LayoutTemplate,
   AlertCircle, AlertTriangle, FileSignature, Settings, Users as Users2, Palette,
@@ -36,20 +36,20 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
   // Load user's work description on component mount and when user changes
   useEffect(() => {
     let isMounted = true;
-    
+
     const loadUserProfile = async () => {
       try {
         console.log('Loading user profile...');
         const profile = await userProfilesApi.getProfile();
-        
+
         if (!isMounted) return;
-        
+
         console.log('Received profile:', profile);
-        
+
         if (profile?.work_description) {
           const workDesc = profile.work_description.trim();
           console.log('Setting work description to:', workDesc);
-          
+
           // Only update if the value has changed to prevent unnecessary re-renders
           setUserWorkDescription(prev => {
             if (prev !== workDesc) {
@@ -66,19 +66,19 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
         if (isMounted) {
           setUserWorkDescription(null);
         }
-              } finally {
-          if (isMounted) {
-            setIsLoading(false);
-            // Trigger slide-in animation after loading
-            setTimeout(() => {
-              setIsVisible(true);
-              // Call onLoad callback when component becomes visible
-              if (onLoad) {
-                onLoad();
-              }
-            }, 100);
-          }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+          // Trigger slide-in animation after loading
+          setTimeout(() => {
+            setIsVisible(true);
+            // Call onLoad callback when component becomes visible
+            if (onLoad) {
+              onLoad();
+            }
+          }, 100);
         }
+      }
     };
 
     // Initial load
@@ -139,7 +139,7 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
   const firstRow = originalUseCases.slice(0, 3);
   const secondRow = originalUseCases.slice(3, 6);
 
-  // Render function for original use cases
+  // Render function for original use cases with responsive design
   const renderOriginalUseCaseRow = (rowItems: typeof originalUseCases) => (
     <div className="flex justify-center gap-2 w-full mb-2 flex-wrap">
     {rowItems.map((useCase) => (
@@ -776,11 +776,11 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
   // Filter categories based on exact work description match
   const filteredCategories = categories.filter(category => {
     if (!userWorkDescription) return false;
-    
+
     // Direct comparison with the category name (case-insensitive)
     return category.name.toLowerCase() === userWorkDescription.trim().toLowerCase();
   });
-  
+
   // Debug logging
   console.log('Current work description:', userWorkDescription);
   console.log('Available categories:', categories.map(c => c.name));
@@ -796,18 +796,17 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
 
   // If user has a specific work description, only show matching categories
   // Show all categories if no work description is set, it's 'other', or no matches were found
-  const shouldShowAllCategories = 
-    !userWorkDescription || 
+  const shouldShowAllCategories =
+    !userWorkDescription ||
     userWorkDescription.toLowerCase() === 'other' ||
     filteredCategories.length === 0;
 
   return (
-    <div 
-      className={`w-full max-w-6xl h-full flex flex-col justify-between mx-auto px-4 py-6 transition-all duration-700 ease-out ${
-        isVisible 
-          ? 'translate-y-0 opacity-100' 
+    <div
+      className={`w-full max-w-6xl h-full flex flex-col justify-between mx-auto px-4 py-6 transition-all duration-700 ease-out ${isVisible
+          ? 'translate-y-0 opacity-100'
           : 'translate-y-8 opacity-0'
-      }`}
+        }`}
     >
       {/* Original Use Cases - Always show these */}
       <div className="mb-10">
@@ -875,7 +874,7 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
                     <ChevronDown className="h-5 w-5 text-muted-foreground" />
                   )}
                 </button>
-                
+
                 {expandedCategories[category.name] && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted/10">
                     {category.items.map((item) => (

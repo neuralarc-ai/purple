@@ -6,6 +6,7 @@ import React, {
   useRef,
   useState,
   useMemo,
+  useContext,
 } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BillingError, AgentRunLimitError } from '@/lib/api';
@@ -40,6 +41,7 @@ import {
   useKeyboardShortcuts,
 } from '../_hooks';
 import { ThreadError, UpgradeDialog, ThreadLayout } from '../_components';
+import { LayoutContext } from '@/components/dashboard/layout-content';
 
 import {
   useThreadAgent,
@@ -67,6 +69,7 @@ export default function ThreadPage({
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { isSidebarOverlaying } = useContext(LayoutContext);
 
   // Enable real-time updates for usage data
   useUsageRealtime(user?.id);
@@ -111,10 +114,9 @@ export default function ThreadPage({
     selectedAgentId,
     setSelectedAgent,
     initializeFromAgents,
-          getCurrentAgent,
-      isHeliumAgent 
-    } = useAgentSelection();
- 
+    getCurrentAgent,
+  } = useAgentSelection();
+  
   const { data: agentsResponse } = useAgents();
   const agents = agentsResponse?.agents || [];
   const [isSidePanelAnimating, setIsSidePanelAnimating] = useState(false);
@@ -125,6 +127,7 @@ export default function ThreadPage({
     runningCount: number;
     runningThreadIds: string[];
   } | null>(null);
+  const [panelWidth, setPanelWidth] = useState<number | null>(null);
 
   // Refs - simplified for flex-column-reverse
   const latestMessageRef = useRef<HTMLDivElement>(null);
@@ -783,6 +786,7 @@ export default function ThreadPage({
         project={project}
         sandboxId={sandboxId}
         isSidePanelOpen={isSidePanelOpen}
+        setIsSidePanelOpen={setIsSidePanelOpen}
         onToggleSidePanel={toggleSidePanel}
         paused={paused}
         inTakeover={inTakeover}
@@ -828,6 +832,7 @@ export default function ThreadPage({
         project={project}
         sandboxId={sandboxId}
         isSidePanelOpen={isSidePanelOpen}
+        setIsSidePanelOpen={setIsSidePanelOpen}
         onToggleSidePanel={toggleSidePanel}
         paused={paused}
         inTakeover={inTakeover}
@@ -865,13 +870,14 @@ export default function ThreadPage({
             await logManual(payload);
           } catch {}
         }}
+        onPanelWidthChange={setPanelWidth}
       >
         {/* {workflowId && (
           <div className="px-4 pt-4">
             <WorkflowInfo workflowId={workflowId} />
           </div>
         )} */}
-
+        
         <ThreadContent
           messages={messages}
           // isSidePanelOpen={isSidePanelOpen}
@@ -951,18 +957,30 @@ export default function ThreadPage({
               : 'right-0',
             isMobile ? 'left-0 right-0 pb-0 pt-0' : '',
           )}
+          style={
+            isSidePanelOpen && !isMobile && panelWidth
+              ? {
+                  right: `${panelWidth}px`,
+                  paddingRight: '1.4rem', // Add padding when panel is open
+                }
+              : undefined
+          }
         >
           <div
             className={cn(
-              'flex justify-center px-0',
-              isMobile ? 'px-3' : 'px-8',
+              'flex justify-center w-full',
+              isMobile ? 'px-3' : 'px-6',
+              isSidePanelOpen && !isMobile && 'pr-0' // Remove right padding when panel is open since we're adding it to the parent
             )}
           >
             <div
               className={cn(
-                'w-full',
-                isSidePanelOpen ? 'max-w-4xl' : 'max-w-4xl',
+                'w-full max-w-4xl',
+                isSidePanelOpen && !isMobile && 'pr-6' // Add right padding to the content
               )}
+              style={{
+                transition: 'padding 0.2s ease-in-out',
+              }}
             >
               <ChatInput
                 value={newMessage}

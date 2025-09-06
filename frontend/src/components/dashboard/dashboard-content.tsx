@@ -422,7 +422,7 @@ export function DashboardContent() {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="h-9 w-9 flex items-center justify-center rounded-full">
+                <div className="h-9 w-9 flex items-center justify-center cursor-pointer rounded-full border border-black/10 dark:border-muted">
                   <AnimatedThemeToggler className="h-4 w-4 cursor-pointer" />
                 </div>
               </TooltipTrigger>
@@ -448,7 +448,7 @@ export function DashboardContent() {
                 <ReleaseBadge text="Custom Agents, Playbooks, and more!" link="/agents?tab=my-agents" />
               </div>
             )} */}
-            <div className="flex-1 flex items-center justify-center px-4 pt-8 mt-[12rem]">
+            <div className="flex-1 flex items-center justify-center px-4 pt-8 mt-[8rem]">
               <div className="w-full max-w-[800px] flex flex-col items-start justify-center space-y-1 md:space-y-2">
                 <div className="flex flex-col items-start text-left w-full">
                   {/* Hello, {user's name} */}
@@ -501,7 +501,7 @@ export function DashboardContent() {
                         }
                       }, 0);
                     }}
-                    onLoad={() => setUseCasesLoaded(true)}
+                    onLoad={() => setUseCasesLoaded(true)}                  
                   />
                 </div>
               </div>

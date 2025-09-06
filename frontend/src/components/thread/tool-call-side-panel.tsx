@@ -13,10 +13,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
 import { ToolView, extractFilePathFromToolCall } from './tool-views/wrapper';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import Image from 'next/image';
 import { useMediumScreen } from '@/hooks/react-query/use-medium-screen';
 import { useCustomBreakpoint } from '@/hooks/use-custom-breakpoints';
+import { ToolCallSidePanelContext } from '@/components/ui/sidebar';
 
 export interface ToolCallInput {
   assistantCall: {
@@ -62,6 +63,8 @@ interface ToolCallSidePanelProps {
   threadId?: string;
   // Agent run ID for current execution
   agentRunId?: string;
+  // Callback when panel width changes
+  onPanelWidthChange?: (width: number | null) => void;
 }
 
 interface ToolCallSnapshot {
@@ -95,16 +98,15 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ currentView, onViewChange }) =>
           damping: 30
         }}
       />
-      
+
       {/* Buttons */}
       <Button
         size="sm"
         onClick={() => onViewChange('tools')}
-        className={`relative z-10 h-7 w-7 p-0 rounded-xl bg-transparent hover:bg-transparent shadow-none ${
-          currentView === 'tools'
-            ? 'text-black'
-            : 'text-gray-500 dark:text-gray-400'
-        }`}
+        className={`relative z-10 h-7 w-7 p-0 rounded-xl bg-transparent hover:bg-transparent shadow-none ${currentView === 'tools'
+          ? 'text-black'
+          : 'text-gray-500 dark:text-gray-400'
+          }`}
         title="Switch to Tool View"
       >
         <Wrench className="h-3.5 w-3.5" />
@@ -113,11 +115,10 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ currentView, onViewChange }) =>
       <Button
         size="sm"
         onClick={() => onViewChange('browser')}
-        className={`relative z-10 h-7 w-7 p-0 rounded-xl bg-transparent hover:bg-transparent shadow-none ${
-          currentView === 'browser'
-            ? 'text-black'
-            : 'text-gray-500 dark:text-gray-400'
-        }`}
+        className={`relative z-10 h-7 w-7 p-0 rounded-xl bg-transparent hover:bg-transparent shadow-none ${currentView === 'browser'
+          ? 'text-black'
+          : 'text-gray-500 dark:text-gray-400'
+          }`}
         title="Switch to Browser View"
       >
         <Globe className="h-3.5 w-3.5" />
@@ -128,7 +129,7 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ currentView, onViewChange }) =>
 
 // Helper function to generate the computer title
 const getComputerTitle = (agentName?: string): string => {
-          return agentName ? `${agentName}'s Computer` : "Helium's Computer";
+  return agentName ? `${agentName}'s Computer` : "Helium's Computer";
 };
 
 // Reusable header component for the tool panel
@@ -152,7 +153,7 @@ const PanelHeader: React.FC<PanelHeaderProps> = ({
   layoutId,
 }) => {
   const title = getComputerTitle(agentName);
-  
+
   if (variant === 'drawer') {
     return (
       <DrawerHeader className="pb-2">
@@ -261,7 +262,10 @@ export function ToolCallSidePanel({
   resetAccumulatedTime = false,
   threadId,
   agentRunId,
+  onPanelWidthChange,
 }: ToolCallSidePanelProps) {
+  const { setIsExpanded } = React.useContext(ToolCallSidePanelContext);
+  const [hasOpened, setHasOpened] = React.useState(false);
   const [dots, setDots] = React.useState('');
   const [internalIndex, setInternalIndex] = React.useState(0);
   const [navigationMode, setNavigationMode] = React.useState<'live' | 'manual'>('live');
@@ -279,36 +283,362 @@ export function ToolCallSidePanel({
   const [isFullScreen, setIsFullScreen] = React.useState(false);
   const isMediumScreen = useMediumScreen();
   const isCustomBreakpoint = useCustomBreakpoint();
+  const [isResizing, setIsResizing] = React.useState(false);
+  // Initialize panel width based on screen size
+  const getInitialPanelWidth = () => {
+    if (typeof window === 'undefined') return 480; // Default server-side
+
+    const screenWidth = window.innerWidth;
+
+    if (screenWidth >= 1920) return Math.min(800, screenWidth * 0.4);
+    if (screenWidth >= 1500) return Math.min(750, screenWidth * 0.35);
+    if (screenWidth >= 1366) return Math.min(700, screenWidth * 0.4);
+    if (screenWidth >= 1280) return Math.min(600, screenWidth * 0.45);
+    if (screenWidth >= 1024) return Math.min(500, screenWidth * 0.5);
+
+    return Math.min(400, screenWidth * 0.6);
+  };
+
+  const [panelWidth, setPanelWidth] = React.useState<number | null>(null);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const minWidth = 560;
+  const maxWidth = typeof window !== 'undefined' ? Math.floor(window.innerWidth * 0.7) : 1000; // 70% of viewport width
+  const defaultWidth = 480;
+
+  // Initialize panel width on client side only
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const mediaQuery = window.matchMedia('(max-width: 1023px)');
-      const handleChange = (event: MediaQueryListEvent) => {
-        setIsFullScreen(event.matches);
-      };
-
-      // Initial check
-      setIsFullScreen(mediaQuery.matches);
-
-      mediaQuery.addEventListener('change', handleChange);
-
-      return () => {
-        mediaQuery.removeEventListener('change', handleChange);
-      };
+    if (panelWidth === null && typeof window !== 'undefined') {
+      setPanelWidth(getInitialPanelWidth());
     }
   }, []);
 
-  // Compute responsive width class; shrink a bit when the left sidebar is expanded
-  const widthClass = React.useMemo(() => {
-    if (isFullScreen) return 'left-2';
-    if (isCustomBreakpoint && isLeftSidebarExpanded) return 'left-2';
-    if (isMediumScreen) return 'w-[calc(100vw-12px)]';
-    const base = isLeftSidebarExpanded ? 'w-[40vw]' : 'w-[45vw]';
-    return `${base} sm:${base} md:${base} lg:${base} xl:${base}`;
-  }, [isFullScreen, isLeftSidebarExpanded, isMediumScreen, isCustomBreakpoint]);
+  // Debounced callback to parent to reduce excessive notifications
+  const debouncedPanelWidthChange = React.useCallback(
+    React.useMemo(() => {
+      let timeoutId: NodeJS.Timeout;
+      return (width: number | null) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          if (onPanelWidthChange) {
+            onPanelWidthChange(width);
+          }
+        }, 50); // 50ms debounce
+      };
+    }, [onPanelWidthChange]),
+    [onPanelWidthChange]
+  );
+
+  // Notify parent when panel width changes (debounced for performance)
+  React.useEffect(() => {
+    if (!isResizing) {
+      debouncedPanelWidthChange(panelWidth);
+    }
+  }, [panelWidth, isResizing, debouncedPanelWidthChange]);
+
+  // Handle window resize to update max width (70% of viewport)
+  React.useEffect(() => {
+    const updateMaxWidth = () => {
+      const newMaxWidth = Math.floor(window.innerWidth * 0.7);
+      setPanelWidth(prevWidth => {
+        // If current width is more than 70% of viewport, cap it
+        if (prevWidth && prevWidth > newMaxWidth) {
+          if (onPanelWidthChange) {
+            onPanelWidthChange(newMaxWidth);
+          }
+          return newMaxWidth;
+        }
+        return prevWidth;
+      });
+    };
+
+    // Only add resize listener, don't run initial setup to avoid resetting user width
+    window.addEventListener('resize', updateMaxWidth);
+    return () => window.removeEventListener('resize', updateMaxWidth);
+  }, [onPanelWidthChange]);
+
+  // Calculate if we should show resizable panel
+  const shouldShowResizable = React.useMemo(() => {
+    if (isMediumScreen) return false;
+    if (isCustomBreakpoint && isLeftSidebarExpanded) return false;
+    return true;
+  }, [isMediumScreen, isCustomBreakpoint, isLeftSidebarExpanded]);
+
+  // Handle resizing
+  // Refs for smooth resizing performance
+  const animationFrameRef = React.useRef<number>();
+  const currentWidthRef = React.useRef<number>(defaultWidth);
+  const lastUpdateTimeRef = React.useRef<number>(0);
+
+  // Keep currentWidthRef in sync with panelWidth changes from other sources
+  React.useEffect(() => {
+    if (panelWidth && !isResizing) {
+      currentWidthRef.current = panelWidth;
+    }
+  }, [panelWidth, isResizing]);
+
+  // Initialize currentWidthRef when panelWidth is first set
+  React.useEffect(() => {
+    if (panelWidth && currentWidthRef.current === defaultWidth) {
+      currentWidthRef.current = panelWidth;
+    }
+  }, [panelWidth, defaultWidth]);
+
+  // Optimized mouse move handler with RAF throttling
+  const handleMouseMove = React.useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+
+    // Cancel previous animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    // Use requestAnimationFrame for smooth 60fps updates
+    animationFrameRef.current = requestAnimationFrame(() => {
+      const now = performance.now();
+
+      // Throttle to ~60fps (16.67ms between updates)
+      if (now - lastUpdateTimeRef.current < 16) return;
+      lastUpdateTimeRef.current = now;
+
+      const screenWidth = window.innerWidth;
+
+      // Calculate new width from the right edge
+      let newWidth = screenWidth - e.clientX;
+
+      // Calculate dynamic max width based on screen size (cached for performance)
+      let maxAllowedWidth: number;
+      if (screenWidth >= 1920) {
+        maxAllowedWidth = screenWidth * 0.7;
+      } else if (screenWidth >= 1500) {
+        maxAllowedWidth = screenWidth * 0.68;
+      } else if (screenWidth >= 1366) {
+        maxAllowedWidth = screenWidth * 0.6;
+      } else if (screenWidth >= 1280) {
+        maxAllowedWidth = screenWidth * 0.58;
+      } else if (screenWidth >= 1109) {
+        maxAllowedWidth = screenWidth * 0.52;
+      } else {
+        maxAllowedWidth = screenWidth * 0.47;
+      }
+
+      // Ensure minimum width for content visibility
+      const minContentWidth = 400;
+      const calculatedMaxWidth = Math.min(
+        maxAllowedWidth,
+        screenWidth - minContentWidth - (isLeftSidebarExpanded ? 256 : 72) - 32
+      );
+
+      // Apply bounds
+      const boundedWidth = Math.max(
+        minWidth,
+        Math.min(newWidth, calculatedMaxWidth)
+      );
+
+      // Only update if width actually changed (avoid unnecessary re-renders)
+      if (Math.abs(currentWidthRef.current - boundedWidth) > 1) {
+        currentWidthRef.current = boundedWidth;
+
+        // Use CSS custom property for immediate visual feedback
+        if (panelRef.current) {
+          panelRef.current.style.setProperty('--panel-width', `${boundedWidth}px`);
+        }
+
+        // Batch state update
+        setPanelWidth(boundedWidth);
+
+        // Real-time parent callback during dragging for immediate layout updates
+        if (onPanelWidthChange) {
+          onPanelWidthChange(boundedWidth);
+        }
+      }
+    });
+  }, [isResizing, minWidth, isLeftSidebarExpanded]);
+
+
 
   const handleClose = React.useCallback(() => {
     onClose();
   }, [onClose]);
+
+  const handleMouseUp = React.useCallback(() => {
+    // Cancel any pending animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+
+    setIsResizing(false);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+
+    // Clear CSS custom property to let React state take over
+    if (panelRef.current) {
+      panelRef.current.style.removeProperty('--panel-width');
+    }
+
+    // Final callback to parent with the current width (debounced)
+    if (onPanelWidthChange && currentWidthRef.current) {
+      onPanelWidthChange(currentWidthRef.current);
+    }
+  }, [onPanelWidthChange]);
+
+  const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    // Set initial CSS custom property to current width to prevent jump
+    if (panelRef.current && currentWidthRef.current) {
+      panelRef.current.style.setProperty('--panel-width', `${currentWidthRef.current}px`);
+    }
+  }, []);
+
+  // Add/remove event listeners for resizing with passive option for better performance
+  React.useEffect(() => {
+    if (isResizing) {
+      // Use passive listeners for better performance
+      window.addEventListener('mousemove', handleMouseMove, { passive: true });
+      window.addEventListener('mouseup', handleMouseUp, { passive: true });
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+
+      // Cleanup animation frame on unmount
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  // Handle screen size changes and update panel width accordingly
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updatePanelWidth = () => {
+      // Update fullscreen state
+      const isMobileView = window.matchMedia('(max-width: 1023px)').matches;
+      const isLargeScreen = window.innerWidth >= 1024;
+      setIsFullScreen(isMobileView);
+
+      if (isMobileView) {
+        setPanelWidth(null);
+      }
+
+      // For screens 1024px and above, close sidebar when panel is opened
+      if (isLargeScreen && isOpen && !isMobileView) {
+        const event = new CustomEvent('sidebar:close');
+        window.dispatchEvent(event);
+      }
+    };
+
+    const updatePanelWidthOnResize = () => {
+      const screenWidth = window.innerWidth;
+
+      // Only auto-adjust if not currently resizing and only on significant screen size changes
+      if (!isResizing) {
+        const newWidth = getInitialPanelWidth();
+        setPanelWidth(prevWidth => {
+          // Only update if the change is significant (more than 50px difference) to avoid unnecessary resets
+          return Math.abs((prevWidth || 0) - newWidth) > 50 ? newWidth : prevWidth;
+        });
+      }
+
+      // Update other states
+      updatePanelWidth();
+    };
+
+    // Initial setup - only update states, don't reset width
+    updatePanelWidth();
+
+    // Handle sidebar close events
+    const handleSidebarClose = () => {
+      const width = window.innerWidth;
+      if (width >= 1024 && isOpen) {
+        // If sidebar is closed and panel is open on large screens, keep the panel open
+        setPanelWidth(prevWidth => prevWidth || defaultWidth);
+      }
+    };
+
+    // Add event listeners
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+    mediaQuery.addEventListener('change', updatePanelWidth);
+    window.addEventListener('resize', updatePanelWidthOnResize);
+    window.addEventListener('sidebar:close', handleSidebarClose);
+
+    // Cleanup
+    return () => {
+      mediaQuery.removeEventListener('change', updatePanelWidth);
+      window.removeEventListener('resize', updatePanelWidthOnResize);
+      window.removeEventListener('sidebar:close', handleSidebarClose);
+    };
+  }, []);
+
+  // Compute responsive width class and styles
+  const { widthClass, panelStyle } = React.useMemo(() => {
+    // Full screen mode takes highest priority
+    if (isFullScreen) {
+      return {
+        widthClass: 'w-[calc(100vw-16px)]',
+        panelStyle: {}
+      };
+    }
+
+    // Medium screens (mobile/tablet) - take full width with small margins
+    if (isMediumScreen) {
+      return {
+        widthClass: 'w-[calc(100vw-16px)] mx-2',
+        panelStyle: {}
+      };
+    }
+
+    // Custom breakpoint (1024px - 1227px)
+    if (isCustomBreakpoint) {
+      if (isLeftSidebarExpanded) {
+        // When sidebar is expanded at custom breakpoint
+        return {
+          widthClass: 'w-[calc(100%-18rem-16px)] ml-auto mr-2',
+          panelStyle: {
+            minWidth: `${minWidth}px`,
+            maxWidth: '60vw',
+            width: panelWidth || undefined
+          }
+        };
+      } else {
+        // When sidebar is collapsed at custom breakpoint
+        return {
+          widthClass: 'w-[calc(100%-4rem-16px)] ml-auto mr-2',
+          panelStyle: {
+            minWidth: `${minWidth}px`,
+            maxWidth: '70vw',
+            width: panelWidth || undefined
+          }
+        };
+      }
+    }
+
+    // Default desktop behavior (≥1228px)
+    if (isLeftSidebarExpanded) {
+      return {
+        widthClass: 'w-[40vw]',
+        panelStyle: {
+          minWidth: `${minWidth}px`,
+          maxWidth: `${maxWidth}px`,
+          width: panelWidth || undefined
+        }
+      };
+    } else {
+      return {
+        widthClass: 'w-[45vw]',
+        panelStyle: {
+          minWidth: `${minWidth}px`,
+          maxWidth: `${maxWidth}px`,
+          width: panelWidth || undefined
+        }
+      };
+    }
+  }, [isFullScreen, isLeftSidebarExpanded, isMediumScreen, isCustomBreakpoint, panelWidth, minWidth, maxWidth]);
 
   React.useEffect(() => {
     const newSnapshots = toolCalls.map((toolCall, index) => ({
@@ -481,7 +811,7 @@ export function ToolCallSidePanel({
     const seconds = Math.floor(milliseconds / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
     } else if (minutes > 0) {
@@ -549,7 +879,7 @@ export function ToolCallSidePanel({
 
   const fetchDatabaseRuntime = React.useCallback(async () => {
     if (!threadId) return;
-    
+
     // TODO: Implement runtime tracking API endpoint
     // For now, this is a no-op to prevent 404 errors
     console.log('Runtime tracking: Fetching database runtime (not yet implemented)', { threadId });
@@ -566,7 +896,7 @@ export function ToolCallSidePanel({
     // TODO: Implement runtime tracking API endpoint
     // For now, this is a no-op to prevent 404 errors
     console.log('Runtime tracking: Agent run completed (not yet implemented)', { runId, totalRuntime });
-    
+
     // Refresh runtime from database after completion if needed
     if (threadId) {
       fetchDatabaseRuntime();
@@ -680,19 +1010,28 @@ export function ToolCallSidePanel({
     }
   }, [resetAccumulatedTime]);
 
+  // Handle panel open/close
+  React.useEffect(() => {
+    if (isOpen) {
+      // Panel is opening
+      setHasOpened(true);
+      setIsExpanded(true);
+    } else {
+      setIsExpanded(false);
+    }
+
+    // Cleanup on unmount
+    return () => {
+      setIsExpanded(false);
+    };
+  }, [isOpen, setIsExpanded]);
+
   // Fetch runtime from database when threadId changes or component mounts
   React.useEffect(() => {
     if (threadId) {
       fetchDatabaseRuntime();
     }
   }, [threadId, fetchDatabaseRuntime]);
-
-  // Also fetch runtime when component mounts to load persisted data
-  React.useEffect(() => {
-    if (threadId && isOpen) {
-      fetchDatabaseRuntime();
-    }
-  }, [threadId, isOpen, fetchDatabaseRuntime]);
 
   // Timer effect for agent runtime
   React.useEffect(() => {
@@ -707,7 +1046,7 @@ export function ToolCallSidePanel({
       setFinalRuntime(databaseRuntime + accumulatedTime + totalRuntime);
       setAgentStartTime(null);
       setElapsedTime(0);
-      
+
       // Complete agent run in database - use generated agentRunId if prop one is not available
       const runIdToUse = agentRunId || generatedAgentRunId;
       if (runIdToUse) {
@@ -727,7 +1066,7 @@ export function ToolCallSidePanel({
       setAgentStartTime(Date.now());
       setElapsedTime(0);
       setFinalRuntime(null);
-      
+
       // Create the agent run record
       if (threadId) {
         createAgentRun(agentRunId, threadId);
@@ -742,7 +1081,7 @@ export function ToolCallSidePanel({
       const newAgentRunId = crypto.randomUUID();
       console.log('Generated new agentRunId:', newAgentRunId);
       setGeneratedAgentRunId(newAgentRunId);
-      
+
       // Create the agent run record immediately
       if (threadId) {
         createAgentRun(newAgentRunId, threadId);
@@ -759,7 +1098,7 @@ export function ToolCallSidePanel({
 
     const interval = setInterval(() => {
       setElapsedTime(Date.now() - agentStartTime);
-      
+
       // Update heartbeat in database every 5 seconds
       const runIdToUse = agentRunId || generatedAgentRunId;
       if (runIdToUse && Date.now() % 5000 < 1000) {
@@ -788,7 +1127,19 @@ export function ToolCallSidePanel({
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 z-30 pointer-events-none">
+      <div
+        ref={panelRef}
+        className={cn(
+          "fixed right-0 top-0 h-full bg-background border-l border-border transition-all duration-300 ease-in-out overflow-hidden",
+          isFullScreen ? "w-full" : "w-[var(--panel-width)]",
+          isOpen ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"
+        )}
+        style={{
+          ...panelStyle,
+          ...(panelWidth ? { '--panel-width': `${panelWidth}px` } : {}),
+          zIndex: 20, // Lower than the sidebar and its overlay
+        }}
+      >
         <div className="p-4 h-full flex items-stretch justify-end pointer-events-auto">
           <div
             className={cn(
@@ -805,28 +1156,28 @@ export function ToolCallSidePanel({
                         {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
                         Helium's Core
                       </h2>
-                        {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                      <div className={cn(
-                        "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                        agentStatus === 'running' 
-                          ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                          : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                      )}>
-                        {agentStatus === 'running' ? (
-                          <>
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                            <span>
-                              {formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                            <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                          </>
-                        )}
-                      </div>
-                    )}
+                      {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
+                        <div className={cn(
+                          "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
+                          agentStatus === 'running'
+                            ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
+                            : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                        )}>
+                          {agentStatus === 'running' ? (
+                            <>
+                              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                              <span>
+                                {formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                              <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
@@ -869,7 +1220,7 @@ export function ToolCallSidePanel({
                 {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
                   <div className={cn(
                     "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                    agentStatus === 'running' 
+                    agentStatus === 'running'
                       ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
                       : "bg-blue-50 text-blue-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
                   )}>
@@ -900,17 +1251,17 @@ export function ToolCallSidePanel({
           <div className="flex flex-col items-center justify-center flex-1 p-8">
             <div className="flex flex-col items-center justify-center w-full h-full">
               <div className="relative w-[20%] h-[20%] flex items-center justify-center">
-                <Image 
-                  src="/helium-brain.png" 
-                  alt="Helium Core Initiating" 
+                <Image
+                  src="/helium-brain.png"
+                  alt="Helium Core Initiating"
                   width={240}
                   height={240}
                   className="w-full h-full object-contain dark:hidden"
                   priority
                 />
-                <Image 
-                  src="/helium-brain(dark).png" 
-                  alt="Helium Core Initiating" 
+                <Image
+                  src="/helium-brain(dark).png"
+                  alt="Helium Core Initiating"
                   width={240}
                   height={240}
                   className="w-full h-full object-contain hidden dark:block"
@@ -938,7 +1289,7 @@ export function ToolCallSidePanel({
                   {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
                     <div className={cn(
                       "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                      agentStatus === 'running' 
+                      agentStatus === 'running'
                         ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
                         : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
                     )}>
@@ -1005,7 +1356,7 @@ export function ToolCallSidePanel({
                 {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
                   <div className={cn(
                     "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                    agentStatus === 'running' 
+                    agentStatus === 'running'
                       ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
                       : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
                   )}>
@@ -1077,7 +1428,7 @@ export function ToolCallSidePanel({
               {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
                 <div className={cn(
                   "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                  agentStatus === 'running' 
+                  agentStatus === 'running'
                     ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
                     : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
                 )}>
@@ -1105,7 +1456,7 @@ export function ToolCallSidePanel({
                   className="h-8 w-8 ml-1"
                   title="Minimize to floating preview"
                 >
-                  <Image src="/icons/minimize2-light.svg" alt="expand" width={18} height={18} className="block dark:hidden mb-0" />  
+                  <Image src="/icons/minimize2-light.svg" alt="expand" width={18} height={18} className="block dark:hidden mb-0" />
                   <Image src="/icons/minimize2-dark.svg" alt="expand" width={18} height={18} className="hidden dark:block mb-0" />
                 </Button>
               </div>
@@ -1155,12 +1506,17 @@ export function ToolCallSidePanel({
       {isOpen && (
         <motion.div
           key="sidepanel"
+          ref={panelRef}
           layoutId={FLOATING_LAYOUT_ID}
           initial={disableInitialAnimation ? { opacity: 1 } : { opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{
+            opacity: 1,
+            ...(shouldShowResizable && panelWidth && { width: panelWidth })
+          }}
           exit={{ opacity: 0 }}
           transition={{
             opacity: { duration: disableInitialAnimation ? 0 : 0.15 },
+            width: { duration: 0.2 },
             layout: {
               type: "spring",
               stiffness: 400,
@@ -1170,12 +1526,39 @@ export function ToolCallSidePanel({
           className={cn(
             'fixed top-1 bottom-1 md:top-3 right-2 md:bottom-6  shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border rounded-[22px] flex flex-col z-[51] md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
             widthClass,
-          )}  
+            'bg-background',
+            isResizing && 'select-none',
+            shouldShowResizable && 'resize-handle-container',
+            {
+              'left-auto': !isMediumScreen,
+              'right-2': true,
+              'md:right-4': !isMediumScreen && !isCustomBreakpoint
+            }
+          )}
           style={{
             overflow: 'hidden',
+            ...panelStyle,
+            // Use CSS custom property for immediate visual feedback during resize
+            width: isResizing ? 'var(--panel-width, auto)' : panelStyle.width,
+            // Enable hardware acceleration for smooth resizing
+            willChange: isResizing ? 'width' : 'auto',
+            // Ensure smooth transitions when not resizing
+            transition: isResizing ? 'none' : 'width 0.2s ease-out'
           }}
         >
-          <div className="flex-1 flex flex-col overflow-hidden bg-card">
+          {shouldShowResizable && (
+            <div
+              className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize z-50 hover:bg-green-500/20 active:bg-green-500/40 transition-colors"
+              onMouseDown={handleMouseDown}
+            >
+              <div className="absolute left-0.5 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-green-500/50 rounded-full" />
+            </div>
+          )}
+
+          <div
+            className="flex-1 flex flex-col overflow-hidden bg-card"
+            style={{ pointerEvents: isResizing ? 'none' : 'auto' }}
+          >
             {renderContent()}
           </div>
           {(displayTotalCalls > 1 || (isCurrentToolStreaming && totalCompletedCalls > 0)) && (
@@ -1226,8 +1609,8 @@ export function ToolCallSidePanel({
                       disabled={displayIndex <= 0}
                       className="h-7 w-7 text-zinc-500 cursor-pointer hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                     >
-                     <Image src="/icons/skip-back.svg" alt="expand" width={18} height={18} className="block dark:hidden mb-0" />
-                     <Image src="/icons/skip-back-dark.svg" alt="expand" width={18} height={18} className="hidden dark:block mb-0" />
+                      <Image src="/icons/skip-back.svg" alt="expand" width={18} height={18} className="block dark:hidden mb-0" />
+                      <Image src="/icons/skip-back-dark.svg" alt="expand" width={18} height={18} className="hidden dark:block mb-0" />
                     </Button>
                     <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium tabular-nums px-1 min-w-[44px] text-center">
                       {displayIndex + 1}/{displayTotalCalls}
@@ -1239,8 +1622,8 @@ export function ToolCallSidePanel({
                       disabled={displayIndex >= displayTotalCalls - 1}
                       className="h-7 w-7 text-zinc-500 cursor-pointer hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                     >
-                     <Image src="/icons/skip-forward.svg" alt="expand" width={18} height={18} className="block dark:hidden mb-0" />
-                     <Image src="/icons/skip-forward-dark.svg" alt="expand" width={18} height={18} className="hidden dark:block mb-0" />
+                      <Image src="/icons/skip-forward.svg" alt="expand" width={18} height={18} className="block dark:hidden mb-0" />
+                      <Image src="/icons/skip-forward-dark.svg" alt="expand" width={18} height={18} className="hidden dark:block mb-0" />
                     </Button>
                   </div>
 
