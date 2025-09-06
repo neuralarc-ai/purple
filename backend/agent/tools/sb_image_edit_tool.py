@@ -86,7 +86,7 @@ class SandboxImageEditTool(SandboxToolsBase):
 
             if mode == "generate":
                 response = await aimage_generation(
-                    model="vertex_ai/gemini-2.5-flash-image-preview",
+                    model="vertex_ai/imagen-4.0-generate-001",
                     prompt=prompt,
                     n=1,
                     size="1024x1024",
@@ -108,7 +108,7 @@ class SandboxImageEditTool(SandboxToolsBase):
                 response = await aimage_edit(
                     image=[image_io],  # Type in the LiteLLM SDK expects list-like for some providers
                     prompt=prompt,
-                    model="vertex_ai/gemini-2.5-flash-image-preview",
+                    model="vertex_ai/imagen-4.0-generate-001",
                     n=1,
                     size="1024x1024",
                 )

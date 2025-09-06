@@ -28,6 +28,8 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
     : 0;
   
   const creditsRemaining = Math.max(0, totalCreditsLimit - totalCreditsUsed);
+  const purchasedCreditsLeft = subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100);
+  const totalRemainingCredits = creditsRemaining + purchasedCreditsLeft;
   
   const isFreePlan = subscriptionData?.plan_name === 'free';
 
@@ -75,24 +77,24 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
         
         {/* Credit Count */}
         <span className="text-sm font-medium text-foreground flex-shrink-0">
-          {(subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)).toLocaleString()}
+          {totalRemainingCredits.toLocaleString()}
         </span>
         
-        {/* Vertical Separator - Only show when hovered */}
+        {/* Vertical Separator - Show when hovered or when total remaining credits is 0 */}
         <div className={cn(
           "w-px h-4 bg-border flex-shrink-0 transition-all duration-300",
-          isHovered ? "opacity-100" : "opacity-0 w-0"
+          (isHovered || totalRemainingCredits === 0) ? "opacity-100" : "opacity-0 w-0"
         )} />
         
         {/* Upgrade Text - Animated sliding from right */}
         <div className={cn(
           "relative overflow-hidden transition-all duration-300",
-          isHovered ? "w-16" : "w-0"
+          (isHovered || totalRemainingCredits === 0) ? "w-16" : "w-0"
         )}>
           <span 
             className={cn(
               "text-sm font-medium text-primary transition-transform duration-300 block whitespace-nowrap",
-              isHovered 
+              (isHovered || totalRemainingCredits === 0)
                 ? "translate-x-0" 
                 : "translate-x-full"
             )}
@@ -105,7 +107,7 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
       {/* Dropdown on Hover */}
       {isHovered && (
         <div 
-          className="token-usage-container absolute top-full right-0 mt-1 w-64 bg-background border border-border rounded-lg shadow-lg z-50 p-4"
+          className="token-usage-container absolute top-full right-0 mt-1 w-64 bg-sidebar border dark:border-border rounded-2xl shadow-lg z-50 p-4 animate-in slide-in-from-right-4 fade-in duration-300"
           onMouseLeave={() => setIsHovered(false)}
         >
           <div className="space-y-3">
@@ -117,7 +119,7 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
               <Button
                 variant="default"
                 size="sm"
-                className="text-xs h-6 px-2 bg-white text-black hover:bg-gray-100 rounded"
+                className="text-xs h-6 px-2 dark:bg-white dark:text-black hover:bg-black/80 dark:hover:bg-gray-100 rounded-full"
                 onClick={handleAddCredits}
               >
                 Add Credits
