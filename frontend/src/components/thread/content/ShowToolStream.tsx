@@ -12,6 +12,8 @@ const FILE_OPERATION_TOOLS = new Set([
   'Creating File',
   'Rewriting File',
   'AI File Edit',
+  'Editing Text',
+  'Editing File',
 ]);
 
 interface ShowToolStreamProps {

@@ -78,14 +78,15 @@ export const AgentToolsConfiguration = ({ tools, onToolsChange, disabled = false
         />
       </div>
 
-      {/* Tools List with Scrolling */}
-      <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+      {/* Tools List */}
+      <div className="pr-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {getFilteredTools().map(([toolName, toolInfo]) => (
             <div 
               key={toolName} 
-              className="group border bg-card rounded-2xl p-4 transition-all duration-200 hover:bg-muted/50"
+              className="group border bg-card rounded-xl p-4 transition-all duration-200 hover:shadow-md hover:border-primary/50 h-full flex flex-col"
             >
-              <div className="flex items-start gap-3 mb-3">
+              <div className="flex items-start gap-3 mb-3 flex-1">
                 <div className={`w-10 h-10 rounded-xl ${toolInfo.color} border flex items-center justify-center flex-shrink-0`}>
                   <span className="text-lg">{toolInfo.icon}</span>
                 </div>
@@ -93,13 +94,13 @@ export const AgentToolsConfiguration = ({ tools, onToolsChange, disabled = false
                   <h3 className="font-medium text-sm leading-tight truncate mb-1">
                     {getToolDisplayName(toolName)}
                   </h3>
-                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                     {toolInfo.description}
                   </p>
                 </div>
               </div>
               
-              <div className="flex justify-end items-center">
+              <div className="flex justify-end items-center pt-2 border-t">
                 <Switch
                   checked={isToolEnabled(tools[toolName])}
                   onCheckedChange={(checked) => handleToolToggle(toolName, checked)}
@@ -108,20 +109,21 @@ export const AgentToolsConfiguration = ({ tools, onToolsChange, disabled = false
               </div>
             </div>
           ))}
-          
-          {getFilteredTools().length === 0 && (
-            <div className="text-center py-12 px-6 bg-muted/30 rounded-xl border-2 border-dashed border-border">
-              <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4 border">
-                <Search className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <h4 className="text-sm font-semibold text-foreground mb-2">
-                No tools found
-              </h4>
-              <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
-                Try adjusting your search criteria
-              </p>
+        </div>
+        
+        {getFilteredTools().length === 0 && (
+          <div className="text-center py-12 px-6 bg-muted/30 rounded-xl border-2 border-dashed border-border">
+            <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4 border">
+              <Search className="h-6 w-6 text-muted-foreground" />
             </div>
-          )}
+            <h4 className="text-sm font-semibold text-foreground mb-2">
+              No tools found
+            </h4>
+            <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+              Try adjusting your search criteria
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

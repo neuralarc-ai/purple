@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   Loader2,
   ArrowUp,
-  Plus,
+  Paperclip,
   Wand2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,11 +20,10 @@ import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
 import { improvePromptWithOpenRouter } from '@/lib/prompt-improvement-api';
 import Image from 'next/image';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ModeToggle } from './mode-toggle';
 import { BorderBeam } from '@/components/magicui/border-beam';
 import { isProductionMode } from '@/lib/config';
@@ -118,7 +117,6 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
   ) => {
     const [billingModalOpen, setBillingModalOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const [isImprovingPrompt, setIsImprovingPrompt] = useState(false);
     const { enabled: customAgentsEnabled, loading: flagsLoading } =
@@ -324,61 +322,46 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             
             {!hideAttachments && (
               <>
-                <DropdownMenu
-                  open={isDropdownOpen}
-                  onOpenChange={setIsDropdownOpen}
-                >
-                  <DropdownMenuTrigger asChild>
+                {/* Attachment Button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <Button
                       type="button"
                       size="icon"
                       variant="outline"
-                      className={cn(
-                        'w-8 h-8 flex-shrink-0 bg-transparent dark:border-muted-foreground/30 shadow-none rounded-full transition-all duration-200',
-                        isDropdownOpen
-                          ? 'bg-background/50!'
-                          : 'bg-white dark:bg-sidebar hover:bg-background/50!',
-                      )}
+                      className="w-8 h-8 flex-shrink-0 dark:border-muted-foreground/30 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
                       disabled={
                         !isLoggedIn ||
                         loading ||
                         (disabled && !isAgentRunning) ||
                         isUploading
                       }
-                    >
-                      <Plus
-                        className={cn(
-                          'h-4 w-4 text-muted-foreground transition-transform duration-200',
-                          isDropdownOpen && 'rotate-45',
-                        )}
-                      />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="start"
-                    className="p-2 rounded-xl bg-background shadow-md"
-                  >
-                    <DropdownMenuItem
                       onClick={handleFileUpload}
-                      className="cursor-pointer px-2.5 rounded-sm hover:bg-white! dark:hover:bg-muted!"
                     >
-                      <Image
-                        src={
-                          resolvedTheme === 'dark'
-                            ? '/icons/paperclip-dark.svg'
-                            : '/icons/Vector-light.svg'
+                      <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Upload files and more</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Integrations Button */}
+                {selectedAgentId && onOpenIntegrations && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="w-8 h-8 flex-shrink-0 dark:border-muted-foreground/30 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
+                        disabled={
+                          !isLoggedIn ||
+                          loading ||
+                          (disabled && !isAgentRunning) ||
+                          isUploading
                         }
-                        alt="Paperclip"
-                        width={18}
-                        height={18}
-                        className="mr-1"
-                      />
-                      Attach files
-                    </DropdownMenuItem>
-                    {selectedAgentId && onOpenIntegrations && (
-                      <DropdownMenuItem
                         onClick={onOpenIntegrations}
-                        className="cursor-pointer px-2.5 rounded-sm hover:bg-white! dark:hover:bg-muted!"
                       >
                         <Image
                           src={
@@ -387,17 +370,19 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                               : '/icons/integrations.svg'
                           }
                           alt="Integrations"
-                          width={18}
-                          height={18}
-                          className="mr-1"
+                          width={16}
+                          height={16}
                         />
-                        Integrations
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Connect apps</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
 
-                <Button
+                {/* Improve Prompt Button - Commented out */}
+                {/* <Button
                   type="button"
                   variant="ghost"                  
                   onClick={handleImprovePrompt}
@@ -425,7 +410,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                     />
                   )}
                   <Wand2 className="h-4! w-4! text-muted-foreground" strokeWidth={1.5} />
-                </Button>
+                </Button> */}
 
                 <input
                   type="file"
