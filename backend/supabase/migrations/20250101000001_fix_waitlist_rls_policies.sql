@@ -20,3 +20,4 @@ CREATE POLICY "Allow authenticated users to insert into waitlist" ON public.wait
     FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 COMMIT;
+

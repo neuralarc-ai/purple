@@ -27,6 +27,11 @@ class WaitlistResponse(BaseModel):
     success: bool
     message: str
 
+class InviteCodeUsageResponse(BaseModel):
+    has_used_invite_code: bool
+    invite_code: Optional[str] = None
+    used_at: Optional[str] = None
+
 @router.post("/validate-invite", response_model=InviteCodeResponse)
 async def validate_invite_code(
     request: InviteCodeRequest,
@@ -201,6 +206,47 @@ async def join_waitlist(
         return WaitlistResponse(
             success=False,
             message="An error occurred while joining the waitlist. Please try again."
+        )
+
+@router.get("/user-usage", response_model=InviteCodeUsageResponse)
+async def get_user_invite_code_usage(
+    request_obj: Request,
+    db: DBConnection = Depends(lambda: DBConnection())
+):
+    """
+    Check if the current user has used an invite code.
+    """
+    try:
+        # Get user ID
+        user_id = await get_optional_user_id(request_obj)
+        
+        if not user_id:
+            return InviteCodeUsageResponse(
+                has_used_invite_code=False
+            )
+        
+        # Get database client
+        client = await db.client
+        
+        # Query for invite codes used by this user
+        result = await client.table('invite_codes').select('code, used_at').eq('used_by', user_id).execute()
+        
+        if result.data and len(result.data) > 0:
+            invite_code_data = result.data[0]
+            return InviteCodeUsageResponse(
+                has_used_invite_code=True,
+                invite_code=invite_code_data.get('code'),
+                used_at=invite_code_data.get('used_at')
+            )
+        
+        return InviteCodeUsageResponse(
+            has_used_invite_code=False
+        )
+        
+    except Exception as e:
+        logger.error(f"Error checking user invite code usage: {e}", exc_info=True)
+        return InviteCodeUsageResponse(
+            has_used_invite_code=False
         )
 
 @router.get("/test")

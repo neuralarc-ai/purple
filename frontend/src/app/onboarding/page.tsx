@@ -51,6 +51,8 @@ interface OnboardingData {
 }
 
 const roles = [
+  { id: 'ceo', name: 'CEO', icon: <TrendingUp className="h-5 w-5" /> },
+  { id: 'founder', name: 'Founder', icon: <TrendingUp className="h-5 w-5" /> },
   { id: 'product-management', name: 'Product Management', icon: <TrendingUp className="h-5 w-5" /> },
   { id: 'engineering', name: 'Engineering', icon: <Briefcase className="h-5 w-5" /> },
   { id: 'hr', name: 'HR', icon: <Users className="h-5 w-5" /> },
@@ -413,7 +415,7 @@ export default function OnboardingPage() {
         return (
           <div className="text-left max-w-md mx-auto">
             <h2 className="text-2xl font-semibold mb-8">
-            Let's start simple—your name?
+             What should Helium call you?
             </h2>
             <div className="flex justify-start">
                               <Input

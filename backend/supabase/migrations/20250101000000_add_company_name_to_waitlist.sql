@@ -8,3 +8,4 @@ ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);
 COMMENT ON COLUMN public.waitlist.company_name IS 'Optional company name for waitlist entries';
 
 COMMIT;
+
