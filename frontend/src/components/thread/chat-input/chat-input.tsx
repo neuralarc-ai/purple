@@ -40,6 +40,7 @@ export interface ChatInputHandles {
 }
 
 export interface ChatInputProps {
+  className?: string;
   onSubmit: (
     message: string,
     options?: {
@@ -127,6 +128,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       agentMetadata,
       showScrollToBottomIndicator = false,
       onScrollToBottom,
+      className,
     },
     ref,
   ) => {
@@ -618,7 +620,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     };
 
     return (
-      <div className="mx-auto w-full max-w-5xl relative">
+      <div className={`mx-auto w-full max-w-5xl relative ${className || ''}`}>
         <div className="relative">
           <ChatSnack
             toolCalls={toolCalls}

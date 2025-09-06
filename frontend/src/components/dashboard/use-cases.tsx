@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Cpu, Code, GitBranch, FileText as FileTextIcon, BarChart2, Shield, 
-  Target, ClipboardList, Search, Users, Lightbulb, Brain, LineChart, 
+import {
+  Cpu, Code, GitBranch, FileText as FileTextIcon, BarChart2, Shield,
+  Target, ClipboardList, Search, Users, Lightbulb, Brain, LineChart,
   TrendingDown, FileCheck, PieChart, Zap, Calendar, Megaphone, MessageSquare,
   Mail, TrendingUp, BookOpen, Package, Database, LayoutGrid, LayoutTemplate,
   AlertCircle, AlertTriangle, FileSignature, Settings, Users as Users2, Palette,
@@ -36,20 +36,20 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
   // Load user's work description on component mount and when user changes
   useEffect(() => {
     let isMounted = true;
-    
+
     const loadUserProfile = async () => {
       try {
         console.log('Loading user profile...');
         const profile = await userProfilesApi.getProfile();
-        
+
         if (!isMounted) return;
-        
+
         console.log('Received profile:', profile);
-        
+
         if (profile?.work_description) {
           const workDesc = profile.work_description.trim();
           console.log('Setting work description to:', workDesc);
-          
+
           // Only update if the value has changed to prevent unnecessary re-renders
           setUserWorkDescription(prev => {
             if (prev !== workDesc) {
@@ -66,19 +66,19 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
         if (isMounted) {
           setUserWorkDescription(null);
         }
-              } finally {
-          if (isMounted) {
-            setIsLoading(false);
-            // Trigger slide-in animation after loading
-            setTimeout(() => {
-              setIsVisible(true);
-              // Call onLoad callback when component becomes visible
-              if (onLoad) {
-                onLoad();
-              }
-            }, 100);
-          }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+          // Trigger slide-in animation after loading
+          setTimeout(() => {
+            setIsVisible(true);
+            // Call onLoad callback when component becomes visible
+            if (onLoad) {
+              onLoad();
+            }
+          }, 100);
         }
+      }
     };
 
     // Initial load
@@ -139,26 +139,49 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
   const firstRow = originalUseCases.slice(0, 3);
   const secondRow = originalUseCases.slice(3, 6);
 
-  // Render function for original use cases
+  // Render function for original use cases with responsive design
   const renderOriginalUseCaseRow = (rowItems: typeof originalUseCases) => (
-    <div className="flex justify-center gap-2 w-full mb-2">
-      {rowItems.map((useCase) => (
-        <button
-          key={useCase.id}
-          onClick={() => {
-            if (useCase.isNavigation) {
-              router.push(useCase.navigateTo);
-            } else {
-              onUseCaseSelect(useCase.prompt);
-            }
-          }}
-          className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-full border border-border hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-2"
-        >
-          {useCase.icon}
-          {useCase.title}
-        </button>
-      ))}
-    </div>
+<div className="flex justify-center gap-2 w-full mb-2 flex-wrap">
+  {rowItems.map((useCase) => (
+    <button
+      key={useCase.id}
+      onClick={() => {
+        if (useCase.isNavigation) {
+          router.push(useCase.navigateTo);
+        } else {
+          onUseCaseSelect(useCase.prompt);
+        }
+      }}
+      className="
+      inline-flex items-center px-3 py-1.5 text-sm font-medium border border-border 
+  hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-2
+  rounded-[12px] min-[489px]:rounded-full
+      "
+    >
+      {/* 👇 Mobile (<488px): square buttons, stacked layout */}
+      <span className="flex flex-col items-center justify-center w-20 h-20 min-[489px]:hidden">
+        {React.cloneElement(useCase.icon as React.ReactElement, {
+          className:
+            "h-6 w-6 text-muted-foreground group-hover:text-foreground transition-colors",
+        })}
+        <span className="text-xs mt-1 text-center">{useCase.title}</span>
+      </span>
+
+      {/* 👇 Desktop (≥489px): normal inline layout */}
+      <span className="hidden min-[489px]:inline-flex items-center">
+        {React.cloneElement(useCase.icon as React.ReactElement, {
+          className:
+            "h-4 w-4 mr-1.5 text-muted-foreground group-hover:text-foreground transition-colors",
+        })}
+        {useCase.title}
+      </span>
+    </button>
+  ))}
+</div>
+
+
+
+
   );
 
   // Categorized use cases state
@@ -670,11 +693,11 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
   // Filter categories based on exact work description match
   const filteredCategories = categories.filter(category => {
     if (!userWorkDescription) return false;
-    
+
     // Direct comparison with the category name (case-insensitive)
     return category.name.toLowerCase() === userWorkDescription.trim().toLowerCase();
   });
-  
+
   // Debug logging
   console.log('Current work description:', userWorkDescription);
   console.log('Available categories:', categories.map(c => c.name));
@@ -690,18 +713,17 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
 
   // If user has a specific work description, only show matching categories
   // Show all categories if no work description is set, it's 'other', or no matches were found
-  const shouldShowAllCategories = 
-    !userWorkDescription || 
+  const shouldShowAllCategories =
+    !userWorkDescription ||
     userWorkDescription.toLowerCase() === 'other' ||
     filteredCategories.length === 0;
 
   return (
-    <div 
-      className={`w-full max-w-6xl h-full flex flex-col justify-between mx-auto px-4 py-6 transition-all duration-700 ease-out ${
-        isVisible 
-          ? 'translate-y-0 opacity-100' 
+    <div
+      className={`w-full max-w-6xl h-full flex flex-col justify-between mx-auto px-4 py-6 transition-all duration-700 ease-out ${isVisible
+          ? 'translate-y-0 opacity-100'
           : 'translate-y-8 opacity-0'
-      }`}
+        }`}
     >
       {/* Original Use Cases - Always show these */}
       <div className="mb-10">
@@ -769,7 +791,7 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
                     <ChevronDown className="h-5 w-5 text-muted-foreground" />
                   )}
                 </button>
-                
+
                 {expandedCategories[category.name] && (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted/10">
                     {category.items.map((item) => (

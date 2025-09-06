@@ -266,7 +266,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       }
       // Unified compact menu for both logged and non-logged (non-logged shows only models subset via menu trigger)
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 agent-selector ">
           <UnifiedConfigMenu
             isLoggedIn={isLoggedIn}
             selectedAgentId={

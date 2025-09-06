@@ -422,7 +422,7 @@ export function DashboardContent() {
         </div>
         
         <div className="flex-1 overflow-y-auto">
-          <div className="min-h-full flex flex-col">
+          <div className=" flex flex-col">
             {/* {customAgentsEnabled && (
               <div className="flex justify-center px-4 pt-4 md:pt-8">
                 <ReleaseBadge text="Custom Agents, Playbooks, and more!" link="/agents?tab=my-agents" />
@@ -481,7 +481,7 @@ export function DashboardContent() {
                         }
                       }, 0);
                     }}
-                    onLoad={() => setUseCasesLoaded(true)}
+                    onLoad={() => setUseCasesLoaded(true)}                  
                   />
                 </div>
               </div>

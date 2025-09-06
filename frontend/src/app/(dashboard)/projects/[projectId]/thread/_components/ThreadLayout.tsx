@@ -20,6 +20,7 @@ interface ThreadLayoutProps {
   project: Project | null;
   sandboxId: string | null;
   isSidePanelOpen: boolean;
+  setIsSidePanelOpen: (open: boolean) => void;
   onToggleSidePanel: () => void;
   onProjectRenamed?: (newName: string) => void;
   onViewFiles: (filePath?: string, filePathList?: string[]) => void;
@@ -56,6 +57,8 @@ interface ThreadLayoutProps {
   agentName?: string;
   disableInitialAnimation?: boolean;
   agentRunId?: string;
+  onPanelWidthChange?: (width: number) => void;
+  initialPanelWidth?: number;
 }
 
 export function ThreadLayout({
@@ -66,6 +69,7 @@ export function ThreadLayout({
   project,
   sandboxId,
   isSidePanelOpen,
+  setIsSidePanelOpen,
   onToggleSidePanel,
   onProjectRenamed,
   onViewFiles,
@@ -96,34 +100,73 @@ export function ThreadLayout({
   agentName,
   disableInitialAnimation = false,
   agentRunId,
+  onPanelWidthChange,
+  initialPanelWidth,
 }: ThreadLayoutProps) {
   const { state: leftSidebarState } = useSidebar();
   const isLeftSidebarExpanded = leftSidebarState === 'expanded';
   const isMediumScreen = useMediumScreen();
   const isCustomBreakpoint = useCustomBreakpoint();
+  const [panelWidth, setPanelWidth] = React.useState<number | null>(initialPanelWidth || null);
+  const isResizing = React.useRef(false);
+  const initialLoadCompletedRef = React.useRef(false);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const resizeHandleRef = React.useRef<HTMLDivElement>(null);
+  const startWidth = React.useRef<number>(0);
 
-  // Determine when to apply margin-right
-  const shouldApplyMarginRight = React.useMemo(() => {
-    // Don't apply margin if:
-    // 1. Not initialized yet
-    // 2. Panel is closed
-    if (!initialLoadCompleted || !isSidePanelOpen) return false;
+  // Call the onPanelWidthChange callback when panelWidth changes
+  React.useEffect(() => {
+    if (onPanelWidthChange && panelWidth) {
+      onPanelWidthChange(panelWidth);
+    }
+  }, [panelWidth, onPanelWidthChange]);
 
-    // Don't apply margin in these cases:
-    // 1. On medium screens (768px-934px)
-    // 2. On custom breakpoint (1024px-1227px) when sidebar is expanded
-    if (isMediumScreen) return false;
-    if (isCustomBreakpoint && isLeftSidebarExpanded) return false;
+  const handleMouseMove = React.useCallback((e: MouseEvent) => {
+    if (!isResizing.current) return;
+    
+    const newWidth = Math.max(320, Math.min(window.innerWidth - e.clientX - 16, 800));
+    setPanelWidth(newWidth);
+  }, []);
 
-    // Apply margin in all other cases
-    return true;
-  }, [
-    initialLoadCompleted,
-    isSidePanelOpen,
-    isMediumScreen,
-    isCustomBreakpoint,
-    isLeftSidebarExpanded,
-  ]);
+  const handleMouseUp = React.useCallback(() => {
+    isResizing.current = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }, []);
+
+  const handleMouseDown = React.useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isResizing.current = true;
+    startWidth.current = panelWidth || 400;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [isLeftSidebarExpanded, panelWidth]);
+
+  // Add/remove event listeners for resizing
+  React.useEffect(() => {
+    if (isResizing.current) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
+
+  // Calculate the right margin for the left section based on panel width
+  const getRightMargin = React.useCallback(() => {
+    if (!isSidePanelOpen || !initialLoadCompleted) return '0px';
+    if (isMediumScreen) return '0px';
+    if (isCustomBreakpoint && isLeftSidebarExpanded) return '0px';
+    
+    const width = panelWidth || Math.floor(window.innerWidth / 2); // Default width if not set
+    return `${width}px`;
+  }, [isSidePanelOpen, initialLoadCompleted, isMediumScreen, isCustomBreakpoint, isLeftSidebarExpanded, panelWidth]);
+
+  const rightMargin = getRightMargin();
   return (
     <div className="flex h-screen">
       {debugMode && (
@@ -133,13 +176,16 @@ export function ThreadLayout({
       )}
 
       <div
-        className={`flex flex-col flex-1 overflow-hidden transition-[margin] duration-200 ease-in-out will-change-[margin] ${
-          shouldApplyMarginRight
-            ? isLeftSidebarExpanded
-              ? 'mr-[40vw]'
-              : 'mr-[45vw]'
-            : ''
-        }`}
+        className="flex flex-col flex-1 overflow-hidden transition-all duration-200 ease-in-out will-change-[margin] relative"
+        style={{
+          marginRight: rightMargin,
+          minWidth: isSidePanelOpen && !isMediumScreen && (!isCustomBreakpoint || !isLeftSidebarExpanded) 
+            ? `calc(100% - ${rightMargin})` 
+            : '100%',
+          maxWidth: isSidePanelOpen && !isMediumScreen && (!isCustomBreakpoint || !isLeftSidebarExpanded) 
+            ? `calc(100% - ${rightMargin})` 
+            : '100%',
+        }}
       >
         <SiteHeader
           threadId={threadId}
@@ -180,6 +226,7 @@ export function ThreadLayout({
         isLeftSidebarExpanded={isLeftSidebarExpanded}
         threadId={threadId}
         agentRunId={agentRunId}
+        onPanelWidthChange={setPanelWidth}
       />
 
       {sandboxId && (

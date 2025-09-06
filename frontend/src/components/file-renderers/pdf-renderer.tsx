@@ -28,6 +28,23 @@ export function PdfRenderer({ url, className }: PdfRendererProps) {
     setNumPages(numPages);
   }
 
+  useEffect(() => {
+    const handleResize = () => {
+      const screenWidth = window.innerWidth;
+
+      if (screenWidth < 501) {
+        const autoScale = Math.max((screenWidth - 32) / 600, 0.5); // assume base PDF width = 600
+        setScale(autoScale);
+      } else {
+        setScale(1.0);
+      }
+    };
+
+    handleResize(); // set on load
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   function changePage(offset: number) {
     setPageNumber((prevPageNumber) => {
       const newPageNumber = prevPageNumber + offset;
@@ -75,15 +92,15 @@ export function PdfRenderer({ url, className }: PdfRendererProps) {
           <div className="flex items-center space-x-2">
             <button
               onClick={zoomOut}
-              className="px-2 py-1 bg-muted rounded hover:bg-muted/80"
+              className="px-2 py-1 max-[501px]:px-1 max-[501px]:py-0 max-[501px]:text-sm bg-muted rounded hover:bg-muted/80"
               disabled={scale <= 0.5}
             >
               -
             </button>
-            <span>{Math.round(scale * 100)}%</span>
+            <span className="max-[501px]:text-sm">{Math.round(scale * 100)}%</span>
             <button
               onClick={zoomIn}
-              className="px-2 py-1 bg-muted rounded hover:bg-muted/80"
+              className="px-2 py-1 max-[501px]:px-1 max-[501px]:py-0 max-[501px]:text-sm bg-muted rounded hover:bg-muted/80"
               disabled={scale >= 3.0}
             >
               +
@@ -93,17 +110,17 @@ export function PdfRenderer({ url, className }: PdfRendererProps) {
           <div className="flex items-center space-x-2">
             <button
               onClick={previousPage}
-              className="px-2 py-1 bg-muted rounded hover:bg-muted/80"
+              className="px-2 py-1 max-[501px]:px-1 max-[501px]:py-0 max-[501px]:text-sm bg-muted rounded hover:bg-muted/80"
               disabled={pageNumber <= 1}
             >
               Previous
             </button>
-            <span>
+            <span className="max-[501px]:text-sm">
               Page {pageNumber} of {numPages}
             </span>
             <button
               onClick={nextPage}
-              className="px-2 py-1 bg-muted rounded hover:bg-muted/80"
+              className="px-2 py-1 max-[501px]:px-1 max-[501px]:py-0 max-[501px]:text-sm bg-muted rounded hover:bg-muted/80"
               disabled={pageNumber >= numPages}
             >
               Next

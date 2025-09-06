@@ -163,7 +163,16 @@ function Sidebar({
   variant?: 'sidebar' | 'floating' | 'inset';
   collapsible?: 'offcanvas' | 'icon' | 'none';
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  const { isMobile, state, setOpen, openMobile, setOpenMobile } = useSidebar();
+  const { isExpanded: isToolCallSidePanelExpanded } = useToolCallSidePanel();
+  const [isLargeScreen, setIsLargeScreen] = React.useState(false);
+
+  React.useEffect(() => {
+    const check = () => setIsLargeScreen(window.innerWidth > 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   if (collapsible === 'none') {
     return (
@@ -205,40 +214,71 @@ function Sidebar({
     );
   }
 
+  // Check screen size and states for overlay and z-index management
+  const isMediumScreen = !isLargeScreen && window.innerWidth >= 768; // 768px to 1024px
+   const shouldOverlay = (isLargeScreen || isMediumScreen) && state === 'expanded' && isToolCallSidePanelExpanded;
+  const isCollapsed = state === 'collapsed';
+  const shouldLowerZIndex = isMediumScreen && isToolCallSidePanelExpanded;
+
+
   return (
     <div
       className="group peer text-sidebar-foreground hidden md:block"
       data-state={state}
-      data-collapsible={state === 'collapsed' ? collapsible : ''}
+      data-collapsible={isCollapsed ? collapsible : ''}
       data-variant={variant}
       data-side={side}
       data-slot="sidebar"
     >
-      {/* This is what handles the sidebar gap on desktop */}
-      <div
-        data-slot="sidebar-gap"
-        className={cn(
-          'relative w-(--sidebar-width) bg-transparent transition-[width] duration-200 ease-linear',
-          'group-data-[collapsible=offcanvas]:w-0',
-          'group-data-[side=right]:rotate-180',
-          variant === 'floating' || variant === 'inset'
-            ? 'group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]'
-            : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
-        )}
-      />
+      {/* Only render the gap when NOT overlaying and not floating */}
+     {/* Only render the gap when NOT overlaying */}
+{!shouldOverlay && variant !== 'floating' && (
+  <div
+    data-slot="sidebar-gap"
+    className={cn(
+      'relative w-(--sidebar-width) bg-transparent transition-all duration-200 ease-in-out',
+      'group-data-[collapsible=offcanvas]:w-0',
+      'group-data-[side=right]:rotate-180',
+      isCollapsed && 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
+    )}
+  />
+)}
+
+
+      {/* Overlay backdrop */}
+      {shouldOverlay && (
+        <div
+          className={cn(
+            'fixed inset-0 bg-black/30',
+            shouldLowerZIndex ? 'z-0' : 'z-40' // Lower z-index when tool panel is open on medium screens
+          )}
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* Sidebar container with transform for smooth animation */}
       <div
         data-slot="sidebar-container"
         className={cn(
-          'fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear md:flex',
-          side === 'left'
-            ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
-            : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
-          // Adjust the padding for floating and inset variants.
+          'fixed inset-y-0 hidden h-svh w-(--sidebar-width) transform-gpu transition-transform duration-200 ease-in-out md:flex',
+          shouldLowerZIndex ? 'z-0' : 'z-50', // Lower z-index when tool panel is open on medium screens
+          side === 'left' 
+            ? isCollapsed 
+              ? '-translate-x-full group-data-[collapsible=offcanvas]:-translate-x-full group-data-[collapsible=icon]:translate-x-0'
+              : 'translate-x-0'
+            : isCollapsed 
+              ? 'translate-x-full right-0 group-data-[collapsible=offcanvas]:translate-x-full group-data-[collapsible=icon]:translate-x-0'
+              : 'translate-x-0 right-0',
           variant === 'floating' || variant === 'inset'
             ? 'p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]'
             : 'group-data-[collapsible=icon]:w-(--sidebar-width-icon)',
           className,
         )}
+        style={{
+          ...(side === 'left' 
+            ? { left: 0 } 
+            : { right: 0 }),
+        }}
         {...props}
       >
         <div
@@ -305,19 +345,71 @@ function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
   );
 }
 
-function SidebarInset({ className, ...props }: React.ComponentProps<'main'>) {
+// Create a context to track tool-call-side-panel state
+export const ToolCallSidePanelContext = React.createContext<{
+  isExpanded: boolean;
+  setIsExpanded: (expanded: boolean) => void;
+}>({
+  isExpanded: false,
+  setIsExpanded: () => {},
+});
+
+export function ToolCallSidePanelProvider({ children }: { children: React.ReactNode }) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  
   return (
-    <main
-      data-slot="sidebar-inset"
-      className={cn(
-        'bg-background relative flex w-full flex-1 flex-col',
-        'md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2',
-        className,
-      )}
-      {...props}
-    />
+    <ToolCallSidePanelContext.Provider value={{ isExpanded, setIsExpanded }}>
+      {children}
+    </ToolCallSidePanelContext.Provider>
   );
 }
+
+export function useToolCallSidePanel() {
+  return React.useContext(ToolCallSidePanelContext);
+}
+
+function SidebarInset({ className, ...props }: React.ComponentProps<'main'>) {
+  const { state, setOpen } = useSidebar();
+  const { isExpanded: isToolCallSidePanelExpanded } = useToolCallSidePanel();
+  const [isLargeScreen, setIsLargeScreen] = React.useState(false);
+
+  // Detect screen size > 1024px
+  React.useEffect(() => {
+    const check = () => setIsLargeScreen(window.innerWidth > 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  const shouldShowOverlay =
+    isLargeScreen && state === 'expanded' && isToolCallSidePanelExpanded;
+
+  return (
+    <div className="relative flex-1">
+      {shouldShowOverlay && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:block hidden"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <main
+        data-slot="sidebar-inset"
+        className={cn(
+          'bg-background relative flex w-full flex-1 flex-col',
+          'md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2',
+          className,
+        )}
+        style={{
+          // Keep content full width; only block interaction
+          pointerEvents: shouldShowOverlay ? 'none' : 'auto',
+        }}
+        {...props}
+      />
+    </div>
+  );
+}
+
 
 function SidebarInput({
   className,
