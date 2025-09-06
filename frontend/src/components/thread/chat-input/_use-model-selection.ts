@@ -7,8 +7,8 @@ import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model'
 
 export const STORAGE_KEY_MODEL = 'suna-preferred-model-v8';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
-export const DEFAULT_PREMIUM_MODEL_ID = 'vertex_ai/gemini-2.5-pro';
-export const DEFAULT_FREE_MODEL_ID = 'vertex_ai/gemini-2.5-pro';
+export const DEFAULT_PREMIUM_MODEL_ID = 'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0';
+export const DEFAULT_FREE_MODEL_ID = 'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0';
 
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
@@ -79,7 +79,7 @@ export const MODELS = {
   },
 
   // Bedrock Models - Claude Sonnet Series
-  'bedrock/anthropic.claude-sonnet-4-20250514-v1:0': { 
+  'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0': { 
     tier: 'premium',
     priority: 91, 
     recommended: false,
@@ -256,13 +256,13 @@ export const useModelSelection = () => {
                       models = [
               { 
                 id: DEFAULT_FREE_MODEL_ID, 
-                label: 'Gemini 2.5 Flash', 
+                label: 'Claude Sonnet 4', 
                 requiresSubscription: false,
                 priority: MODELS[DEFAULT_FREE_MODEL_ID]?.priority || 100
               },
               { 
                 id: DEFAULT_PREMIUM_MODEL_ID, 
-                label: 'Gemini 2.5 Pro', 
+                label: 'Claude Sonnet 4', 
                 requiresSubscription: true, 
                 priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
               },
@@ -415,8 +415,8 @@ export const useModelSelection = () => {
       const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
         (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
       console.log('🔧 useModelSelection: Using default model:', defaultModel);
-      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Gemini 2.5 Pro)' : 
-        `Subscription status: ${subscriptionStatus} -> Default: ${subscriptionStatus === 'active' ? 'PREMIUM (Gemini 2.5 Pro)' : 'FREE (Gemini 2.5 Flash)'}`);
+      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Claude Sonnet 4)' : 
+        `Subscription status: ${subscriptionStatus} -> Default: ${subscriptionStatus === 'active' ? 'PREMIUM (Claude Sonnet 4)' : 'FREE (Claude Sonnet 4)'}`);
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       setHasInitialized(true);
@@ -426,8 +426,8 @@ export const useModelSelection = () => {
       const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
         (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
       console.log('🔧 useModelSelection: Using fallback default model:', defaultModel);
-      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Gemini 2.5 Pro)' : 
-        `Subscription status: ${subscriptionStatus} -> Fallback: ${subscriptionStatus === 'active' ? 'PREMIUM (Gemini 2.5 Pro)' : 'FREE (Gemini 2.5 Flash)'}`);
+      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Claude Sonnet 4)' : 
+        `Subscription status: ${subscriptionStatus} -> Fallback: ${subscriptionStatus === 'active' ? 'PREMIUM (Claude Sonnet 4)' : 'FREE (Claude Sonnet 4)'}`);
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       setHasInitialized(true);
@@ -488,8 +488,8 @@ export const useModelSelection = () => {
         console.warn('⚠️ useModelSelection: Current model no longer accessible, switching to default');
         const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
           (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
-              console.log('🔧 useModelSelection: Subscription-based default switch:', isProductionMode() ? 'PRODUCTION (Gemini 2.5 Pro)' : 
-        `${subscriptionStatus === 'active' ? 'PREMIUM (Gemini 2.5 Pro)' : 'FREE (Gemini 2.5 Flash)'}`);
+              console.log('🔧 useModelSelection: Subscription-based default switch:', isProductionMode() ? 'PRODUCTION (Claude Sonnet 4)' : 
+        `${subscriptionStatus === 'active' ? 'PREMIUM (Claude Sonnet 4)' : 'FREE (Claude Sonnet 4)'}`);
         setSelectedModel(defaultModel);
         saveModelPreference(defaultModel);
       } else {
@@ -576,8 +576,8 @@ export const useModelSelection = () => {
       console.log('  subscriptionStatus:', subscriptionStatus);
       console.log('  isLoadingModels:', isLoadingModels);
       console.log('  localStorage value:', localStorage.getItem(STORAGE_KEY_MODEL));
-      console.log('🔧 useModelSelection: defaultModel would be:', isProductionMode() ? `${DEFAULT_PREMIUM_MODEL_ID} (Gemini 2.5 Pro)` : 
-        `${subscriptionStatus === 'active' ? `${DEFAULT_PREMIUM_MODEL_ID} (Gemini 2.5 Pro)` : `${DEFAULT_FREE_MODEL_ID} (Gemini 2.5 Flash)`}`);
+      console.log('🔧 useModelSelection: defaultModel would be:', isProductionMode() ? `${DEFAULT_PREMIUM_MODEL_ID} (Claude Sonnet 4)` : 
+        `${subscriptionStatus === 'active' ? `${DEFAULT_PREMIUM_MODEL_ID} (Claude Sonnet 4)` : `${DEFAULT_FREE_MODEL_ID} (Claude Sonnet 4)`}`);
       console.log('🔧 useModelSelection: availableModels:', availableModels.map(m => ({ id: m.id, requiresSubscription: m.requiresSubscription })));
     }
   };

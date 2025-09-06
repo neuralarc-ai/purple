@@ -418,7 +418,7 @@ export function DashboardContent() {
                 <ReleaseBadge text="Custom Agents, Playbooks, and more!" link="/agents?tab=my-agents" />
               </div>
             )} */}
-            <div className="flex-1 flex items-end justify-center px-4 pt-8">
+            <div className="flex-1 flex items-center justify-center px-4 pt-8">
               <div className="w-full max-w-[800px] flex flex-col items-center justify-center space-y-1 md:space-y-2">
                 <div className="flex flex-col items-center text-center w-full">
                   <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground/80 libre-baskerville-regular">

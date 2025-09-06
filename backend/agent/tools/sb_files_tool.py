@@ -300,22 +300,38 @@ class SandboxFilesTool(SandboxToolsBase):
         except Exception as e:
             return self.fail_response(f"Error rewriting file: {str(e)}")
 
-    async def _call_vertex_gemini_api(self, file_content: str, code_edit: str, instructions: str, file_path: str) -> tuple[Optional[str], Optional[str]]:
+    async def _call_claude_sonnet_api(self, file_content: str, code_edit: str, instructions: str, file_path: str) -> tuple[Optional[str], Optional[str]]:
         """
-        Call Vertex AI Gemini 2.5 Flash via LiteLLM to apply edits to file content.
+        Call Claude Sonnet 4 from Bedrock via LiteLLM to apply edits to file content.
         Returns a tuple (new_content, error_message).
         On success, error_message is None. On failure, new_content is None.
         """
         try:
-            model_name = "vertex_ai/gemini-2.5-flash"
+            model_name = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
             prompt = (
                 f"<instruction>{instructions}</instruction>\n"
-                f"<code>{file_content}</code>\n"
-                f"<update>{code_edit}</update>"
+                f"<file_content>{file_content}</file_content>\n"
+                f"<update>{code_edit}</update>\n\n"
+                f"You are an expert file editor capable of handling multiple file types:\n"
+                f"- Code files (Python, JavaScript, TypeScript, HTML, CSS, etc.)\n"
+                f"- Data files (CSV, JSON, XML, YAML, etc.)\n"
+                f"- Documents (Markdown, plain text, configuration files)\n"
+                f"- Spreadsheets (CSV format, structured data)\n"
+                f"- Configuration files (config, env, ini, etc.)\n\n"
+                f"Apply the changes specified in the <update> section to the content in the <file_content> section. "
+                f"For code files: maintain proper syntax, indentation, and formatting. "
+                f"For data files: preserve structure and data integrity. "
+                f"For documents: maintain readability and formatting. "
+                f"For CSV/structured data: ensure proper delimiters and headers.\n\n"
+                f"CRITICAL: Return ONLY the raw file content without any XML tags, CDATA wrappers, markdown code blocks, or explanations. "
+                f"Do NOT wrap your response in <![CDATA[...]]>, ```code```, or any other formatting tags. "
+                f"Do not include the instruction text in your response. "
+                f"Preserve the original file's encoding and line endings where applicable. "
+                f"The output should be the exact content that should be written to the file."
             )
             messages = [{"role": "user", "content": prompt}]
 
-            logger.debug("Using Vertex AI Gemini 2.5 Flash via LiteLLM for file editing.")
+            logger.debug("Using Claude Sonnet 4 from Bedrock via LiteLLM for file editing.")
             response = await make_llm_api_call(
                 messages=messages,
                 model_name=model_name,
@@ -344,19 +360,33 @@ class SandboxFilesTool(SandboxToolsBase):
                 content = None
 
             if not content:
-                return None, f"Invalid response from Gemini 2.5 Flash API: {response}"
+                return None, f"Invalid response from Claude Sonnet 4 API: {response}"
 
-            # Extract code block if wrapped in markdown
+            # Clean up the response content
             content_str = content.strip() if isinstance(content, str) else str(content).strip()
+            
+            # Remove CDATA wrappers if present
+            if content_str.startswith("<![CDATA[") and content_str.endswith("]]>"):
+                content_str = content_str[9:-3].strip()
+            
+            # Remove markdown code blocks if present
             if content_str.startswith("```") and content_str.endswith("```"):
                 lines = content_str.split('\n')
                 if len(lines) > 2:
                     content_str = '\n'.join(lines[1:-1])
+            
+            # Remove any remaining XML-like tags that might wrap the content
+            if content_str.startswith("<") and ">" in content_str:
+                # Find the first > and last < to extract content between tags
+                first_close = content_str.find(">")
+                last_open = content_str.rfind("<")
+                if first_close != -1 and last_open != -1 and first_close < last_open:
+                    content_str = content_str[first_close + 1:last_open].strip()
 
             return content_str, None
         except Exception as e:
             error_message = f"AI model call for file edit failed. Exception: {str(e)}"
-            logger.error(f"Error calling Vertex AI Gemini 2.5 Flash: {error_message}", exc_info=True)
+            logger.error(f"Error calling Claude Sonnet 4: {error_message}", exc_info=True)
             return None, error_message
 
     @openapi_schema({
@@ -385,53 +415,95 @@ class SandboxFilesTool(SandboxToolsBase):
         }
     })
     @usage_example('''
-        <!-- Example: Mark multiple scattered tasks as complete in a todo list -->
+        <!-- Example: Update CSV data with new records -->
         <function_calls>
         <invoke name="edit_file">
-        <parameter name="target_file">todo.md</parameter>
-        <parameter name="instructions">I am marking the research and setup tasks as complete in my todo list.</parameter>
+        <parameter name="target_file">data/customers.csv</parameter>
+        <parameter name="instructions">I am adding new customer records to the CSV file</parameter>
         <parameter name="code_edit">
 // ... existing code ...
-- [x] Research topic A
-- [ ] Research topic B
-- [x] Research topic C
-// ... existing code ...
-- [x] Setup database
-- [x] Configure server
+John,Doe,john.doe@email.com,555-0123,New York
+Jane,Smith,jane.smith@email.com,555-0124,Los Angeles
+Bob,Johnson,bob.johnson@email.com,555-0125,Chicago
 // ... existing code ...
         </parameter>
         </invoke>
         </function_calls>
 
-        <!-- Example: Add error handling and logging to a function -->
+        <!-- Example: Update configuration file with new settings -->
         <function_calls>
         <invoke name="edit_file">
-        <parameter name="target_file">src/main.py</parameter>
-        <parameter name="instructions">I am adding error handling and logging to the user authentication function</parameter>
+        <parameter name="target_file">config/settings.env</parameter>
+        <parameter name="instructions">I am adding new environment variables for database and API configuration</parameter>
         <parameter name="code_edit">
-// ... existing imports ...
-from my_app.logging import logger
-from my_app.exceptions import DatabaseError
 // ... existing code ...
-def authenticate_user(username, password):
-    try:
-        user = get_user(username)
-        if user and verify_password(password, user.password_hash):
-            return user
-        return None
-    except DatabaseError as e:
-        logger.error(f"Database error during authentication: {e}")
-        return None
-    except Exception as e:
-        logger.error(f"Unexpected error during authentication: {e}")
-        return None
+DATABASE_URL=postgresql://user:pass@localhost:5432/mydb
+API_KEY=sk-1234567890abcdef
+REDIS_URL=redis://localhost:6379
+LOG_LEVEL=INFO
+// ... existing code ...
+        </parameter>
+        </invoke>
+        </function_calls>
+
+        <!-- Example: Update JSON configuration -->
+        <function_calls>
+        <invoke name="edit_file">
+        <parameter name="target_file">package.json</parameter>
+        <parameter name="instructions">I am adding new dependencies and updating the scripts section</parameter>
+        <parameter name="code_edit">
+// ... existing code ...
+  "dependencies": {
+    "react": "^18.2.0",
+    "axios": "^1.6.0",
+    "lodash": "^4.17.21"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "lint": "eslint src/"
+  }
+// ... existing code ...
+        </parameter>
+        </invoke>
+        </function_calls>
+
+        <!-- Example: Update Markdown documentation -->
+        <function_calls>
+        <invoke name="edit_file">
+        <parameter name="target_file">README.md</parameter>
+        <parameter name="instructions">I am adding installation instructions and usage examples to the README</parameter>
+        <parameter name="code_edit">
+// ... existing code ...
+## Installation
+
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Run the application: `npm start`
+
+## Usage
+
+```bash
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## Features
+
+- User authentication
+- Real-time updates
+- Responsive design
 // ... existing code ...
         </parameter>
         </invoke>
         </function_calls>
         ''')
     async def edit_file(self, target_file: str, instructions: str, code_edit: str) -> ToolResult:
-        """Edit a file using AI-powered intelligent editing with Vertex AI Gemini 2.5 Flash"""
+        """Edit a file using AI-powered intelligent editing with Claude Sonnet 4 from Bedrock"""
         try:
             # Ensure sandbox is initialized
             await self._ensure_sandbox()
@@ -444,13 +516,13 @@ def authenticate_user(username, password):
             # Read current content
             original_content = (await self.sandbox.fs.download_file(full_path)).decode()
             
-            # Try Vertex AI Gemini 2.5 Flash editing
+            # Try Claude Sonnet 4 editing
             logger.debug(f"Attempting AI-powered edit for file '{target_file}' with instructions: {instructions[:100]}...")
-            new_content, error_message = await self._call_vertex_gemini_api(original_content, code_edit, instructions, target_file)
+            new_content, error_message = await self._call_claude_sonnet_api(original_content, code_edit, instructions, target_file)
 
             if error_message:
                 return ToolResult(success=False, output=json.dumps({
-                    "message": f"Vertex AI Gemini 2.5 Flash editing failed: {error_message}",
+                    "message": f"Claude Sonnet 4 editing failed: {error_message}",
                     "file_path": target_file,
                     "original_content": original_content,
                     "updated_content": None
