@@ -29,6 +29,8 @@ import { useAuth } from '@/components/AuthProvider';
 import { useQueryClient } from '@tanstack/react-query';
 
 const workOptions = [
+  'CEO',
+  'Founder',
   'Product Management',
   'Engineering',
   'Human Resources',
@@ -44,6 +46,8 @@ const workOptions = [
 
 // Mapping from role IDs to display names for backward compatibility
 const roleIdToName: Record<string, string> = {
+  'ceo': 'CEO',
+  'founder': 'Founder',
   'product-management': 'Product Management',
   'engineering': 'Engineering',
   'hr': 'Human Resources',

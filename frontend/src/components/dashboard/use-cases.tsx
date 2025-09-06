@@ -185,6 +185,92 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
 
   const categories = [
     {
+      id: 'ceo',
+      name: 'CEO',
+      icon: <TrendingUp className="h-4 w-4 mr-2" />,
+      items: [
+        {
+          id: 'strategic-planning',
+          title: 'Strategic Planning',
+          prompt: 'Develop a comprehensive 3-year strategic plan for a {{industry}} company. Include market analysis, competitive positioning, growth opportunities, and resource allocation. Define key initiatives, success metrics, and risk mitigation strategies. Provide a roadmap for execution with quarterly milestones and board reporting frameworks.',
+          icon: <Target className="h-4 w-4 mr-2 text-muted-foreground" />
+        },
+        {
+          id: 'board-presentation',
+          title: 'Board Presentation',
+          prompt: 'Create a quarterly board presentation for a {{industry}} company covering financial performance, strategic initiatives, market trends, and operational metrics. Include executive summary, key achievements, challenges, and forward-looking strategies. Ensure clear visualizations and actionable insights for board decision-making.',
+          icon: <BarChart2 className="h-4 w-4 mr-2 text-muted-foreground" />
+        },
+        {
+          id: 'leadership-team-building',
+          title: 'Leadership Team Building',
+          prompt: 'Design a leadership development program for C-suite executives in a {{industry}} organization. Include succession planning, executive coaching, cross-functional collaboration, and performance management. Define leadership competencies, assessment methods, and development pathways for senior talent.',
+          icon: <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+        },
+        {
+          id: 'investor-relations',
+          title: 'Investor Relations',
+          prompt: 'Develop an investor relations strategy for a {{industry}} company including quarterly earnings calls, investor presentations, and stakeholder communication. Cover financial storytelling, market positioning, growth narratives, and risk communication. Include templates for investor updates and Q&A preparation.',
+          icon: <TrendingUp className="h-4 w-4 mr-2 text-muted-foreground" />
+        },
+        {
+          id: 'crisis-management',
+          title: 'Crisis Management',
+          prompt: 'Create a crisis management framework for a {{industry}} company covering communication protocols, stakeholder management, and business continuity. Include scenarios like market downturns, regulatory changes, or operational disruptions. Define escalation procedures, decision-making authority, and recovery strategies.',
+          icon: <Shield className="h-4 w-4 mr-2 text-muted-foreground" />
+        },
+        {
+          id: 'digital-transformation',
+          title: 'Digital Transformation',
+          prompt: 'Lead a digital transformation initiative for a {{industry}} organization. Assess current technology landscape, identify transformation opportunities, and create a roadmap for modernization. Include change management strategies, ROI projections, and success metrics for digital adoption across all business functions.',
+          icon: <Cpu className="h-4 w-4 mr-2 text-muted-foreground" />
+        }
+      ]
+    },
+    {
+      id: 'founder',
+      name: 'Founder',
+      icon: <Lightbulb className="h-4 w-4 mr-2" />,
+      items: [
+        {
+          id: 'startup-fundraising',
+          title: 'Startup Fundraising',
+          prompt: 'Prepare a comprehensive fundraising strategy for a {{industry}} startup including pitch deck development, investor targeting, and due diligence preparation. Cover valuation methodologies, term sheet negotiation, and investor relationship management. Include templates for pitch presentations and financial projections.',
+          icon: <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+        },
+        {
+          id: 'product-market-fit',
+          title: 'Product-Market Fit',
+          prompt: 'Develop a product-market fit strategy for a {{industry}} startup. Include customer discovery methods, MVP development, user feedback loops, and iteration cycles. Define success metrics, customer acquisition strategies, and scaling approaches once product-market fit is achieved.',
+          icon: <Target className="h-4 w-4 mr-2 text-muted-foreground" />
+        },
+        {
+          id: 'team-scaling',
+          title: 'Team Scaling',
+          prompt: 'Create a team scaling plan for a growing {{industry}} startup from 10 to 100 employees. Include hiring strategies, culture building, organizational structure, and leadership development. Cover remote work policies, equity distribution, and retention strategies for early-stage companies.',
+          icon: <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+        },
+        {
+          id: 'go-to-market-strategy',
+          title: 'Go-to-Market Strategy',
+          prompt: 'Design a go-to-market strategy for a {{industry}} startup including market segmentation, pricing models, distribution channels, and customer acquisition. Cover launch planning, competitive positioning, and growth hacking techniques. Include metrics for tracking GTM success and optimization strategies.',
+          icon: <Megaphone className="h-4 w-4 mr-2 text-muted-foreground" />
+        },
+        {
+          id: 'startup-operations',
+          title: 'Startup Operations',
+          prompt: 'Build operational frameworks for a {{industry}} startup including financial management, legal compliance, and operational efficiency. Cover cash flow management, vendor relationships, and process automation. Include templates for operational dashboards and KPI tracking systems.',
+          icon: <Settings className="h-4 w-4 mr-2 text-muted-foreground" />
+        },
+        {
+          id: 'exit-strategy',
+          title: 'Exit Strategy Planning',
+          prompt: 'Develop an exit strategy framework for a {{industry}} startup including IPO preparation, acquisition readiness, and strategic partnership opportunities. Cover valuation optimization, due diligence preparation, and stakeholder alignment. Include timelines and milestones for different exit scenarios.',
+          icon: <TrendingUp className="h-4 w-4 mr-2 text-muted-foreground" />
+        }
+      ]
+    },
+    {
       id: 'engineering',
       name: 'Engineering',
       icon: <Cpu className="h-4 w-4 mr-2" />,
