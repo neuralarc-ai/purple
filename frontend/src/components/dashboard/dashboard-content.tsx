@@ -42,8 +42,6 @@ import {
 
 import { UseCases } from './use-cases';
 
-import { SecurityPopup } from '@/components/thread/chat-input/security-popup';
-import { useSecurityInterception } from '@/hooks/useSecurityInterception';
 import { TokenUsage } from './token-usage';
 import { PromotionalBanner } from './promotional-banner';
 import { useInviteCodeUsage } from '@/hooks/use-invite-code-usage';
@@ -97,16 +95,6 @@ export function DashboardContent() {
       }, 100);
     }
   }, [searchParams]);
-  
-  // Security interception hook
-  const {
-    showPopup: showSecurityPopup,
-    popupMessage: securityPopupMessage,
-    popupType: securityPopupType,
-    shouldBlock: shouldBlockRequest,
-    closePopup: closeSecurityPopup,
-    shouldProceedWithRequest,
-  } = useSecurityInterception();
   
   const welcomeMessage = useMemo(() => {
     // Check if we have a cached welcome message
@@ -236,12 +224,6 @@ export function DashboardContent() {
     setLocalLoading(true);
     
     // Set loading state immediately
-    // Check for security concerns on submission only
-    if (!shouldProceedWithRequest(message)) {
-      // Security popup is already shown by the hook
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -462,14 +444,6 @@ export function DashboardContent() {
                   </div>
                 </div>
                 <div className="w-full transition-all duration-700 ease-out">
-                  {/* Security Popup - Positioned above the input */}
-                  <SecurityPopup
-                    isVisible={showSecurityPopup}
-                    onClose={closeSecurityPopup}
-                    message={securityPopupMessage}
-                    type={securityPopupType}
-                    showCloseButton={true}
-                  />
                   
                   <div className={`transition-all duration-700 ease-out ${useCasesLoaded ? 'translate-y-0' : 'translate-y-4'}`}>
                     <ChatInput

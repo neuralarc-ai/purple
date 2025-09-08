@@ -36,7 +36,6 @@ import { ShowToolStream } from './ShowToolStream';
 import { ComposioUrlDetector } from './composio-url-detector';
 import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
-import { SECURITY_ALERT_VARIANTS, HARM_ALERT_VARIANT, HARM_CONTENT_PATTERNS } from '@/lib/security-database';
 
 
 // Helper function to render all attachments as standalone messages
@@ -1285,19 +1284,17 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
 
                                     if (isDenialNotice) {
                                       // Check if this is harmful content to use specific variant
-                                      const isHarmful = HARM_CONTENT_PATTERNS.some(pattern => 
-                                        parsedContent.content.toLowerCase().includes(pattern.toLowerCase())
-                                      );
+                                      const isHarmful = false; // Disabled security checks
                                       
                                       let variant;
                                       if (isHarmful) {
-                                        variant = HARM_ALERT_VARIANT;
+                                        variant = parsedContent.content;
                                       } else {
                                         // Deterministic variant pick based on message id/content to avoid flicker
                                         const basis = `${message.message_id || ''}|${parsedContent.content}`;
                                         let seed = 0;
                                         for (let i = 0; i < basis.length; i++) seed = (seed * 31 + basis.charCodeAt(i)) >>> 0;
-                                        variant = SECURITY_ALERT_VARIANTS[(seed % SECURITY_ALERT_VARIANTS.length) || 0] || parsedContent.content;
+                                        variant = parsedContent.content;
                                       }
 
                                       elements.push(

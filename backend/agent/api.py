@@ -24,7 +24,6 @@ from services.llm import make_llm_api_call
 from run_agent_background import run_agent_background, _cleanup_redis_response_list, update_agent_run_status
 from utils.constants import MODEL_NAME_ALIASES
 from flags.flags import is_enabled
-from utils.security import is_malicious_input
 
 from .config_helper import extract_agent_config, build_unified_config
 from .utils import check_agent_run_limit
@@ -328,9 +327,9 @@ async def start_agent(
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
     logger.debug(f"Resolved model name: {resolved_model}")
 
-    # Use Vertex AI Gemini 2.5 Pro for both local and production environments
+    # Use Claude Sonnet 4 from Bedrock for both local and production environments
     if os.getenv("ENV_MODE", "local").lower() == "production":
-        resolved_model = "vertex_ai/gemini-2.5-pro"
+        resolved_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
 
     # Update model_name to use the resolved version (or forced one)
     model_name = resolved_model
@@ -1057,9 +1056,6 @@ async def initiate_agent_with_files(
     files: List[UploadFile] = File(default=[]),
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
-    # Security check: block prompt injection or malware content
-    if is_malicious_input(prompt or ""):
-        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     """
     Initiate a new agent session with optional file attachments.
 
@@ -1073,8 +1069,8 @@ async def initiate_agent_with_files(
     logger.debug(f"Original model_name from request: {model_name}")
 
     if model_name is None:
-        # Use Vertex AI Gemini 2.5 Pro for both local and production environments
-        model_name = "vertex_ai/gemini-2.5-pro"
+        # Use Claude Sonnet 4 from Bedrock for both local and production environments
+        model_name = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
         logger.debug(f"Using default model: {model_name}")
 
     # Log the model name after alias resolution
@@ -3361,8 +3357,6 @@ async def add_message_to_thread(
     user_id: str = Depends(get_current_user_id_from_jwt),
 ):
     """Add a message to a thread"""
-    if is_malicious_input(message or ""):
-        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     logger.debug(f"Adding message to thread: {thread_id}")
     client = await db.client
     await verify_thread_access(client, thread_id, user_id)
@@ -3389,8 +3383,6 @@ async def create_message(
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
     """Create a new message in a thread."""
-    if is_malicious_input(getattr(message_data, 'content', '') or ""):
-        raise HTTPException(status_code=400, detail="⚠️ Security Warning: This request contains restricted or malicious content. I cannot provide the requested information.")
     logger.debug(f"Creating message in thread: {thread_id}")
     client = await db.client
     

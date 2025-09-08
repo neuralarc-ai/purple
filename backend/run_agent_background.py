@@ -58,7 +58,7 @@ async def run_agent_background(
     thread_id: str,
     instance_id: str,
     project_id: str,
-    model_name: str = "vertex_ai/gemini-2.5-pro",
+    model_name: str = "openai/gpt-5-mini",
     enable_thinking: Optional[bool] = False,
     reasoning_effort: Optional[str] = 'low',
     stream: bool = True,
