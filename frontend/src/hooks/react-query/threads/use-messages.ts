@@ -2,7 +2,7 @@ import { createMutationHook, createQueryHook } from "@/hooks/use-query";
 import { threadKeys } from "./keys";
 import { addUserMessage, getMessages } from "@/lib/api";
 
-export const useMessagesQuery = (threadId: string) =>
+export const useMessagesQuery = (threadId: string, options?: { onError?: (error: any) => void }) =>
   createQueryHook(
     threadKeys.messages(threadId),
     () => getMessages(threadId),
@@ -12,6 +12,7 @@ export const useMessagesQuery = (threadId: string) =>
       refetchOnMount: false,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
+      ...options,
     }
   )();
 
