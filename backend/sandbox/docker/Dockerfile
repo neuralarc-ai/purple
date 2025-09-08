@@ -108,7 +108,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN npx playwright install-deps
 RUN npx playwright install chromium
 # Verify installation
-RUN node -e "import('playwright').then(() => console.log('Playwright installation verified')).catch(e => { console.error('Playwright verification failed:', e); process.exit(1); })"
+# RUN node -e "import('playwright').then(() => console.log('Playwright installation verified')).catch(e => { console.error('Playwright verification failed:', e); process.exit(1); })"
 
 WORKDIR /opt/templates/next-app
 

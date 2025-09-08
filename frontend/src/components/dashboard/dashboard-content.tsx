@@ -169,14 +169,14 @@ export function DashboardContent() {
   const threadQuery = useThreadQuery(initiatedThreadId || '');
 
   useEffect(() => {
-    console.log('🚀 Dashboard effect:', { 
-      agentsLength: agents.length, 
-      selectedAgentId, 
-      agents: agents.map(a => ({ id: a.agent_id, name: a.name, isDefault: a.metadata?.is_helium_default })) 
-    });
+    // console.log('🚀 Dashboard effect:', { 
+    //   agentsLength: agents.length, 
+    //   selectedAgentId, 
+    //   agents: agents.map(a => ({ id: a.agent_id, name: a.name, isDefault: a.metadata?.is_helium_default })) 
+    // });
     
     if (agents.length > 0) {
-      console.log('📞 Calling initializeFromAgents');
+      // console.log('📞 Calling initializeFromAgents');
       initializeFromAgents(agents, undefined, setSelectedAgent);
     }
   }, [agents, initializeFromAgents, setSelectedAgent]);
