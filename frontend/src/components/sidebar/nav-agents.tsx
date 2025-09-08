@@ -16,6 +16,18 @@ import {
   History,
   ListTodo,
 } from 'lucide-react';
+
+// Custom Select All Icon component
+const SelectAllIcon = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M11.602 13.7599L13.014 15.1719L21.4795 6.7063L22.8938 8.12051L13.014 18.0003L6.65 11.6363L8.06421 10.2221L10.189 12.3469L11.6025 13.7594L11.602 13.7599ZM11.6037 10.9322L16.5563 5.97949L17.9666 7.38977L13.014 12.3424L11.6037 10.9322ZM8.77698 16.5873L7.36396 18.0003L1 11.6363L2.41421 10.2221L3.82723 11.6352L3.82604 11.6363L8.77698 16.5873Z"></path>
+  </svg>
+);
 import { toast } from 'sonner';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -370,6 +382,7 @@ export function NavAgents() {
               setSelectedThreads(new Set());
               setDeleteProgress(0);
               setTotalToDelete(0);
+              setIsSelectMode(false);
             },
             onError: (error) => {
               console.error('Error in bulk deletion:', error);
@@ -393,6 +406,7 @@ export function NavAgents() {
         isPerformingActionRef.current = false;
         setDeleteProgress(0);
         setTotalToDelete(0);
+        setIsSelectMode(false);
       }
     }
   };
@@ -414,6 +428,29 @@ export function NavAgents() {
           <div className="flex items-center space-x-1">
             {isSelectMode ? (
               <>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className="h-7 w-7 flex items-center justify-center cursor-pointer hover:bg-muted/50 rounded transition-all duration-150"
+                      onClick={() => {
+                        if (selectedThreads.size === combinedThreads.length) {
+                          deselectAllThreads();
+                        } else {
+                          selectAllThreads();
+                        }
+                      }}
+                    >
+                      <SelectAllIcon 
+                        className={`h-4 w-4 transition-all duration-150 ${
+                          selectedThreads.size === combinedThreads.length && combinedThreads.length > 0
+                            ? 'text-primary'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>Select All</TooltipContent>
+                </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -496,7 +533,7 @@ export function NavAgents() {
                           }`}
                         tooltip={thread.projectName}
                       >
-                        <div className="flex items-center w-full">
+                        <div className="flex items-center w-full gap-2">
                           <Link
                             href={thread.url}
                             onClick={(e) =>
@@ -516,7 +553,7 @@ export function NavAgents() {
                           {/* Checkbox - only visible when in select mode */}
                           {isSelectMode && (
                             <div
-                              className="mr-1 flex-shrink-0 w-4 h-4 flex items-center justify-center"
+                              className="flex-shrink-0 w-4 h-4 flex items-center justify-center"
                               onClick={(e) =>
                                 toggleThreadSelection(thread.threadId, e)
                               }
@@ -534,76 +571,78 @@ export function NavAgents() {
                             </div>
                           )}
 
-                          {/* Dropdown Menu - inline with content */}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                className="cursor-pointer flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-muted/50 rounded transition-all duration-150 text-muted-foreground hover:text-foreground opacity-0 group-hover/row:opacity-100"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  // Ensure pointer events are enabled when dropdown opens
-                                  document.body.style.pointerEvents = 'auto';
-                                }}
-                              >
-                                <Image
-                                  src="/icons/more-horizontal-light.svg"
-                                  alt="check Light Logo"
-                                  width={19}
-                                  height={19}
-                                  className="block dark:hidden mb-0"
-                                />
-                                <Image
-                                  src="/icons/more-horizontal-dark.svg"
-                                  alt="check Dark Logo"
-                                  width={19}
-                                  height={19}
-                                  className="hidden dark:block mb-0"
-                                />
-                                <span className="sr-only">More actions</span>
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              className="w-56 rounded-lg"
-                              side={isMobile ? 'bottom' : 'right'}
-                              align={isMobile ? 'end' : 'start'}
-                            >
-                              <DropdownMenuItem
-                                onClick={() => {
-                                  setSelectedItem({
-                                    threadId: thread?.threadId,
-                                    projectId: thread?.projectId,
-                                  });
-                                  setShowShareModal(true);
-                                }}
-                              >
-                                <Share2 className="text-muted-foreground" />
-                                <span>Share Chat</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <a
-                                  href={thread.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                          {/* Dropdown Menu - only show when not in select mode */}
+                          {!isSelectMode && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  className="cursor-pointer flex-shrink-0 w-4 h-4 flex items-center justify-center hover:bg-muted/50 rounded transition-all duration-150 text-muted-foreground hover:text-foreground opacity-0 group-hover/row:opacity-100"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    // Ensure pointer events are enabled when dropdown opens
+                                    document.body.style.pointerEvents = 'auto';
+                                  }}
                                 >
-                                  <ArrowUpRight className="text-muted-foreground" />
-                                  <span>Open in New Tab</span>
-                                </a>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleDeleteThread(
-                                    thread.threadId,
-                                    thread.projectName,
-                                  )
-                                }
+                                  <Image
+                                    src="/icons/more-horizontal-light.svg"
+                                    alt="check Light Logo"
+                                    width={19}
+                                    height={19}
+                                    className="block dark:hidden mb-0"
+                                  />
+                                  <Image
+                                    src="/icons/more-horizontal-dark.svg"
+                                    alt="check Dark Logo"
+                                    width={19}
+                                    height={19}
+                                    className="hidden dark:block mb-0"
+                                  />
+                                  <span className="sr-only">More actions</span>
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                className="w-56 rounded-lg"
+                                side={isMobile ? 'bottom' : 'right'}
+                                align={isMobile ? 'end' : 'start'}
                               >
-                                <Trash2 className="text-muted-foreground" />
-                                <span>Delete</span>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedItem({
+                                      threadId: thread?.threadId,
+                                      projectId: thread?.projectId,
+                                    });
+                                    setShowShareModal(true);
+                                  }}
+                                >
+                                  <Share2 className="text-muted-foreground" />
+                                  <span>Share Chat</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <a
+                                    href={thread.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    <ArrowUpRight className="text-muted-foreground" />
+                                    <span>Open in New Tab</span>
+                                  </a>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleDeleteThread(
+                                      thread.threadId,
+                                      thread.projectName,
+                                    )
+                                  }
+                                >
+                                  <Trash2 className="text-muted-foreground" />
+                                  <span>Delete</span>
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </div>
                       </SidebarMenuButton>
                     </SidebarMenuItem>

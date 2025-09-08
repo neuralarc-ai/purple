@@ -54,7 +54,7 @@ export const siteConfig = {
       upgradePlans: [],
     },
     {
-      name: 'Ridiculously Cheap',
+      name: 'Outrageously Smart',
       price: '$24.99',
       yearlyPrice: '$254.89',
       originalYearlyPrice: '$299.88',
@@ -77,7 +77,7 @@ export const siteConfig = {
       upgradePlans: [],
     },
     {
-      name: 'Serious Business',
+      name: 'Supremely Serious',
       price: '$94.99',
       yearlyPrice: '$968.88',
       originalYearlyPrice: '$1139.88',
