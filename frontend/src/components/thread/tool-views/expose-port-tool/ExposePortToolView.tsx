@@ -119,7 +119,29 @@ export function ExposePortToolView({
   const temporaryUrl = isPortInUrl(url, 8000) ? url : null;
   // If the tool returned an 8080 URL, treat it as permanent too
   const permanentFromTool = isPortInUrl(url, 8080) ? url : null;
-  const effectivePermanentUrl = permanentFromTool || permanentPreviewUrl;
+  
+  // Ensure URLs end with /index.html when path is empty or '/'
+  const ensureIndexHtml = (input: string | null): string | null => {
+    if (!input) return input;
+    try {
+      const u = new URL(input);
+      if (!u.pathname || u.pathname === '/') {
+        u.pathname = '/index.html';
+        return u.toString();
+      }
+      // If it already ends with index.html, keep as is
+      if (u.pathname.endsWith('/index.html')) return u.toString();
+      return u.toString();
+    } catch {
+      return input;
+    }
+  };
+
+  const normalizedPermanentFromTool = ensureIndexHtml(permanentFromTool);
+  const effectivePermanentUrl = normalizedPermanentFromTool || permanentPreviewUrl;
+
+  // Show temporary URL only if tool provided an 8000 link
+  const finalTemporaryUrl = temporaryUrl;
 
   return (
     <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
@@ -167,7 +189,7 @@ export function ExposePortToolView({
         ) : (
           <ScrollArea className="h-full w-full">
             <div className=" py-0 space-y-6">
-              {(temporaryUrl || effectivePermanentUrl) && (
+              {(finalTemporaryUrl || effectivePermanentUrl) && (
                 <div >
                   <div className="p-4">
                     <div className="flex items-start gap-3 mb-3">
@@ -195,22 +217,22 @@ export function ExposePortToolView({
                         )}
 
                         {/* Divider between permanent and temporary links when both exist */}
-                        {effectivePermanentUrl && temporaryUrl && (
+                        {effectivePermanentUrl && finalTemporaryUrl && (
                           <div className="h-px w-full bg-zinc-200 dark:bg-zinc-800 my-2" />
                         )}
 
-                        {temporaryUrl && (
+                        {finalTemporaryUrl && (
                           <>
                             <h3 className="text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-2">
                               Exposed URL (temporary)
                             </h3>
                             <a
-                              href={temporaryUrl}
+                              href={finalTemporaryUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-md font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2 mb-3 break-all max-w-full"
                             >
-                              {temporaryUrl}
+                              {finalTemporaryUrl}
                               <ExternalLink className="flex-shrink-0 h-3.5 w-3.5" />
                             </a>
                           </>
@@ -222,7 +244,7 @@ export function ExposePortToolView({
 
                       {/* Removed verbose success message under Port Details per request */}
 
-                      {temporaryUrl && (
+                      {finalTemporaryUrl && (
                         <div className="text-xs bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 rounded-md p-3 text-amber-600 dark:text-amber-400 flex items-start gap-2">
                           <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                           <span>This exposed URL might be temporary and could expire.</span>
