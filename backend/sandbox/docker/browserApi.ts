@@ -52,13 +52,13 @@ class BrowserAutomation {
     async init(apiKey: string): Promise<{status: string, message: string}> {
         try{
             if (!this.browserInitialized) {
-                console.log("Initializing browser with api key");
+                // console.log("Initializing browser with api key");
                 this.stagehand = new Stagehand({
                     env: "LOCAL",
                     enableCaching: true,
                     verbose: 2,
                     logger: (logLine: LogLine) => {
-                        console.log(`[${logLine.category}] ${logLine.message}`);
+                        // console.log(`[${logLine.category}] ${logLine.message}`);
                     },
                     modelName: "google/gemini-2.5-pro",
                     modelClientOptions: {
@@ -90,7 +90,7 @@ class BrowserAutomation {
                 if (this.page) {
                     // If the browser page itself closes we mark the automation as un-initialised
                     this.page.on('close', () => {
-                        console.log('Browser page closed - resetting state');
+                        // console.log('Browser page closed - resetting state');
                         this.browserInitialized = false;
                     });
 
@@ -98,7 +98,7 @@ class BrowserAutomation {
                     try {
                         const browserInstance = this.page.context().browser();
                         browserInstance?.on('disconnected', () => {
-                            console.log('Browser disconnected - resetting state');
+                            // console.log('Browser disconnected - resetting state');
                             this.browserInitialized = false;
                         });
                     } catch (err) {
@@ -137,7 +137,7 @@ class BrowserAutomation {
     }
 
     async shutdown() {
-        console.log("Shutting down browser");
+        // console.log("Shutting down browser");
         this.browserInitialized = false;
         this.stagehand?.close();
         this.stagehand = null;
@@ -306,7 +306,7 @@ class BrowserAutomation {
 
     async enableTakeover(req: express.Request, res: express.Response): Promise<void> {
         try {
-            console.log("Enabling browser takeover mode");
+            // console.log("Enabling browser takeover mode");
             this.takeoverMode = true;
             
             // Capture current browser state for seamless resume
@@ -339,7 +339,7 @@ class BrowserAutomation {
 
     async releaseTakeover(req: express.Request, res: express.Response): Promise<void> {
         try {
-            console.log("Releasing browser takeover mode");
+            // console.log("Releasing browser takeover mode");
             this.takeoverMode = false;
             
             // Capture final state before releasing control
@@ -404,7 +404,7 @@ const browserAutomation = new BrowserAutomation();
 app.use('/api', browserAutomation.router);
 
 app.get('/api', (req, res) => {
-    console.log("Health check");
+    // console.log("Health check");
     const health = browserAutomation.health();
     if (health.status === "healthy") {
         res.status(200).json({
@@ -420,7 +420,7 @@ app.get('/api', (req, res) => {
 });
 
 app.post('/api/init', async (req, res) => {
-    console.log("Initializing browser");
+    // console.log("Initializing browser");
     const {api_key} = req.body;
     const result = await browserAutomation.init(api_key);
     
@@ -438,5 +438,5 @@ app.post('/api/init', async (req, res) => {
 });
 
 app.listen(8004, () => {
-    console.log('Starting browser server on port 8004');
+    // console.log('Starting browser server on port 8004');
 });

@@ -2071,7 +2071,7 @@ export const createPortalSession = async (
 export const getSubscription = async (): Promise<SubscriptionStatus> => {
   try {
     // Log when subscription API is called for debugging
-    console.log('🔍 [BILLING] Making subscription API call:', new Date().toISOString());
+    // console.log('🔍 [BILLING] Making subscription API call:', new Date().toISOString());
     
     const supabase = createClient();
     const {
