@@ -98,31 +98,31 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
     {
       id: 'image',
       title: 'Image',
-      prompt: 'Create a high-quality image of [describe the scene, object, or concept] in [style, e.g., minimalistic, realistic, 3D, cartoon] with [color theme or mood if needed]',
+      prompt: 'Analyze the uploaded image in detail. Describe all visible elements including objects, text, and context. Highlight key patterns or relationships and suggest possible interpretations. Recommend how this image could be improved or repurposed for use in [presentation/report/marketing].',
       icon: <ImageIcon className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
     },
     {
       id: 'analysis',
       title: 'Analysis',
-      prompt: 'Analyze the following [data/text/report] and provide [insights, trends, or recommendations] in a structured format.',
+      prompt: 'Perform a comprehensive analysis of the following [dataset/document/scenario]. Identify key patterns, trends, and anomalies. Generate clear insights that highlight risks and opportunities. Provide actionable recommendations and, if helpful, suggest visualizations like charts or tables.',
       icon: <BarChart2 className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
     },
     {
       id: 'webpage',
       title: 'Webpage',
-      prompt: 'Generate a responsive webpage for [business/product/event] using modern design principles. Include [sections, e.g., hero banner, about, contact form, testimonials] and ensure it\'s optimized for both desktop and mobile.',
+      prompt: 'Generate a complete webpage for [company/product/service]. Include sections such as a hero banner with headline and call-to-action, an about section, product or service highlights, testimonials, and a contact form. Use a modern, responsive design with clear headings, structured layout, and engaging content tailored to the target audience.',
       icon: <FileCode className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
     },
     {
       id: 'summarize-document',
       title: 'Summarize Document',
-      prompt: 'Summarize the following [document/text/article/PDF] into [key points, bullet points, or an executive summary], highlighting the most important details.',
+      prompt: 'Summarize the following document: [upload text or file]. Create a concise overview broken into sections that highlight main arguments, evidence, and conclusions. Ensure the summary is clear, decision-focused, and easy to share with [team/clients/stakeholders].',
       icon: <FileText className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
     },
     {
       id: 'spreadsheet',
       title: 'Spreadsheet',
-      prompt: 'Create a spreadsheet for [purpose, e.g., budget, inventory, schedule] with the following columns: [list columns]. Include [specific requirements, e.g., formulas, formatting, data validation].',
+      prompt: 'Analyze the attached spreadsheet: [upload file]. Generate a summary of key patterns, trends, and important metrics. Highlight anomalies or errors if found. Recommend optimizations and suggest visualizations (charts/tables/graphs) that make the data easier to interpret.',
       icon: <Table className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
     },
     {

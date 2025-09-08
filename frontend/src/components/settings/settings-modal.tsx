@@ -121,6 +121,8 @@ export interface SettingsModalProps {
 type SettingsSection = 'profile' | 'billing';
 
 const workOptions = [
+  'CEO',
+  'Founder',
   'Product Management',
   'Engineering',
   'Human Resources',
