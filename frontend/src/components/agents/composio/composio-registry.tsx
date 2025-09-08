@@ -243,7 +243,7 @@ const ConnectedAppCard = ({
 
   return (
     <div className="relative group">
-      <div className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-2 left-2 z-10 opacity-100 transition-opacity">
         <Button
           variant="ghost"
           size="icon"
@@ -336,7 +336,7 @@ const ConnectedAppCard = ({
       <Button
         variant="ghost"
         size="sm"
-        className="absolute top-2 right-2 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+        className="absolute top-2 right-2 h-8 w-8 p-0 opacity-100 transition-opacity text-destructive hover:text-destructive/80 hover:bg-destructive/10"
         onClick={(e) => {
           e.stopPropagation();
           setShowDeleteDialog(true);
@@ -493,7 +493,19 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
 
   const allToolkits = useMemo(() => {
     if (!toolkitsInfiniteData?.pages) return [] as ComposioToolkit[];
-    return toolkitsInfiniteData.pages.flatMap((page) => page.toolkits || []);
+    
+    // Flatten all toolkits from all pages
+    const flattenedToolkits = toolkitsInfiniteData.pages.flatMap((page) => page.toolkits || []);
+    
+    // Deduplicate by slug to prevent duplicate keys
+    const uniqueToolkits = flattenedToolkits.reduce((acc, toolkit) => {
+      if (!acc.find(t => t.slug === toolkit.slug)) {
+        acc.push(toolkit);
+      }
+      return acc;
+    }, [] as ComposioToolkit[]);
+    
+    return uniqueToolkits;
   }, [toolkitsInfiniteData]);
 
   // Reset pagination on search/category change
