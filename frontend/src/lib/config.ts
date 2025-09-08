@@ -27,6 +27,7 @@ interface Config {
   IS_LOCAL: boolean;
   IS_STAGING: boolean;
   SUBSCRIPTION_TIERS: SubscriptionTiers;
+  BACKEND_URL: string;
 }
 
 // Production tier IDs
@@ -97,6 +98,21 @@ function getEnvironmentMode(): EnvMode {
   }
 }
 
+function getBackendUrl(): string {
+  const envMode = getEnvironmentMode();
+  
+  switch (envMode) {
+    case EnvMode.LOCAL:
+      return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    case EnvMode.STAGING:
+      return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://staging-api.he2.ai';
+    case EnvMode.PRODUCTION:
+      return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.he2.ai';
+    default:
+      return 'http://localhost:8000';
+  }
+}
+
 const currentEnvMode = getEnvironmentMode();
 
 export const config: Config = {
@@ -105,6 +121,7 @@ export const config: Config = {
   IS_STAGING: currentEnvMode === EnvMode.STAGING,
   SUBSCRIPTION_TIERS:
     currentEnvMode === EnvMode.STAGING ? STAGING_TIERS : PROD_TIERS,
+  BACKEND_URL: getBackendUrl(),
 };
 
 export const isLocalMode = (): boolean => {
