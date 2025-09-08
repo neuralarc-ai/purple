@@ -57,7 +57,7 @@ function LoginContent() {
   const isProduction = isProductionMode();
 
   // Random auth image selection
-  const [randomAuthImage, setRandomAuthImage] = useState('/auth/login-bg.png');
+  const [randomAuthImage, setRandomAuthImage] = useState('/auth/auth-1.jpeg');
 
   useEffect(() => {
     // Generate random number between 1 and 5

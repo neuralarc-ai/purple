@@ -41,12 +41,12 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 
 def get_plan_info(price_id: str) -> dict:
     PLAN_TIERS = {
-        config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'tier': 1, 'type': 'monthly', 'name': 'Ridiculously Cheap - $24.99/month'},
-        config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'tier': 2, 'type': 'monthly', 'name': 'Serious Business - $94.99/month'},
+        config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'tier': 1, 'type': 'monthly', 'name': 'Outrageously Smart - $24.99/month'},
+        config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'tier': 2, 'type': 'monthly', 'name': 'Supremely Serious - $94.99/month'},
         
         # Yearly plans
-        config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'tier': 1, 'type': 'yearly', 'name': 'Ridiculously Cheap - $254.89/year'},
-        config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'tier': 2, 'type': 'yearly', 'name': 'Serious Business - $968.88/year'},
+        config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'tier': 1, 'type': 'yearly', 'name': 'Outrageously Smart - $254.89/year'},
+        config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'tier': 2, 'type': 'yearly', 'name': 'Supremely Serious - $968.88/year'},
     }
     
     return PLAN_TIERS.get(price_id, {'tier': 0, 'type': 'unknown', 'name': 'Unknown'})
@@ -716,7 +716,7 @@ async def check_subscription_commitment(subscription_id: str) -> dict:
         }
 
 async def is_user_on_highest_tier(user_id: str) -> bool:
-    """Check if user is on the highest subscription tier (Serious Business)."""
+    """Check if user is on the highest subscription tier (Supremely Serious)."""
     try:
         subscription = await get_user_subscription(user_id)
         if not subscription:
@@ -730,7 +730,7 @@ async def is_user_on_highest_tier(user_id: str) -> bool:
         
         logger.info(f"User {user_id} subscription price_id: {price_id}")
         
-        # Check if it's the highest tier price ID (Serious Business only)
+        # Check if it's the highest tier price ID (Supremely Serious only)
         highest_tier_price_ids = [
             config.STRIPE_TIER_SERIOUS_BUSINESS_ID,  # Monthly highest tier
             config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID,  # Yearly highest tier
