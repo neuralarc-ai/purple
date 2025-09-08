@@ -98,6 +98,26 @@ class EmailService:
             logger.error(f"Error encoding image {image_path}: {str(e)}")
             return None
 
+    def _get_hosted_image_url(self, image_path: str) -> Optional[str]:
+        """
+        Get hosted URL for image (alternative to base64 embedding).
+        
+        Args:
+            image_path: Path to the image file
+            
+        Returns:
+            Hosted URL or None if not available
+        """
+        try:
+            # For production, you might want to upload images to a CDN
+            # For now, we'll use the base64 approach
+            # This method can be extended to upload to S3, Cloudinary, etc.
+            base_url = os.getenv('FRONTEND_URL', 'https://he2.ai')
+            return f"{base_url}/images/Mail.png"
+        except Exception as e:
+            logger.error(f"Error getting hosted image URL for {image_path}: {str(e)}")
+            return None
+
     def send_welcome_email(self, user_email: str, user_name: str) -> Dict[str, Any]:
         """
         Send welcome email to newly onboarded user.
@@ -158,12 +178,25 @@ class EmailService:
                 "Content-Type": "application/json"
             }
             
+            # Get base64 encoded image for embedding
+            image_base64 = self._get_image_base64("frontend/public/images/Mail.png")
+            
             payload = {
                 "from": f"{self.from_name} <{self.from_email}>",
                 "to": [to_email],
                 "subject": subject,
                 "html": html_content
             }
+            
+            # Add image as attachment if available
+            if image_base64:
+                payload["attachments"] = [
+                    {
+                        "filename": "Mail.png",
+                        "content": image_base64,
+                        "content_type": "image/png"
+                    }
+                ]
             
             async def send_request():
                 async with httpx.AsyncClient() as client:
@@ -200,10 +233,10 @@ class EmailService:
             }
     
     def _send_via_smtp(self, to_email: str, subject: str, html_content: str, text_content: str) -> Dict[str, Any]:
-        """Send email via SMTP with proper image attachment."""
+        """Send email via SMTP with embedded images."""
         try:
-            # Create message with mixed content for attachments
-            msg = MIMEMultipart('mixed')
+            # Create message with alternative content (text and html)
+            msg = MIMEMultipart('alternative')
             msg['From'] = f"{self.from_name} <{self.from_email}>"
             msg['To'] = to_email
             msg['Subject'] = subject
@@ -211,28 +244,11 @@ class EmailService:
             msg['Return-Path'] = self.from_email
             msg['Message-ID'] = f"<{os.urandom(16).hex()}@he2.ai>"
             
-            # Create alternative container for text and html
-            msg_alternative = MIMEMultipart('alternative')
-            
             # Attach text and html parts
             text_part = MIMEText(text_content, 'plain')
             html_part = MIMEText(html_content, 'html')
-            msg_alternative.attach(text_part)
-            msg_alternative.attach(html_part)
-            
-            # Attach the alternative container
-            msg.attach(msg_alternative)
-            
-            # Add image as attachment with Content-ID
-            image_path = self._get_image_path("frontend/public/images/Mail.png")
-            if image_path and os.path.exists(image_path):
-                with open(image_path, 'rb') as f:
-                    img_data = f.read()
-                
-                image = MIMEImage(img_data)
-                image.add_header('Content-ID', '<welcome_image>')
-                image.add_header('Content-Disposition', 'inline', filename='welcome.png')
-                msg.attach(image)
+            msg.attach(text_part)
+            msg.attach(html_part)
             
             # Send email
             with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
@@ -259,13 +275,17 @@ class EmailService:
         """Create HTML version of welcome email with custom template."""
         first_name = user_name.split()[0] if user_name else "there"
         
-        # Create image HTML using Content-ID reference
-        image_html = """
+        # Get base64 encoded image for direct embedding
+        image_base64 = self._get_image_base64("frontend/public/images/Mail.png")
+        
+        # Create image HTML using base64 data URI
+        if image_base64:
+            image_html = f"""
                 <div class="header-image" style="text-align: center; margin-bottom: 30px;">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
                         <tr>
                             <td>
-                                <img src="cid:welcome_image" 
+                                <img src="data:image/png;base64,{image_base64}" 
                                      alt="Welcome to Helium" 
                                      style="max-width: 100%; 
                                             height: auto; 
@@ -277,6 +297,15 @@ class EmailService:
                             </td>
                         </tr>
                     </table>
+                </div>
+            """
+        else:
+            # Fallback if image not found
+            image_html = """
+                <div class="header-image" style="text-align: center; margin-bottom: 30px;">
+                    <div style="font-size: 24px; color: #333; font-weight: bold;">
+                        Welcome to Helium
+                    </div>
                 </div>
             """
         
