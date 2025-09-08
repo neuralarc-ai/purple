@@ -308,17 +308,11 @@ class EmailService:
         """Create HTML version of welcome email with custom template."""
         first_name = user_name.split()[0] if user_name else "there"
         
-        # Get hosted image URL (robust production solution)
-        image_url = self._get_hosted_image_url("frontend/public/images/Mail.png")
+        # Use direct image URL (robust production solution)
+        image_url = "https://he2.ai/images/Mail.png"
         
-        # Verify image URL is accessible
-        if image_url and not self._verify_image_url(image_url):
-            logger.warning(f"Image URL not accessible, falling back to text: {image_url}")
-            image_url = None
-        
-        # Create image HTML using hosted URL
-        if image_url:
-            image_html = f"""
+        # Create image HTML using direct URL
+        image_html = f"""
                 <div class="header-image" style="text-align: center; margin-bottom: 30px;">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
                         <tr>
@@ -335,15 +329,6 @@ class EmailService:
                             </td>
                         </tr>
                     </table>
-                </div>
-            """
-        else:
-            # Fallback if image not found
-            image_html = """
-                <div class="header-image" style="text-align: center; margin-bottom: 30px;">
-                    <div style="font-size: 24px; color: #333; font-weight: bold;">
-                        Welcome to Helium
-                    </div>
                 </div>
             """
         
