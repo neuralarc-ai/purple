@@ -26,7 +26,14 @@ class EmailService:
         self.smtp_port = int(os.getenv('SMTP_PORT', '587'))
         self.smtp_username = os.getenv('SMTP_USER') or os.getenv('SMTP_USERNAME')  # Support both variable names
         self.smtp_password = os.getenv('SMTP_PASSWORD')
-        self.from_email = os.getenv('FROM_EMAIL') or os.getenv('SENDER_EMAIL', 'onboarding@he2.ai')
+        # Use neuralarc.ai credentials for production
+        env_mode = os.getenv('NEXT_PUBLIC_ENV_MODE', 'PRODUCTION').upper()
+        if env_mode == 'PRODUCTION':
+            # Use neuralarc.ai for production
+            self.from_email = 'dev@neuralarc.ai'
+        else:
+            # Use environment variable or default for development
+            self.from_email = os.getenv('FROM_EMAIL') or os.getenv('SENDER_EMAIL', 'dev@neuralarc.ai')
         self.from_name = os.getenv('FROM_NAME', 'Team Helium')
         
         # Determine which provider to use
@@ -100,7 +107,7 @@ class EmailService:
 
     def _get_hosted_image_url(self, image_path: str) -> Optional[str]:
         """
-        Get hosted URL for image (alternative to base64 embedding).
+        Get hosted URL for image (robust production solution).
         
         Args:
             image_path: Path to the image file
@@ -109,14 +116,53 @@ class EmailService:
             Hosted URL or None if not available
         """
         try:
-            # For production, you might want to upload images to a CDN
-            # For now, we'll use the base64 approach
-            # This method can be extended to upload to S3, Cloudinary, etc.
-            base_url = os.getenv('FRONTEND_URL', 'https://he2.ai')
-            return f"{base_url}/images/Mail.png"
+            # Get environment-specific frontend URL
+            env_mode = os.getenv('NEXT_PUBLIC_ENV_MODE', 'PRODUCTION').upper()
+            
+            if env_mode == 'LOCAL':
+                base_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+            elif env_mode == 'STAGING':
+                base_url = os.getenv('FRONTEND_URL', 'https://staging.he2.ai')
+            else:  # PRODUCTION
+                base_url = os.getenv('FRONTEND_URL', 'https://he2.ai')
+            
+            # Extract filename from path
+            filename = os.path.basename(image_path)
+            hosted_url = f"{base_url}/images/{filename}"
+            
+            logger.info(f"Generated hosted image URL: {hosted_url}")
+            return hosted_url
+            
         except Exception as e:
             logger.error(f"Error getting hosted image URL for {image_path}: {str(e)}")
             return None
+
+    def _verify_image_url(self, image_url: str) -> bool:
+        """
+        Verify that the image URL is accessible.
+        
+        Args:
+            image_url: URL to verify
+            
+        Returns:
+            True if accessible, False otherwise
+        """
+        try:
+            import httpx
+            import asyncio
+            
+            async def check_url():
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    response = await client.head(image_url)
+                    return response.status_code == 200
+            
+            result = asyncio.run(check_url())
+            logger.info(f"Image URL verification: {image_url} - {'OK' if result else 'FAILED'}")
+            return result
+            
+        except Exception as e:
+            logger.warning(f"Could not verify image URL {image_url}: {str(e)}")
+            return False
 
     def send_welcome_email(self, user_email: str, user_name: str) -> Dict[str, Any]:
         """
@@ -178,25 +224,12 @@ class EmailService:
                 "Content-Type": "application/json"
             }
             
-            # Get base64 encoded image for embedding
-            image_base64 = self._get_image_base64("frontend/public/images/Mail.png")
-            
             payload = {
                 "from": f"{self.from_name} <{self.from_email}>",
                 "to": [to_email],
                 "subject": subject,
                 "html": html_content
             }
-            
-            # Add image as attachment if available
-            if image_base64:
-                payload["attachments"] = [
-                    {
-                        "filename": "Mail.png",
-                        "content": image_base64,
-                        "content_type": "image/png"
-                    }
-                ]
             
             async def send_request():
                 async with httpx.AsyncClient() as client:
@@ -275,17 +308,22 @@ class EmailService:
         """Create HTML version of welcome email with custom template."""
         first_name = user_name.split()[0] if user_name else "there"
         
-        # Get base64 encoded image for direct embedding
-        image_base64 = self._get_image_base64("frontend/public/images/Mail.png")
+        # Get hosted image URL (robust production solution)
+        image_url = self._get_hosted_image_url("frontend/public/images/Mail.png")
         
-        # Create image HTML using base64 data URI
-        if image_base64:
+        # Verify image URL is accessible
+        if image_url and not self._verify_image_url(image_url):
+            logger.warning(f"Image URL not accessible, falling back to text: {image_url}")
+            image_url = None
+        
+        # Create image HTML using hosted URL
+        if image_url:
             image_html = f"""
                 <div class="header-image" style="text-align: center; margin-bottom: 30px;">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto;">
                         <tr>
                             <td>
-                                <img src="data:image/png;base64,{image_base64}" 
+                                <img src="{image_url}" 
                                      alt="Welcome to Helium" 
                                      style="max-width: 100%; 
                                             height: auto; 
