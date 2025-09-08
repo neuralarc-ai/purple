@@ -204,8 +204,9 @@ export function ExposePortToolView({
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-md font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2 mb-3 break-all max-w-full"
+                              title={effectivePermanentUrl}
                             >
-                              {effectivePermanentUrl}
+                              Click here to open Link
                               <ExternalLink className="flex-shrink-0 h-3.5 w-3.5" />
                             </a>
                             {/* Permanent link info message (mirrors temporary style) */}
@@ -231,8 +232,9 @@ export function ExposePortToolView({
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-md font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2 mb-3 break-all max-w-full"
+                              title={finalTemporaryUrl}
                             >
-                              {finalTemporaryUrl}
+                              Click here to open Link
                               <ExternalLink className="flex-shrink-0 h-3.5 w-3.5" />
                             </a>
                           </>
