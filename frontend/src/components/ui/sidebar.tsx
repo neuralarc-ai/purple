@@ -249,7 +249,7 @@ function Sidebar({
       {shouldOverlay && (
         <div
           className={cn(
-            'fixed inset-0 bg-black/30',
+            'fixed inset-0 bg-black/30 backdrop-blur-[0.5px]',
             shouldLowerZIndex ? 'z-0' : 'z-40'
           )}
           onClick={() => setOpen(false)}
