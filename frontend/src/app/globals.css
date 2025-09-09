@@ -10,6 +10,7 @@
   --color-helium-yellow: var(--helium-yellow);
   --color-helium-blue: var(--helium-blue);
   --color-helium-teal: var(--helium-teal);
+  --color-helium-orange: var(--helium-orange);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
@@ -292,6 +293,7 @@
   --helium-blue: oklch(0.5608 0.2416 270.34);
   --helium-green: oklch(0.9024 0.2346 134.77);
   --helium-teal: oklch(0.7197 0.1217 174.92);
+  --helium-orange: oklch(0.6514 0.193 30.11);
 }
 
 .dark {
@@ -331,6 +333,7 @@
   --helium-blue: oklch(0.5608 0.2416 270.34);
   --helium-green: oklch(0.9024 0.2346 134.77);
   --helium-teal: oklch(0.7197 0.1217 174.92);
+  --helium-orange: oklch(0.6514 0.193 30.11);
 }
 
 /* Custom scrollbar hiding utilities */
@@ -819,7 +822,6 @@
     mix-blend-mode: normal;
 }
 
-
 @media (max-width: 512px) {
   .project-ellipsis {
     max-width: 160px;  /* adjust as needed */
@@ -843,7 +845,7 @@
   * {
     min-width: 0; /* prevent child from forcing overflow */
   }
-  
+
   /* Chat input container styles */
   .dashboard-chat-input .flex.items-center.justify-between {
     display: flex;
@@ -859,21 +861,21 @@
     max-width: 100%;
     box-sizing: border-box;
   }
-  
+
   .dashboard-chat-input .flex.items-center.justify-between::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
-  
+
   .dashboard-chat-input .flex.items-center.justify-between::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
-  
+
   .dashboard-chat-input .flex.items-center.gap-2 {
     flex-wrap: nowrap;
     gap: 0.25rem;
     min-width: max-content;
   }
-  
+
   .dashboard-chat-input button {
     min-width: 2rem;
     height: 2rem;
@@ -882,54 +884,52 @@
     white-space: nowrap;
     font-size: 0.8rem;
   }
-  
+
   .dashboard-chat-input .flex.items-center.gap-2 > button,
   .dashboard-chat-input .flex.items-center.gap-2 > div {
     margin: 0 !important;
   }
-  
+
   /* Styles for screens below 420px */
   @media (max-width: 420px) {
     .dashboard-chat-input .agent-selector .flex.items-center.gap-2 {
       max-width: 120px;
     }
-    
+
     .dashboard-chat-input .agent-selector span {
       display: none;
     }
-    
+
     .dashboard-chat-input button {
       min-width: 2rem;
       width: auto;
       padding: 0 0.5rem;
     }
-    
+
     .dashboard-chat-input .flex.items-center.gap-2 {
       gap: 0.25rem;
     }
-    
+
     /* Hide text in buttons on small screens */
     .dashboard-chat-input .btn-text {
       display: none;
     }
-    
+
     /* Ensure the send button stays on the right */
     .dashboard-chat-input .flex.items-center.gap-2:last-child {
       margin-left: auto;
     }
-    
+
     /* Adjust the agent selector button */
     .dashboard-chat-input .agent-selector button {
       padding: 0 0.5rem;
       min-width: auto;
     }
-    
+
     /* Ensure the plus icon has proper spacing */
     .dashboard-chat-input .agent-selector svg:last-child {
       margin-left: 0;
     }
   }
 }
-
-
 
