@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Markdown } from '@/components/ui/markdown-optimized';
+import { OverflowHandler } from './OverflowHandler';
 
 interface ComposioUrlDetectorProps {
   content: string;
   className?: string;
+  enableOverflowHandling?: boolean;
 }
 
 interface ComposioUrl {
@@ -263,7 +265,7 @@ const ComposioConnectButton: React.FC<ComposioConnectButtonProps> = ({
                     Sign in to {displayName}
                 </h3>
               </div>
-              <p className="text-xs text-zinc-600 dark:text-zinc-400 -mt-1">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 -mt-1 break-words">
                 Click to authorize access to your {displayName} account
               </p>
             </div>
@@ -284,15 +286,18 @@ const ComposioConnectButton: React.FC<ComposioConnectButtonProps> = ({
 
 export const ComposioUrlDetector: React.FC<ComposioUrlDetectorProps> = ({ 
   content, 
-  className 
+  className,
+  enableOverflowHandling = false
 }) => {
   const composioUrls = detectComposioUrls(content);
 
   if (composioUrls.length === 0) {
     return (
-      <Markdown className={className}>
-        {content}
-      </Markdown>
+      <OverflowHandler content={content} enableOverflowHandling={enableOverflowHandling}>
+        <Markdown className={className}>
+          {content}
+        </Markdown>
+      </OverflowHandler>
     );
   }
 
@@ -314,9 +319,11 @@ export const ComposioUrlDetector: React.FC<ComposioUrlDetectorProps> = ({
 
       if (cleanedTextBefore.trim()) {
         contentParts.push(
-          <Markdown key={`text-${index}`} className={className}>
-            {cleanedTextBefore}
-          </Markdown>
+          <OverflowHandler key={`text-${index}`} content={cleanedTextBefore} enableOverflowHandling={enableOverflowHandling}>
+            <Markdown className={className}>
+              {cleanedTextBefore}
+            </Markdown>
+          </OverflowHandler>
         );
       }
     }
@@ -337,7 +344,7 @@ export const ComposioUrlDetector: React.FC<ComposioUrlDetectorProps> = ({
     const remainingText = content.substring(lastIndex);
     if (remainingText.trim()) {
       contentParts.push(
-        <Markdown key="text-final" className={className}>
+        <Markdown key="text-final" className={className} enableOverflowHandling={enableOverflowHandling}>
           {remainingText}
         </Markdown>
       );

@@ -880,8 +880,7 @@ export default function ThreadPage({
         
         <ThreadContent
           messages={messages}
-          // isSidePanelOpen={isSidePanelOpen}
-          //leftSidebarState={leftSidebarState}
+          isSidePanelOpen={isSidePanelOpen}
           streamingTextContent={streamingTextContent}
           streamingToolCall={streamingToolCall}
           agentStatus={agentStatus}
@@ -945,17 +944,12 @@ export default function ThreadPage({
           className={cn(
             'fixed bottom-6 z-20  bg-gradient-to-t from-background via-background/90 to-transparent pt-0',
             'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
-            leftSidebarState === 'expanded'
-              ? 'left-[72px] md:left-[256px]'
-              : isSidePanelOpen
-                ? 'left-[53px]'
-                : 'left-[50px]',
-            isSidePanelOpen
-              ? leftSidebarState === 'expanded'
-                ? 'right-[45vw] 2xl:right-[40.5vw] xl:right-[40.5vw] lg:right-[43vw]'
-                : 'right-[46vw]'
-              : 'right-0',
-            isMobile ? 'left-0 right-0 pb-0 pt-0' : '',
+            {
+              'left-0 right-0 pb-3': isMobile,
+              'left-[72px] md:left-[256px] right-0': leftSidebarState === 'expanded' && !isMobile && !isSidebarOverlaying,
+              'left-[53px] right-0': isSidePanelOpen && !isMobile && leftSidebarState !== 'expanded',
+              'left-10 right-0': !isSidePanelOpen && !isMobile || (leftSidebarState === 'expanded' && isSidebarOverlaying),
+            }
           )}
           style={
             isSidePanelOpen && !isMobile && panelWidth
@@ -966,8 +960,10 @@ export default function ThreadPage({
               : undefined
           }
         >
-          <div
+         <div
             className={cn(
+              'flex justify-center px-0',
+              isMobile ? 'px-3' : 'px-8',
               'flex justify-center w-full',
               isMobile ? 'px-3' : 'px-6',
               isSidePanelOpen && !isMobile && 'pr-0' // Remove right padding when panel is open since we're adding it to the parent
@@ -975,6 +971,8 @@ export default function ThreadPage({
           >
             <div
               className={cn(
+                'w-full',
+                isSidePanelOpen ? 'max-w-4xl' : 'max-w-4xl',
                 'w-full max-w-4xl',
                 isSidePanelOpen && !isMobile && 'pr-6' // Add right padding to the content
               )}
