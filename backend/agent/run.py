@@ -318,6 +318,43 @@ IMPORTANT: Always reference and utilize the knowledge base information above whe
                 logger.error(f"Error retrieving knowledge base context for agent {agent_config.get('agent_id', 'unknown')}: {e}")
                 # Continue without knowledge base context rather than failing
         
+        # Add smart user DAGAD context if available (context-aware, not always)
+        if client and user_input:
+            try:
+                # Resolve user/account id from thread
+                account_id = await get_account_id_from_thread(client, thread_id)
+                # Build small recent thread context for relevance
+                messages_result = await client.table('messages').select('content').eq('thread_id', thread_id).order('created_at', desc=True).limit(5).execute()
+                context_parts: List[str] = []
+                for m in messages_result.data or []:
+                    content = m.get('content', '')
+                    if isinstance(content, dict):
+                        content = content.get('content', '')
+                    if content:
+                        context_parts.append(str(content)[:200])
+                thread_context_str = ' '.join(context_parts)
+
+                if account_id:
+                    dagad_result = await client.rpc('get_smart_user_dagad_context', {
+                        'p_user_id': account_id,
+                        'p_user_input': user_input,
+                        'p_thread_context': thread_context_str,
+                        'p_max_tokens': 2000
+                    }).execute()
+
+                    if dagad_result.data and isinstance(dagad_result.data, str) and dagad_result.data.strip():
+                        dagad_section = f"""
+
+=== USER PREFERENCES & INSTRUCTIONS ===
+{dagad_result.data}
+=== END USER PREFERENCES & INSTRUCTIONS ===
+"""
+                        system_content += dagad_section
+                    else:
+                        logger.debug("No relevant DAGAD context for this turn")
+            except Exception as e:
+                logger.error(f"Error retrieving DAGAD context: {e}")
+
         if agent_config and (agent_config.get('configured_mcps') or agent_config.get('custom_mcps')) and mcp_wrapper_instance and mcp_wrapper_instance._initialized:
             mcp_info = "\n\n--- MCP Tools Available ---\n"
             mcp_info += "You have access to external MCP (Model Context Protocol) server tools.\n"

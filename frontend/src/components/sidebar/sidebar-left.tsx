@@ -288,6 +288,36 @@ export function SidebarLeft({
               </span>
             </SidebarMenuButton>
           </Link>
+          <Link href="/dagad">
+            <SidebarMenuButton
+              className={cn('touch-manipulation', {
+                'bg-accent px-4 text-accent-foreground font-medium':
+                  pathname === '/dagad',
+              })}
+              onClick={() => {
+                if (isMobile) setOpenMobile(false);
+              }}
+              tooltip="DAGAD"
+            >
+              <Image
+                src="/icons/notes-dark.svg"
+                alt="DAGAD"
+                width={20}
+                height={20}
+                className="mr-1 hidden dark:block"
+              />
+              <Image
+                src="/icons/notes-light.svg"
+                alt="DAGAD"
+                width={20}
+                height={20}
+                className="mr-1 block dark:hidden"
+              />
+              <span className="flex items-center justify-between w-full">
+                DAGAD
+              </span>
+            </SidebarMenuButton>
+          </Link>
           {!flagsLoading && customAgentsEnabled && (
             <Link href="/agents?tab=my-agents">
               <SidebarMenuButton
