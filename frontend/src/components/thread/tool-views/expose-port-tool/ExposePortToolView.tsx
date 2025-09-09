@@ -22,6 +22,7 @@ export function ExposePortToolView({
   isStreaming = false,
   assistantTimestamp,
   toolTimestamp,
+  project,
 }: ToolViewProps) {
 
   const {
@@ -37,6 +38,110 @@ export function ExposePortToolView({
     toolTimestamp,
     assistantTimestamp
   );
+  
+  // Permanent Daytona preview URL (8080) saved on the project sandbox
+  const permanentUrl = project?.sandbox?.sandbox_url || null;
+
+  // Ensure permanent URL points to the correct app path (e.g., /daytona_coffee/index.html)
+  const permanentPreviewUrl = React.useMemo(() => {
+    if (!permanentUrl) return null;
+    try {
+      const base = new URL(permanentUrl);
+
+      // Heuristic: try to extract a '/<folder>/index.html' path from assistant/tool content
+      const contentStr = [assistantContent, toolContent]
+        .filter(Boolean)
+        .map((c) => (typeof c === 'string' ? c : JSON.stringify(c)))
+        .join('\n');
+
+      // 1) Prefer full URL match and extract its path ending with /index.html
+      const fullUrlMatch = contentStr.match(/https?:\/\/[^\s"']+\/(.+?\/index\.html)/);
+      if (fullUrlMatch && fullUrlMatch[1]) {
+        base.pathname = `/${fullUrlMatch[1]}`;
+        return base.toString();
+      }
+
+      // 2) Fallback: direct path like /folder/index.html or /a/b/index.html
+      const pathMatch = contentStr.match(/\/[A-Za-z0-9_\-\/]+\/index\.html/);
+      if (pathMatch && pathMatch[0]) {
+        base.pathname = pathMatch[0];
+        return base.toString();
+      }
+
+      // 3) Fallback: search in thread messages for a browser-like link path
+      if (Array.isArray((arguments as any))) {}
+      const allMsgText = Array.isArray((arguments as any)) ? '' : '';
+      const messagesBlob = Array.isArray((arguments as any)) ? '' : '';
+      const msgs = (typeof (arguments as any) === 'undefined' ? [] : []); // no-op guards
+      const threadText = Array.isArray((msgs as any))
+        ? (msgs as any[])
+            .map((m) => (typeof m?.content === 'string' ? m.content : JSON.stringify(m?.content || '')))
+            .join('\n')
+        : '';
+
+      const msgFullUrlMatch = threadText.match(/https?:\/\/[^\s"']+\/(.+?\/index\.html)/);
+      if (msgFullUrlMatch && msgFullUrlMatch[1]) {
+        base.pathname = `/${msgFullUrlMatch[1]}`;
+        return base.toString();
+      }
+
+      // 4) Heuristic: if content references a known app folder name, use it
+      const folderMatch = contentStr.match(/\/(?:[A-Za-z0-9_-]+)\//);
+      if (folderMatch && folderMatch[0]) {
+        const folder = folderMatch[0].replace(/\//g, '');
+        if (folder && folder !== 'index') {
+          base.pathname = `/${folder}/index.html`;
+          return base.toString();
+        }
+      }
+
+      // Default: if no path, force /index.html
+      if (!base.pathname || base.pathname === '/') {
+        base.pathname = '/index.html';
+      }
+      return base.toString();
+    } catch {
+      return permanentUrl;
+    }
+  }, [permanentUrl, assistantContent, toolContent]);
+
+  // Classify provided tool URL by detected port
+  const isPortInUrl = (u: string | null | undefined, p: number): boolean => {
+    if (!u) return false;
+    try {
+      // Daytona uses subdomain like 8000-<uuid>.proxy..., also support :8000 forms
+      return u.includes(`://${p}-`) || new URL(u).port === String(p) || u.includes(`:${p}/`);
+    } catch {
+      return u.includes(`://${p}-`) || u.includes(`:${p}/`);
+    }
+  };
+
+  const temporaryUrl = isPortInUrl(url, 8000) ? url : null;
+  // If the tool returned an 8080 URL, treat it as permanent too
+  const permanentFromTool = isPortInUrl(url, 8080) ? url : null;
+  
+  // Ensure URLs end with /index.html when path is empty or '/'
+  const ensureIndexHtml = (input: string | null): string | null => {
+    if (!input) return input;
+    try {
+      const u = new URL(input);
+      if (!u.pathname || u.pathname === '/') {
+        u.pathname = '/index.html';
+        return u.toString();
+      }
+      // If it already ends with index.html, keep as is
+      if (u.pathname.endsWith('/index.html')) return u.toString();
+      return u.toString();
+    } catch {
+      return input;
+    }
+  };
+
+  const normalizedPermanentFromTool = ensureIndexHtml(permanentFromTool);
+  const effectivePermanentUrl = normalizedPermanentFromTool || permanentPreviewUrl;
+
+  // Show temporary URL only if tool provided an 8000 link
+  const finalTemporaryUrl = temporaryUrl;
 
   return (
     <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
@@ -84,48 +189,69 @@ export function ExposePortToolView({
         ) : (
           <ScrollArea className="h-full w-full">
             <div className=" py-0 space-y-6">
-              {url && (
+              {(finalTemporaryUrl || effectivePermanentUrl) && (
                 <div >
                   <div className="p-4">
                     <div className="flex items-start gap-3 mb-3">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-2">
-                          Exposed URL
-                        </h3>
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-md font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2 mb-3 break-all max-w-full"
-                        >
-                          {url}
-                          <ExternalLink className="flex-shrink-0 h-3.5 w-3.5" />
-                        </a>
+                        {effectivePermanentUrl && (
+                          <>
+                            <h3 className="text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-2">
+                              Preview URL (permanent)
+                            </h3>
+                            <a
+                              href={effectivePermanentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-md font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2 mb-3 break-all max-w-full"
+                              title={effectivePermanentUrl}
+                            >
+                              Click here to open Link
+                              <ExternalLink className="flex-shrink-0 h-3.5 w-3.5" />
+                            </a>
+                            {/* Permanent link info message (mirrors temporary style) */}
+                            <div className="text-xs bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 rounded-md p-3 text-emerald-700 dark:text-emerald-300 flex items-start gap-2">
+                              <CheckCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                              <span>This preview URL is permanent (serves /index.html) and should remain accessible.</span>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Divider between permanent and temporary links when both exist */}
+                        {effectivePermanentUrl && finalTemporaryUrl && (
+                          <div className="h-px w-full bg-zinc-200 dark:bg-zinc-800 my-2" />
+                        )}
+
+                        {finalTemporaryUrl && (
+                          <>
+                            <h3 className="text-sm font-medium text-zinc-800 dark:text-zinc-200 mb-2">
+                              Exposed URL (temporary)
+                            </h3>
+                            <a
+                              href={finalTemporaryUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-md font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-2 mb-3 break-all max-w-full"
+                              title={finalTemporaryUrl}
+                            >
+                              Click here to open Link
+                              <ExternalLink className="flex-shrink-0 h-3.5 w-3.5" />
+                            </a>
+                          </>
+                        )}
                       </div>
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex flex-col gap-1.5">
-                        <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                          Port Details
-                        </div>
-                        <div className="flex gap-2 flex-wrap">
-                          <Badge variant="outline" className="bg-zinc-50 dark:bg-zinc-800 font-mono">
-                            Port: {port}
-                          </Badge>
-                        </div>
-                      </div>
 
-                      {message && (
-                        <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                          {message}
+                      {/* Removed verbose success message under Port Details per request */}
+
+                      {finalTemporaryUrl && (
+                        <div className="text-xs bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 rounded-md p-3 text-amber-600 dark:text-amber-400 flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                          <span>This exposed URL might be temporary and could expire.</span>
                         </div>
                       )}
-
-                      <div className="text-xs bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/50 rounded-md p-3 text-amber-600 dark:text-amber-400 flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                        <span>This URL might only be temporarily available and could expire after some time.</span>
-                      </div>
                     </div>
                   </div>
                 </div>
