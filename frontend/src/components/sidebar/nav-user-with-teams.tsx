@@ -13,7 +13,6 @@ import { useAccounts } from '@/hooks/use-accounts';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
 import NewTeamForm from '@/components/basejump/new-team-form';
 import { agentApi } from '@/lib/api-enhanced';
-import BoringAvatar from 'boring-avatars';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -121,7 +120,7 @@ export function NavUserWithTeams({
   // Debug: Log profile data to see what's being fetched
   React.useEffect(() => {
     console.log('NavUserWithTeams - Profile data:', profile);
-    console.log('NavUserWithTeams - Profile avatar:', profile?.avatar);
+    console.log('NavUserWithTeams - Profile avatar_url:', profile?.avatar_url);
   }, [profile]);
   
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
@@ -265,31 +264,19 @@ export function NavUserWithTeams({
     <>
       <SidebarMenu>
         <SidebarMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                {profile?.avatar ? (
-                  <div className="h-8 w-8 rounded-lg overflow-hidden">
-                    {profile.avatar.startsWith('{') ? (
-                      <BoringAvatar
-                        name={preferredName || user.name}
-                        colors={JSON.parse(profile.avatar).colors}
-                        variant="beam"
-                        size={32}
-                      />
-                    ) : (
-                      <Avatar className="h-8 w-8 rounded-lg">
-                        <AvatarImage src={profile.avatar} alt={preferredName || user.name} />
-                        <AvatarFallback className="rounded-lg">
-                          {getInitials(preferredName || user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                  </div>
+                {profile?.avatar_url ? (
+                  <Avatar className="h-8 w-8 rounded-lg">
+                    <AvatarImage src={profile.avatar_url} alt={preferredName || user.name} />
+                    <AvatarFallback className="rounded-lg">
+                      {getInitials(preferredName || user.name)}
+                    </AvatarFallback>
+                  </Avatar>
                 ) : user.avatar ? (
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage src={user.avatar} alt={preferredName || user.name} />
@@ -311,24 +298,13 @@ export function NavUserWithTeams({
                 {/* Show user avatar in collapsed state, more icon in expanded state */}
                 <div className="ml-auto group-data-[collapsible=icon]:mr-2">
                   <div className="group-data-[collapsible=icon]:block hidden">
-                    {profile?.avatar ? (
-                      <div className="h-6 w-6 rounded-lg overflow-hidden">
-                        {profile.avatar.startsWith('{') ? (
-                          <BoringAvatar
-                            name={preferredName || user.name}
-                            colors={JSON.parse(profile.avatar).colors}
-                            variant="beam"
-                            size={24}
-                          />
-                        ) : (
-                          <Avatar className="h-6 w-6 rounded-lg">
-                            <AvatarImage src={profile.avatar} alt={preferredName || user.name} />
-                            <AvatarFallback className="rounded-lg text-xs">
-                              {getInitials(preferredName || user.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
+                    {profile?.avatar_url ? (
+                      <Avatar className="h-6 w-6 rounded-lg">
+                        <AvatarImage src={profile.avatar_url} alt={preferredName || user.name} />
+                        <AvatarFallback className="rounded-lg text-xs">
+                          {getInitials(preferredName || user.name)}
+                        </AvatarFallback>
+                      </Avatar>
                     ) : user.avatar ? (
                       <Avatar className="h-6 w-6 rounded-lg">
                         <AvatarImage src={user.avatar} alt={preferredName || user.name} />
