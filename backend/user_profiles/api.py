@@ -14,14 +14,14 @@ class UserProfileCreate(BaseModel):
     preferred_name: str
     work_description: str
     personal_references: Optional[str] = None
-    avatar: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     preferred_name: Optional[str] = None
     work_description: Optional[str] = None
     personal_references: Optional[str] = None
-    avatar: Optional[str] = None
+    avatar_url: Optional[str] = None
 
 class OnboardingData(BaseModel):
     terms_accepted: bool
@@ -42,7 +42,7 @@ class UserProfileResponse(BaseModel):
     preferred_name: str
     work_description: str
     personal_references: Optional[str] = None
-    avatar: Optional[str] = None
+    avatar_url: Optional[str] = None
     referral_source: Optional[str] = None
     consent_given: Optional[bool] = None
     consent_date: Optional[datetime] = None
@@ -110,7 +110,7 @@ async def create_user_profile(
             'preferred_name': profile_data.preferred_name.strip(),
             'work_description': profile_data.work_description,
             'personal_references': profile_data.personal_references.strip() if profile_data.personal_references else None,
-            'avatar': profile_data.avatar
+            'avatar_url': profile_data.avatar_url
         }
         
         logger.info(f"Attempting to insert profile record: {profile_record}")
@@ -179,8 +179,8 @@ async def update_user_profile(
             update_data['work_description'] = profile_data.work_description
         if profile_data.personal_references is not None:
             update_data['personal_references'] = profile_data.personal_references.strip()
-        if profile_data.avatar is not None:
-            update_data['avatar'] = profile_data.avatar
+        if profile_data.avatar_url is not None:
+            update_data['avatar_url'] = profile_data.avatar_url
         
         logger.info(f"Prepared update data: {update_data}")
         
@@ -497,7 +497,7 @@ async def test_schema():
                     "message": "Schema check successful",
                     "table_exists": True,
                     "columns": columns,
-                    "has_avatar": 'avatar' in columns,
+                    "has_avatar_url": 'avatar_url' in columns,
                     "sample_record": sample_record
                 }
             else:
@@ -505,7 +505,7 @@ async def test_schema():
                     "message": "Table exists but no data",
                     "table_exists": True,
                     "columns": [],
-                    "has_avatar": False,
+                    "has_avatar_url": False,
                     "sample_record": None
                 }
                 
@@ -526,50 +526,50 @@ async def test_schema():
 
 @router.get("/test-avatar")
 async def test_avatar():
-    """Test endpoint to verify avatar field functionality."""
+    """Test endpoint to verify avatar_url field functionality."""
     try:
         db = DBConnection()
         client = await db.client
         
-        # Test if we can insert and retrieve avatar data
+        # Test if we can insert and retrieve avatar_url data
         try:
             test_user_id = '123e4567-e89b-12d3-a456-426614174000'  # Dummy UUID
             
-            # Test insert with avatar
+            # Test insert with avatar_url
             test_record = {
                 'user_id': test_user_id,
                 'full_name': 'Test User',
                 'preferred_name': 'Test',
                 'work_description': 'Engineering',
-                'avatar': '{"colors": ["#0a0310", "#80007b", "#455bff", "#ffff45", "#96ff45"], "variant": "beam"}'
+                'avatar_url': 'https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-1.png'
             }
             
-            logger.info("Testing avatar insert functionality...")
+            logger.info("Testing avatar_url insert functionality...")
             
             # Try the insert
             insert_result = await client.table('user_profiles').insert(test_record).execute()
-            logger.info(f"Avatar test insert result: {insert_result}")
+            logger.info(f"Avatar URL test insert result: {insert_result}")
             
             if insert_result.data and len(insert_result.data) > 0:
-                # Test fetch with avatar
+                # Test fetch with avatar_url
                 fetch_result = await client.table('user_profiles').select('*').eq('user_id', test_user_id).execute()
-                logger.info(f"Avatar test fetch result: {fetch_result}")
+                logger.info(f"Avatar URL test fetch result: {fetch_result}")
                 
                 # Clean up test data
                 await client.table('user_profiles').delete().eq('user_id', test_user_id).execute()
                 
                 return {
-                    "message": "Avatar functionality test successful",
+                    "message": "Avatar URL functionality test successful",
                     "insert_worked": True,
                     "fetch_worked": True,
-                    "avatar_field_accessible": True
+                    "avatar_url_field_accessible": True
                 }
             else:
                 return {
-                    "message": "Avatar insert test failed",
+                    "message": "Avatar URL insert test failed",
                     "insert_worked": False,
                     "fetch_worked": False,
-                    "avatar_field_accessible": False
+                    "avatar_url_field_accessible": False
                 }
                 
         except Exception as e:
@@ -579,7 +579,7 @@ async def test_avatar():
                 "error": str(e),
                 "insert_worked": False,
                 "fetch_worked": False,
-                "avatar_field_accessible": False
+                "avatar_url_field_accessible": False
             }
     except Exception as e:
         logger.error(f"Avatar test failed: {e}", exc_info=True)
