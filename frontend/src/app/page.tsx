@@ -1,30 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/components/AuthProvider';
-import { Loader2 } from 'lucide-react';
+import HeroSection from '@/components/hero-section-1';
 
-export default function RootPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading) {
-      if (user) {
-        // User is authenticated, redirect to dashboard
-        router.push('/dashboard');
-      } else {
-        // User is not authenticated, redirect to auth
-        router.push('/auth');
-      }
-    }
-  }, [user, isLoading, router]);
-
-  // Show loading state while checking authentication
+export default function HomePage() {
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
+    <main className="min-h-screen">
+      <HeroSection />
+      {/* Additional sections will be added here */}
+    </main>
   );
 }

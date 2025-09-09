@@ -243,12 +243,12 @@ export function renderMarkdownContent(
             <div key={`tool-${match.index}-${index}`} className="my-1">
               <button
                 onClick={() => handleToolClick(messageId, toolName)}
-                className="inline-flex items-center gap-1.5 py-1 px-1 pr-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+                className="inline-flex items-center gap-1.5 py-1 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
               >
-                <div className="border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600">
-                  <IconComponent className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600">
+                  <IconComponent className="h-3 w-3 z-40 text text-muted-foreground flex-shrink-0" />
                 </div>
-                <span className="font-mono text-xs text-foreground">
+                <span className="font-mono text-xs text-accent-foreground font-medium">
                   {getUserFriendlyToolName(toolName)}
                 </span>
                 {paramDisplay && (
@@ -421,7 +421,7 @@ export function renderMarkdownContent(
         <div key={toolCallKey} className="my-1">
           <button
             onClick={() => handleToolClick(messageId, toolName)}
-            className="inline-flex items-center gap-1.5 py-1 px-1 pr-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+            className="inline-flex items-center gap-1.5 py-1 px-2 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
           >
             <div className="border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600">
               <IconComponent className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />

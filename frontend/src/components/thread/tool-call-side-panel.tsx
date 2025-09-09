@@ -1079,7 +1079,7 @@ export function ToolCallSidePanel({
     if (agentStatus === 'running' && !agentRunId && !agentStartTime) {
       // Generate a new agentRunId if we don't have one
       const newAgentRunId = crypto.randomUUID();
-      // console.log('Generated new agentRunId:', newAgentRunId);
+
       setGeneratedAgentRunId(newAgentRunId);
 
       // Create the agent run record immediately
@@ -1092,22 +1092,22 @@ export function ToolCallSidePanel({
     }
   }, [agentStatus, agentRunId, agentStartTime, threadId, createAgentRun]);
 
-  // Timer effect for updating elapsed time
-  React.useEffect(() => {
-    if (!agentStartTime || agentStatus !== 'running') return;
+  // Timer effect for updating elapsed time - DISABLED to reduce load
+  // React.useEffect(() => {
+  //   if (!agentStartTime || agentStatus !== 'running') return;
 
-    const interval = setInterval(() => {
-      setElapsedTime(Date.now() - agentStartTime);
+  //   const interval = setInterval(() => {
+  //     setElapsedTime(Date.now() - agentStartTime);
 
-      // Update heartbeat in database every 5 seconds
-      const runIdToUse = agentRunId || generatedAgentRunId;
-      if (runIdToUse && Date.now() % 5000 < 1000) {
-        updateHeartbeat(runIdToUse);
-      }
-    }, 1000);
+  //     // Update heartbeat in database every 5 seconds
+  //     const runIdToUse = agentRunId || generatedAgentRunId;
+  //     if (runIdToUse && Date.now() % 5000 < 1000) {
+  //       updateHeartbeat(runIdToUse);
+  //     }
+  //   }, 1000);
 
-    return () => clearInterval(interval);
-  }, [agentStartTime, agentStatus, agentRunId, generatedAgentRunId, updateHeartbeat]);
+  //   return () => clearInterval(interval);
+  // }, [agentStartTime, agentStatus, agentRunId, generatedAgentRunId, updateHeartbeat]);
 
   React.useEffect(() => {
     if (!isStreaming) return;
@@ -1156,26 +1156,10 @@ export function ToolCallSidePanel({
                         {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
                         Helium's Core
                       </h2>
-                      {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                        <div className={cn(
-                          "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                          agentStatus === 'running'
-                            ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                            : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                        )}>
-                          {agentStatus === 'running' ? (
-                            <>
-                              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                              <span>
-                                {formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                              <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                            </>
-                          )}
+                      {agentStatus === 'running' && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                          <span>Running</span>
                         </div>
                       )}
                     </div>
@@ -1217,7 +1201,7 @@ export function ToolCallSidePanel({
                   {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
                   Helium's Core
                 </h2>
-                {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
+                {/* {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
                   <div className={cn(
                     "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
                     agentStatus === 'running'
@@ -1236,7 +1220,7 @@ export function ToolCallSidePanel({
                       </>
                     )}
                   </div>
-                )}
+                )} */}
               </div>
               <Button
                 variant="ghost"
@@ -1286,7 +1270,7 @@ export function ToolCallSidePanel({
                     {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
                     Helium's Core
                   </h2>
-                  {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
+                  {/* {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
                     <div className={cn(
                       "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
                       agentStatus === 'running'
@@ -1305,7 +1289,7 @@ export function ToolCallSidePanel({
                         </>
                       )}
                     </div>
-                  )}
+                  )} */}
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 flex items-center gap-1.5">
@@ -1353,7 +1337,7 @@ export function ToolCallSidePanel({
                   {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
                   Helium's Core
                 </h2>
-                {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
+                {/* {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
                   <div className={cn(
                     "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
                     agentStatus === 'running'
@@ -1372,7 +1356,7 @@ export function ToolCallSidePanel({
                       </>
                     )}
                   </div>
-                )}
+                )} */}
               </div>
               <Button
                 variant="ghost"
