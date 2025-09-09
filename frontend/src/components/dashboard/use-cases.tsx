@@ -853,10 +853,11 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
         </div>
       )}
 
-      {/* Show all categories if no specific work description is set */}
-      {shouldShowAllCategories && (
+      {/* Show all categories if no specific work description is set and user has a profile */}
+      {shouldShowAllCategories && userWorkDescription && (
         <div className="mt-10">
           <h2 className="text-2xl font-bold mb-6">Use Cases by Category</h2>
+          <p className="text-muted-foreground mb-6">Select a category to explore use cases tailored for {userWorkDescription}.</p>
           <div className="space-y-6">
             {categories.map((category) => (
               <div key={category.id} className="border rounded-2xl overflow-hidden">
