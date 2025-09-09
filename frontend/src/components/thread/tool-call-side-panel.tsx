@@ -791,7 +791,7 @@ export function ToolCallSidePanel({
 
     const isNavigatingToLatest = newIndex === totalCalls - 1;
 
-    console.log(`[INTERNAL_NAV] ${source}: ${internalIndex} -> ${newIndex}, mode will be: ${isNavigatingToLatest ? 'live' : 'manual'}`);
+    // console.log(`[INTERNAL_NAV] ${source}: ${internalIndex} -> ${newIndex}, mode will be: ${isNavigatingToLatest ? 'live' : 'manual'}`);
 
     setInternalIndex(newIndex);
 
@@ -882,20 +882,20 @@ export function ToolCallSidePanel({
 
     // TODO: Implement runtime tracking API endpoint
     // For now, this is a no-op to prevent 404 errors
-    console.log('Runtime tracking: Fetching database runtime (not yet implemented)', { threadId });
+    // console.log('Runtime tracking: Fetching database runtime (not yet implemented)', { threadId });
     setDatabaseRuntime(0); // Set to 0 since we can't fetch from non-existent endpoint
   }, [threadId]);
 
   const createAgentRun = React.useCallback(async (runId: string, threadId: string) => {
     // TODO: Implement runtime tracking API endpoint
     // For now, this is a no-op to prevent 404 errors
-    console.log('Runtime tracking: Agent run created (not yet implemented)', { runId, threadId });
+    // console.log('Runtime tracking: Agent run created (not yet implemented)', { runId, threadId });
   }, []);
 
   const completeAgentRun = React.useCallback(async (runId: string, totalRuntime: number) => {
     // TODO: Implement runtime tracking API endpoint
     // For now, this is a no-op to prevent 404 errors
-    console.log('Runtime tracking: Agent run completed (not yet implemented)', { runId, totalRuntime });
+    // console.log('Runtime tracking: Agent run completed (not yet implemented)', { runId, totalRuntime });
 
     // Refresh runtime from database after completion if needed
     if (threadId) {
@@ -906,7 +906,7 @@ export function ToolCallSidePanel({
   const updateHeartbeat = React.useCallback(async (runId: string) => {
     // TODO: Implement runtime tracking API endpoint
     // For now, this is a no-op to prevent 404 errors
-    console.log('Runtime tracking: Heartbeat update (not yet implemented)', { runId });
+    // console.log('Runtime tracking: Heartbeat update (not yet implemented)', { runId });
   }, []);
 
   const renderStatusButton = React.useCallback(() => {
@@ -1050,10 +1050,10 @@ export function ToolCallSidePanel({
       // Complete agent run in database - use generated agentRunId if prop one is not available
       const runIdToUse = agentRunId || generatedAgentRunId;
       if (runIdToUse) {
-        console.log('Completing agent run:', { runIdToUse, totalRuntime });
+        // console.log('Completing agent run:', { runIdToUse, totalRuntime });
         completeAgentRun(runIdToUse, totalRuntime);
       } else {
-        console.log('Missing agentRunId for completion');
+        // console.log('Missing agentRunId for completion');
       }
     }
   }, [agentStatus, agentStartTime, accumulatedTime, databaseRuntime, threadId, agentRunId, generatedAgentRunId, createAgentRun, completeAgentRun]);
@@ -1062,7 +1062,7 @@ export function ToolCallSidePanel({
   React.useEffect(() => {
     if (agentRunId && agentStatus === 'running' && !agentStartTime) {
       // We have an agentRunId and agent is running, but we haven't started tracking yet
-      console.log('AgentRunId available, starting runtime tracking:', { agentRunId, threadId });
+      // console.log('AgentRunId available, starting runtime tracking:', { agentRunId, threadId });
       setAgentStartTime(Date.now());
       setElapsedTime(0);
       setFinalRuntime(null);
@@ -1079,7 +1079,7 @@ export function ToolCallSidePanel({
     if (agentStatus === 'running' && !agentRunId && !agentStartTime) {
       // Generate a new agentRunId if we don't have one
       const newAgentRunId = crypto.randomUUID();
-      // console.log('Generated new agentRunId:', newAgentRunId); // Disabled to reduce console noise
+
       setGeneratedAgentRunId(newAgentRunId);
 
       // Create the agent run record immediately

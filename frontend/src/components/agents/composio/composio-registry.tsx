@@ -29,6 +29,7 @@ import {
   File,
   Folder,
   Share2,
+  Filter,
 } from 'lucide-react';
 import {
   useComposioCategories,
@@ -73,7 +74,73 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   default: <File className="h-4 w-4" />,
 };
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 12;
+
+// Apps that are active (all others will be coming soon)
+const ACTIVE_APPS = [
+  'google', 'gmail', 'google drive', 'googlecalendar', 'google sheets', 'google docs', 'google slides','google analytics',
+  'microsoft', 'outlook', 'teams', 'office', 'one drive', 'excel', 'word', 'powerpoint', 'share',
+  'notion',
+  'github',
+  'hubspot',
+  'zoho',
+  'figma',
+  'twitter', 'x.com',
+  'linkedin',
+  'asana',
+  'freshbooks','shopify',
+  'whatsapp','calendly'
+];
+
+// Apps that should be coming soon (explicit exclusions)
+const COMING_SOON_APPS = [
+  'big','googleads', 'google admin', 'googlebigquery', 'google classroom', 'google ads', 'castingwords', 
+  'lexoffice', 'digital ocean', 'freshdesk', 'bigin', 'cal booking', 'ayr'
+];
+
+const isComingSoon = (toolkit: ComposioToolkit): boolean => {
+  const toolkitName = toolkit.name.toLowerCase();
+  const toolkitSlug = toolkit.slug.toLowerCase();
+  
+  // Debug logging for Zoho
+  if (toolkitName.includes('zoho') || toolkitSlug.includes('zoho')) {
+    console.log('Zoho toolkit found:', {
+      name: toolkit.name,
+      slug: toolkit.slug,
+      toolkitName,
+      toolkitSlug
+    });
+  }
+  
+  // First check if it's explicitly in the coming soon list
+  const isExplicitlyComingSoon = COMING_SOON_APPS.some(comingSoonApp => 
+    toolkitName.includes(comingSoonApp) || 
+    toolkitSlug.includes(comingSoonApp) ||
+    comingSoonApp.includes(toolkitName) ||
+    comingSoonApp.includes(toolkitSlug)
+  );
+  
+  if (isExplicitlyComingSoon) {
+    console.log(`${toolkit.name}: EXPLICITLY COMING SOON`);
+    return true;
+  }
+  
+  // Check if this toolkit matches any active app
+  const isActive = ACTIVE_APPS.some(activeApp => 
+    toolkitName.includes(activeApp) || 
+    toolkitSlug.includes(activeApp) ||
+    activeApp.includes(toolkitName) ||
+    activeApp.includes(toolkitSlug)
+  );
+  
+  // Debug logging for Zoho
+  if (toolkitName.includes('zoho') || toolkitSlug.includes('zoho')) {
+    console.log('Zoho isActive:', isActive);
+  }
+  
+  // If it's not in the active list, it's coming soon
+  return !isActive;
+};
 
 interface ConnectedApp {
   toolkit: ComposioToolkit;
@@ -471,6 +538,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
   const [showToolsManager, setShowToolsManager] = useState(false);
   const [selectedConnectedApp, setSelectedConnectedApp] = useState<ConnectedApp | null>(null);
   const [showCustomMCPDialog, setShowCustomMCPDialog] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
 
   // pagination state
   const [page, setPage] = useState(1);
@@ -513,13 +581,13 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
     setPage(1);
   }, [search, selectedCategory]);
 
-  // If user clicks next beyond loaded results, fetch the next page transparently
+  // Force fetch more pages to get all toolkits including Zoho
   useEffect(() => {
-    const endIndex = page * PAGE_SIZE;
-    if (endIndex > allToolkits.length && hasNextPage && !isFetchingNextPage) {
+    if (!search && !selectedCategory && hasNextPage && !isFetchingNextPage) {
+      console.log('Fetching next page to get all toolkits...');
       fetchNextPage();
     }
-  }, [page, allToolkits.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [search, selectedCategory, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const currentAgentId = selectedAgentId ?? internalSelectedAgentId;
   const { data: agent, isLoading: isLoadingAgent } = useAgent(currentAgentId || '');
@@ -582,6 +650,13 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
   const filteredToolkits = useMemo(() => {
     let result = allToolkits;
 
+    // Debug: Log what we're working with
+    console.log('=== CATEGORY FILTERING DEBUG ===');
+    console.log('Selected category:', selectedCategory);
+    console.log('All toolkits count:', allToolkits.length);
+    console.log('All toolkit names:', allToolkits.map(t => t.name));
+    console.log('All toolkit slugs:', allToolkits.map(t => t.slug));
+
     // First filter by category if selected
     if (selectedCategory) {
       console.log('=== FILTERING TOOLKITS BY CATEGORY ===');
@@ -637,6 +712,10 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
       });
 
       console.log(`Found ${result.length} matching toolkits after category filter`);
+    } else {
+      console.log('=== NO CATEGORY SELECTED (All Apps) ===');
+      console.log('Using all toolkits without category filtering');
+      console.log('Result count:', result.length);
     }
 
     // Then filter out connected apps if we have an agent selected
@@ -663,6 +742,43 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
       console.log(`Filtered out ${beforeCount - result.length} connected apps, ${result.length} remaining`);
     }
 
+    // Filter to only show active apps (remove coming soon apps)
+    console.log('=== FILTERING ACTIVE APPS ===');
+    console.log('Total toolkits before filtering:', result.length);
+    console.log('Active apps list:', ACTIVE_APPS);
+    
+    result = result.filter(toolkit => {
+      const isComingSoonApp = isComingSoon(toolkit);
+      console.log(`${toolkit.name} (${toolkit.slug}): ${isComingSoonApp ? 'COMING SOON' : 'ACTIVE'}`);
+      return !isComingSoonApp;
+    });
+    
+    console.log('Active toolkits after filtering:', result.length);
+    console.log('Active toolkit names:', result.map(t => t.name));
+
+    // Sort active apps by priority groups
+    result = result.sort((a, b) => {
+      const aName = a.name.toLowerCase();
+      const bName = b.name.toLowerCase();
+      
+      // Google apps first
+      const aIsGoogle = aName.includes('google') || aName.includes('gmail') || aName.includes('drive') || aName.includes('calendar') || aName.includes('sheets') || aName.includes('docs') || aName.includes('slides');
+      const bIsGoogle = bName.includes('google') || bName.includes('gmail') || bName.includes('drive') || bName.includes('calendar') || bName.includes('sheets') || bName.includes('docs') || bName.includes('slides');
+      
+      if (aIsGoogle && !bIsGoogle) return -1;
+      if (!aIsGoogle && bIsGoogle) return 1;
+      
+      // Microsoft apps second
+      const aIsMicrosoft = aName.includes('microsoft') || aName.includes('outlook') || aName.includes('teams') || aName.includes('office') || aName.includes('onedrive') || aName.includes('excel') || aName.includes('word') || aName.includes('powerpoint') || aName.includes('clarity');
+      const bIsMicrosoft = bName.includes('microsoft') || bName.includes('outlook') || bName.includes('teams') || bName.includes('office') || bName.includes('onedrive') || bName.includes('excel') || bName.includes('word') || bName.includes('powerpoint') || bName.includes('clarity');
+      
+      if (aIsMicrosoft && !bIsMicrosoft) return -1;
+      if (!aIsMicrosoft && bIsMicrosoft) return 1;
+      
+      // Within same group, maintain alphabetical order
+      return aName.localeCompare(bName);
+    });
+
     return result;
   }, [allToolkits, selectedCategory, currentAgentId, connectedApps]);
 
@@ -678,7 +794,15 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
   const endIdx = startIdx + PAGE_SIZE;
   const pagedToolkits = filteredToolkits.slice(startIdx, endIdx);
   const totalLoadedPages = Math.max(1, Math.ceil(filteredToolkits.length / PAGE_SIZE));
-  const canGoNext = page < totalLoadedPages || !!hasNextPage;
+  const canGoNext = page < totalLoadedPages;
+  
+  console.log('=== PAGINATION DEBUG ===');
+  console.log('Page:', page, 'PAGE_SIZE:', PAGE_SIZE);
+  console.log('Total filtered toolkits:', filteredToolkits.length);
+  console.log('Total pages:', totalLoadedPages);
+  console.log('Start index:', startIdx, 'End index:', endIdx);
+  console.log('Paged toolkits count:', pagedToolkits.length);
+  console.log('Paged toolkit names:', pagedToolkits.map(t => t.name));
 
   const handleConnect = (app: ComposioToolkit) => {
     if (mode !== 'profile-only' && !currentAgentId) {
@@ -867,8 +991,20 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
 
   return (
     <div className="h-full w-full overflow-hidden flex rounded-4xl border bg-background shadow-lg">
+      {/* Mobile Sidebar Overlay */}
+      {showSidebar && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/50 md:hidden"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
       {/* Sidebar: Categories */}
-      <div className="w-64 h-full overflow-hidden border-r bg-muted/20">
+      <div className={cn(
+        "w-64 h-full overflow-hidden border-r transition-transform duration-300",
+        "md:translate-x-0 md:static md:z-auto md:bg-muted/20",
+        showSidebar ? "translate-x-0 fixed left-0 top-0 z-50 bg-background/95" : "-translate-x-full fixed left-0 top-0 z-50 bg-background/95"
+      )}>
         <div className="h-full flex flex-col">
           <div className="flex-shrink-0 p-4 border-b">
             <h3 className="text-sm font-medium text-muted-foreground">Categories</h3>
@@ -877,7 +1013,10 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
             <ScrollArea className="h-full">
               <div className="p-3 space-y-1">
                 <button
-                  onClick={() => handleCategoryChange('')}
+                  onClick={() => {
+                    handleCategoryChange('');
+                    setShowSidebar(false);
+                  }}
                   disabled={isLoading || isCategoryLoading}
                   className={cn(
                     'w-full flex items-center gap-3 px-4 py-2.5 rounded-3xl text-sm transition-all text-left border',
@@ -912,7 +1051,10 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                     return (
                       <button
                         key={category.id}
-                        onClick={() => handleCategoryChange(category.id)}
+                        onClick={() => {
+                          handleCategoryChange(category.id);
+                          setShowSidebar(false);
+                        }}
                         disabled={isLoading || isCategoryLoading}
                         className={cn(
                           'w-full flex items-center gap-3 px-4 py-2.5 rounded-3xl text-sm transition-all text-left border border-transparent',
@@ -962,23 +1104,34 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
             {/* Search and Actions */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
+                {/* Mobile Filter Button */}
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSidebar(true)}
+                  className="md:hidden flex items-center gap-2 h-10 border-1 border-border/40 hover:border-border/60 focus-visible:ring-transparent"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span className="sr-only">Filter categories</span>
+                </Button>
+                
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search apps..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 h-10 rounded-3xl border-1 focus-visible:ring-transparent"
+                    className="pl-10 h-10 rounded-3xl border border-border hover:border-primary/50 focus-visible:ring-transparent transition-colors shadow-none"
                   />
                 </div>
                 {mode !== 'profile-only' && currentAgentId && (
                   <Button
                     variant="outline"
                     onClick={() => setShowCustomMCPDialog(true)}
-                    className="flex items-center gap-2 whitespace-nowrap h-10 border-1 border-border/40 hover:border-border/60 focus-visible:ring-transparent relative z-10 bg-background/95 backdrop-blur-sm hover:bg-accent/50 transition-colors"
+                    className="flex items-center gap-2 whitespace-nowrap h-10 rounded-3xl border border-border hover:border-primary/50 focus-visible:ring-transparent relative z-10 bg-background/95 backdrop-blur-sm hover:bg-accent/50 transition-colors shadow-none"
                   >
                     <Server className="h-4 w-4" />
-                    Add Custom MCP
+                    <span className="hidden sm:inline">Add Custom MCP</span>
+                    <span className="sm:hidden">Custom MCP</span>
                   </Button>
                 )}
               </div>
@@ -1042,7 +1195,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                     </CollapsibleTrigger>
                     <CollapsibleContent className="mt-4">
                       {isLoadingConnectedApps ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                           {Array.from({ length: 6 }).map((_, i) => (
                             <ConnectedAppSkeleton key={i} />
                           ))}
@@ -1056,7 +1209,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                           <p className="text-xs">Connect apps below to manage tools for this agent.</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                           {connectedApps.map((connectedApp) => (
                             <ConnectedAppCard
                               key={`${connectedApp.profile.profile_id}-${connectedApp.toolkit.name}`}
@@ -1093,7 +1246,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                   </h3>
 
                   {isLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                       {Array.from({ length: PAGE_SIZE }).map((_, i) => (
                         <AppCardSkeleton key={i} />
                       ))}
@@ -1115,7 +1268,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {pagedToolkits.map((app) => (
                           <AppCard
                             key={app.slug}
@@ -1127,6 +1280,19 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                             mode={mode}
                           />
                         ))}
+                        
+                        {/* More to come card - only show on last page */}
+                        {!canGoNext && (
+                          <div className="border border-border rounded-xl p-4 h-full flex flex-col items-center justify-center bg-muted/20">
+                            {/* <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3">
+                              <span className="text-2xl">+</span>
+                            </div> */}
+                            <h3 className="font-medium text-sm mb-1">More to come ...</h3>
+                            <p className="text-xs text-muted-foreground text-center">
+                              Additional integrations coming soon
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       {/* Pagination */}

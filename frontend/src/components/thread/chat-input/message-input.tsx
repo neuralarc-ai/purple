@@ -483,8 +483,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
               className={cn(
                 'w-8 h-8 flex-shrink-0 rounded-full cursor-pointer',
                 resolvedTheme === 'dark'
-                  ? 'bg-helium-blue hover:bg-helium-blue/80'
-                  : 'bg-helium-blue hover:bg-helium-blue/80',
+                  ? 'bg-helium-orange hover:bg-helium-orange/80'
+                  : 'bg-helium-orange hover:bg-helium-orange/80',
                 (!value.trim() &&
                   uploadedFiles.length === 0 &&
                   !isAgentRunning) ||

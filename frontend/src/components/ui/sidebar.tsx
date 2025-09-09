@@ -196,7 +196,7 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
+          className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden rounded-tr-[30px] rounded-br-[30px]"
           style={
             {
               '--sidebar-width': SIDEBAR_WIDTH_MOBILE,
@@ -250,7 +250,7 @@ function Sidebar({
         <div
           className={cn(
             'fixed inset-0 bg-black/30',
-            shouldLowerZIndex ? 'z-0' : 'z-40' // Lower z-index when tool panel is open on medium screens
+            shouldLowerZIndex ? 'z-0' : 'z-40'
           )}
           onClick={() => setOpen(false)}
         />
@@ -388,7 +388,7 @@ function SidebarInset({ className, ...props }: React.ComponentProps<'main'>) {
     <div className="relative flex-1">
       {shouldShowOverlay && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:block hidden"
+          className="fixed inset-0 z-40 bg-black/30 md:block hidden"
           onClick={() => setOpen(false)}
           aria-hidden="true"
         />

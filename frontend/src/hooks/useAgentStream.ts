@@ -306,7 +306,7 @@ export function useAgentStream(
           }
         });
         
-        console.log(`[useAgentStream] Invalidated agent queries for refetch instead of page reload - Agent ID: ${agentId}`);
+        // console.log(`[useAgentStream] Invalidated agent queries for refetch instead of page reload - Agent ID: ${agentId}`);
       }
 
       if (
@@ -551,9 +551,9 @@ export function useAgentStream(
     if (!isMountedRef.current) return;
 
     const runId = currentRunIdRef.current;
-    console.log(
-      `[useAgentStream] Stream closed for run ID: ${runId}, status: ${status}`,
-    );
+    // console.log(
+    //   `[useAgentStream] Stream closed for run ID: ${runId}, status: ${status}`,
+    // );
 
     if (!runId) {
       console.warn('[useAgentStream] Stream closed but no active agentRunId.');
@@ -575,22 +575,22 @@ export function useAgentStream(
     // Immediately check the agent status when the stream closes unexpectedly
     // This covers cases where the agent finished but the final message wasn't received,
     // or if the agent errored out on the backend.
-    console.log(`[useAgentStream] Checking final status for run ID: ${runId}`);
+    // console.log(`[useAgentStream] Checking final status for run ID: ${runId}`);
     getAgentStatus(runId)
       .then((agentStatus) => {
         if (!isMountedRef.current) return; // Check mount status again
 
         // Check if this is still the current run ID
         if (currentRunIdRef.current !== runId) {
-          console.log(
-            `[useAgentStream] Run ID changed during status check in handleStreamClose, ignoring`,
-          );
+          // console.log(
+          //   `[useAgentStream] Run ID changed during status check in handleStreamClose, ignoring`,
+          // );
           return;
         }
 
-        console.log(
-          `[useAgentStream] Final status for run ID ${runId}: ${agentStatus.status}`,
-        );
+        // console.log(
+        //   `[useAgentStream] Final status for run ID ${runId}: ${agentStatus.status}`,
+        // );
 
         if (agentStatus.status === 'running') {
           setError('Stream closed unexpectedly while agent was running.');
@@ -669,11 +669,11 @@ export function useAgentStream(
     async (runId: string) => {
       if (!isMountedRef.current) return;
 
-      console.log(`[useAgentStream] Starting stream for run ID: ${runId}`);
+      // console.log(`[useAgentStream] Starting stream for run ID: ${runId}`);
 
       // Clean up any previous stream
       if (streamCleanupRef.current) {
-        console.log(`[useAgentStream] Cleaning up previous stream`);
+        // console.log(`[useAgentStream] Cleaning up previous stream`);
         streamCleanupRef.current();
         streamCleanupRef.current = null;
       }
@@ -852,7 +852,7 @@ export function useAgentStream(
 
   const logManual = useCallback(async (payload: { event_type: string; data?: Record<string, any>; description?: string }) => {
     // Implementation would typically call an API endpoint
-    console.log('Manual event logged:', payload);
+    // console.log('Manual event logged:', payload);
   }, []);
 
   return {

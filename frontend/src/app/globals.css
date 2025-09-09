@@ -933,3 +933,12 @@
   }
 }
 
+/* Custom Helium Orange Classes */
+.bg-helium-orange {
+  background-color: var(--helium-orange);
+}
+
+.hover\:bg-helium-orange\/80:hover {
+  background-color: color-mix(in srgb, var(--helium-orange) 80%, transparent);
+}
+

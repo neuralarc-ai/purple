@@ -57,7 +57,7 @@ function LoginContent() {
   const isProduction = isProductionMode();
 
   // Random auth image selection
-  const [randomAuthImage, setRandomAuthImage] = useState('/auth/login-bg.png');
+  const [randomAuthImage, setRandomAuthImage] = useState('/auth/auth-1.jpeg');
 
   useEffect(() => {
     // Generate random number between 1 and 5
@@ -288,8 +288,8 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#EDEDED] relative dark:bg-background">
-      <div className="flex min-h-screen items-center justify-center gap-15 px-2 xs:px-4 sm:px-6 lg:px-0">
+    <div className="min-h-screen bg-[#EDEDED] relative dark:bg-background ">
+      <div className="flex min-h-screen items-center justify-center gap-15 px-2 xs:px-4 sm:px-6 lg:px-0 max-[480px]:min-h-[85vh]">
         {/* Left Section - Image (No card background) */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
@@ -369,7 +369,10 @@ function LoginContent() {
               ease: [0.4, 0, 0.2, 1],
               delay: 0.4,
             }}
-            className={`bg-white px-4 py-8 h-full min-h-0 rounded-[24px] shadow-lg flex flex-col justify-center w-full lg:w-[500px] ${isSignUp ? 'lg:h-full' : 'lg:h-full'}`}            
+            className={`bg-white  px-4 py-8 h-full min-h-0 rounded-[24px] shadow-lg flex flex-col 
+              justify-center w-full lg:w-[500px] ${isSignUp ? 'lg:h-full' : 'lg:h-full'}
+              max-[480px]:bg-transparent max-[480px]:shadow-none max-[480px]:rounded-none
+              `}            
           >
             <div className="w-full px-2 sm:px-4 lg:px-4">
               <form
@@ -378,7 +381,7 @@ function LoginContent() {
                 <div className="space-y-3">
                   <label
                     htmlFor="email"
-                    className="text-sm font-normal text-black mb-1.5 block"
+                    className="text-sm font-normal text-black mb-1.5 block dark:max-[480px]:text-[#949494]"
                   >
                     Email
                   </label>
@@ -399,7 +402,7 @@ function LoginContent() {
                   <div className="flex justify-between items-center">
                     <label
                       htmlFor="password"
-                      className="text-sm font-normal text-black"
+                      className="text-sm font-normal text-black dark:max-[480px]:text-[#949494]"
                     >
                       Password
                     </label>
@@ -430,7 +433,7 @@ function LoginContent() {
                   <div className="space-y-3">
                     <label
                       htmlFor="confirmPassword"
-                      className="text-sm font-medium text-black block"
+                      className="text-sm font-medium text-black block dark:max-[480px]:text-[#949494]"
                     >
                       Confirm Password
                     </label>
@@ -485,7 +488,7 @@ function LoginContent() {
                     ) : (
                       <>
                         Don’t have an account?{' '}
-                        <span className="text-black font-medium">SignUp</span>
+                        <span className="text-black font-medium dark:max-[480px]:text-[#949494]">SignUp</span>
                       </>
                     )}
                   </Link>
@@ -496,7 +499,7 @@ function LoginContent() {
                 <>
                   <div className="relative my-3">
                     <div className="relative flex justify-center text-sm">
-                      <span className="px-2 text-black font-medium">OR</span>
+                      <span className="px-2 text-black font-medium dark:max-[480px]:text-[#949494]">OR</span>
                     </div>
                   </div>
 

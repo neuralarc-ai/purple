@@ -7,7 +7,7 @@ export interface UserProfile {
   preferred_name: string;
   work_description: string;
   personal_references?: string;
-  avatar?: string;
+  avatar_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -17,7 +17,7 @@ export interface UserProfileCreate {
   preferred_name: string;
   work_description: string;
   personal_references?: string;
-  avatar?: string;
+  avatar_url?: string;
 }
 
 export interface UserProfileUpdate {
@@ -25,7 +25,7 @@ export interface UserProfileUpdate {
   preferred_name?: string;
   work_description?: string;
   personal_references?: string;
-  avatar?: string;
+  avatar_url?: string;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
@@ -103,7 +103,7 @@ export const userProfilesApi = {
         preferred_name: profileData.preferred_name.trim(),
         work_description: profileData.work_description,
         personal_references: profileData.personal_references?.trim() || null,
-        avatar: profileData.avatar || null,
+        avatar_url: profileData.avatar_url || null,
       }),
     });
 
@@ -134,7 +134,7 @@ export const userProfilesApi = {
         preferred_name: profileData.preferred_name?.trim() || undefined,
         work_description: profileData.work_description || undefined,
         personal_references: profileData.personal_references?.trim() || undefined,
-        avatar: profileData.avatar || undefined,
+        avatar_url: profileData.avatar_url || undefined,
       }),
     });
 
