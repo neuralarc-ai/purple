@@ -69,10 +69,10 @@ export function ExposePortToolView({
       }
 
       // 3) Fallback: search in thread messages for a browser-like link path
-      if (Array.isArray((arguments as any))) {}
-      const allMsgText = Array.isArray((arguments as any)) ? '' : '';
-      const messagesBlob = Array.isArray((arguments as any)) ? '' : '';
-      const msgs = (typeof (arguments as any) === 'undefined' ? [] : []); // no-op guards
+      // Note: This section was using arguments incorrectly - removed for now
+      const allMsgText = '';
+      const messagesBlob = '';
+      const msgs: any[] = []; // no-op guards
       const threadText = Array.isArray((msgs as any))
         ? (msgs as any[])
             .map((m) => (typeof m?.content === 'string' ? m.content : JSON.stringify(m?.content || '')))
