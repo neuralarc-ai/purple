@@ -3,7 +3,8 @@ import { cn } from '@/lib/utils';
 import { marked } from 'marked';
 import { memo, useId, useMemo } from 'react';
 import { Response } from '@/components/response';
-import { CodeBlock, CodeBlockCode } from '@/components/ui/code-block';
+import { CodeBlock } from '@/components/ui/code-block';
+import { LazyCodeBlockCode } from '@/components/ui/lazy-code-block';
 
 export type MarkdownProps = {
   children: string;
@@ -48,10 +49,11 @@ const CUSTOM_COMPONENTS = {
 
     return (
       <CodeBlock className="rounded-md overflow-hidden my-4 border border-zinc-200 dark:border-zinc-800 max-w-full min-w-0 w-full">
-        <CodeBlockCode
+        <LazyCodeBlockCode
           code={children as string}
           language={language}
           className="text-sm"
+          threshold={30} // Lazy load code blocks with more than 30 lines
         />
       </CodeBlock>
     );
@@ -143,7 +145,7 @@ const CUSTOM_COMPONENTS = {
     return (
       <a
         href={href}
-        className="text-primary hover:underline dark:text-blue-400"
+        className="hover:underline text-helium-blue"
         target="_blank"
         rel="noopener noreferrer"
         {...props}
