@@ -10,9 +10,11 @@ import {
   ArrowUpRight,
   ChevronDown,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Menu,
+  X
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -139,6 +141,7 @@ const workOptions = [
 export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }: SettingsModalProps) {
   const [activeSection, setActiveSection] = useState<SettingsSection>(defaultSection);
   const [isManaging, setIsManaging] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Reset active section when modal opens with a new defaultSection
   React.useEffect(() => {
@@ -809,11 +812,24 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[700px] w-[80vw] max-h-[85vh] overflow-hidden p-0">
+      <DialogContent className="max-w-4xl h-[700px] w-[80vw] max-h-[85vh] overflow-hidden p-0 border-0">
         <DialogTitle className="sr-only">Settings</DialogTitle>
-        <div className="flex h-full">
-          {/* Left Navigation Sidebar */}
-          <div className="w-64 border-r border-border bg-muted/30 p-4 space-y-4">
+        <div className="flex h-full relative max-h-screen overflow-y-auto md:overflow-y-scroll">
+          {/* Mobile Header - Only visible on mobile */}
+          <div className="md:hidden absolute top-0 left-0 right-0 z-20 bg-background border-b border-border p-4 flex items-center justify-between">
+            <button
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <DialogClose className="p-2 hover:bg-muted rounded-lg transition-colors">
+              <X className="h-5 w-5" />
+            </DialogClose>
+          </div>
+
+          {/* Left Navigation Sidebar - Desktop */}
+          <div className="hidden md:block w-64 border-r border-border bg-sidebar dark:bg-grey p-4 space-y-4">
             {/* Header */}
             <div className="flex items-center gap-2 pb-4 border-b border-border">
               <DynamicIcon
@@ -850,9 +866,74 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
               })}
             </nav>
           </div>
+
+          {/* Mobile Overlay Sidebar */}
+          {isMobileSidebarOpen && (
+            <>
+              {/* Backdrop */}
+              <div 
+                className="md:hidden fixed inset-0 bg-black/20 z-40"
+                onClick={() => setIsMobileSidebarOpen(false)}
+              />
+              
+              {/* Sidebar */}
+              <div className={`md:hidden fixed left-0 top-0 bottom-0 w-64 max-[480px]:w-48 bg-sidebar dark:bg-sidebar border-r border-border z-50 transform transition-transform duration-300 ease-in-out ${
+                isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              }`}>
+                <div className="p-4 space-y-4 h-full">
+                  {/* Header with close button */}
+                  <div className="flex items-center justify-between pb-4 border-b border-border">
+                    <div className="flex items-center gap-2">
+                      <DynamicIcon
+                        lightPath="/logo-light.svg"
+                        darkPath="/logo-dark.svg"
+                        alt="Helium"
+                        width={24}
+                        height={24}
+                        className="w-6 h-6"
+                      />
+                      <span className="font-semibold text-foreground">Helium</span>
+                    </div>
+                    <button
+                      onClick={() => setIsMobileSidebarOpen(false)}
+                      className="p-1 hover:bg-muted rounded-lg transition-colors"
+                    >
+                  
+                    </button>
+                  </div>
+
+                  {/* Navigation Items */}
+                  <nav className="space-y-1">
+                    {navigationItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeSection === item.id;
+                      
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            setActiveSection(item.id);
+                            setIsMobileSidebarOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                          }`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+              </div>
+            </>
+          )}
           
           {/* Right Content Area */}
-          <div className="flex-1 p-6 overflow-y-auto h-full">
+          <div className="flex-1 p-6 overflow-y-auto h-full md:pt-6 pt-20">
             <div className="max-w-2xl h-full">
             {renderContent()}
             </div>

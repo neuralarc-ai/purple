@@ -393,7 +393,7 @@ export function DashboardContent() {
       />
       <div className="flex flex-col h-screen w-full overflow-hidden">
         {/* Top Right Controls */}
-        <div className="absolute py-4 right-12 z-10 flex items-center gap-3">
+        <div className="absolute py-4 right-3 z-10 flex items-center gap-3 md:right-11">
           {/* Token Usage */}
           <TokenUsage 
             onUpgradeClick={() => setShowPaymentModal(true)} 
