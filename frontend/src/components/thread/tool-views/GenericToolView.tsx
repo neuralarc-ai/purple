@@ -44,6 +44,10 @@ const isTabularData = (data: any): boolean => {
     if (data.list && Array.isArray(data.list)) {
       return isTabularData(data.list);
     }
+    // Check if it's an object with a 'tools' field containing an array
+    if (data.tools && Array.isArray(data.tools)) {
+      return isTabularData(data.tools);
+    }
   }
   
   if (!Array.isArray(data) || data.length === 0) return false;
@@ -74,21 +78,38 @@ const isTabularData = (data: any): boolean => {
     key.toLowerCase().includes('stage') ||
     key.toLowerCase().includes('contact') ||
     key.toLowerCase().includes('lead') ||
-    key.toLowerCase().includes('opportunity')
+    key.toLowerCase().includes('opportunity') ||
+    key.toLowerCase().includes('description') ||
+    key.toLowerCase().includes('tool') ||
+    key.toLowerCase().includes('function') ||
+    key.toLowerCase().includes('schema')
   );
   
-  // If it has common database fields, be more lenient with structure matching
-  const threshold = hasCommonFields ? 0.5 : 0.8;
+  // Check for tool-specific patterns
+  const hasToolFields = firstItemKeys.some(key => 
+    key.toLowerCase().includes('tool') ||
+    key.toLowerCase().includes('function') ||
+    key.toLowerCase().includes('action') ||
+    key.toLowerCase().includes('method') ||
+    key.toLowerCase().includes('endpoint') ||
+    key.toLowerCase().includes('schema') ||
+    key.toLowerCase().includes('input') ||
+    key.toLowerCase().includes('output') ||
+    key.toLowerCase().includes('parameter')
+  );
+  
+  // If it has common database fields or tool fields, be more lenient with structure matching
+  const threshold = (hasCommonFields || hasToolFields) ? 0.3 : 0.8;
   const minMatchingItems = Math.max(1, Math.floor(data.length * threshold));
   let matchingItems = 0;
   
   for (const item of data) {
     if (typeof item === 'object' && item !== null) {
       const itemKeys = Object.keys(item);
-      // For database-like data, check if most keys match (not all)
-      if (hasCommonFields) {
+      // For database-like or tool-like data, check if some keys match
+      if (hasCommonFields || hasToolFields) {
         const matchingKeys = firstItemKeys.filter(key => itemKeys.includes(key));
-        if (matchingKeys.length >= Math.floor(firstItemKeys.length * 0.6)) {
+        if (matchingKeys.length >= Math.floor(firstItemKeys.length * 0.4)) {
           matchingItems++;
         }
       } else {
@@ -197,14 +218,35 @@ const TabularDataTable: React.FC<{ data: any[] }> = ({ data }) => {
   if (!Array.isArray(data) || data.length === 0) return null;
   
   const firstItem = data[0];
-  const keys = Object.keys(firstItem);
+  const allKeys = Object.keys(firstItem);
+  
+  // Filter out complex nested objects that clutter the table
+  const filteredKeys = allKeys.filter(key => {
+    const value = firstItem[key];
+    
+    // Skip complex nested objects
+    if (typeof value === 'object' && value !== null) {
+      // Skip if it's a complex object with many properties (like inputSchema)
+      if (Object.keys(value).length > 3) {
+        return false;
+      }
+      
+      // Skip specific complex fields
+      const complexFields = ['inputSchema', 'outputSchema', 'schema', 'parameters', 'config', 'settings', 'metadata'];
+      if (complexFields.some(field => key.toLowerCase().includes(field))) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
   
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            {keys.map((key) => (
+            {filteredKeys.map((key) => (
               <TableHead key={key} className="font-medium">
                 {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
               </TableHead>
@@ -214,7 +256,7 @@ const TabularDataTable: React.FC<{ data: any[] }> = ({ data }) => {
         <TableBody>
           {data.map((item, index) => (
             <TableRow key={index}>
-              {keys.map((key) => {
+              {filteredKeys.map((key) => {
                 const value = item[key];
                 let displayValue = '';
                 
@@ -226,6 +268,8 @@ const TabularDataTable: React.FC<{ data: any[] }> = ({ data }) => {
                     displayValue = value.name;
                   } else if (value.email) {
                     displayValue = value.email;
+                  } else if (value.id) {
+                    displayValue = value.id;
                   } else {
                     displayValue = JSON.stringify(value);
                   }
@@ -280,7 +324,7 @@ export function GenericToolView({
       const hasTabularData = (data: any): boolean => {
         if (Array.isArray(data) && isTabularData(data)) return true;
         if (typeof data === 'object' && data !== null) {
-          const tabularFields = ['data', 'results', 'records', 'items', 'list'];
+          const tabularFields = ['data', 'results', 'records', 'items', 'list', 'tools'];
           
           // Check direct fields first
           if (tabularFields.some(field => 
@@ -310,7 +354,7 @@ export function GenericToolView({
         outputText = parsedOutput;
       } else if (hasTabularData(parsedOutput)) {
         // For tabular data, create a simple description but keep raw for table rendering
-        const tabularFields = ['data', 'results', 'records', 'items', 'list'];
+        const tabularFields = ['data', 'results', 'records', 'items', 'list', 'tools'];
         
         // Check direct fields first
         let tabularField = tabularFields.find(field => 
@@ -576,7 +620,7 @@ export function GenericToolView({
       }
       
       if (typeof data === 'object' && data !== null) {
-        const tabularFields = ['data', 'results', 'records', 'items', 'list'];
+        const tabularFields = ['data', 'results', 'records', 'items', 'list', 'tools'];
         
         // Check direct fields first
         for (const field of tabularFields) {
@@ -610,8 +654,17 @@ export function GenericToolView({
             <FileText className="h-4 w-4 text-muted-foreground" />
             {title}
           </div>
-          <div className="bg-muted/50 rounded-xl border p-4">
-            <TabularDataTable data={tabularData} />
+          <div className="space-y-4">
+            {/* Show descriptive text */}
+            <div className="bg-muted/50 rounded-xl border p-4">
+              <div className="text-base text-foreground whitespace-pre-wrap break-words">
+                {output}
+              </div>
+            </div>
+            {/* Show table */}
+            <div className="bg-muted/50 rounded-xl border p-4">
+              <TabularDataTable data={tabularData} />
+            </div>
           </div>
         </div>
       );
@@ -647,8 +700,17 @@ export function GenericToolView({
             <FileText className="h-4 w-4 text-muted-foreground" />
             {title}
           </div>
-          <div className="bg-muted/50 rounded-xl border p-4">
-            <TabularDataTable data={tabularDataFromOutput} />
+          <div className="space-y-4">
+            {/* Show descriptive text */}
+            <div className="bg-muted/50 rounded-xl border p-4">
+              <div className="text-base text-foreground whitespace-pre-wrap break-words">
+                {output}
+              </div>
+            </div>
+            {/* Show table */}
+            <div className="bg-muted/50 rounded-xl border p-4">
+              <TabularDataTable data={tabularDataFromOutput} />
+            </div>
           </div>
         </div>
       );

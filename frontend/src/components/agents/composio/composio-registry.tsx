@@ -78,8 +78,8 @@ const PAGE_SIZE = 12;
 
 // Apps that are active (all others will be coming soon)
 const ACTIVE_APPS = [
-  'google', 'gmail', 'google drive', 'googlecalendar', 'google sheets', 'google docs', 'google slides',
-  'microsoft', 'outlook', 'teams', 'office', 'one drive', 'excel', 'word', 'powerpoint',
+  'google', 'gmail', 'google drive', 'googlecalendar', 'google sheets', 'google docs', 'google slides','google analytics',
+  'microsoft', 'outlook', 'teams', 'office', 'one drive', 'excel', 'word', 'powerpoint', 'share',
   'notion',
   'github',
   'hubspot',
@@ -88,14 +88,14 @@ const ACTIVE_APPS = [
   'twitter', 'x.com',
   'linkedin',
   'asana',
-  'freshbooks',
+  'freshbooks','shopify',
   'whatsapp','calendly'
 ];
 
 // Apps that should be coming soon (explicit exclusions)
 const COMING_SOON_APPS = [
-  'bigmailer','googleads', 'google admin', 'googlebigquery', 'google classroom', 'google ads', 'castingwords', 
-  'lexoffice', 'digital ocean', 'freshdesk', 'bigin', 'cal booking'
+  'big','googleads', 'google admin', 'googlebigquery', 'google classroom', 'google ads', 'castingwords', 
+  'lexoffice', 'digital ocean', 'freshdesk', 'bigin', 'cal booking', 'ayr'
 ];
 
 const isComingSoon = (toolkit: ComposioToolkit): boolean => {
