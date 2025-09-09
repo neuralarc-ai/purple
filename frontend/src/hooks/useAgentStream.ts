@@ -90,6 +90,7 @@ export function useAgentStream(
   threadId: string,
   setMessages: (messages: UnifiedMessage[]) => void,
   agentId?: string, // Optional agent ID for invalidation
+  onCreditError?: (error: any) => void, // Optional credit error handler
 ): UseAgentStreamResult {
   const queryClient = useQueryClient();
 
@@ -496,9 +497,23 @@ export function useAgentStream(
       const lower = errorMessage.toLowerCase();
       const isExpected =
         lower.includes('not found') || lower.includes('not running');
+        
+      const isCreditError =
+        lower.includes('credit') && 
+        (lower.includes('insufficient') || 
+         lower.includes('exhausted') || 
+         lower.includes('used up') ||
+         lower.includes('limit reached') ||
+         lower.includes('not enough') ||
+         lower.includes('balance') ||
+         lower.includes('required') ||
+         lower.includes('need'));
 
       if (isExpected) {
         console.info('[useAgentStream] Streaming skipped/ended:', errorMessage);
+      } else if (isCreditError && onCreditError) {
+        // Handle credit errors with the credit error handler
+        onCreditError(err);
       } else {
         console.error('[useAgentStream] Streaming error:', errorMessage, err);
         setError(errorMessage);
@@ -585,20 +600,27 @@ export function useAgentStream(
         }
 
         const errorMessage = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[useAgentStream] Error checking agent status for ${runId} after stream close: ${errorMessage}`,
-        );
-
+        
         const isNotFoundError =
           errorMessage.includes('not found') ||
           errorMessage.includes('404') ||
           errorMessage.includes('does not exist');
+          
+        const isNotRunningError =
+          errorMessage.includes('not running') ||
+          errorMessage.includes('is not running');
 
-        if (isNotFoundError) {
-          // Revert to agent_not_running for this specific case
+        if (isNotFoundError || isNotRunningError) {
+          // These are expected conditions when an agent finishes running
+          console.info(
+            `[useAgentStream] Agent run ${runId} finished: ${errorMessage}`,
+          );
           finalizeStream('agent_not_running', runId);
         } else {
-          // For other errors checking status, finalize with generic error
+          // Only log as error for unexpected conditions
+          console.error(
+            `[useAgentStream] Error checking agent status for ${runId} after stream close: ${errorMessage}`,
+          );
           finalizeStream('error', runId);
         }
       });

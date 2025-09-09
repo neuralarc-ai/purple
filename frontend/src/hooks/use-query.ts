@@ -27,19 +27,30 @@ export function createQueryHook<
   options?: Omit<
     UseQueryOptions<TData, TError, TData, TQueryKey>,
     'queryKey' | 'queryFn'
-  >,
+  > & {
+    onError?: (error: TError) => void;
+  },
 ) {
   return (
     customOptions?: Omit<
       UseQueryOptions<TData, TError, TData, TQueryKey>,
       'queryKey' | 'queryFn'
-    >,
+    > & {
+      onError?: (error: TError) => void;
+    },
   ) => {
+    const { onError: baseOnError, ...baseOptions } = options || {};
+    const { onError: customOnError, ...customQueryOptions } = customOptions || {};
+    
     return useQuery<TData, TError, TData, TQueryKey>({
       queryKey,
       queryFn,
-      ...options,
-      ...customOptions,
+      onError: (error) => {
+        baseOnError?.(error);
+        customOnError?.(error);
+      },
+      ...baseOptions,
+      ...customQueryOptions,
     });
   };
 }

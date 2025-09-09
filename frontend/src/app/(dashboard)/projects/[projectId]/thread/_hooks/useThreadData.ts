@@ -24,9 +24,10 @@ interface UseThreadDataReturn {
   messagesQuery: ReturnType<typeof useMessagesQuery>;
   projectQuery: ReturnType<typeof useProjectQuery>;
   agentRunsQuery: ReturnType<typeof useAgentRunsQuery>;
+  onCreditError?: (error: any) => void;
 }
 
-export function useThreadData(threadId: string, projectId: string): UseThreadDataReturn {
+export function useThreadData(threadId: string, projectId: string, onCreditError?: (error: any) => void): UseThreadDataReturn {
   const [messages, setMessages] = useState<UnifiedMessage[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [sandboxId, setSandboxId] = useState<string | null>(null);
@@ -42,10 +43,10 @@ export function useThreadData(threadId: string, projectId: string): UseThreadDat
   const hasInitiallyScrolled = useRef<boolean>(false);
   
 
-  const threadQuery = useThreadQuery(threadId);
-  const messagesQuery = useMessagesQuery(threadId);
-  const projectQuery = useProjectQuery(projectId);
-  const agentRunsQuery = useAgentRunsQuery(threadId);
+  const threadQuery = useThreadQuery(threadId, { onError: onCreditError });
+  const messagesQuery = useMessagesQuery(threadId, { onError: onCreditError });
+  const projectQuery = useProjectQuery(projectId, { onError: onCreditError });
+  const agentRunsQuery = useAgentRunsQuery(threadId, { onError: onCreditError });
   
   // (debug logs removed)
 
@@ -153,6 +154,25 @@ export function useThreadData(threadId: string, projectId: string): UseThreadDat
         if (isMounted) {
           const errorMessage =
             err instanceof Error ? err.message : 'Failed to load thread';
+          
+          // Check if this is a credit-related error
+          if (onCreditError && (
+            (err as any)?.status === 402 || 
+            (err as any)?.response?.status === 402 ||
+            (errorMessage.toLowerCase().includes('credit') && 
+             (errorMessage.toLowerCase().includes('insufficient') || 
+              errorMessage.toLowerCase().includes('exhausted') || 
+              errorMessage.toLowerCase().includes('used up') ||
+              errorMessage.toLowerCase().includes('limit reached') ||
+              errorMessage.toLowerCase().includes('not enough') ||
+              errorMessage.toLowerCase().includes('balance') ||
+              errorMessage.toLowerCase().includes('required') ||
+              errorMessage.toLowerCase().includes('need')))
+          )) {
+            onCreditError(err);
+            return; // Don't set error state for credit errors
+          }
+          
           setError(errorMessage);
           toast.error(errorMessage);
           setIsLoading(false);
@@ -246,5 +266,6 @@ export function useThreadData(threadId: string, projectId: string): UseThreadDat
     messagesQuery,
     projectQuery,
     agentRunsQuery,
+    onCreditError,
   };
 } 

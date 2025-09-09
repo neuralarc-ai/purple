@@ -18,8 +18,6 @@ import {
   safeJsonParse,
 } from '@/components/thread/utils';
 import { HeliumLogo } from '@/components/sidebar/helium-logo';
-import { AgentLoader } from './loader';
-import { AgentAvatar, AgentName } from './agent-avatar';
 import { AnimatedLoader } from './AnimatedLoader';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +34,7 @@ import { ShowToolStream } from './ShowToolStream';
 import { ComposioUrlDetector } from './composio-url-detector';
 import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
+import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
 
 
 // Helper function to render all attachments as standalone messages
@@ -490,6 +489,8 @@ export interface ThreadContentProps {
   setInputValue?: (value: string) => void;
   scrollToBottom?: (behavior?: ScrollBehavior) => void;
   finalGroupedMessages?: any[];
+  // Credit exhaustion callback
+  onCreditExhaustionUpgrade?: () => void;
 }
 
 // Component for action buttons that appear on assistant messages
@@ -729,6 +730,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
   finalGroupedMessages,
   agentMetadata,
   agentData,
+  onCreditExhaustionUpgrade,
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const latestMessageRef = useRef<HTMLDivElement>(null);
@@ -906,7 +908,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
             <div className="space-y-8 min-w-0">
               {(() => {
                 type MessageGroup = {
-                  type: 'user' | 'assistant_group';
+                  type: 'user' | 'assistant_group' | 'credit_exhaustion';
                   messages: UnifiedMessage[];
                   key: string;
                 };
@@ -927,6 +929,18 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                     // Create a new user message group
                     groupedMessages.push({
                       type: 'user',
+                      messages: [message],
+                      key,
+                    });
+                  } else if (messageType === 'credit_exhaustion') {
+                    // Finalize any existing group
+                    if (currentGroup) {
+                      groupedMessages.push(currentGroup);
+                      currentGroup = null;
+                    }
+                    // Create a standalone credit exhaustion group
+                    groupedMessages.push({
+                      type: 'credit_exhaustion',
                       messages: [message],
                       key,
                     });
@@ -1170,6 +1184,17 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                               )}
                             </div>
                           </div>
+                        </div>
+                      </div>
+                    );
+                  } else if (group.type === 'credit_exhaustion') {
+                    // Handle credit exhaustion group
+                    return (
+                      <div key={group.key} className="flex justify-center w-full py-4 pr-4">
+                        <div className="w-full pr-4">
+                          <CreditExhaustionBanner 
+                            onUpgrade={onCreditExhaustionUpgrade}
+                          />
                         </div>
                       </div>
                     );
@@ -1645,6 +1670,8 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                     </div>
                   </div>
                 )}
+              
+              
               <div className="!h-48" />
             </div>
           </div>

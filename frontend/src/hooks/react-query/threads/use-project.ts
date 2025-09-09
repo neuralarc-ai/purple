@@ -2,7 +2,7 @@ import { createMutationHook, createQueryHook } from "@/hooks/use-query";
 import { threadKeys } from "./keys";
 import { getProject, getPublicProjects, Project, updateProject } from "./utils";
 
-export const useProjectQuery = (projectId: string | undefined) =>
+export const useProjectQuery = (projectId: string | undefined, options?: { onError?: (error: any) => void }) =>
   createQueryHook(
     threadKeys.project(projectId || ""),
     () =>
@@ -12,6 +12,7 @@ export const useProjectQuery = (projectId: string | undefined) =>
     {
       enabled: !!projectId,
       retry: 1,
+      ...options,
     }
   )();
 
