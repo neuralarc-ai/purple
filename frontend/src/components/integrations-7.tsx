@@ -13,10 +13,10 @@ export default function IntegrationsSection() {
         <section>
             <div className="bg-black py-24 md:py-32">
                 <div className="mx-auto max-w-5xl px-6">
-                    <div className="bg-muted/25 group scale-125 relative mx-auto max-w-[22rem] items-center justify-between space-y-6 [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] sm:max-w-md">
+                    <div className="bg-neutral-800/40 group scale-125 relative mx-auto max-w-[22rem] items-center justify-between space-y-6 [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] sm:max-w-md">
                         <div
                             role="presentation"
-                            className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:32px_32px] opacity-50"></div>
+                            className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#1e1e1e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:32px_32px] opacity-50"></div>
                         <div>
                             <InfiniteSlider
                                 gap={24}
@@ -96,8 +96,8 @@ export default function IntegrationsSection() {
                         </div>                        
                     </div>
                     <div className="mx-auto mt-24 max-w-lg space-y-6 text-center">
-                        <h2 className="text-balance text-3xl font-semibold md:text-4xl">100+ Integrations. Zero Friction. Total Control.</h2>
-                        <p className="text-muted-foreground">
+                        <h2 className="text-balance text-3xl font-semibold md:text-4xl text-white">100+ Integrations. Zero Friction. Total Control.</h2>
+                        <p className="text-white/80">
                         Stop jumping between apps to get work done. Helium AI connects with your existing tools in just a few clicks, then lets you orchestrate everything through simple prompts.
                         </p>
 
@@ -116,7 +116,7 @@ export default function IntegrationsSection() {
 
 const IntegrationCard = ({ children, className, isCenter = false }: { children: React.ReactNode; className?: string; position?: 'left-top' | 'left-middle' | 'left-bottom' | 'right-top' | 'right-middle' | 'right-bottom'; isCenter?: boolean }) => {
     return (
-        <div className={cn('bg-background relative z-20 flex size-12 rounded-full border', className)}>
+        <div className={cn('bg-black/80 backdrop-blur-2xl relative z-20 flex size-12 rounded-full border', className)}>
             <div className={cn('m-auto size-fit *:size-6', isCenter && '*:size-6')}>{children}</div>
         </div>
     )

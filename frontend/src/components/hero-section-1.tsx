@@ -226,7 +226,7 @@ export default function HeroSection() {
                                         <Button
                                             asChild
                                             size="lg"
-                                            className="rounded-full px-8 py-3 text-lg font-semibold">
+                                            className="rounded-full bg-white text-black hover:bg-white/80 px-8 py-3 text-lg font-semibold">
                                             {user ? (
                                                 <Link href="/auth">
                                                     <span className="text-nowrap">Lift off</span>

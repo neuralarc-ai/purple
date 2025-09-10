@@ -5,7 +5,7 @@ import { ReactNode } from 'react'
 
 export default function Features() {
     return (
-        <section className="bg-zinc-50 py-16 md:py-32 dark:bg-transparent">
+        <section className="bg-black py-16 md:py-32 dark:bg-transparent">
             <div className="mx-auto max-w-2xl px-6 lg:max-w-5xl">
                 <div className="mx-auto grid gap-4 lg:grid-cols-2">
                     <FeatureCard className="bg-black">
@@ -106,11 +106,11 @@ interface CardHeadingProps {
 
 const CardHeading = ({ icon, title, description }: CardHeadingProps) => (
     <div className="p-6">
-        <span className="text-muted-foreground flex items-center gap-2">
+        <span className="text-white/80 flex items-center gap-2">
             {icon}
             {title}
         </span>
-        <p className="mt-8 text-2xl font-semibold">{description}</p>
+        <p className="mt-8 text-2xl font-semibold text-white">{description}</p>
     </div>
 )
 

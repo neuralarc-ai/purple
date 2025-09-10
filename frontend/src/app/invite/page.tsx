@@ -56,7 +56,7 @@ export default function InvitePage() {
 
           if (profileData && !profileError) {
             // User has already completed onboarding - redirect to dashboard
-            router.push('/dashboard');
+            router.push('/');
             return;
           }
         }
@@ -265,7 +265,7 @@ export default function InvitePage() {
           </DialogHeader>
           <div className="flex  ">
             {/* Left Section - Image */}
-            <div className="flex-1 hidden md:block bg-gray-100 dark:bg-gray-800 rounded-l-3xl flex items-center justify-center">
+            <div className="flex-1 hidden md:block bg-gray-100 dark:bg-gray-800 rounded-l-3xl items-center justify-center">
               <Image
                 src="/images/Benefit.png"
                 alt="Helium Benefits"
