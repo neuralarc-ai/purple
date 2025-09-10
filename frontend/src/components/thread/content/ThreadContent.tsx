@@ -99,6 +99,7 @@ export function renderMarkdownContent(
   sandboxId?: string,
   project?: Project,
   debugMode?: boolean,
+  isSidePanelOpen?: boolean,
 ) {
   // If in debug mode, just display raw content in a pre tag
   if (debugMode) {
@@ -127,6 +128,7 @@ export function renderMarkdownContent(
               key={`md-${lastIndex}`}
               content={textBeforeBlock}
               className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words"
+              enableOverflowHandling={isSidePanelOpen}
             />,
           );
         }
@@ -156,6 +158,7 @@ export function renderMarkdownContent(
               <ComposioUrlDetector
                 content={askText}
                 className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
+                enableOverflowHandling={isSidePanelOpen}
               />
               {renderAttachments(
                 attachmentArray,
@@ -199,6 +202,7 @@ export function renderMarkdownContent(
               <ComposioUrlDetector
                 content={completeText}
                 className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
+                enableOverflowHandling={isSidePanelOpen}
               />
               {renderAttachments(
                 attachmentArray,
@@ -277,6 +281,7 @@ export function renderMarkdownContent(
             key={`md-${lastIndex}`}
             content={remainingText}
             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words"
+            enableOverflowHandling={isSidePanelOpen}
           />,
         );
       }
@@ -288,6 +293,7 @@ export function renderMarkdownContent(
       <ComposioUrlDetector
         content={content}
         className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words"
+        enableOverflowHandling={isSidePanelOpen}
       />
     );
   }
@@ -305,6 +311,7 @@ export function renderMarkdownContent(
       <ComposioUrlDetector
         content={content}
         className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words"
+        enableOverflowHandling={isSidePanelOpen}
       />
     );
   }
@@ -318,6 +325,7 @@ export function renderMarkdownContent(
           key={`md-${lastIndex}`}
           content={textBeforeTag}
           className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none inline-block mr-1 break-words"
+          enableOverflowHandling={isSidePanelOpen}
         />,
       );
     }
@@ -343,6 +351,7 @@ export function renderMarkdownContent(
           <ComposioUrlDetector
             content={askContent}
             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
+            enableOverflowHandling={isSidePanelOpen}
           />
           {renderAttachments(
             attachments,
@@ -387,6 +396,7 @@ export function renderMarkdownContent(
           <ComposioUrlDetector
             content={completeContent}
             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
+            enableOverflowHandling={isSidePanelOpen}
           />
           {renderAttachments(
             attachments,
@@ -451,6 +461,7 @@ export function renderMarkdownContent(
         key={`md-${lastIndex}`}
         content={content.substring(lastIndex)}
         className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words"
+        enableOverflowHandling={isSidePanelOpen}
       />,
     );
   }
@@ -489,6 +500,7 @@ export interface ThreadContentProps {
   setInputValue?: (value: string) => void;
   scrollToBottom?: (behavior?: ScrollBehavior) => void;
   finalGroupedMessages?: any[];
+  isSidePanelOpen?: boolean; // Add side panel state prop
   // Credit exhaustion callback
   onCreditExhaustionUpgrade?: () => void;
 }
@@ -730,6 +742,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
   finalGroupedMessages,
   agentMetadata,
   agentData,
+  isSidePanelOpen = false,
   onCreditExhaustionUpgrade,
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -900,6 +913,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
           ref={scrollContainerRef || messagesContainerRef}
           className={`${containerClassName} flex flex-col-reverse ${shouldJustifyToTop ? 'justify-end min-h-full' : ''}`}
           onScroll={handleScroll}
+          style={isSidePanelOpen ? { overflowX: 'hidden' } : {}}
         >
           <div
             ref={contentRef}
@@ -1172,6 +1186,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                 <ComposioUrlDetector
                                   content={cleanContent}
                                   className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere"
+                                  enableOverflowHandling={isSidePanelOpen}
                                 />
                               )}
 
@@ -1350,6 +1365,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                         sandboxId,
                                         project,
                                         debugMode,
+                                        isSidePanelOpen,
                                       );
 
                                     elements.push(
@@ -1383,7 +1399,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                 group.messages.some(
                                   (msg) => msg.type === 'assistant',
                                 ) && (
-                                  <div className="flex items-center justify-between">
+                                  <div className="flex items-center justify-between mb-[2rem]">
                                     {/* Agent info on the left */}
                                     <div className="flex items-center">
                                       <div className="rounded-md flex items-center justify-center">
@@ -1463,6 +1479,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                           <StreamingText
                                             content={textBeforeTag}
                                             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere"
+                                            enableOverflowHandling={isSidePanelOpen}
                                           />
 
                                           {detectedTag && (
@@ -1547,6 +1564,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                 <ComposioUrlDetector
                                                   content={textBeforeTag}
                                                   className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere"
+                                                  enableOverflowHandling={isSidePanelOpen}
                                                 />
                                               )}
                                               {showCursor && (

@@ -284,6 +284,7 @@ export function ToolCallSidePanel({
   const isMediumScreen = useMediumScreen();
   const isCustomBreakpoint = useCustomBreakpoint();
   const [isResizing, setIsResizing] = React.useState(false);
+  const [isSmallScreen, setIsSmallScreen] = React.useState(false);
   // Initialize panel width based on screen size
   const getInitialPanelWidth = () => {
     if (typeof window === 'undefined') return 480; // Default server-side
@@ -301,14 +302,18 @@ export function ToolCallSidePanel({
 
   const [panelWidth, setPanelWidth] = React.useState<number | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
-  const minWidth = 560;
+  const minWidth = 360;
   const maxWidth = typeof window !== 'undefined' ? Math.floor(window.innerWidth * 0.7) : 1000; // 70% of viewport width
   const defaultWidth = 480;
 
-  // Initialize panel width on client side only
+  // Initialize panel width and screen size on client side only
   React.useEffect(() => {
-    if (panelWidth === null && typeof window !== 'undefined') {
-      setPanelWidth(getInitialPanelWidth());
+    if (typeof window !== 'undefined') {
+      if (panelWidth === null) {
+        setPanelWidth(getInitialPanelWidth());
+      }
+      // Initialize small screen state
+      setIsSmallScreen(window.innerWidth < 768);
     }
   }, []);
 
@@ -358,10 +363,11 @@ export function ToolCallSidePanel({
 
   // Calculate if we should show resizable panel
   const shouldShowResizable = React.useMemo(() => {
+    if (isSmallScreen) return false; // Disable resize for screens below 768px
     if (isMediumScreen) return false;
     if (isCustomBreakpoint && isLeftSidebarExpanded) return false;
     return true;
-  }, [isMediumScreen, isCustomBreakpoint, isLeftSidebarExpanded]);
+  }, [isSmallScreen, isMediumScreen, isCustomBreakpoint, isLeftSidebarExpanded]);
 
   // Handle resizing
   // Refs for smooth resizing performance
@@ -520,7 +526,10 @@ export function ToolCallSidePanel({
       // Update fullscreen state
       const isMobileView = window.matchMedia('(max-width: 1023px)').matches;
       const isLargeScreen = window.innerWidth >= 1024;
+      const isSmallScreenView = window.innerWidth < 768;
+      
       setIsFullScreen(isMobileView);
+      setIsSmallScreen(isSmallScreenView);
 
       if (isMobileView) {
         setPanelWidth(null);
@@ -1130,7 +1139,7 @@ export function ToolCallSidePanel({
       <div
         ref={panelRef}
         className={cn(
-          "fixed right-0 top-0 h-full bg-background border-l border-border transition-all duration-300 ease-in-out overflow-hidden",
+          "fixed right-0 top-0 h-full bg-background border-l border-border transition-all duration-300 ease-in-out overflow-hidden thread-content-container",
           isFullScreen ? "w-full" : "w-[var(--panel-width)]",
           isOpen ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"
         )}
@@ -1478,7 +1487,7 @@ export function ToolCallSidePanel({
           </div>
         </motion.div>
 
-        <div className="flex-1 p-4 pt-0 overflow-auto scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+        <div className="flex-1 p-4 pt-0 overflow-auto scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700 scrollbar-track-transparent tool-call-content">
           {toolView}
         </div>
       </div>

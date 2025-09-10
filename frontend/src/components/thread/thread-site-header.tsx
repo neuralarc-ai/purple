@@ -348,7 +348,7 @@ export function SiteHeader({
               </TooltipContent>
             </Tooltip>
 
-            {!isMobile && (
+            {/* {!isMobile && ( */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -364,7 +364,7 @@ export function SiteHeader({
                   <p>Toggle theme</p>
                 </TooltipContent>
               </Tooltip>
-            )}
+            {/* )} */}
 
             {/* <Tooltip>
               <TooltipTrigger asChild>
