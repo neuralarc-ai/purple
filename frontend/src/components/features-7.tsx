@@ -1,4 +1,7 @@
 import Image from 'next/image'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Brain, Zap, Sparkles } from 'lucide-react'
+import { ReactNode } from 'react'
 
 export default function FeaturesSection() {
     return (
@@ -16,30 +19,73 @@ export default function FeaturesSection() {
                         <Image src="/home/app-screen.jpeg" className="dark:hidden rounded-xl" alt="payments illustration light" width={2797} height={1137} />
                     </div>
                 </div>
-                <div className="relative mx-auto grid max-w-4xl divide-x divide-y divide-white/30 border border-white/30 *:p-12 sm:grid-cols-2 lg:grid-cols-3">
-                    <div className="space-y-3">
-                        <div className="flex items-start gap-2">
-                            <i className="ri-cpu-line text-white"></i>
-                            <h3 className="text-sm font-medium text-white">Deeper, reliable intelligence</h3>
-                        </div>
-                        <p className="text-sm text-white/80">Advanced AI agents that understand context and deliver accurate insights.</p>
+                <Card className="mx-auto mt-8 grid grid-cols-3 divide-x divide-white/20 overflow-hidden shadow-zinc-950/5 *:text-center md:mt-16 bg-black/20 border-white/30">
+                    <div className="group shadow-zinc-950/5">
+                        <CardHeader className="pb-3">
+                            <CardDecorator>
+                                <Brain
+                                    className="size-6 text-white"
+                                    aria-hidden
+                                />
+                            </CardDecorator>
+
+                            <h3 className="mt-6 font-medium text-white">Deeper, reliable intelligence</h3>
+                        </CardHeader>
+
+                        <CardContent>
+                            <p className="text-sm text-white/80">Advanced AI agents that understand context and deliver accurate insights.</p>
+                        </CardContent>
                     </div>
-                    <div className="space-y-2">
-                        <div className="flex items-start gap-2">
-                            <i className="ri-flashlight-line text-white"></i>
-                            <h3 className="text-sm font-medium text-white">Automates workflows</h3>
-                        </div>
-                        <p className="text-sm text-white/80">Streamline complex processes and accelerate research with intelligent automation.</p>
+
+                    <div className="group shadow-zinc-950/5">
+                        <CardHeader className="pb-3">
+                            <CardDecorator>
+                                <Zap
+                                    className="size-6 text-white"
+                                    aria-hidden
+                                />
+                            </CardDecorator>
+
+                            <h3 className="mt-6 font-medium text-white">Automates workflows</h3>
+                        </CardHeader>
+
+                        <CardContent>
+                            <p className="mt-3 text-sm text-white/80">Streamline complex processes and accelerate research with intelligent automation.</p>
+                        </CardContent>
                     </div>
-                    <div className="space-y-2">
-                        <div className="flex items-start gap-2">
-                            <i className="ri-sparkling-2-line text-white"></i>
-                            <h3 className="text-sm font-medium text-white">No-code, simple to use</h3>
-                        </div>
-                        <p className="text-sm text-white/80">Build powerful AI workflows without writing code - intuitive interface for everyone.</p>
+
+                    <div className="group shadow-zinc-950/5">
+                        <CardHeader className="pb-3">
+                            <CardDecorator>
+                                <Sparkles
+                                    className="size-6 text-white"
+                                    aria-hidden
+                                />
+                            </CardDecorator>
+
+                            <h3 className="mt-6 font-medium text-white">No-code, simple to use</h3>
+                        </CardHeader>
+
+                        <CardContent>
+                            <p className="mt-3 text-sm text-white/80">Build powerful AI workflows without writing code - intuitive interface for everyone.</p>
+                        </CardContent>
                     </div>
-                </div>
+                </Card>
             </div>
         </section>
     )
 }
+
+const CardDecorator = ({ children }: { children: ReactNode }) => (
+    <div className="relative mx-auto size-36 duration-200 [--color-border:color-mix(in_oklab,var(--color-white)20%,transparent)] group-hover:[--color-border:color-mix(in_oklab,var(--color-white)20%,transparent)]">
+        <div
+            aria-hidden
+            className="absolute inset-0 bg-[linear-gradient(to_right,var(--color-helium-orange)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-helium-orange)_1px,transparent_1px)] bg-[size:24px_24px]"
+        />
+        <div
+            aria-hidden
+            className="bg-radial to-black absolute inset-0 from-transparent to-75%"
+        />
+        <div className="bg-black absolute inset-0 m-auto flex size-12 items-center justify-center border border-helium-orange">{children}</div>
+    </div>
+)
