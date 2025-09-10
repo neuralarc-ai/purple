@@ -421,6 +421,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           agent_id: selectedAgentId,
           model_name: baseModelName,
           enable_thinking: thinkingEnabled,
+          mode: selectedMode,  // Add the actual mode parameter
           ...modeConfig,
         });
 

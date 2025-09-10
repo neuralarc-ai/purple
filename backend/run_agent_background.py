@@ -64,7 +64,8 @@ async def run_agent_background(
     stream: bool = True,
     enable_context_manager: bool = True,
     agent_config: Optional[dict] = None,
-    request_id: Optional[str] = None
+    request_id: Optional[str] = None,
+    mode: Optional[str] = 'default'  # Add mode parameter
 ):
     """Run the agent in the background using Redis for state."""
     structlog.contextvars.clear_contextvars()
@@ -210,6 +211,7 @@ async def run_agent_background(
             enable_context_manager=enable_context_manager,
             agent_config=agent_config,
             trace=trace,
+            mode=mode,  # Pass mode parameter
         )
 
         final_status = "running"

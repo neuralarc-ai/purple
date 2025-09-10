@@ -54,6 +54,7 @@ class AgentStartRequest(BaseModel):
     stream: Optional[bool] = True
     enable_context_manager: Optional[bool] = False
     agent_id: Optional[str] = None  # Custom agent to use
+    mode: Optional[str] = 'default'  # Mode: 'default' (simple chat) or 'agent' (full agent)
 
 class InitiateAgentResponse(BaseModel):
     thread_id: str
@@ -334,7 +335,8 @@ async def start_agent(
     # Update model_name to use the resolved version (or forced one)
     model_name = resolved_model
 
-    logger.debug(f"Starting new agent for thread: {thread_id} with config: model={model_name}, thinking={body.enable_thinking}, effort={body.reasoning_effort}, stream={body.stream}, context_manager={body.enable_context_manager} (Instance: {instance_id})")
+    logger.info(f"🚨 API DEBUG: Received mode={body.mode}")
+    logger.debug(f"Starting new agent for thread: {thread_id} with config: model={model_name}, thinking={body.enable_thinking}, effort={body.reasoning_effort}, stream={body.stream}, context_manager={body.enable_context_manager}, mode={body.mode} (Instance: {instance_id})")
     client = await db.client
 
 
@@ -517,6 +519,7 @@ async def start_agent(
         stream=body.stream, enable_context_manager=body.enable_context_manager,
         agent_config=agent_config,  # Pass agent configuration
         request_id=request_id,
+        mode=body.mode,  # Add mode parameter
     )
 
     return {"agent_run_id": agent_run_id, "status": "running"}
@@ -1053,6 +1056,7 @@ async def initiate_agent_with_files(
     stream: Optional[bool] = Form(True),
     enable_context_manager: Optional[bool] = Form(False),
     agent_id: Optional[str] = Form(None),  # Add agent_id parameter
+    mode: Optional[str] = Form("default"),  # Add mode parameter
     files: List[UploadFile] = File(default=[]),
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
@@ -1394,6 +1398,7 @@ async def initiate_agent_with_files(
             stream=stream, enable_context_manager=enable_context_manager,
             agent_config=agent_config,  # Pass agent configuration
             request_id=request_id,
+            mode=mode,  # Add mode parameter
         )
 
         return {"thread_id": thread_id, "agent_run_id": agent_run_id}

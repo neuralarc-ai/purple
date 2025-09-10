@@ -271,7 +271,10 @@ export function DashboardContent() {
       }
 
       // Submit the request
-      const result = await initiateAgentMutation.mutateAsync(formData);
+      const result = await initiateAgentMutation.mutateAsync({
+        formData,
+        mode: options?.mode
+      });
 
       if (result.thread_id) {
         setInitiatedThreadId(result.thread_id);

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 export const STORAGE_KEY_MODE = 'suna-preferred-mode-v1';
-export const DEFAULT_MODE: 'default' | 'agent' = 'agent';
+export const DEFAULT_MODE: 'default' | 'agent' = 'default';
 
 export type ModeType = 'default' | 'agent';
 
