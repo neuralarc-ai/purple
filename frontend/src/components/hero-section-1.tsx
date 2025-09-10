@@ -160,7 +160,7 @@ export default function HeroSection() {
                                             preset="fade-in-blur"
                                             speedSegment={0.3}
                                             as="h1"
-                                            className="text-balance text-6xl xl:text-7xl leading-18 libre-baskerville-regular">
+                                            className="text-balance text-6xl xl:text-7xl leading-20 libre-baskerville-regular">
                                             {contentData[currentContentIndex].title}
                                         </TextEffect>
                                         <TextEffect
