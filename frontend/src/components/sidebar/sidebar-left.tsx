@@ -299,14 +299,14 @@ export function SidebarLeft({
             tooltip="DAGAD"
           >
             <Image
-              src="/icons/notes-dark.svg"
+              src="/icons/prompt-dark.svg"
               alt="DAGAD"
               width={20}
               height={20}
               className="mr-1 hidden dark:block"
             />
             <Image
-              src="/icons/notes-light.svg"
+              src="/icons/prompt-light.svg"
               alt="DAGAD"
               width={20}
               height={20}
