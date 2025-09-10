@@ -13,7 +13,7 @@ import { useAuth } from '@/components/AuthProvider'
 const contentData = [
     {
         title: "While others rush to respond, we think to solve.",
-        description: "Helium goes deeper than ChatGPT, smarter than Claude, integrates better than Grok and delivers what Perplexity can't real business intelligence."
+        description: "Deeper than ChatGPT, sharper than Claude, more connected than Grok — Helium delivers real business intelligence."
     },
     {
         title: "Your entire AI workforce in one platform.",
@@ -125,14 +125,7 @@ export default function HeroSection() {
         <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
             <div className="light">
                 <HeroHeader />
-                <main className="overflow-hidden">
-                {/* <div
-                    aria-hidden
-                    className="absolute inset-0 isolate hidden opacity-65 contain-strict lg:block">
-                    <div className="w-140 h-320 -translate-y-87.5 absolute left-0 top-0 -rotate-45 rounded-full bg-[radial-gradient(68.54%_68.72%_at_55.02%_31.46%,hsla(0,0%,85%,.08)_0,hsla(0,0%,55%,.02)_50%,hsla(0,0%,45%,0)_80%)]" />
-                    <div className="h-320 absolute left-0 top-0 w-60 -rotate-45 rounded-full bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.06)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)] [translate:5%_-50%]" />
-                    <div className="h-320 -translate-y-87.5 absolute left-0 top-0 w-60 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.04)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)]" />
-                </div> */}
+                <main className="overflow-hidden">                
                 <section className="h-screen">
                     <div className="relative">
                         <motion.div 
@@ -150,34 +143,9 @@ export default function HeroSection() {
                             />
                         </motion.div>
                         {/* <div className="absolute inset-0 -z-10 size-full [background:radial-gradient(90%_90%_at_50%_70%,transparent_0%,var(--color-background)_90%)]"></div> */}
-                        <div className="mx-auto max-w-7xl px-6 z-20 translate-y-1/2">
-                            <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0 text-black z-20">
-                                <motion.div
-                                    variants={badgeVariants}
-                                    initial="hidden"
-                                    animate="visible"
-                                    className="z-20"
-                                >
-                                    <Link
-                                        href={user ? "/dashboard" : "https://waitlist.he2.ai"}
-                                        target={user ? "_self" : "_blank"}
-                                        rel={user ? undefined : "noopener noreferrer"}
-                                        className="hover:bg-black/80 bg-black text-white group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-sm transition-colors duration-300">
-                                        <span className="text-white group-hover:text-white transition-colors duration-300 ease-in-out text-sm">Unveiling Intelligence with True Depth</span>
-                                        <span className="block h-4 w-0.5 border-l bg-white"></span>
-
-                                        <div className="bg-white group-hover:bg-helium-orange size-6 overflow-hidden rounded-full duration-500">
-                                            <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
-                                                <span className="flex size-6">
-                                                    <ArrowRight className="m-auto size-3 text-white" />
-                                                </span>
-                                                <span className="flex size-6">
-                                                    <ArrowRight className="m-auto size-3 text-black" />
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                </motion.div>
+                        <div className="mx-auto max-w-7xl px-6 z-20 pt-24">
+                            <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0 text-black z-20 translate-y-1/2">
+                                
 
                                 <AnimatePresence mode="wait">
                                     <motion.div
@@ -192,7 +160,7 @@ export default function HeroSection() {
                                             preset="fade-in-blur"
                                             speedSegment={0.3}
                                             as="h1"
-                                            className="mt-8 text-balance text-6xl xl:text-7xl lg:mt-16 libre-baskerville-regular">
+                                            className="text-balance text-6xl xl:text-7xl leading-20 libre-baskerville-regular">
                                             {contentData[currentContentIndex].title}
                                         </TextEffect>
                                         <TextEffect
@@ -220,24 +188,26 @@ export default function HeroSection() {
                                         ...transitionVariants,
                                     }}
                                     className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
-                                    <div
-                                        key={1}
-                                        className="bg-helium-orange/30 rounded-full border p-0.5">
-                                        <Button
-                                            asChild
-                                            size="lg"
-                                            className="rounded-full bg-white text-black hover:bg-white/80 px-8 py-3 text-lg font-semibold">
-                                            {user ? (
-                                                <Link href="/auth">
-                                                    <span className="text-nowrap">Lift off</span>
-                                                </Link>
-                                            ) : (
-                                                <Link href="https://waitlist.he2.ai" target="_blank" rel="noopener noreferrer">
-                                                    <span className="text-nowrap">Join the waitlist</span>
-                                                </Link>
-                                            )}
-                                        </Button>
-                                    </div>
+                                    <Link
+                                        href={user ? "/dashboard" : "https://waitlist.he2.ai"}
+                                        target={user ? "_self" : "_blank"}
+                                        rel={user ? undefined : "noopener noreferrer"}
+                                        className="hover:bg-black/80 bg-black text-white group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-sm transition-colors duration-300">
+                                        <span className="text-white group-hover:text-white transition-colors duration-300 ease-in-out text-sm">
+                                            {user ? "Lift off" : "Ready to lift off?"}
+                                        </span>                                        
+
+                                        <div className="bg-white group-hover:bg-helium-orange size-6 overflow-hidden rounded-full duration-500">
+                                            <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
+                                                <span className="flex size-6">
+                                                    <ArrowRight className="m-auto size-3 text-white" />
+                                                </span>
+                                                <span className="flex size-6">
+                                                    <ArrowRight className="m-auto size-3 text-black" />
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </Link>
                                 </AnimatedGroup>
                             </div>
                         </div>
