@@ -51,6 +51,11 @@ export async function middleware(request: NextRequest) {
   // Check if user is accessing the root path (homepage)
   const isRootPath = request.nextUrl.pathname === '/'
   
+  // Redirect all users from root path to auth page
+  if (isRootPath) {
+    return NextResponse.redirect(new URL('/auth', request.url))
+  }
+  
   // Redirect unauthenticated users from protected routes
   if (isProtectedRoute && !user) {
     const redirectUrl = new URL('/auth', request.url)
