@@ -99,8 +99,8 @@ async def get_user_dagad_entries(
     # Set DISABLE_DAGAD_CHECK=false to re-enable checks
     disable_check = os.getenv("DISABLE_DAGAD_CHECK", "true").lower() in ("1", "true", "yes", "on")
     if not disable_check:
-    if not await is_enabled("dagad"):
-        raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
+        if not await is_enabled("dagad"):
+            raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
 
     try:
         client = await db.client
@@ -147,8 +147,8 @@ async def create_dagad_entry(
 ):
     disable_check = os.getenv("DISABLE_DAGAD_CHECK", "true").lower() in ("1", "true", "yes", "on")
     if not disable_check:
-    if not await is_enabled("dagad"):
-        raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
+        if not await is_enabled("dagad"):
+            raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
 
     try:
         client = await db.client
@@ -202,8 +202,8 @@ async def update_dagad_entry(
 ):
     disable_check = os.getenv("DISABLE_DAGAD_CHECK", "true").lower() in ("1", "true", "yes", "on")
     if not disable_check:
-    if not await is_enabled("dagad"):
-        raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
+        if not await is_enabled("dagad"):
+            raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
 
     try:
         client = await db.client
@@ -274,8 +274,8 @@ async def delete_dagad_entry(
 ):
     disable_check = os.getenv("DISABLE_DAGAD_CHECK", "true").lower() in ("1", "true", "yes", "on")
     if not disable_check:
-    if not await is_enabled("dagad"):
-        raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
+        if not await is_enabled("dagad"):
+            raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
 
     try:
         client = await db.client
@@ -297,8 +297,8 @@ async def get_dagad_entry(
 ):
     disable_check = os.getenv("DISABLE_DAGAD_CHECK", "true").lower() in ("1", "true", "yes", "on")
     if not disable_check:
-    if not await is_enabled("dagad"):
-        raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
+        if not await is_enabled("dagad"):
+            raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
 
     try:
         client = await db.client
@@ -338,8 +338,8 @@ async def get_smart_dagad_context(
 ):
     disable_check = os.getenv("DISABLE_DAGAD_CHECK", "true").lower() in ("1", "true", "yes", "on")
     if not disable_check:
-    if not await is_enabled("dagad"):
-        raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
+        if not await is_enabled("dagad"):
+            raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
 
     try:
         client = await db.client
@@ -360,31 +360,6 @@ async def get_smart_dagad_context(
     except Exception as e:
         logger.error(f"Error getting smart DAGAD context for user {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve smart DAGAD context")
-
-
-
-
-            context_conditions=row.get('context_conditions'),
-
-            content_tokens=row.get('content_tokens'),
-
-            created_at=row['created_at'],
-
-            updated_at=row['updated_at'],
-
-            last_used_at=row.get('last_used_at')
-
-        )
-
-    except HTTPException:
-
-        raise
-
-    except Exception as e:
-
-        logger.error(f"Error creating DAGAD entry for user {user_id}: {e}")
-
-        raise HTTPException(status_code=500, detail="Failed to create DAGAD entry")
 
 
 
