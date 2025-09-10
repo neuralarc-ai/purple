@@ -1,19 +1,78 @@
 import { Gmail, HubSpot, GoogleDrive, Supabase, Twitter, LinkedIn, GoogleNotion, Discord, Shopify, GoogleSheets, GoogleMeet, GoogleDocs, GoogleSlides, Mailchimp } from '@/components/logos'
-import { LogoIcon } from '@/components/logo'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { InfiniteSlider } from '@/components/ui/infinite-slider'
 import { useAuth } from '@/components/AuthProvider'
+import { motion } from 'framer-motion'
+
+const fadeBlurVariants = {
+    hidden: {
+        opacity: 0,
+        filter: 'blur(10px)',
+        y: 20,
+    },
+    visible: {
+        opacity: 1,
+        filter: 'blur(0px)',
+        y: 0,
+        transition: {
+            duration: 0.8,
+            ease: [0.25, 0.46, 0.45, 0.94] as const,
+        },
+    },
+}
+
+const cardVariants = {
+    hidden: {
+        opacity: 0,
+        filter: 'blur(12px)',
+        y: 30,
+    },
+    visible: {
+        opacity: 1,
+        filter: 'blur(0px)',
+        y: 0,
+        transition: {
+            type: 'spring' as const,
+            bounce: 0.3,
+            duration: 1.2,
+        },
+    },
+}
+
+const sliderVariants = {
+    hidden: {
+        opacity: 0,
+        filter: 'blur(15px)',
+        scale: 1.05,
+    },
+    visible: {
+        opacity: 1,
+        filter: 'blur(0px)',
+        scale: 1,
+        transition: {
+            duration: 1,
+            ease: [0.25, 0.46, 0.45, 0.94] as const,
+            delay: 0.3,
+        },
+    },
+}
 
 export default function IntegrationsSection() {
     const { user } = useAuth()
     
     return (
         <section>
-            <div className="bg-black py-24 md:py-32">
+            <div className="bg-black pt-24 md:pt-32">
                 <div className="mx-auto max-w-5xl px-6">
-                    <div className="bg-neutral-800/40 group scale-125 relative mx-auto max-w-[22rem] items-center justify-between space-y-6 [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] sm:max-w-md">
+                    <motion.div 
+                        className="bg-neutral-800/40 group scale-125 relative mx-auto max-w-[22rem] items-center justify-between space-y-6 [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] sm:max-w-md"
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-100px" }}
+                        variants={sliderVariants}
+                    >
                         <div
                             role="presentation"
                             className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#1e1e1e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:32px_32px] opacity-50"></div>
@@ -94,10 +153,16 @@ export default function IntegrationsSection() {
                                 </IntegrationCard>
                             </InfiniteSlider>
                         </div>                        
-                    </div>
-                    <div className="mx-auto mt-24 max-w-lg space-y-6 text-center">
+                    </motion.div>
+                    <motion.div 
+                        className="mx-auto mt-24 space-y-6 text-center"
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-100px" }}
+                        variants={fadeBlurVariants}
+                    >
                         <h2 className="text-balance text-3xl font-semibold md:text-4xl text-white">100+ Integrations. Zero Friction. Total Control.</h2>
-                        <p className="text-white/80">
+                        <p className="text-white/80 max-w-2xl text-balance mx-auto">
                         Stop jumping between apps to get work done. Helium AI connects with your existing tools in just a few clicks, then lets you orchestrate everything through simple prompts.
                         </p>
 
@@ -107,7 +172,7 @@ export default function IntegrationsSection() {
                             asChild>
                             <Link href={user ? "/dashboard" : "https://waitlist.he2.ai"}>Get Started</Link>
                         </Button>
-                    </div>
+                    </motion.div>
                 </div>
             </div>
         </section>

@@ -2,75 +2,148 @@ import Image from 'next/image'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Brain, Zap, Sparkles } from 'lucide-react'
 import { ReactNode } from 'react'
+import { motion } from 'framer-motion'
+
+const fadeBlurVariants = {
+    hidden: {
+        opacity: 0,
+        filter: 'blur(10px)',
+        y: 20,
+    },
+    visible: {
+        opacity: 1,
+        filter: 'blur(0px)',
+        y: 0,
+        transition: {
+            duration: 0.8,
+            ease: [0.25, 0.46, 0.45, 0.94] as const,
+        },
+    },
+}
+
+const cardVariants = {
+    hidden: {
+        opacity: 0,
+        filter: 'blur(12px)',
+        y: 30,
+    },
+    visible: {
+        opacity: 1,
+        filter: 'blur(0px)',
+        y: 0,
+        transition: {
+            type: 'spring' as const,
+            bounce: 0.3,
+            duration: 1.2,
+        },
+    },
+}
+
+const imageVariants = {
+    hidden: {
+        opacity: 0,
+        filter: 'blur(15px)',
+        scale: 1.05,
+    },
+    visible: {
+        opacity: 1,
+        filter: 'blur(0px)',
+        scale: 1,
+        transition: {
+            duration: 1,
+            ease: [0.25, 0.46, 0.45, 0.94] as const,
+            delay: 0.3,
+        },
+    },
+}
 
 export default function FeaturesSection() {
     return (
         <section className="py-16 md:py-32">
             <div className="mx-auto max-w-5xl space-y-12 px-6">
-                <div className="relative z-10 grid items-center justify-center text-center gap-4 md:gap-12">
+                <motion.div 
+                    className="relative z-10 grid items-center justify-center text-center gap-4 md:gap-12"
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-100px" }}
+                    variants={fadeBlurVariants}
+                >
                     <h2 className="text-4xl xl:text-6xl font-semibold leading-none text-white">Stop switching between AI tools. <br />Start succeeding with one.</h2>
                     <p className="max-w-lg mx-auto text-white/80">Helium seamlessly integrates with your existing workflows to automate tasks, generate insights, and manage your business operations all from your intelligent digital companion.</p>
-                </div>
-                <div className="relative rounded-2xl p-3 md:-mx-8 lg:col-span-3">
+                </motion.div>
+                <motion.div 
+                    className="relative rounded-2xl p-3 md:-mx-8 lg:col-span-3"
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-100px" }}
+                    variants={imageVariants}
+                >
                     <div className="aspect-88/36 relative">
                         <div className="bg-linear-to-t z-10 rounded-2xl from-black absolute inset-0 to-transparent"></div>
                         {/* <Image src="/home/app-screen.jpeg" className="absolute inset-0 rounded-2xl" alt="payments illustration dark" width={2797} height={1137} /> */}
                         <Image src="/home/app-screen.jpeg" className="hidden dark:block rounded-xl" alt="payments illustration dark" width={2797} height={1137} />
                         <Image src="/home/app-screen.jpeg" className="dark:hidden rounded-xl" alt="payments illustration light" width={2797} height={1137} />
                     </div>
-                </div>
-                <Card className="mx-auto mt-8 grid grid-cols-3 divide-x divide-white/20 overflow-hidden shadow-zinc-950/5 *:text-center md:mt-16 bg-black/20 border-white/30">
-                    <div className="group shadow-zinc-950/5">
-                        <CardHeader className="pb-3">
-                            <CardDecorator>
-                                <Brain
-                                    className="size-6 text-white"
-                                    aria-hidden
-                                />
-                            </CardDecorator>
+                </motion.div>
+                <motion.div
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-100px" }}
+                    variants={cardVariants}
+                >
+                    <Card className="mx-auto mt-8 grid grid-cols-3 divide-x divide-white/20 overflow-hidden shadow-zinc-950/5 *:text-center md:mt-16 bg-black/20 border-white/30">
+                        <div className="group shadow-zinc-950/5">
+                            <CardHeader className="pb-3">
+                                <CardDecorator>
+                                    <Brain
+                                        className="size-6 text-white"
+                                        aria-hidden
+                                    />
+                                </CardDecorator>
 
-                            <h3 className="mt-6 font-medium text-white">Deeper, reliable intelligence</h3>
-                        </CardHeader>
+                                <h3 className="mt-6 font-medium text-white">Deeper, reliable intelligence</h3>
+                            </CardHeader>
 
-                        <CardContent>
-                            <p className="text-sm text-white/80">Advanced AI agents that understand context and deliver accurate insights.</p>
-                        </CardContent>
-                    </div>
+                            <CardContent>
+                                <p className="text-sm text-white/80">Advanced AI agents that understand context and deliver accurate insights.</p>
+                            </CardContent>
+                        </div>
 
-                    <div className="group shadow-zinc-950/5">
-                        <CardHeader className="pb-3">
-                            <CardDecorator>
-                                <Zap
-                                    className="size-6 text-white"
-                                    aria-hidden
-                                />
-                            </CardDecorator>
+                        <div className="group shadow-zinc-950/5">
+                            <CardHeader className="pb-3">
+                                <CardDecorator>
+                                    <Zap
+                                        className="size-6 text-white"
+                                        aria-hidden
+                                    />
+                                </CardDecorator>
 
-                            <h3 className="mt-6 font-medium text-white">Automates workflows</h3>
-                        </CardHeader>
+                                <h3 className="mt-6 font-medium text-white">Automates workflows</h3>
+                            </CardHeader>
 
-                        <CardContent>
-                            <p className="mt-3 text-sm text-white/80">Streamline complex processes and accelerate research with intelligent automation.</p>
-                        </CardContent>
-                    </div>
+                            <CardContent>
+                                <p className="mt-3 text-sm text-white/80">Streamline complex processes and accelerate research with intelligent automation.</p>
+                            </CardContent>
+                        </div>
 
-                    <div className="group shadow-zinc-950/5">
-                        <CardHeader className="pb-3">
-                            <CardDecorator>
-                                <Sparkles
-                                    className="size-6 text-white"
-                                    aria-hidden
-                                />
-                            </CardDecorator>
+                        <div className="group shadow-zinc-950/5">
+                            <CardHeader className="pb-3">
+                                <CardDecorator>
+                                    <Sparkles
+                                        className="size-6 text-white"
+                                        aria-hidden
+                                    />
+                                </CardDecorator>
 
-                            <h3 className="mt-6 font-medium text-white">No-code, simple to use</h3>
-                        </CardHeader>
+                                <h3 className="mt-6 font-medium text-white">No-code, simple to use</h3>
+                            </CardHeader>
 
-                        <CardContent>
-                            <p className="mt-3 text-sm text-white/80">Build powerful AI workflows without writing code - intuitive interface for everyone.</p>
-                        </CardContent>
-                    </div>
-                </Card>
+                            <CardContent>
+                                <p className="mt-3 text-sm text-white/80">Build powerful AI workflows without writing code - intuitive interface for everyone.</p>
+                            </CardContent>
+                        </div>
+                    </Card>
+                </motion.div>
             </div>
         </section>
     )

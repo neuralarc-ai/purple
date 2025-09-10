@@ -66,8 +66,7 @@ export const HeroHeader = () => {
                                     width={20}
                                     height={20}
                                     className="sm:w-6 sm:h-6"
-                                />
-                                <span className="text-lg sm:text-xl font-semibold text-black">Helium</span>
+                                />                                
                             </Link>
 
                             <button
