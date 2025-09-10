@@ -18,6 +18,278 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingState } from './shared/LoadingState';
 import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+// Utility function to detect if data is tabular
+const isTabularData = (data: any): boolean => {
+  // Handle nested structures that might contain tabular data
+  if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
+    // Check if it's an object with a 'data' field containing an array
+    if (data.data && Array.isArray(data.data)) {
+      return isTabularData(data.data);
+    }
+    // Check if it's an object with a 'results' field containing an array
+    if (data.results && Array.isArray(data.results)) {
+      return isTabularData(data.results);
+    }
+    // Check if it's an object with a 'records' field containing an array
+    if (data.records && Array.isArray(data.records)) {
+      return isTabularData(data.records);
+    }
+    // Check if it's an object with a 'items' field containing an array
+    if (data.items && Array.isArray(data.items)) {
+      return isTabularData(data.items);
+    }
+    // Check if it's an object with a 'list' field containing an array
+    if (data.list && Array.isArray(data.list)) {
+      return isTabularData(data.list);
+    }
+    // Check if it's an object with a 'tools' field containing an array
+    if (data.tools && Array.isArray(data.tools)) {
+      return isTabularData(data.tools);
+    }
+  }
+  
+  if (!Array.isArray(data) || data.length === 0) return false;
+  
+  // Check if all items are objects with similar structure
+  const firstItem = data[0];
+  if (typeof firstItem !== 'object' || firstItem === null) return false;
+  
+  const firstItemKeys = Object.keys(firstItem);
+  if (firstItemKeys.length === 0) return false;
+  
+  // Check for common database/API field patterns that indicate tabular data
+  const hasCommonFields = firstItemKeys.some(key => 
+    key.toLowerCase().includes('id') ||
+    key.toLowerCase().includes('name') ||
+    key.toLowerCase().includes('email') ||
+    key.toLowerCase().includes('date') ||
+    key.toLowerCase().includes('time') ||
+    key.toLowerCase().includes('amount') ||
+    key.toLowerCase().includes('status') ||
+    key.toLowerCase().includes('type') ||
+    key.toLowerCase().includes('created') ||
+    key.toLowerCase().includes('modified') ||
+    key.toLowerCase().includes('updated') ||
+    key.toLowerCase().includes('account') ||
+    key.toLowerCase().includes('deal') ||
+    key.toLowerCase().includes('owner') ||
+    key.toLowerCase().includes('stage') ||
+    key.toLowerCase().includes('contact') ||
+    key.toLowerCase().includes('lead') ||
+    key.toLowerCase().includes('opportunity') ||
+    key.toLowerCase().includes('description') ||
+    key.toLowerCase().includes('tool') ||
+    key.toLowerCase().includes('function') ||
+    key.toLowerCase().includes('schema')
+  );
+  
+  // Check for tool-specific patterns
+  const hasToolFields = firstItemKeys.some(key => 
+    key.toLowerCase().includes('tool') ||
+    key.toLowerCase().includes('function') ||
+    key.toLowerCase().includes('action') ||
+    key.toLowerCase().includes('method') ||
+    key.toLowerCase().includes('endpoint') ||
+    key.toLowerCase().includes('schema') ||
+    key.toLowerCase().includes('input') ||
+    key.toLowerCase().includes('output') ||
+    key.toLowerCase().includes('parameter')
+  );
+  
+  // If it has common database fields or tool fields, be more lenient with structure matching
+  const threshold = (hasCommonFields || hasToolFields) ? 0.3 : 0.8;
+  const minMatchingItems = Math.max(1, Math.floor(data.length * threshold));
+  let matchingItems = 0;
+  
+  for (const item of data) {
+    if (typeof item === 'object' && item !== null) {
+      const itemKeys = Object.keys(item);
+      // For database-like or tool-like data, check if some keys match
+      if (hasCommonFields || hasToolFields) {
+        const matchingKeys = firstItemKeys.filter(key => itemKeys.includes(key));
+        if (matchingKeys.length >= Math.floor(firstItemKeys.length * 0.4)) {
+          matchingItems++;
+        }
+      } else {
+        // For other data, require exact key match
+        if (itemKeys.length === firstItemKeys.length && 
+            firstItemKeys.every(key => itemKeys.includes(key))) {
+          matchingItems++;
+        }
+      }
+    }
+  }
+  
+  return matchingItems >= minMatchingItems;
+};
+
+// Utility function to format tabular data as text
+const formatTabularDataAsText = (data: any[]): string => {
+  if (!Array.isArray(data) || data.length === 0) return '';
+  
+  const firstItem = data[0];
+  const keys = Object.keys(firstItem);
+  
+  let result = '';
+  
+  // Add header
+  result += keys.join(' | ') + '\n';
+  result += keys.map(() => '---').join(' | ') + '\n';
+  
+  // Add rows
+  for (const item of data) {
+    const row = keys.map(key => {
+      const value = item[key];
+      if (value === null || value === undefined) return '';
+      if (typeof value === 'object') {
+        // Handle nested objects (like Account_Name, Owner)
+        if (value.name) return value.name;
+        if (value.email) return value.email;
+        return JSON.stringify(value);
+      }
+      return String(value);
+    });
+    result += row.join(' | ') + '\n';
+  }
+  
+  return result;
+};
+
+// Utility function to format non-tabular data as readable text
+const formatDataAsText = (data: any): string => {
+  if (data === null || data === undefined) return 'null';
+  
+  if (typeof data === 'string') return data;
+  
+  if (typeof data === 'number' || typeof data === 'boolean') return String(data);
+  
+  if (Array.isArray(data)) {
+    if (isTabularData(data)) {
+      return formatTabularDataAsText(data);
+    }
+    
+    // Format as list
+    return data.map((item, index) => {
+      if (typeof item === 'object' && item !== null) {
+        return `${index + 1}. ${JSON.stringify(item, null, 2)}`;
+      }
+      return `${index + 1}. ${String(item)}`;
+    }).join('\n\n');
+  }
+  
+  if (typeof data === 'object') {
+    // Check if this object contains tabular data in common fields
+    const tabularFields = ['data', 'results', 'records', 'items', 'list'];
+    for (const field of tabularFields) {
+      if (data[field] && Array.isArray(data[field]) && isTabularData(data[field])) {
+        // Format the tabular data and include other fields as metadata
+        let result = '';
+        const otherFields = Object.entries(data).filter(([key]) => key !== field);
+        if (otherFields.length > 0) {
+          result += otherFields.map(([key, value]) => {
+            if (typeof value === 'object' && value !== null) {
+              return `${key}: ${JSON.stringify(value, null, 2)}`;
+            }
+            return `${key}: ${String(value)}`;
+          }).join('\n') + '\n\n';
+        }
+        result += formatTabularDataAsText(data[field]);
+        return result;
+      }
+    }
+    
+    // Format object properties as key-value pairs
+    const entries = Object.entries(data);
+    return entries.map(([key, value]) => {
+      if (typeof value === 'object' && value !== null) {
+        return `${key}: ${JSON.stringify(value, null, 2)}`;
+      }
+      return `${key}: ${String(value)}`;
+    }).join('\n');
+  }
+  
+  return String(data);
+};
+
+// Component to render tabular data as a table
+const TabularDataTable: React.FC<{ data: any[] }> = ({ data }) => {
+  if (!Array.isArray(data) || data.length === 0) return null;
+  
+  const firstItem = data[0];
+  const allKeys = Object.keys(firstItem);
+  
+  // Filter out complex nested objects that clutter the table
+  const filteredKeys = allKeys.filter(key => {
+    const value = firstItem[key];
+    
+    // Skip complex nested objects
+    if (typeof value === 'object' && value !== null) {
+      // Skip if it's a complex object with many properties (like inputSchema)
+      if (Object.keys(value).length > 3) {
+        return false;
+      }
+      
+      // Skip specific complex fields
+      const complexFields = ['inputSchema', 'outputSchema', 'schema', 'parameters', 'config', 'settings', 'metadata'];
+      if (complexFields.some(field => key.toLowerCase().includes(field))) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+  
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {filteredKeys.map((key) => (
+              <TableHead key={key} className="font-medium">
+                {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.map((item, index) => (
+            <TableRow key={index}>
+              {filteredKeys.map((key) => {
+                const value = item[key];
+                let displayValue = '';
+                
+                if (value === null || value === undefined) {
+                  displayValue = '';
+                } else if (typeof value === 'object') {
+                  // Handle nested objects (like Account_Name, Owner)
+                  if (value.name) {
+                    displayValue = value.name;
+                  } else if (value.email) {
+                    displayValue = value.email;
+                  } else if (value.id) {
+                    displayValue = value.id;
+                  } else {
+                    displayValue = JSON.stringify(value);
+                  }
+                } else {
+                  displayValue = String(value);
+                }
+                
+                return (
+                  <TableCell key={key} className="text-sm">
+                    {displayValue}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
 
 export function GenericToolView({
   name = 'generic-tool',
@@ -30,35 +302,100 @@ export function GenericToolView({
 }: ToolViewProps) {
   const toolTitle = getToolTitle(name);
 
-  // Add debugging to see what content is being passed
-  React.useEffect(() => {
-    if (assistantContent && typeof assistantContent === 'object') {
-      console.log('GenericToolView: assistantContent is an object:', assistantContent);
-    }
-    if (toolContent && typeof toolContent === 'object') {
-      console.log('GenericToolView: toolContent is an object:', toolContent);
-    }
-  }, [assistantContent, toolContent]);
 
   const formatContent = (content: any) => {
     if (!content) return null;
-
-    // Add debugging
-    console.log('GenericToolView: formatContent called with:', content, 'type:', typeof content);
 
     // Use the new parser for backwards compatibility
     const { toolResult } = extractToolData(content);
 
     if (toolResult) {
+      // Try to parse the tool output to determine if it's tabular data
+      let parsedOutput = toolResult.toolOutput;
+      try {
+        if (typeof toolResult.toolOutput === 'string') {
+          parsedOutput = JSON.parse(toolResult.toolOutput);
+        }
+      } catch {
+        // Keep as string if parsing fails
+      }
+      
+      // Helper function to check if data contains tabular data
+      const hasTabularData = (data: any): boolean => {
+        if (Array.isArray(data) && isTabularData(data)) return true;
+        if (typeof data === 'object' && data !== null) {
+          const tabularFields = ['data', 'results', 'records', 'items', 'list', 'tools'];
+          
+          // Check direct fields first
+          if (tabularFields.some(field => 
+            data[field] && Array.isArray(data[field]) && isTabularData(data[field])
+          )) {
+            return true;
+          }
+          
+          // Check nested fields (for cases like { data: { data: [...] } })
+          for (const field of tabularFields) {
+            if (data[field] && typeof data[field] === 'object' && data[field] !== null) {
+              const nestedData = data[field];
+              if (tabularFields.some(nestedField => 
+                nestedData[nestedField] && Array.isArray(nestedData[nestedField]) && isTabularData(nestedData[nestedField])
+              )) {
+                return true;
+              }
+            }
+          }
+        }
+        return false;
+      };
+      
+      // Determine the output format based on whether it contains tabular data
+      let outputText;
+      if (typeof parsedOutput === 'string') {
+        outputText = parsedOutput;
+      } else if (hasTabularData(parsedOutput)) {
+        // For tabular data, create a simple description but keep raw for table rendering
+        const tabularFields = ['data', 'results', 'records', 'items', 'list', 'tools'];
+        
+        // Check direct fields first
+        let tabularField = tabularFields.find(field => 
+          parsedOutput[field] && Array.isArray(parsedOutput[field]) && isTabularData(parsedOutput[field])
+        );
+        
+        // Check nested fields if no direct field found
+        if (!tabularField) {
+          for (const field of tabularFields) {
+            if (parsedOutput[field] && typeof parsedOutput[field] === 'object' && parsedOutput[field] !== null) {
+              const nestedData = parsedOutput[field];
+              tabularField = tabularFields.find(nestedField => 
+                nestedData[nestedField] && Array.isArray(nestedData[nestedField]) && isTabularData(nestedData[nestedField])
+              );
+              if (tabularField) break;
+            }
+          }
+        }
+        
+        if (tabularField && Array.isArray(parsedOutput[tabularField])) {
+          const count = (parsedOutput[tabularField] as any[]).length;
+          outputText = `Found ${count} ${tabularField} record${count !== 1 ? 's' : ''}`;
+        } else if (Array.isArray(parsedOutput) && isTabularData(parsedOutput)) {
+          outputText = `Found ${(parsedOutput as any[]).length} record${(parsedOutput as any[]).length !== 1 ? 's' : ''}`;
+        } else {
+          outputText = 'Tabular data found';
+        }
+      } else {
+        // For regular JSON, format as readable text
+        outputText = formatDataAsText(parsedOutput);
+      }
+      
       const result = {
         tool: toolResult.xmlTagName || toolResult.functionName,
         arguments: toolResult.arguments || {},
-        output: typeof toolResult.toolOutput === 'string' ? toolResult.toolOutput : String(toolResult.toolOutput || ''),
+        output: outputText,
+        rawOutput: parsedOutput, // Keep raw data for table rendering
         success: toolResult.isSuccess,
         summary: toolResult.summary || '',
         timestamp: toolResult.timestamp,
       };
-      console.log('GenericToolView: formatContent returning toolResult:', result);
       return result;
     }
 
@@ -69,12 +406,12 @@ export function GenericToolView({
         const result = {
           tool: content.tool_name || content.xml_tag_name || 'unknown',
           arguments: content.parameters || {},
-          output: content.result || '',
+          output: typeof content.result === 'string' ? content.result : formatDataAsText(content.result || ''),
+          rawOutput: content.result,
           success: content.success !== false,
           summary: '',
           timestamp: undefined,
         };
-        console.log('GenericToolView: formatContent returning legacy structured:', result);
         return result;
       }
 
@@ -85,12 +422,12 @@ export function GenericToolView({
           const result = {
             tool: innerContent.tool_name || innerContent.xml_tag_name || 'unknown',
             arguments: innerContent.parameters || {},
-            output: innerContent.result || '',
+            output: typeof innerContent.result === 'string' ? innerContent.result : formatDataAsText(innerContent.result || ''),
+            rawOutput: innerContent.result,
             success: innerContent.success !== false,
             summary: '',
             timestamp: undefined,
           };
-          console.log('GenericToolView: formatContent returning nested legacy structured:', result);
           return result;
         }
       }
@@ -105,21 +442,20 @@ export function GenericToolView({
           summary: '',
           timestamp: undefined,
         };
-        console.log('GenericToolView: formatContent returning content string:', result);
         return result;
       }
       
       // Ensure we always return a string output for objects to prevent React rendering issues
-      const safeOutput = typeof content === 'object' ? JSON.stringify(content, null, 2) : String(content);
+      const safeOutput = typeof content === 'object' ? formatDataAsText(content) : String(content);
       const result = { 
         tool: 'unknown',
         arguments: {},
         output: safeOutput,
+        rawOutput: content,
         success: true,
         summary: '',
         timestamp: undefined,
       };
-      console.log('GenericToolView: formatContent returning safe object output:', result);
       return result;
     }
 
@@ -130,12 +466,12 @@ export function GenericToolView({
           const result = { 
             tool: 'unknown',
             arguments: {},
-            output: JSON.stringify(parsedJson, null, 2),
+            output: formatDataAsText(parsedJson),
+            rawOutput: parsedJson,
             success: true,
             summary: '',
             timestamp: undefined,
           };
-          console.log('GenericToolView: formatContent returning parsed JSON string:', result);
           return result;
         }
         const result = { 
@@ -146,7 +482,6 @@ export function GenericToolView({
           summary: '',
           timestamp: undefined,
         };
-        console.log('GenericToolView: formatContent returning original string:', result);
         return result;
       } catch (e) {
         const result = { 
@@ -157,7 +492,6 @@ export function GenericToolView({
           summary: '',
           timestamp: undefined,
         };
-        console.log('GenericToolView: formatContent returning original string (parse failed):', result);
         return result;
       }
     }
@@ -171,7 +505,6 @@ export function GenericToolView({
       summary: '',
       timestamp: undefined,
     };
-    console.log('GenericToolView: formatContent returning final fallback:', result);
     return result;
   };
 
@@ -181,18 +514,73 @@ export function GenericToolView({
     
     // Ensure output is always a string
     if (formatted.output && typeof formatted.output !== 'string') {
-      formatted.output = String(formatted.output);
+      try {
+        formatted.output = JSON.stringify(formatted.output, null, 2);
+      } catch (error) {
+        console.warn('Failed to stringify formatted output:', error);
+        formatted.output = String(formatted.output);
+      }
+    }
+    
+    // Ensure arguments is always an object
+    if (formatted.arguments && typeof formatted.arguments !== 'object') {
+      try {
+        formatted.arguments = typeof formatted.arguments === 'string' 
+          ? JSON.parse(formatted.arguments) 
+          : {};
+      } catch (error) {
+        console.warn('Failed to parse formatted arguments:', error);
+        formatted.arguments = {};
+      }
+    }
+    
+    // Ensure summary is always a string
+    if (formatted.summary && typeof formatted.summary !== 'string') {
+      try {
+        formatted.summary = JSON.stringify(formatted.summary, null, 2);
+      } catch (error) {
+        console.warn('Failed to stringify formatted summary:', error);
+        formatted.summary = String(formatted.summary);
+      }
     }
     
     return formatted;
   };
 
   const formattedAssistantContent = React.useMemo(
-    () => ensureFormattedContent(formatContent(assistantContent)),
+    () => {
+      try {
+        return ensureFormattedContent(formatContent(assistantContent));
+      } catch (error) {
+        console.error('Error formatting assistant content:', error);
+        return {
+          tool: 'unknown',
+          arguments: {},
+          output: 'Error processing assistant content',
+          success: false,
+          summary: '',
+          timestamp: undefined,
+        };
+      }
+    },
     [assistantContent],
   );
   const formattedToolContent = React.useMemo(
-    () => ensureFormattedContent(formatContent(toolContent)),
+    () => {
+      try {
+        return ensureFormattedContent(formatContent(toolContent));
+      } catch (error) {
+        console.error('Error formatting tool content:', error);
+        return {
+          tool: 'unknown',
+          arguments: {},
+          output: 'Error processing tool content',
+          success: false,
+          summary: '',
+          timestamp: undefined,
+        };
+      }
+    },
     [toolContent],
   );
 
@@ -222,41 +610,124 @@ export function GenericToolView({
     );
   };
 
-  const renderOutput = (output: string, title: string = 'Output') => {
+  const renderOutput = (output: string, title: string = 'Output', rawOutput?: any) => {
     if (!output) return null;
 
-    // Try to parse JSON for better formatting
-    let parsedOutput;
-    try {
-      parsedOutput = typeof output === 'string' ? JSON.parse(output) : output;
-    } catch {
-      parsedOutput = output;
+    // Helper function to extract tabular data from nested structures
+    const extractTabularData = (data: any): any[] | null => {
+      if (Array.isArray(data) && isTabularData(data)) {
+        return data;
+      }
+      
+      if (typeof data === 'object' && data !== null) {
+        const tabularFields = ['data', 'results', 'records', 'items', 'list', 'tools'];
+        
+        // Check direct fields first
+        for (const field of tabularFields) {
+          if (data[field] && Array.isArray(data[field]) && isTabularData(data[field])) {
+            return data[field];
+          }
+        }
+        
+        // Check nested fields (for cases like { data: { data: [...] } })
+        for (const field of tabularFields) {
+          if (data[field] && typeof data[field] === 'object' && data[field] !== null) {
+            const nestedData = data[field];
+            for (const nestedField of tabularFields) {
+              if (nestedData[nestedField] && Array.isArray(nestedData[nestedField]) && isTabularData(nestedData[nestedField])) {
+                return nestedData[nestedField];
+              }
+            }
+          }
+        }
+      }
+      
+      return null;
+    };
+
+    // Check if we have raw output data that might be tabular
+    const tabularData = extractTabularData(rawOutput);
+    if (tabularData) {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            {title}
+          </div>
+          <div className="space-y-4">
+            {/* Show descriptive text */}
+            <div className="bg-muted/50 rounded-xl border p-4">
+              <div className="text-base text-foreground whitespace-pre-wrap break-words">
+                {output}
+              </div>
+            </div>
+            {/* Show table */}
+            <div className="bg-muted/50 rounded-xl border p-4">
+              <TabularDataTable data={tabularData} />
+            </div>
+          </div>
+        </div>
+      );
     }
 
+    // Try to parse the output string to check if it contains tabular data
+    let parsedOutput;
+    try {
+      parsedOutput = JSON.parse(output);
+    } catch {
+      // If parsing fails, treat as regular text
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            {title}
+          </div>
+          <div className="bg-muted/50 rounded-xl border p-4">
+            <div className="text-base text-foreground whitespace-pre-wrap break-words">
+              {output}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Check if the parsed output contains tabular data
+    const tabularDataFromOutput = extractTabularData(parsedOutput);
+    if (tabularDataFromOutput) {
+      return (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <FileText className="h-4 w-4 text-muted-foreground" />
+            {title}
+          </div>
+          <div className="space-y-4">
+            {/* Show descriptive text */}
+            <div className="bg-muted/50 rounded-xl border p-4">
+              <div className="text-base text-foreground whitespace-pre-wrap break-words">
+                {output}
+              </div>
+            </div>
+            {/* Show table */}
+            <div className="bg-muted/50 rounded-xl border p-4">
+              <TabularDataTable data={tabularDataFromOutput} />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // For non-tabular data, display as formatted text
     return (
       <div className="space-y-4">
-        {typeof parsedOutput === 'object' && parsedOutput !== null ? (
-          <div className="bg-accent rounded-xl border p-4 space-y-4">
-            {Object.entries(parsedOutput).map(([key, value]) => (
-              <div key={key} className="space-y-2">
-                <div className="text-xs font-semibold text-foreground uppercase tracking-wide">
-                  {key.replace(/_/g, ' ')}
-                </div>
-                <div className="bg-background rounded-lg border p-3">
-                  {/* Ensure we never try to render objects directly */}
-                  {renderValue(value)}
-                </div>
-              </div>
-            ))}
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          {title}
+        </div>
+        <div className="bg-muted/50 rounded-xl border p-4">
+          <div className="text-base text-foreground whitespace-pre-wrap break-words">
+            {output}
           </div>
-        ) : (
-          <div className="bg-muted/50 rounded-xl border p-4">
-              <div className="text-base text-foreground whitespace-pre-wrap break-words">
-                {/* Ensure we never try to render objects directly */}
-                {renderValue(parsedOutput)}
-              </div>
-          </div>
-        )}
+        </div>
       </div>
     );
   };
@@ -331,14 +802,26 @@ export function GenericToolView({
     if (typeof value === 'object') {
       // Ensure we always return a string representation for objects
       // This prevents React from trying to render objects directly
-      const jsonString = JSON.stringify(value, null, 2);
-      return (
-        <div className="bg-muted/50 rounded p-2">
-          <pre className="text-xs text-foreground overflow-x-auto">
-            {jsonString}
-          </pre>
-        </div>
-      );
+      try {
+        const jsonString = JSON.stringify(value, null, 2);
+        return (
+          <div className="bg-muted/50 rounded p-2">
+            <pre className="text-xs text-foreground overflow-x-auto">
+              {jsonString}
+            </pre>
+          </div>
+        );
+      } catch (error) {
+        // If JSON.stringify fails, use a safe fallback
+        console.warn('Failed to stringify object:', value, error);
+        return (
+          <div className="bg-muted/50 rounded p-2">
+            <pre className="text-xs text-foreground overflow-x-auto">
+              {String(value)}
+            </pre>
+          </div>
+        );
+      }
     }
     
     // For any other type, convert to string safely
@@ -531,7 +1014,7 @@ export function GenericToolView({
               {/* Tool Output */}
               {formattedToolContent?.output && (
                 (isSuccess && !(typeof formattedToolContent.output === 'string' && formattedToolContent.output.includes('Error'))) 
-                  ? renderOutput(formattedToolContent.output, 'Result')
+                  ? renderOutput(formattedToolContent.output, 'Result', formattedToolContent.rawOutput)
                   : renderErrorOutput(formattedToolContent.output)
               )}
 
@@ -553,12 +1036,7 @@ export function GenericToolView({
                   <div className="p-3 bg-muted/50 rounded-lg border border-border">
                     <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
                       {/* Ensure we never try to render objects directly */}
-                      {typeof formattedToolContent === 'string' 
-                        ? formattedToolContent 
-                        : typeof formattedToolContent === 'object' 
-                          ? JSON.stringify(formattedToolContent, null, 2)
-                          : String(formattedToolContent)
-                      }
+                      {renderValue(formattedToolContent)}
                     </div>
                   </div>
                 </div>

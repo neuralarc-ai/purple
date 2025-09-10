@@ -18,8 +18,6 @@ import {
   safeJsonParse,
 } from '@/components/thread/utils';
 import { HeliumLogo } from '@/components/sidebar/helium-logo';
-import { AgentLoader } from './loader';
-import { AgentAvatar, AgentName } from './agent-avatar';
 import { AnimatedLoader } from './AnimatedLoader';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,7 +34,7 @@ import { ShowToolStream } from './ShowToolStream';
 import { ComposioUrlDetector } from './composio-url-detector';
 import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
-import { SECURITY_ALERT_VARIANTS, HARM_ALERT_VARIANT, HARM_CONTENT_PATTERNS } from '@/lib/security-database';
+import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
 
 
 // Helper function to render all attachments as standalone messages
@@ -249,12 +247,12 @@ export function renderMarkdownContent(
             <div key={`tool-${match.index}-${index}`} className="my-1">
               <button
                 onClick={() => handleToolClick(messageId, toolName)}
-                className="inline-flex items-center gap-1.5 py-1 px-1 pr-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+                className="inline-flex items-center gap-1.5 py-1 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
               >
-                <div className="border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600">
-                  <IconComponent className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600">
+                  <IconComponent className="h-3 w-3 z-40 text text-muted-foreground flex-shrink-0" />
                 </div>
-                <span className="font-mono text-xs text-foreground">
+                <span className="font-mono text-xs text-accent-foreground font-medium">
                   {getUserFriendlyToolName(toolName)}
                 </span>
                 {paramDisplay && (
@@ -433,7 +431,7 @@ export function renderMarkdownContent(
         <div key={toolCallKey} className="my-1">
           <button
             onClick={() => handleToolClick(messageId, toolName)}
-            className="inline-flex items-center gap-1.5 py-1 px-1 pr-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+            className="inline-flex items-center gap-1.5 py-1 px-2 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
           >
             <div className="border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600">
               <IconComponent className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
@@ -503,6 +501,8 @@ export interface ThreadContentProps {
   scrollToBottom?: (behavior?: ScrollBehavior) => void;
   finalGroupedMessages?: any[];
   isSidePanelOpen?: boolean; // Add side panel state prop
+  // Credit exhaustion callback
+  onCreditExhaustionUpgrade?: () => void;
 }
 
 // Component for action buttons that appear on assistant messages
@@ -743,6 +743,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
   agentMetadata,
   agentData,
   isSidePanelOpen = false,
+  onCreditExhaustionUpgrade,
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const latestMessageRef = useRef<HTMLDivElement>(null);
@@ -921,7 +922,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
             <div className="space-y-8 min-w-0">
               {(() => {
                 type MessageGroup = {
-                  type: 'user' | 'assistant_group';
+                  type: 'user' | 'assistant_group' | 'credit_exhaustion';
                   messages: UnifiedMessage[];
                   key: string;
                 };
@@ -942,6 +943,18 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                     // Create a new user message group
                     groupedMessages.push({
                       type: 'user',
+                      messages: [message],
+                      key,
+                    });
+                  } else if (messageType === 'credit_exhaustion') {
+                    // Finalize any existing group
+                    if (currentGroup) {
+                      groupedMessages.push(currentGroup);
+                      currentGroup = null;
+                    }
+                    // Create a standalone credit exhaustion group
+                    groupedMessages.push({
+                      type: 'credit_exhaustion',
                       messages: [message],
                       key,
                     });
@@ -1189,6 +1202,17 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                         </div>
                       </div>
                     );
+                  } else if (group.type === 'credit_exhaustion') {
+                    // Handle credit exhaustion group
+                    return (
+                      <div key={group.key} className="flex justify-center w-full py-4 pr-4">
+                        <div className="w-full pr-4">
+                          <CreditExhaustionBanner 
+                            onUpgrade={onCreditExhaustionUpgrade}
+                          />
+                        </div>
+                      </div>
+                    );
                   } else if (group.type === 'assistant_group') {
                     // Get agent_id from the first assistant message in this group
                     const firstAssistantMsg = group.messages.find(
@@ -1300,19 +1324,17 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
 
                                     if (isDenialNotice) {
                                       // Check if this is harmful content to use specific variant
-                                      const isHarmful = HARM_CONTENT_PATTERNS.some(pattern => 
-                                        parsedContent.content.toLowerCase().includes(pattern.toLowerCase())
-                                      );
+                                      const isHarmful = false; // Disabled security checks
                                       
                                       let variant;
                                       if (isHarmful) {
-                                        variant = HARM_ALERT_VARIANT;
+                                        variant = parsedContent.content;
                                       } else {
                                         // Deterministic variant pick based on message id/content to avoid flicker
                                         const basis = `${message.message_id || ''}|${parsedContent.content}`;
                                         let seed = 0;
                                         for (let i = 0; i < basis.length; i++) seed = (seed * 31 + basis.charCodeAt(i)) >>> 0;
-                                        variant = SECURITY_ALERT_VARIANTS[(seed % SECURITY_ALERT_VARIANTS.length) || 0] || parsedContent.content;
+                                        variant = parsedContent.content;
                                       }
 
                                       elements.push(
@@ -1666,6 +1688,8 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                     </div>
                   </div>
                 )}
+              
+              
               <div className="!h-48" />
             </div>
           </div>

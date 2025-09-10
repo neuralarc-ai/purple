@@ -27,6 +27,7 @@ interface Config {
   IS_LOCAL: boolean;
   IS_STAGING: boolean;
   SUBSCRIPTION_TIERS: SubscriptionTiers;
+  BACKEND_URL: string;
 }
 
 // Production tier IDs
@@ -37,20 +38,20 @@ const PROD_TIERS: SubscriptionTiers = {
   },
   TIER_RIDICULOUSLY_CHEAP: {
     priceId: 'price_1S2VNiAnxOD5rXBGWs7gO2rv',
-    name: 'Ridiculously Cheap - $24.99/month',
+    name: 'Outrageously Smart - $24.99/month',
   },
   TIER_SERIOUS_BUSINESS: {
     priceId: 'price_1S2VO6AnxOD5rXBGU5KcFi0O',
-    name: 'Serious Business - $94.99/month',
+    name: 'Supremely Serious - $94.99/month',
   },
   // Yearly plans with 15% discount
   TIER_RIDICULOUSLY_CHEAP_YEARLY: {
     priceId: 'price_1S2VOMAnxOD5rXBGOfBNWIe4',
-    name: 'Ridiculously Cheap - $254.89/year',
+    name: 'Outrageously Smart - $254.89/year',
   },
   TIER_SERIOUS_BUSINESS_YEARLY: {
     priceId: 'price_1S2VOfAnxOD5rXBGI80iSxA5',
-    name: 'Serious Business - $968.88/year',
+    name: 'Supremely Serious - $968.88/year',
   },
 } as const;
 
@@ -62,20 +63,20 @@ const STAGING_TIERS: SubscriptionTiers = {
   },
   TIER_RIDICULOUSLY_CHEAP: {
     priceId: 'price_1RIGvuG6l1KZGqIrCRu0E4Gi',
-    name: 'Ridiculously Cheap - $24.99/month',
+    name: 'Outrageously Smart - $24.99/month',
   },
   TIER_SERIOUS_BUSINESS: {
     priceId: 'price_1RIGvuG6l1KZGqIrvjlz5p5V',
-    name: 'Serious Business - $94.99/month',
+    name: 'Supremely Serious - $94.99/month',
   },
   // Yearly plans with 15% discount
   TIER_RIDICULOUSLY_CHEAP_YEARLY: {
     priceId: 'price_1ReGogG6l1KZGqIrEyBTmtPk',
-    name: 'Ridiculously Cheap - $254.89/year',
+    name: 'Outrageously Smart - $254.89/year',
   },
   TIER_SERIOUS_BUSINESS_YEARLY: {
     priceId: 'price_1ReGoJG6l1KZGqIr0DJWtoOc',
-    name: 'Serious Business - $968.88/year',
+    name: 'Supremely Serious - $968.88/year',
   },
 } as const;
 
@@ -97,6 +98,21 @@ function getEnvironmentMode(): EnvMode {
   }
 }
 
+function getBackendUrl(): string {
+  const envMode = getEnvironmentMode();
+  
+  switch (envMode) {
+    case EnvMode.LOCAL:
+      return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    case EnvMode.STAGING:
+      return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://staging-api.he2.ai';
+    case EnvMode.PRODUCTION:
+      return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.he2.ai';
+    default:
+      return 'http://localhost:8000';
+  }
+}
+
 const currentEnvMode = getEnvironmentMode();
 
 export const config: Config = {
@@ -105,6 +121,7 @@ export const config: Config = {
   IS_STAGING: currentEnvMode === EnvMode.STAGING,
   SUBSCRIPTION_TIERS:
     currentEnvMode === EnvMode.STAGING ? STAGING_TIERS : PROD_TIERS,
+  BACKEND_URL: getBackendUrl(),
 };
 
 export const isLocalMode = (): boolean => {
@@ -139,19 +156,19 @@ export const isYearlyPlan = (priceId: string): boolean => {
 // Tier level mappings for all plan types
 const PLAN_TIERS = {
   // Monthly plans
-  [PROD_TIERS.TIER_RIDICULOUSLY_CHEAP.priceId]: { tier: 1, type: 'monthly', name: 'Ridiculously Cheap - $24.99/month' },
-  [PROD_TIERS.TIER_SERIOUS_BUSINESS.priceId]: { tier: 2, type: 'monthly', name: 'Serious Business - $94.99/month' },
+  [PROD_TIERS.TIER_RIDICULOUSLY_CHEAP.priceId]: { tier: 1, type: 'monthly', name: 'Outrageously Smart - $24.99/month' },
+  [PROD_TIERS.TIER_SERIOUS_BUSINESS.priceId]: { tier: 2, type: 'monthly', name: 'Supremely Serious - $94.99/month' },
   
   // Yearly plans  
-  [PROD_TIERS.TIER_RIDICULOUSLY_CHEAP_YEARLY.priceId]: { tier: 1, type: 'yearly', name: 'Ridiculously Cheap - $254.89/year' },
-  [PROD_TIERS.TIER_SERIOUS_BUSINESS_YEARLY.priceId]: { tier: 2, type: 'yearly', name: 'Serious Business - $968.88/year' },
+  [PROD_TIERS.TIER_RIDICULOUSLY_CHEAP_YEARLY.priceId]: { tier: 1, type: 'yearly', name: 'Outrageously Smart - $254.89/year' },
+  [PROD_TIERS.TIER_SERIOUS_BUSINESS_YEARLY.priceId]: { tier: 2, type: 'yearly', name: 'Supremely Serious - $968.88/year' },
 
   // Staging plans
-  [STAGING_TIERS.TIER_RIDICULOUSLY_CHEAP.priceId]: { tier: 1, type: 'monthly', name: 'Ridiculously Cheap - $24.99/month' },
-  [STAGING_TIERS.TIER_SERIOUS_BUSINESS.priceId]: { tier: 2, type: 'monthly', name: 'Serious Business - $94.99/month' },
+  [STAGING_TIERS.TIER_RIDICULOUSLY_CHEAP.priceId]: { tier: 1, type: 'monthly', name: 'Outrageously Smart - $24.99/month' },
+  [STAGING_TIERS.TIER_SERIOUS_BUSINESS.priceId]: { tier: 2, type: 'monthly', name: 'Supremely Serious - $94.99/month' },
   
-  [STAGING_TIERS.TIER_RIDICULOUSLY_CHEAP_YEARLY.priceId]: { tier: 1, type: 'yearly', name: 'Ridiculously Cheap - $254.89/year' },
-  [STAGING_TIERS.TIER_SERIOUS_BUSINESS_YEARLY.priceId]: { tier: 2, type: 'yearly', name: 'Serious Business - $968.88/year' },
+  [STAGING_TIERS.TIER_RIDICULOUSLY_CHEAP_YEARLY.priceId]: { tier: 1, type: 'yearly', name: 'Outrageously Smart - $254.89/year' },
+  [STAGING_TIERS.TIER_SERIOUS_BUSINESS_YEARLY.priceId]: { tier: 2, type: 'yearly', name: 'Supremely Serious - $968.88/year' },
 } as const;
 
 export const getPlanInfo = (priceId: string) => {

@@ -11,7 +11,7 @@ export type ModeType = 'default' | 'agent';
 const saveModePreference = (mode: ModeType): void => {
   try {
     localStorage.setItem(STORAGE_KEY_MODE, mode);
-    console.log('✅ useModeSelection: Saved mode preference to localStorage:', mode);
+    // console.log('✅ useModeSelection: Saved mode preference to localStorage:', mode);
   } catch (error) {
     console.warn('❌ useModeSelection: Failed to save mode preference to localStorage:', error);
   }
@@ -25,7 +25,7 @@ const loadModePreference = (): ModeType => {
     }
     
     const savedMode = localStorage.getItem(STORAGE_KEY_MODE);
-    console.log('🔧 useModeSelection: Saved mode from localStorage:', savedMode);
+    // console.log('🔧 useModeSelection: Saved mode from localStorage:', savedMode);
     
     if (savedMode === 'default' || savedMode === 'agent') {
       return savedMode;
@@ -46,7 +46,7 @@ export const useModeSelection = () => {
   useEffect(() => {
     if (!hasInitialized && typeof window !== 'undefined') {
       const savedMode = loadModePreference();
-      console.log('🔧 useModeSelection: Initializing with saved mode:', savedMode);
+      // console.log('🔧 useModeSelection: Initializing with saved mode:', savedMode);
       setSelectedMode(savedMode);
       setHasInitialized(true);
     }
@@ -54,12 +54,12 @@ export const useModeSelection = () => {
 
   // Handle mode selection change
   const handleModeChange = (mode: ModeType) => {
-    console.log('🔧 useModeSelection: handleModeChange called with:', mode);
+    // console.log('🔧 useModeSelection: handleModeChange called with:', mode);
     
-    console.log('✅ useModeSelection: Setting mode to:', mode);
+    // console.log('✅ useModeSelection: Setting mode to:', mode);
     setSelectedMode(mode);
     saveModePreference(mode);
-    console.log('✅ useModeSelection: Mode change completed successfully');
+    // console.log('✅ useModeSelection: Mode change completed successfully');
   };
 
   return {

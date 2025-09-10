@@ -44,7 +44,7 @@ export const siteConfig = {
       /** @deprecated */
       hours: '60 min',
       features: [
-        '799 credits/month',
+        '1,500 credits/month',
         '2 custom agents',
         'Public projects',
         'Upto 2 Integrations',
@@ -54,7 +54,7 @@ export const siteConfig = {
       upgradePlans: [],
     },
     {
-      name: 'Ridiculously Cheap',
+      name: 'Outrageously Smart',
       price: '$24.99',
       yearlyPrice: '$254.89',
       originalYearlyPrice: '$299.88',
@@ -66,7 +66,7 @@ export const siteConfig = {
       /** @deprecated */
       hours: '2 hours',
       features: [
-        '3,000 credits/month',
+        '4,500 credits/month',
         '5 custom agents',
         'Private projects',
         'Upto 10 Integrations',
@@ -77,7 +77,7 @@ export const siteConfig = {
       upgradePlans: [],
     },
     {
-      name: 'Serious Business',
+      name: 'Supremely Serious',
       price: '$94.99',
       yearlyPrice: '$968.88',
       originalYearlyPrice: '$1139.88',
@@ -89,7 +89,7 @@ export const siteConfig = {
       /** @deprecated */
       hours: '6 hours',
       features: [
-        '10,000 credits/month',
+        '11,500 credits/month',
         '10 custom agents',
         'Private projects',
         'Unlimited Integrations',

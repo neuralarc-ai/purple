@@ -15,10 +15,10 @@ export async function POST(request: NextRequest) {
     // Try to connect to backend first
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
     
-    console.log('Sending onboarding data to backend:', {
-      url: `${backendUrl}/api/user-profiles/onboarding`,
-      body: body
-    });
+    // console.log('Sending onboarding data to backend:', {
+    //   url: `${backendUrl}/api/user-profiles/onboarding`,
+    //   body: body
+    // });
     
     try {
       const response = await fetch(`${backendUrl}/api/user-profiles/onboarding`, {
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify(body),
       });
 
-      console.log('Backend response status:', response.status);
+      // console.log('Backend response status:', response.status);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
         
         // If backend is not found (404), use fallback immediately
         if (response.status === 404) {
-          console.log('Backend endpoint not found, using Supabase fallback');
+          // console.log('Backend endpoint not found, using Supabase fallback');
           throw new Error('Backend not available');
         }
         
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       }
 
       const data = await response.json();
-      console.log('Backend success response:', data);
+      // console.log('Backend success response:', data);
       
       return NextResponse.json(data);
     } catch (backendError) {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      console.log('Supabase fallback success:', profileData);
+      // console.log('Supabase fallback success:', profileData);
       return NextResponse.json({
         success: true,
         message: 'Onboarding completed successfully',

@@ -19,7 +19,6 @@ from agent.tools.sb_files_tool import SandboxFilesTool
 from agent.tools.data_providers_tool import DataProvidersTool
 from agent.tools.expand_msg_tool import ExpandMessageTool
 from agent.prompt import get_system_prompt
-from utils.security_prompt import get_security_prompt, should_use_security_prompt, get_security_response_type, log_security_event
 
 from utils.logger import logger
 from utils.auth_utils import get_account_id_from_thread
@@ -250,18 +249,6 @@ class PromptManager:
                                   thread_id: str, 
                                   mcp_wrapper_instance: Optional[MCPToolWrapper],
                                   client=None, user_input: Optional[str] = None) -> dict:
-        
-        # Check if security prompt should be used based on user input
-        if user_input and should_use_security_prompt(user_input):
-            logger.warning(f"Security prompt triggered for thread {thread_id} due to suspicious input")
-            
-            # Log the security event
-            response_type = get_security_response_type(user_input)
-            log_security_event(user_input, response_type, "security_prompt_activated")
-            
-            # Return security prompt
-            security_content = get_security_prompt()
-            return {"role": "system", "content": security_content, "is_security_prompt": True}
         
         # Continue with normal system prompt logic
         default_system_content = get_system_prompt()
@@ -593,36 +580,6 @@ class AgentRunner:
             temporary_message = await message_manager.build_temporary_message()
             max_tokens = self.get_max_tokens()
             
-            # Check if this is a security prompt response
-            is_security_prompt = system_message.get('is_security_prompt', False)
-            
-            # If this is a security prompt, provide a direct security response
-            if is_security_prompt:
-                from utils.security_prompt import get_security_response_type, get_security_response_template
-                response_type = get_security_response_type(user_input or "")
-                security_response = get_security_response_template(response_type)
-                
-                # Log the security event
-                log_security_event(user_input or "", response_type, "security_response_generated")
-                
-                # Yield the security response
-                yield {
-                    "type": "assistant",
-                    "content": json.dumps({
-                        "content": security_response,
-                        "is_security_response": True,
-                        "security_type": response_type
-                    })
-                }
-                
-                # End the generation if we have tracing
-                if generation:
-                    generation.end(output=security_response, status_message="security_response_complete")
-                
-                # Stop execution after security response
-                continue_execution = False
-                break
-            
             generation = self.config.trace.generation(name="thread_manager.run_thread") if self.config.trace else None
             try:
                 response = await self.thread_manager.run_thread(
@@ -762,7 +719,7 @@ async def run_agent(
     thread_manager: Optional[ThreadManager] = None,
     native_max_auto_continues: int = 25,
     max_iterations: int = 100,
-    model_name: str = "vertex_ai/gemini-2.5-pro",
+    model_name: str = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0",
     enable_thinking: Optional[bool] = False,
     reasoning_effort: Optional[str] = 'low',
     enable_context_manager: bool = True,
@@ -776,15 +733,15 @@ async def run_agent(
     elif model_name != "openai/gpt-5-mini":
         logger.debug(f"Using user-selected model: {effective_model}")
     else:
-        # Use Vertex AI Gemini 2.5 Pro for both local and production environments
+        # Use Claude Sonnet 4 from Bedrock for both local and production environments
         if model_name == "openai/gpt-5-mini":
-            effective_model = "vertex_ai/gemini-2.5-pro"
+            effective_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
             logger.debug(f"Using default model: {effective_model}")
         else:
             logger.debug(f"Using default model: {effective_model}")
     
-    # Use Vertex AI Gemini 2.5 Pro for both local and production environments
-    effective_model = "vertex_ai/gemini-2.5-pro"
+    # Use Claude Sonnet 4 from Bedrock for both local and production environments
+    effective_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
 
     config = AgentConfig(
         thread_id=thread_id,

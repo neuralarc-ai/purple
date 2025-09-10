@@ -300,14 +300,14 @@ class SandboxFilesTool(SandboxToolsBase):
         except Exception as e:
             return self.fail_response(f"Error rewriting file: {str(e)}")
 
-    async def _call_gemini_api(self, file_content: str, code_edit: str, instructions: str, file_path: str) -> tuple[Optional[str], Optional[str]]:
+    async def _call_claude_sonnet_api(self, file_content: str, code_edit: str, instructions: str, file_path: str) -> tuple[Optional[str], Optional[str]]:
         """
-        Call Vertex AI Gemini 2.5 Pro via LiteLLM to apply edits to file content.
+        Call Claude Sonnet 4 from Bedrock via LiteLLM to apply edits to file content.
         Returns a tuple (new_content, error_message).
         On success, error_message is None. On failure, new_content is None.
         """
         try:
-            model_name = "vertex_ai/gemini-2.5-pro"
+            model_name = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
             prompt = (
                 f"<instruction>{instructions}</instruction>\n"
                 f"<file_content>{file_content}</file_content>\n"
@@ -516,13 +516,13 @@ npm run build
             # Read current content
             original_content = (await self.sandbox.fs.download_file(full_path)).decode()
             
-            # Try Vertex AI Gemini 2.5 Pro editing
+            # Try Claude Sonnet 4 editing
             logger.debug(f"Attempting AI-powered edit for file '{target_file}' with instructions: {instructions[:100]}...")
-            new_content, error_message = await self._call_gemini_api(original_content, code_edit, instructions, target_file)
+            new_content, error_message = await self._call_claude_sonnet_api(original_content, code_edit, instructions, target_file)
 
             if error_message:
                 return ToolResult(success=False, output=json.dumps({
-                    "message": f"Vertex AI Gemini 2.5 Pro editing failed: {error_message}",
+                    "message": f"Claude Sonnet 4 editing failed: {error_message}",
                     "file_path": target_file,
                     "original_content": original_content,
                     "updated_content": None

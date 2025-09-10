@@ -81,10 +81,10 @@ export function SiteHeader({
   const { data: threadTokenUsage, isLoading: tokenUsageLoading, error: tokenUsageError } = useThreadTokenUsage(threadId, agentStatus);
   
   // Debug logging
-  console.log('Thread ID:', threadId);
-  console.log('Thread token usage:', threadTokenUsage);
-  console.log('Token usage loading:', tokenUsageLoading);
-  console.log('Token usage error:', tokenUsageError);
+  // console.log('Thread ID:', threadId);
+  // console.log('Thread token usage:', threadTokenUsage);
+  // console.log('Token usage loading:', tokenUsageLoading);
+  // console.log('Token usage error:', tokenUsageError);
 
   const isMobile = useIsMobile() || isMobileView
   const updateProjectMutation = useUpdateProject()

@@ -5,10 +5,10 @@ import { useState, useEffect, useMemo } from 'react';
 import { isLocalMode, isProductionMode } from '@/lib/config';
 import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model';
 
-export const STORAGE_KEY_MODEL = 'suna-preferred-model-v10';
+export const STORAGE_KEY_MODEL = 'suna-preferred-model-v9';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
-export const DEFAULT_PREMIUM_MODEL_ID = 'vertex_ai/gemini-2.5-pro';
-export const DEFAULT_FREE_MODEL_ID = 'vertex_ai/gemini-2.5-pro';
+export const DEFAULT_PREMIUM_MODEL_ID = 'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0';
+export const DEFAULT_FREE_MODEL_ID = 'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0';
 
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
@@ -214,7 +214,7 @@ export const getCustomModels = (): CustomModel[] => {
 const saveModelPreference = (modelId: string): void => {
   try {
     localStorage.setItem(STORAGE_KEY_MODEL, modelId);
-    console.log('✅ useModelSelection: Saved model preference to localStorage:', modelId);
+    // console.log('✅ useModelSelection: Saved model preference to localStorage:', modelId);
   } catch (error) {
     console.warn('❌ useModelSelection: Failed to save model preference to localStorage:', error);
   }
@@ -256,13 +256,13 @@ export const useModelSelection = () => {
                       models = [
               { 
                 id: DEFAULT_FREE_MODEL_ID, 
-                label: 'Vertex AI Gemini 2.5 Pro', 
+                label: 'Claude Sonnet 4', 
                 requiresSubscription: false,
                 priority: MODELS[DEFAULT_FREE_MODEL_ID]?.priority || 100
               },
               { 
                 id: DEFAULT_PREMIUM_MODEL_ID, 
-                label: 'Vertex AI Gemini 2.5 Pro', 
+                label: 'Claude Sonnet 4', 
                 requiresSubscription: true, 
                 priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
               },
@@ -359,42 +359,42 @@ export const useModelSelection = () => {
   useEffect(() => {
     if (typeof window === 'undefined' || hasInitialized) return;
     
-    console.log('🔧 useModelSelection: Initializing model selection...');
-    console.log('🔧 useModelSelection: isLoadingModels:', isLoadingModels);
-    console.log('🔧 useModelSelection: subscriptionStatus:', subscriptionStatus);    
+    // console.log('🔧 useModelSelection: Initializing model selection...');
+    // console.log('🔧 useModelSelection: isLoadingModels:', isLoadingModels);
+    // console.log('🔧 useModelSelection: subscriptionStatus:', subscriptionStatus);    
     
     try {
       const savedModel = localStorage.getItem(STORAGE_KEY_MODEL);
-      console.log('🔧 useModelSelection: Saved model from localStorage:', savedModel);
+      // console.log('🔧 useModelSelection: Saved model from localStorage:', savedModel);
       
       // If we have a saved model, validate it's still available and accessible
       if (savedModel) {
         // Wait for models to load before validating
         if (isLoadingModels) {
-          console.log('🔧 useModelSelection: Models still loading, using saved model temporarily:', savedModel);
+          // console.log('🔧 useModelSelection: Models still loading, using saved model temporarily:', savedModel);
           // Use saved model immediately while waiting for validation
           setSelectedModel(savedModel);
           setHasInitialized(true);
           return;
         }
         
-        console.log('🔧 useModelSelection: Available MODEL_OPTIONS:', MODEL_OPTIONS.map(m => ({ id: m.id, requiresSubscription: m.requiresSubscription })));
+        // console.log('🔧 useModelSelection: Available MODEL_OPTIONS:', MODEL_OPTIONS.map(m => ({ id: m.id, requiresSubscription: m.requiresSubscription })));
         
         const modelOption = MODEL_OPTIONS.find(option => option.id === savedModel);
         const isCustomModel = isLocalMode() && customModels.some(model => model.id === savedModel);
         
-        console.log('🔧 useModelSelection: modelOption found:', modelOption);
-        console.log('🔧 useModelSelection: isCustomModel:', isCustomModel);
+        // console.log('🔧 useModelSelection: modelOption found:', modelOption);
+        // console.log('🔧 useModelSelection: isCustomModel:', isCustomModel);
         
         // Check if saved model is still valid and accessible
         if (modelOption || isCustomModel) {
           const isAccessible = isLocalMode() || 
             canAccessModel(subscriptionStatus, modelOption?.requiresSubscription ?? false);
           
-          console.log('🔧 useModelSelection: isAccessible:', isAccessible);
+          // console.log('🔧 useModelSelection: isAccessible:', isAccessible);
           
           if (isAccessible) {
-            console.log('✅ useModelSelection: Using saved model:', savedModel);
+            // console.log('✅ useModelSelection: Using saved model:', savedModel);
             setSelectedModel(savedModel);
             setHasInitialized(true);
             return;
@@ -414,9 +414,11 @@ export const useModelSelection = () => {
       // Fallback to default model
       const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
         (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
-      console.log('🔧 useModelSelection: Using default model:', defaultModel);
-      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' : 
-        `Subscription status: ${subscriptionStatus} -> Default: ${subscriptionStatus === 'active' ? 'PREMIUM (Vertex AI Gemini 2.5 Pro)' : 'FREE (Vertex AI Gemini 2.5 Pro)'}`);
+
+      // console.log('🔧 useModelSelection: Using default model:', defaultModel);
+      // console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' : 
+      //   `Subscription status: ${subscriptionStatus} -> Default: ${subscriptionStatus === 'active' ? 'PREMIUM (Vertex AI Gemini 2.5 Pro)' : 'FREE (Vertex AI Gemini 2.5 Pro)'}`);
+
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       setHasInitialized(true);
@@ -425,9 +427,11 @@ export const useModelSelection = () => {
       console.warn('❌ useModelSelection: Failed to load preferences from localStorage:', error);
       const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
         (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
-      console.log('🔧 useModelSelection: Using fallback default model:', defaultModel);
-      console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' : 
-        `Subscription status: ${subscriptionStatus} -> Fallback: ${subscriptionStatus === 'active' ? 'PREMIUM (Vertex AI Gemini 2.5 Pro)' : 'FREE (Vertex AI Gemini 2.5 Pro)'}`);
+
+      // console.log('🔧 useModelSelection: Using fallback default model:', defaultModel);
+      // console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' : 
+      //   `Subscription status: ${subscriptionStatus} -> Fallback: ${subscriptionStatus === 'active' ? 'PREMIUM (Vertex AI Gemini 2.5 Pro)' : 'FREE (Vertex AI Gemini 2.5 Pro)'}`);
+
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       setHasInitialized(true);
@@ -441,7 +445,7 @@ export const useModelSelection = () => {
     const savedModel = localStorage.getItem(STORAGE_KEY_MODEL);
     if (!savedModel || savedModel === selectedModel) return;
     
-    console.log('🔧 useModelSelection: Re-validating saved model after loading:', savedModel);
+    // console.log('🔧 useModelSelection: Re-validating saved model after loading:', savedModel);
     
     const modelOption = MODEL_OPTIONS.find(option => option.id === savedModel);
     const isCustomModel = isLocalMode() && customModels.some(model => model.id === savedModel);
@@ -470,9 +474,9 @@ export const useModelSelection = () => {
   useEffect(() => {
     if (!hasInitialized || typeof window === 'undefined') return;
     
-    console.log('🔧 useModelSelection: Subscription status changed, re-validating current model...');
-    console.log('🔧 useModelSelection: Current selected model:', selectedModel);
-    console.log('🔧 useModelSelection: New subscription status:', subscriptionStatus);
+    // console.log('🔧 useModelSelection: Subscription status changed, re-validating current model...');
+    // console.log('🔧 useModelSelection: Current selected model:', selectedModel);
+    // console.log('🔧 useModelSelection: New subscription status:', subscriptionStatus);
     
     // Skip validation if models are still loading
     if (isLoadingModels) return;
@@ -488,20 +492,22 @@ export const useModelSelection = () => {
         console.warn('⚠️ useModelSelection: Current model no longer accessible, switching to default');
         const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
           (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
-              console.log('🔧 useModelSelection: Subscription-based default switch:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' : 
-        `${subscriptionStatus === 'active' ? 'PREMIUM (Vertex AI Gemini 2.5 Pro)' : 'FREE (Vertex AI Gemini 2.5 Pro)'}`);
+
+              // console.log('🔧 useModelSelection: Subscription-based default switch:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' : 
+      //   `${subscriptionStatus === 'active' ? 'PREMIUM (Vertex AI Gemini 2.5 Pro)' : 'FREE (Vertex AI Gemini 2.5 Pro)'}`);
+
         setSelectedModel(defaultModel);
         saveModelPreference(defaultModel);
       } else {
-        console.log('✅ useModelSelection: Current model still accessible');
+        // console.log('✅ useModelSelection: Current model still accessible');
       }
     }
   }, [subscriptionStatus, selectedModel, hasInitialized, isLoadingModels]);
 
   // Handle model selection change
   const handleModelChange = (modelId: string) => {
-    console.log('🔧 useModelSelection: handleModelChange called with:', modelId);
-    console.log('🔧 useModelSelection: Available MODEL_OPTIONS:', MODEL_OPTIONS.map(m => m.id));
+    // console.log('🔧 useModelSelection: handleModelChange called with:', modelId);
+    // console.log('🔧 useModelSelection: Available MODEL_OPTIONS:', MODEL_OPTIONS.map(m => m.id));
     
     // Refresh custom models from localStorage to ensure we have the latest
     if (isLocalMode()) {
@@ -514,8 +520,8 @@ export const useModelSelection = () => {
     // Then check if it's in standard MODEL_OPTIONS
     const modelOption = MODEL_OPTIONS.find(option => option.id === modelId);
     
-    console.log('🔧 useModelSelection: modelOption found:', modelOption);
-    console.log('🔧 useModelSelection: isCustomModel:', isCustomModel);
+    // console.log('🔧 useModelSelection: modelOption found:', modelOption);
+    // console.log('🔧 useModelSelection: isCustomModel:', isCustomModel);
     
     // Check if model exists in either custom models or standard options
     if (!modelOption && !isCustomModel) {
@@ -524,7 +530,7 @@ export const useModelSelection = () => {
       // Reset to default model when the selected model is not found
       const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
         (isLocalMode() ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
-      console.log('🔧 useModelSelection: Resetting to default model:', defaultModel);
+      // console.log('🔧 useModelSelection: Resetting to default model:', defaultModel);
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       return;
@@ -576,8 +582,8 @@ export const useModelSelection = () => {
       console.log('  subscriptionStatus:', subscriptionStatus);
       console.log('  isLoadingModels:', isLoadingModels);
       console.log('  localStorage value:', localStorage.getItem(STORAGE_KEY_MODEL));
-      console.log('🔧 useModelSelection: defaultModel would be:', isProductionMode() ? `${DEFAULT_PREMIUM_MODEL_ID} (Vertex AI Gemini 2.5 Pro)` : 
-        `${subscriptionStatus === 'active' ? `${DEFAULT_PREMIUM_MODEL_ID} (Vertex AI Gemini 2.5 Pro)` : `${DEFAULT_FREE_MODEL_ID} (Vertex AI Gemini 2.5 Pro)`}`);
+      console.log('🔧 useModelSelection: defaultModel would be:', isProductionMode() ? `${DEFAULT_PREMIUM_MODEL_ID} (Claude Sonnet 4)` : 
+        `${subscriptionStatus === 'active' ? `${DEFAULT_PREMIUM_MODEL_ID} (Claude Sonnet 4)` : `${DEFAULT_FREE_MODEL_ID} (Claude Sonnet 4)`}`);
       console.log('🔧 useModelSelection: availableModels:', availableModels.map(m => ({ id: m.id, requiresSubscription: m.requiresSubscription })));
     }
   };

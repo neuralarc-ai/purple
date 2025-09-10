@@ -3,13 +3,14 @@ import { threadKeys } from "./keys";
 import { Thread, updateThread, toggleThreadPublicStatus, deleteThread, getThread } from "./utils";
 import { getThreads } from "@/lib/api";
 
-export const useThreadQuery = (threadId: string) =>
+export const useThreadQuery = (threadId: string, options?: { onError?: (error: any) => void }) =>
   createQueryHook(
     threadKeys.details(threadId),
     () => getThread(threadId),
     {
       enabled: !!threadId,
       retry: 1,
+      ...options,
     }
 )();
 

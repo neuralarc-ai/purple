@@ -42,12 +42,12 @@ import {
 
 import { UseCases } from './use-cases';
 
-import { SecurityPopup } from '@/components/thread/chat-input/security-popup';
-import { useSecurityInterception } from '@/hooks/useSecurityInterception';
 import { TokenUsage } from './token-usage';
 import { PromotionalBanner } from './promotional-banner';
 import { useInviteCodeUsage } from '@/hooks/use-invite-code-usage';
 import { SettingsModal } from '@/components/settings/settings-modal';
+import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
+import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -71,6 +71,13 @@ export function DashboardContent() {
   } = useAgentSelection();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
   const { billingError, handleBillingError, clearBillingError } = useBillingError();
+  const {
+    isExhausted,
+    showBanner,
+    handleCreditError,
+    clearCreditExhaustion,
+    hideBanner,
+  } = useCreditExhaustion();
   const [showAgentLimitDialog, setShowAgentLimitDialog] = useState(false);
   const [agentLimitData, setAgentLimitData] = useState<{
     runningCount: number;
@@ -97,16 +104,6 @@ export function DashboardContent() {
       }, 100);
     }
   }, [searchParams]);
-  
-  // Security interception hook
-  const {
-    showPopup: showSecurityPopup,
-    popupMessage: securityPopupMessage,
-    popupType: securityPopupType,
-    shouldBlock: shouldBlockRequest,
-    closePopup: closeSecurityPopup,
-    shouldProceedWithRequest,
-  } = useSecurityInterception();
   
   const welcomeMessage = useMemo(() => {
     // Check if we have a cached welcome message
@@ -181,14 +178,14 @@ export function DashboardContent() {
   const threadQuery = useThreadQuery(initiatedThreadId || '');
 
   useEffect(() => {
-    console.log('🚀 Dashboard effect:', { 
-      agentsLength: agents.length, 
-      selectedAgentId, 
-      agents: agents.map(a => ({ id: a.agent_id, name: a.name, isDefault: a.metadata?.is_helium_default })) 
-    });
+    // console.log('🚀 Dashboard effect:', { 
+    //   agentsLength: agents.length, 
+    //   selectedAgentId, 
+    //   agents: agents.map(a => ({ id: a.agent_id, name: a.name, isDefault: a.metadata?.is_helium_default })) 
+    // });
     
     if (agents.length > 0) {
-      console.log('📞 Calling initializeFromAgents');
+      // console.log('📞 Calling initializeFromAgents');
       initializeFromAgents(agents, undefined, setSelectedAgent);
     }
   }, [agents, initializeFromAgents, setSelectedAgent]);
@@ -236,12 +233,6 @@ export function DashboardContent() {
     setLocalLoading(true);
     
     // Set loading state immediately
-    // Check for security concerns on submission only
-    if (!shouldProceedWithRequest(message)) {
-      // Security popup is already shown by the hook
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -290,6 +281,12 @@ export function DashboardContent() {
       chatInputRef.current?.clearPendingFiles();
     } catch (error: any) {
       console.error('Error during submission process:', error);
+      
+      // Handle credit errors with the new banner
+      if (handleCreditError(error)) {
+        return;
+      }
+      
       if (error instanceof BillingError) {
         setShowPaymentModal(true);
       } else if (error instanceof AgentRunLimitError) {
@@ -462,16 +459,20 @@ export function DashboardContent() {
                   </div>
                 </div>
                 <div className="w-full transition-all duration-700 ease-out">
-                  {/* Security Popup - Positioned above the input */}
-                  <SecurityPopup
-                    isVisible={showSecurityPopup}
-                    onClose={closeSecurityPopup}
-                    message={securityPopupMessage}
-                    type={securityPopupType}
-                    showCloseButton={true}
-                  />
                   
                   <div className={`transition-all duration-700 ease-out ${useCasesLoaded ? 'translate-y-0' : 'translate-y-4'}`}>
+                    {/* Credit Exhaustion Banner */}
+                    {showBanner && (
+                      <div className="mb-4">
+                        <CreditExhaustionBanner 
+                          onUpgrade={() => {
+                            // Clear credit exhaustion state when user clicks upgrade
+                            clearCreditExhaustion();
+                          }}
+                        />
+                      </div>
+                    )}
+
                     <ChatInput
                       ref={chatInputRef}
                       onSubmit={handleSubmit}
@@ -484,6 +485,7 @@ export function DashboardContent() {
                       onAgentSelect={setSelectedAgent}
                       enableAdvancedConfig={true}
                       onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
+                      disabled={isExhausted}
                     />
                   </div>
                   <UseCases 

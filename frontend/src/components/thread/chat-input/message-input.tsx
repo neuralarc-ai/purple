@@ -301,7 +301,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             onPaste={handlePaste}
             placeholder={placeholder}
             className={cn(
-              "w-full bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-2 min-h-[100px] max-h-[200px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] scrollbar-hide",
+              "w-full text-foreground bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-2 min-h-[100px] max-h-[200px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] scrollbar-hide",
               isDraggingOver ? 'opacity-40' : '',
             )}
             disabled={loading || (disabled && !isAgentRunning)}
@@ -483,8 +483,8 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
               className={cn(
                 'w-8 h-8 flex-shrink-0 rounded-full cursor-pointer',
                 resolvedTheme === 'dark'
-                  ? 'bg-helium-blue hover:bg-helium-blue/80'
-                  : 'bg-helium-blue hover:bg-helium-blue/80',
+                  ? 'bg-helium-orange hover:bg-helium-orange/80'
+                  : 'bg-helium-orange hover:bg-helium-orange/80',
                 (!value.trim() &&
                   uploadedFiles.length === 0 &&
                   !isAgentRunning) ||

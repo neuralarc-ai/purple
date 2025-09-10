@@ -4,11 +4,6 @@ import * as React from 'react';
 import { useState } from 'react';
 import { 
   User, 
-  Settings, 
-  Zap, 
-  HelpCircle, 
-  ArrowUpRight,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -16,32 +11,38 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/components/AuthProvider';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
 import { useSubscriptionData } from '@/contexts/SubscriptionContext';
 import { useUsageRealtime } from '@/hooks/useUsageRealtime';
-import { PricingSection } from '@/components/home/sections/pricing-section';
 import { CreditPurchaseModal } from '@/components/billing/credit-purchase';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { isLocalMode } from '@/lib/config';
-import { getSubscription, createPortalSession } from '@/lib/api';
 import { toast } from 'sonner';
-import BoringAvatar from 'boring-avatars';
+// Avatar images from Supabase storage
+const avatarList = [
+  "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-1.png",
+  "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-2.png",
+  "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-3.png",
+  "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-4.png",
+  "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-5.png",
+  "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-6.png",
+  "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-7.png",
+  "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-8.png",
+  "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-9.png",
+  "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-10.png",
+];
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { userProfilesApi, type UserProfile } from '@/lib/api/user-profiles';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUsageLogs } from '@/hooks/react-query/subscriptions/use-billing';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
-import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/utils';
 
 // Dynamic icon component that changes path based on theme
 const DynamicIcon = ({
@@ -123,6 +124,8 @@ export interface SettingsModalProps {
 type SettingsSection = 'profile' | 'billing';
 
 const workOptions = [
+  'CEO',
+  'Founder',
   'Product Management',
   'Engineering',
   'Human Resources',
@@ -153,13 +156,12 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
     preferredName: '',
     workDescription: '',
     personalReferences: '',
-    avatar: ''
+    avatar_url: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showCustomRoleInput, setShowCustomRoleInput] = useState(false);
   const [customRole, setCustomRole] = useState('');
   const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [showDailyUsage, setShowDailyUsage] = useState(false);
   const [usagePage, setUsagePage] = useState(0);
   const USAGE_ITEMS_PER_PAGE = 10;
   const [hasProfile, setHasProfile] = useState(false);
@@ -195,7 +197,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           preferredName: userProfile.preferred_name || '',
           workDescription: 'Other',
           personalReferences: userProfile.personal_references || '',
-          avatar: userProfile.avatar || ''
+          avatar_url: userProfile.avatar_url || ''
         });
         setShowCustomRoleInput(true);
         setCustomRole(workDesc);
@@ -207,7 +209,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           preferredName: userProfile.preferred_name || '',
           workDescription: normalizedWorkDesc,
           personalReferences: userProfile.personal_references || '',
-          avatar: userProfile.avatar || ''
+          avatar_url: userProfile.avatar_url || ''
         });
         setShowCustomRoleInput(false);
         setCustomRole('');
@@ -240,7 +242,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           preferredName: profile.preferred_name || '',
           workDescription: 'Other',
           personalReferences: profile.personal_references || '', // Load existing personal references
-          avatar: profile.avatar || ''
+          avatar_url: profile.avatar_url || ''
         });
         setShowCustomRoleInput(true);
         setCustomRole(workDesc);
@@ -252,7 +254,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           preferredName: profile.preferred_name || '',
           workDescription: normalizedWorkDesc,
           personalReferences: profile.personal_references || '', // Load existing personal references
-          avatar: profile.avatar || ''
+          avatar_url: profile.avatar_url || ''
         });
         setShowCustomRoleInput(false);
         setCustomRole('');
@@ -310,10 +312,10 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
   };
 
   const handleAvatarChange = (avatarValue: string) => {
-    setProfileForm(prev => ({ ...prev, avatar: avatarValue }));
+    setProfileForm(prev => ({ ...prev, avatar_url: avatarValue }));
     // Update the local profile state immediately for real-time display
     if (localProfile) {
-      setLocalProfile({ ...localProfile, avatar: avatarValue });
+      setLocalProfile({ ...localProfile, avatar_url: avatarValue });
     }
     // Invalidate the user profile query to update navigation and other components
     queryClient.invalidateQueries({ queryKey: ['user-profile'] });
@@ -323,7 +325,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
 
   const handleSaveProfile = async () => {
     // Validate required fields
-    if (!profileForm.fullName.trim() || !profileForm.preferredName.trim() || !profileForm.workDescription || !profileForm.avatar) {
+    if (!profileForm.fullName.trim() || !profileForm.preferredName.trim() || !profileForm.workDescription || !profileForm.avatar_url) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -341,7 +343,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
         preferred_name: profileForm.preferredName.trim(),
         work_description: profileForm.workDescription === 'Other' ? customRole.trim() : normalizeWorkDescription(profileForm.workDescription),
         personal_references: profileForm.personalReferences.trim() || undefined,
-        avatar: profileForm.avatar,
+        avatar_url: profileForm.avatar_url,
       };
 
       console.log('Submitting profile data:', profileData);
@@ -363,7 +365,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
         preferredName: userProfile.preferred_name,
         workDescription: userProfile.work_description && !workOptions.includes(userProfile.work_description) ? 'Other' : normalizeWorkDescription(userProfile.work_description),
         personalReferences: userProfile.personal_references || '',
-        avatar: userProfile.avatar,
+        avatar_url: userProfile.avatar_url,
       });
       
       // Handle custom role display
@@ -405,25 +407,12 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
       .substring(0, 2);
   };
 
-  // Generate avatar options with different color combinations
+  // Generate avatar options from the avatar list
   const generateAvatarOptions = () => {
-    const colorPalettes = [
-      ['#0a0310', '#80007b', '#455bff', '#ffff45', '#96ff45'],
-      ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'],
-      ['#2d3748', '#4a5568', '#718096', '#a0aec0', '#e2e8f0'],
-      ['#1a202c', '#2d3748', '#4a5568', '#718096', '#a0aec0'],
-      ['#2c1810', '#5d4037', '#8d6e63', '#a1887f', '#d7ccc8'],
-      ['#1b5e20', '#2e7d32', '#388e3c', '#4caf50', '#66bb6a'],
-      ['#1565c0', '#1976d2', '#1e88e5', '#2196f3', '#42a5f5'],
-      ['#6a1b9a', '#7b1fa2', '#8e24aa', '#9c27b0', '#ab47bc'],
-      ['#d84315', '#e64a19', '#f4511e', '#ff5722', '#ff7043'],
-      ['#ff6f00', '#ff8f00', '#ffa000', '#ffb300', '#ffc107'],
-    ];
-    
-    return colorPalettes.map((colors, index) => ({
+    return avatarList.map((avatarUrl, index) => ({
       id: index,
-      colors,
-      value: JSON.stringify({ colors, variant: 'beam' })
+      url: avatarUrl,
+      value: avatarUrl
     }));
   };
 
@@ -435,20 +424,19 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
   const renderProfileContent = () => (
     <div className="space-y-6">
       {/* User Profile Section */}
-      <div className="flex items-start gap-4">
-        <div className="flex-shrink-0">
-          {localProfile?.avatar ? (
-            <div className="h-16 w-16 rounded-full overflow-hidden">
-              <BoringAvatar
-                name={profileForm.fullName || preferredName || authUser?.user_metadata?.full_name || 'User'}
-                colors={JSON.parse(localProfile.avatar).colors}
-                variant="beam"
-                size={64}
-              />
-            </div>
+      <div className="flex items-center gap-4">
+        <div className="flex-shrink-0 flex flex-col items-center">
+          {localProfile?.avatar_url ? (
+            <Image
+              src={localProfile.avatar_url} 
+              alt="User avatar" 
+              className="w-24 h-24 rounded-full object-cover"
+              width={96}
+              height={96}
+            />
           ) : (
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="bg-green-500 text-white text-xl font-semibold">
+            <Avatar className="h-24 w-24">
+              <AvatarFallback className="bg-green-500 text-white text-2xl font-semibold">
                 {getInitials(profileForm.fullName || preferredName || authUser?.user_metadata?.full_name || 'User')}
               </AvatarFallback>
             </Avatar>
@@ -456,22 +444,20 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           <button
             type="button"
             onClick={() => setShowAvatarModal(true)}
-            className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 mt-2 block"
+            className="text-xs text-primary hover:text-primary/80 underline underline-offset-2 mt-2"
           >
             Change avatar
           </button>
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">
-                {preferredName || authUser?.user_metadata?.full_name || 'User'}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {authUser?.email}
-              </p>
-            </div>
+          <div>
+            <h3 className="text-lg font-semibold text-foreground">
+              {preferredName || authUser?.user_metadata?.full_name || 'User'}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {authUser?.email}
+            </p>
           </div>
         </div>
       </div>
@@ -581,7 +567,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
             <div className="pt-4 flex justify-center">
                 <Button
                 onClick={handleSaveProfile}
-                disabled={isLoading || !profileForm.fullName.trim() || !profileForm.preferredName.trim() || !profileForm.workDescription || (profileForm.workDescription === 'Other' && !customRole.trim())}
+                disabled={isLoading || !profileForm.fullName.trim() || !profileForm.preferredName.trim() || !profileForm.workDescription || (profileForm.workDescription === 'Other' && !customRole.trim()) || !profileForm.avatar_url}
                 className="px-8 h-10 text-sm font-medium bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
               >
                 {isLoading ? (
@@ -946,32 +932,30 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           
           <div className="space-y-4">
             {/* Avatar Grid */}
-            <div className="grid grid-cols-8 gap-3 p-4 bg-muted/30 rounded-lg">
+            <div className="grid grid-cols-5 gap-6 p-6 bg-muted/30 rounded-lg">
               {generateAvatarOptions().map((avatarOption, index) => (
                 <button
                   key={index}
                   type="button"
                   onClick={() => {
                     handleAvatarChange(avatarOption.value);
-                    setShowAvatarModal(false);
                   }}
                   className={`
-                    relative p-2 rounded-full transition-all duration-200
+                    relative w-24 h-24 rounded-full transition-all duration-200
                     hover:scale-110 focus:outline-none focus:ring-2 focus:ring-primary/50
-                    ${profileForm.avatar === avatarOption.value 
-                      ? 'ring-2 ring-primary shadow-lg scale-110 bg-primary/10' 
-                      : 'hover:shadow-md hover:bg-muted/50'
+                    ${profileForm.avatar_url === avatarOption.value 
+                      ? 'ring-4 ring-primary shadow-lg scale-110' 
+                      : 'hover:shadow-md hover:ring-2 hover:ring-primary/30'
                     }
                   `}
                 >
-                  <BoringAvatar
-                    name={profileForm.fullName || 'User'}
-                    colors={avatarOption.colors}
-                    variant="beam"
-                    size={48}
+                  <img 
+                    src={avatarOption.url} 
+                    alt={`Avatar ${index + 1}`} 
+                    className="w-full h-full rounded-full object-cover"
                   />
-                  {profileForm.avatar === avatarOption.value && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                  {profileForm.avatar_url === avatarOption.value && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
                       <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
@@ -980,19 +964,6 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
                 </button>
               ))}
             </div>
-            
-            {/* Current Selection Info */}
-            {profileForm.avatar && (
-              <div className="flex items-center justify-center space-x-3 p-3 bg-primary/5 rounded-lg">
-                <span className="text-sm font-medium">Current selection:</span>
-                <BoringAvatar
-                  name={profileForm.fullName || 'User'}
-                  colors={JSON.parse(profileForm.avatar).colors}
-                  variant="beam"
-                  size={32}
-                />
-              </div>
-            )}
           </div>
           
           <div className="flex justify-end space-x-2 pt-4">
@@ -1004,7 +975,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
             </Button>
             <Button
               onClick={() => setShowAvatarModal(false)}
-              disabled={!profileForm.avatar}
+              disabled={!profileForm.avatar_url}
             >
               Confirm Selection
             </Button>

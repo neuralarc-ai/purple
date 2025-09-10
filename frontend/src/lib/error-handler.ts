@@ -93,6 +93,29 @@ const shouldShowError = (error: any, context?: ErrorContext): boolean => {
     return false;
   }
 
+  // Don't show toast errors for credit exhaustion (402 errors)
+  if (error?.status === 402 || error?.response?.status === 402) {
+    return false;
+  }
+
+  // Don't show toast errors for credit-related error messages
+  if (error?.message || error?.error?.message) {
+    const errorMessage = error?.message || error?.error?.message;
+    const lowerMessage = errorMessage.toLowerCase();
+    
+    if (lowerMessage.includes('credit') && 
+        (lowerMessage.includes('insufficient') || 
+         lowerMessage.includes('exhausted') || 
+         lowerMessage.includes('used up') ||
+         lowerMessage.includes('limit reached') ||
+         lowerMessage.includes('not enough') ||
+         lowerMessage.includes('balance') ||
+         lowerMessage.includes('required') ||
+         lowerMessage.includes('need'))) {
+      return false;
+    }
+  }
+
   if (error?.status === 404 && context?.resource) {
     return false;
   }
