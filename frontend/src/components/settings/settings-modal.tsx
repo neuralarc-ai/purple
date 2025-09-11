@@ -4,11 +4,6 @@ import * as React from 'react';
 import { useState } from 'react';
 import { 
   User, 
-  Settings, 
-  Zap, 
-  HelpCircle, 
-  ArrowUpRight,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -16,18 +11,15 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/components/AuthProvider';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
 import { useSubscriptionData } from '@/contexts/SubscriptionContext';
 import { useUsageRealtime } from '@/hooks/useUsageRealtime';
-import { PricingSection } from '@/components/home/sections/pricing-section';
 import { CreditPurchaseModal } from '@/components/billing/credit-purchase';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { isLocalMode } from '@/lib/config';
-import { getSubscription, createPortalSession } from '@/lib/api';
 import { toast } from 'sonner';
 // Default avatar for users who haven't selected one
 const DEFAULT_AVATAR_URL = "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-7.png";
@@ -49,14 +41,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { userProfilesApi, type UserProfile } from '@/lib/api/user-profiles';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUsageLogs } from '@/hooks/react-query/subscriptions/use-billing';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
-import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/utils';
 
 // Dynamic icon component that changes path based on theme
 const DynamicIcon = ({
@@ -176,7 +165,6 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
   const [showCustomRoleInput, setShowCustomRoleInput] = useState(false);
   const [customRole, setCustomRole] = useState('');
   const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [showDailyUsage, setShowDailyUsage] = useState(false);
   const [usagePage, setUsagePage] = useState(0);
   const USAGE_ITEMS_PER_PAGE = 10;
   const [hasProfile, setHasProfile] = useState(false);
@@ -441,11 +429,23 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
       {/* User Profile Section */}
       <div className="flex items-center gap-4">
         <div className="flex-shrink-0 flex flex-col items-center">
-          <img 
-            src={localProfile?.avatar_url || DEFAULT_AVATAR_URL} 
-            alt="User avatar" 
-            className="w-24 h-24 rounded-full object-cover"
-          />
+
+          {localProfile?.avatar_url ? (
+            <Image
+              src={localProfile.avatar_url} 
+              alt="User avatar" 
+              className="w-24 h-24 rounded-full object-cover"
+              width={96}
+              height={96}
+            />
+          ) : (
+            <Avatar className="h-24 w-24">
+              <AvatarFallback className="bg-green-500 text-white text-2xl font-semibold">
+                {getInitials(profileForm.fullName || preferredName || authUser?.user_metadata?.full_name || 'User')}
+              </AvatarFallback>
+            </Avatar>
+          )}
+
           <button
             type="button"
             onClick={() => setShowAvatarModal(true)}

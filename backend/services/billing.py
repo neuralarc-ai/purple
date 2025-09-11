@@ -95,13 +95,13 @@ def get_model_pricing(model: str) -> tuple[float, float] | None:
 
 
 SUBSCRIPTION_TIERS = {
-    config.STRIPE_FREE_TIER_ID: {'name': 'free', 'minutes': 60, 'cost': 7.99},  # 799 credits = $7.99
+    config.STRIPE_FREE_TIER_ID: {'name': 'free', 'minutes': 60, 'cost': 15.00},  # 1,500 credits = $15.00
     # Monthly tiers
-    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 30.00},  # 3,000 credits/month
-    config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 100.00},  # 10,000 credits/month
+    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 45.00},  # 4,500 credits/month
+    config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 115.00},  # 11,500 credits/month
     # Yearly tiers (same usage limits, different billing period) - displayed as monthly equivalent
-    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 360.00},  # 36,000 credits/month (billed yearly)
-    config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 1200.00},  # 120,000 credits/month (billed yearly)
+    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 540.00},  # 54,000 credits/month (billed yearly)
+    config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 1380.00},  # 138,000 credits/month (billed yearly)
 }
 
 # Pydantic models for request/response validation

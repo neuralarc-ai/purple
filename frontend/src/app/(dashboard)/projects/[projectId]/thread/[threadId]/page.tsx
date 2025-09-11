@@ -54,6 +54,8 @@ import { threadKeys } from '@/hooks/react-query/threads/keys';
 import { useProjectRealtime } from '@/hooks/useProjectRealtime';
 import { useUsageRealtime } from '@/hooks/useUsageRealtime';
 import { useAuth } from '@/components/AuthProvider';
+import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
+import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
 
 export default function ThreadPage({
   params,
@@ -70,6 +72,7 @@ export default function ThreadPage({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isSidebarOverlaying } = useContext(LayoutContext);
+  
 
   // Enable real-time updates for usage data
   useUsageRealtime(user?.id);
@@ -156,6 +159,27 @@ export default function ThreadPage({
     projectQuery,
     agentRunsQuery,
   } = useThreadData(threadId, projectId);
+
+  // Credit exhaustion handling (after messages are available)
+  const {
+    isExhausted,
+    showBanner,
+    handleCreditError,
+    clearCreditExhaustion,
+    hideBanner,
+  } = useCreditExhaustion({
+    onAddCreditExhaustionMessage: (message) => {
+      setMessages((prev) => [...prev, message]);
+    },
+    messages, // Pass messages to check for existing credit exhaustion
+  });
+
+  // Handle errors from useThreadData after handleCreditError is available
+  useEffect(() => {
+    if (error) {
+      handleCreditError(error, threadId);
+    }
+  }, [error, handleCreditError, threadId]);
 
   const {
     toolCalls,
@@ -337,6 +361,7 @@ export default function ThreadPage({
     threadId,
     setMessages,
     threadAgentData?.agent?.agent_id,
+    (error) => handleCreditError(error, threadId), // Pass credit error handler with threadId
   );
 
   const handleTogglePauseResume = useCallback(async () => {
@@ -404,6 +429,14 @@ export default function ThreadPage({
       options?: { model_name?: string; enable_thinking?: boolean },
     ) => {
       if (!message.trim()) return;
+      
+      // Prevent submission if credits are exhausted
+      if (isExhausted) {
+        // Don't add user message or make API calls
+        setNewMessage('');
+        return;
+      }
+      
       setIsSending(true);
 
       const optimisticUserMessage: UnifiedMessage = {
@@ -452,16 +485,9 @@ export default function ThreadPage({
           console.error('Failed to start agent:', error);
 
           if (error instanceof BillingError) {
-            setBillingData({
-              currentUsage: error.detail.currentUsage as number | undefined,
-              limit: error.detail.limit as number | undefined,
-              message:
-                error.detail.message ||
-                'Monthly usage limit reached. Please upgrade.',
-              accountId: null,
-            });
-            setShowBillingAlert(true);
-
+            // Handle credit exhaustion with the new banner
+            handleCreditError(error, threadId);
+            
             setMessages((prev) =>
               prev.filter(
                 (m) => m.message_id !== optimisticUserMessage.message_id,
@@ -495,6 +521,15 @@ export default function ThreadPage({
         setAgentRunId(agentResult.agent_run_id);
       } catch (err) {
         console.error('Error sending message or starting agent:', err);
+        
+        // Handle credit errors with the new banner
+        if (handleCreditError(err, threadId)) {
+          setMessages((prev) =>
+            prev.filter((m) => m.message_id !== optimisticUserMessage.message_id),
+          );
+          return;
+        }
+        
         if (
           !(err instanceof BillingError) &&
           !(err instanceof AgentRunLimitError)
@@ -517,6 +552,7 @@ export default function ThreadPage({
       setBillingData,
       setShowBillingAlert,
       setAgentRunId,
+      isExhausted, // Add isExhausted to dependencies
     ],
   );
 
@@ -880,8 +916,7 @@ export default function ThreadPage({
         
         <ThreadContent
           messages={messages}
-          // isSidePanelOpen={isSidePanelOpen}
-          //leftSidebarState={leftSidebarState}
+          isSidePanelOpen={isSidePanelOpen}
           streamingTextContent={streamingTextContent}
           streamingToolCall={streamingToolCall}
           agentStatus={agentStatus}
@@ -897,6 +932,10 @@ export default function ThreadPage({
           agentMetadata={agent?.metadata}
           agentData={agent}
           onSubmit={handleSubmitMessage}
+          onCreditExhaustionUpgrade={() => {
+            // Clear credit exhaustion state when user clicks upgrade
+            clearCreditExhaustion();
+          }}
         />
 
         {/* Disclaimer text between content and chat input */}
@@ -941,21 +980,17 @@ export default function ThreadPage({
           </div>
         )}
 
+
         <div
           className={cn(
             'fixed bottom-6 z-20  bg-gradient-to-t from-background via-background/90 to-transparent pt-0',
             'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
-            leftSidebarState === 'expanded'
-              ? 'left-[72px] md:left-[256px]'
-              : isSidePanelOpen
-                ? 'left-[53px]'
-                : 'left-[50px]',
-            isSidePanelOpen
-              ? leftSidebarState === 'expanded'
-                ? 'right-[45vw] 2xl:right-[40.5vw] xl:right-[40.5vw] lg:right-[43vw]'
-                : 'right-[46vw]'
-              : 'right-0',
-            isMobile ? 'left-0 right-0 pb-0 pt-0' : '',
+            {
+              'left-0 right-0 pb-3': isMobile,
+              'left-[72px] md:left-[256px] right-0': leftSidebarState === 'expanded' && !isMobile && !isSidebarOverlaying,
+              'left-[53px] right-0': isSidePanelOpen && !isMobile && leftSidebarState !== 'expanded',
+              'left-10 right-0': !isSidePanelOpen && !isMobile || (leftSidebarState === 'expanded' && isSidebarOverlaying),
+            }
           )}
           style={
             isSidePanelOpen && !isMobile && panelWidth
@@ -966,8 +1001,10 @@ export default function ThreadPage({
               : undefined
           }
         >
-          <div
+         <div
             className={cn(
+              'flex justify-center px-0',
+              isMobile ? 'px-3' : 'px-8',
               'flex justify-center w-full',
               isMobile ? 'px-3' : 'px-6',
               isSidePanelOpen && !isMobile && 'pr-0' // Remove right padding when panel is open since we're adding it to the parent
@@ -975,6 +1012,8 @@ export default function ThreadPage({
           >
             <div
               className={cn(
+                'w-full',
+                isSidePanelOpen ? 'max-w-4xl' : 'max-w-4xl',
                 'w-full max-w-4xl',
                 isSidePanelOpen && !isMobile && 'pr-6' // Add right padding to the content
               )}
@@ -991,7 +1030,8 @@ export default function ThreadPage({
                 disabled={
                   isSending ||
                   agentStatus === 'running' ||
-                  agentStatus === 'connecting'
+                  agentStatus === 'connecting' ||
+                  isExhausted
                 }
                 isAgentRunning={
                   agentStatus === 'running' || agentStatus === 'connecting'

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
+import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
 import {
   ChatInput,
   ChatInputHandles
@@ -14,6 +15,7 @@ import { useStartAgentMutation, useStopAgentMutation } from '@/hooks/react-query
 import { BillingError } from '@/lib/api';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
 import { HeliumLogo } from '../sidebar/helium-logo';
+import { toast } from 'sonner';
 
 interface Agent {
   agent_id: string;
@@ -46,6 +48,15 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
   const [hasStartedConversation, setHasStartedConversation] = useState(false);
 
   const isHeliumAgent = agentMetadata?.is_helium_default || false;
+  
+  // Credit exhaustion handling
+  const {
+    isExhausted,
+    showBanner,
+    handleCreditError,
+    clearCreditExhaustion,
+    hideBanner,
+  } = useCreditExhaustion();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputHandles>(null);
@@ -402,7 +413,8 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
         if (results[1].status === 'rejected') {
           const error = results[1].reason;
           if (error instanceof BillingError) {
-            toast.error('Billing limit reached. Please upgrade your plan.');
+            // Handle credit exhaustion with the new banner
+            handleCreditError(error);
             setMessages(prev => prev.filter(m => m.message_id !== optimisticUserMessage.message_id));
             return;
           }
@@ -414,6 +426,13 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
 
       } catch (err) {
         console.error('[PREVIEW] Error sending message:', err);
+        
+        // Handle credit errors with the new banner
+        if (handleCreditError(err)) {
+          setMessages((prev) => prev.filter((m) => m.message_id !== optimisticUserMessage.message_id));
+          return;
+        }
+        
         toast.error(err instanceof Error ? err.message : 'Operation failed');
         setMessages((prev) => prev.filter((m) => m.message_id !== optimisticUserMessage.message_id));
       } finally {
@@ -489,6 +508,17 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       <div className="flex-shrink-0">
         <div className="px-8 md:pb-4">
           <div className="w-full">
+            {/* Credit Exhaustion Banner */}
+            {showBanner && (
+              <div className="mb-4">
+                <CreditExhaustionBanner 
+                  onUpgrade={() => {
+                    // Clear credit exhaustion state when user clicks upgrade
+                    clearCreditExhaustion();
+                  }}
+                />
+              </div>
+            )}
             
             <ChatInput
               ref={chatInputRef}
@@ -497,7 +527,7 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
               placeholder={`Message ${agent.name || 'agent'}...`}
               value={inputValue}
               onChange={setInputValue}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isExhausted}
               isAgentRunning={agentStatus === 'running' || agentStatus === 'connecting'}
               onStopAgent={handleStopAgent}
               agentName={agent.name}
