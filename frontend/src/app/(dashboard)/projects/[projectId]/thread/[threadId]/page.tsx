@@ -131,6 +131,7 @@ export default function ThreadPage({
     runningThreadIds: string[];
   } | null>(null);
   const [panelWidth, setPanelWidth] = useState<number | null>(null);
+  const [fileViewerWidth, setFileViewerWidth] = useState<number | null>(null);
 
   // Refs - simplified for flex-column-reverse
   const latestMessageRef = useRef<HTMLDivElement>(null);
@@ -572,6 +573,8 @@ export default function ThreadPage({
 
   const handleOpenFileViewer = useCallback(
     (filePath?: string, filePathList?: string[]) => {
+      // Ensure tool panel is closed before opening file viewer
+      setIsSidePanelOpen(false);
       if (filePath) {
         setFileToView(filePath);
       } else {
@@ -690,6 +693,13 @@ export default function ThreadPage({
     initialLoadCompleted,
     userInitiatedRun,
   ]);
+
+  // Mutual exclusivity: if tool panel opens, close file viewer
+  useEffect(() => {
+    if (isSidePanelOpen && fileViewerOpen) {
+      setFileViewerOpen(false);
+    }
+  }, [isSidePanelOpen, fileViewerOpen]);
 
   // No auto-scroll needed with flex-column-reverse
 
@@ -907,6 +917,7 @@ export default function ThreadPage({
           } catch {}
         }}
         onPanelWidthChange={setPanelWidth}
+        onFileViewerWidthChange={setFileViewerWidth}
       >
         {/* {workflowId && (
           <div className="px-4 pt-4">
@@ -988,14 +999,14 @@ export default function ThreadPage({
             {
               'left-0 right-0 pb-3': isMobile,
               'left-[72px] md:left-[256px] right-0': leftSidebarState === 'expanded' && !isMobile && !isSidebarOverlaying,
-              'left-[53px] right-0': isSidePanelOpen && !isMobile && leftSidebarState !== 'expanded',
-              'left-10 right-0': !isSidePanelOpen && !isMobile || (leftSidebarState === 'expanded' && isSidebarOverlaying),
+              'left-[53px] right-0': (isSidePanelOpen || fileViewerOpen) && !isMobile && leftSidebarState !== 'expanded',
+              'left-10 right-0': (!isSidePanelOpen && !fileViewerOpen && !isMobile) || (leftSidebarState === 'expanded' && isSidebarOverlaying),
             }
           )}
           style={
-            isSidePanelOpen && !isMobile && panelWidth
+            ((isSidePanelOpen && panelWidth) || (fileViewerOpen && fileViewerWidth)) && !isMobile
               ? {
-                  right: `${panelWidth}px`,
+                  right: `${isSidePanelOpen ? panelWidth : fileViewerWidth}px`,
                   paddingRight: '1.4rem', // Add padding when panel is open
                 }
               : undefined
@@ -1007,7 +1018,7 @@ export default function ThreadPage({
               isMobile ? 'px-3' : 'px-8',
               'flex justify-center w-full',
               isMobile ? 'px-3' : 'px-6',
-              isSidePanelOpen && !isMobile && 'pr-0' // Remove right padding when panel is open since we're adding it to the parent
+              (isSidePanelOpen || fileViewerOpen) && !isMobile && 'pr-0' // Remove right padding when panel is open since we're adding it to the parent
             )}
           >
             <div
@@ -1015,7 +1026,7 @@ export default function ThreadPage({
                 'w-full',
                 isSidePanelOpen ? 'max-w-4xl' : 'max-w-4xl',
                 'w-full max-w-4xl',
-                isSidePanelOpen && !isMobile && 'pr-6' // Add right padding to the content
+                (isSidePanelOpen || fileViewerOpen) && !isMobile && 'pr-6' // Add right padding to the content when any right panel open
               )}
               style={{
                 transition: 'padding 0.2s ease-in-out',

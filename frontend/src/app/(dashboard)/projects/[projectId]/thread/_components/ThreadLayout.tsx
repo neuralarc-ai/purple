@@ -59,6 +59,8 @@ interface ThreadLayoutProps {
   agentRunId?: string;
   onPanelWidthChange?: (width: number) => void;
   initialPanelWidth?: number;
+  // Notify parent about File Viewer width changes
+  onFileViewerWidthChange?: (width: number | null) => void;
 }
 
 export function ThreadLayout({
@@ -102,12 +104,14 @@ export function ThreadLayout({
   agentRunId,
   onPanelWidthChange,
   initialPanelWidth,
+  onFileViewerWidthChange,
 }: ThreadLayoutProps) {
   const { state: leftSidebarState } = useSidebar();
   const isLeftSidebarExpanded = leftSidebarState === 'expanded';
   const isMediumScreen = useMediumScreen();
   const isCustomBreakpoint = useCustomBreakpoint();
   const [panelWidth, setPanelWidth] = React.useState<number | null>(initialPanelWidth || null);
+  const [fileViewerWidth, setFileViewerWidth] = React.useState<number | null>(null);
   const isResizing = React.useRef(false);
   const initialLoadCompletedRef = React.useRef(false);
   const panelRef = React.useRef<HTMLDivElement>(null);
@@ -156,15 +160,17 @@ export function ThreadLayout({
     };
   }, [handleMouseMove, handleMouseUp]);
 
-  // Calculate the right margin for the left section based on panel width
+  // Calculate the right margin for the left section based on whichever right panel is open
   const getRightMargin = React.useCallback(() => {
-    if (!isSidePanelOpen || !initialLoadCompleted) return '0px';
+    const anyPanelOpen = (fileViewerOpen || isSidePanelOpen) && initialLoadCompleted;
+    if (!anyPanelOpen) return '0px';
     if (isMediumScreen) return '0px';
     if (isCustomBreakpoint && isLeftSidebarExpanded) return '0px';
-    
-    const width = panelWidth || Math.floor(window.innerWidth / 2); // Default width if not set
+
+    const activeWidth = fileViewerOpen ? fileViewerWidth : panelWidth;
+    const width = activeWidth || Math.floor(window.innerWidth / 2); // Default width if not set
     return `${width}px`;
-  }, [isSidePanelOpen, initialLoadCompleted, isMediumScreen, isCustomBreakpoint, isLeftSidebarExpanded, panelWidth]);
+  }, [fileViewerOpen, isSidePanelOpen, initialLoadCompleted, isMediumScreen, isCustomBreakpoint, isLeftSidebarExpanded, fileViewerWidth, panelWidth]);
 
   const rightMargin = getRightMargin();
   return (
@@ -179,10 +185,10 @@ export function ThreadLayout({
         className="flex flex-col flex-1 overflow-hidden transition-all duration-200 ease-in-out will-change-[margin] relative"
         style={{
           marginRight: rightMargin,
-          minWidth: isSidePanelOpen && !isMediumScreen && (!isCustomBreakpoint || !isLeftSidebarExpanded) 
+          minWidth: (fileViewerOpen || isSidePanelOpen) && !isMediumScreen && (!isCustomBreakpoint || !isLeftSidebarExpanded) 
             ? `calc(100% - ${rightMargin})` 
             : '100%',
-          maxWidth: isSidePanelOpen && !isMediumScreen && (!isCustomBreakpoint || !isLeftSidebarExpanded) 
+          maxWidth: (fileViewerOpen || isSidePanelOpen) && !isMediumScreen && (!isCustomBreakpoint || !isLeftSidebarExpanded) 
             ? `calc(100% - ${rightMargin})` 
             : '100%',
         }}
@@ -206,6 +212,11 @@ export function ThreadLayout({
 
         {children}
       </div>
+
+      {/* Sidebar overlay tint (same behavior as tool panel): shown whenever sidebar overlays due to right panel */}
+      {(fileViewerOpen || isSidePanelOpen) && isLeftSidebarExpanded && !isMediumScreen && (
+        <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[0.5px] pointer-events-none" />
+      )}
 
       <ToolCallSidePanel
         isOpen={isSidePanelOpen && initialLoadCompleted}
@@ -238,6 +249,7 @@ export function ThreadLayout({
           project={project || undefined}
           filePathList={filePathList}
           editable={inTakeover}
+          onPanelWidthChange={(w) => { setFileViewerWidth(w); onFileViewerWidthChange?.(w ?? null); }}
           onFileEdited={async ({ path, bytes }) => {
             try {
               await onLogManual?.({ event_type: 'file_edit', data: { path, bytes } });

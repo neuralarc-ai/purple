@@ -45,6 +45,7 @@ import {
 import JSZip from 'jszip';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
 import React from 'react';
+import { ToolCallSidePanelContext } from '@/components/ui/sidebar';
 
 // Define API_URL
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -58,6 +59,8 @@ interface FileViewerModalProps {
   filePathList?: string[];
   // Enable inline editing when in takeover
   editable?: boolean;
+  // Notify parent about desktop panel width changes (for layout adjustments)
+  onPanelWidthChange?: (width: number | null) => void;
   onFileEdited?: (info: { path: string; bytes: number }) => void;
 }
 
@@ -69,6 +72,7 @@ export function FileViewerModal({
   project,
   filePathList,
   editable = false,
+  onPanelWidthChange,
   onFileEdited,
 }: FileViewerModalProps) {
   // Safely handle initialFilePath to ensure it's a string or null
@@ -77,6 +81,7 @@ export function FileViewerModal({
 
   // Auth for session token
   const { session } = useAuth();
+  const { setIsExpanded } = React.useContext(ToolCallSidePanelContext);
 
   // File navigation state
   const [currentPath, setCurrentPath] = useState('/workspace');
@@ -98,6 +103,8 @@ export function FileViewerModal({
       900 // max 900px
     );
     setPanelWidth(newWidth);
+    // Realtime notify parent while dragging
+    onPanelWidthChange?.(newWidth);
   };
   
   const handleMouseUp = () => {
@@ -114,6 +121,23 @@ export function FileViewerModal({
       window.removeEventListener("mouseup", handleMouseUp);
     };
   }, []);
+
+  // While File Viewer is open, mark right-panel as expanded so sidebar uses overlay mode
+  useEffect(() => {
+    if (open) {
+      setIsExpanded(true);
+    } else {
+      setIsExpanded(false);
+    }
+    return () => setIsExpanded(false);
+  }, [open, setIsExpanded]);
+
+  // Notify parent when width changes (debounced by React batching; also on open)
+  useEffect(() => {
+    if (open) {
+      onPanelWidthChange?.(panelWidth);
+    }
+  }, [open, panelWidth, onPanelWidthChange]);
 
   // Add navigation state for file list mode
   const [currentFileIndex, setCurrentFileIndex] = useState<number>(-1);
@@ -831,6 +855,8 @@ export function FileViewerModal({
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
+        // Reset width for parent layout
+        onPanelWidthChange?.(null);
         // Only revoke if not downloading and not an active download URL
         if (
           blobUrlForRenderer &&
@@ -861,6 +887,57 @@ export function FileViewerModal({
       isDownloading,
     ],
   );
+
+  // When the modal is already open and a new initialFilePath is provided,
+  // switch to that file seamlessly (close previous selection and open new)
+  useEffect(() => {
+    if (!open) return;
+    if (!safeInitialFilePath) return;
+
+    const targetFullPath = normalizePath(safeInitialFilePath);
+    if (selectedFilePath === targetFullPath) return;
+
+    // Derive directory path and file name
+    const lastSlashIndex = targetFullPath.lastIndexOf('/');
+    const directoryPath =
+      lastSlashIndex > 0 ? targetFullPath.substring(0, lastSlashIndex) : '/workspace';
+    const fileName = lastSlashIndex >= 0 ? targetFullPath.substring(lastSlashIndex + 1) : '';
+
+    // Ensure the file list mode index is aligned if applicable
+    if (isFileListMode && filePathList) {
+      const normalizedInitialPath = normalizePath(safeInitialFilePath);
+      const index = filePathList.findIndex(
+        (path) => normalizePath(path) === normalizedInitialPath,
+      );
+      if (index !== -1) {
+        setCurrentFileIndex(index);
+      }
+    }
+
+    // Update current path to the file's directory for correct breadcrumb
+    if (currentPath !== directoryPath) {
+      setCurrentPath(directoryPath);
+    }
+
+    // Open the requested file
+    const targetFile: FileInfo = {
+      name: fileName,
+      path: targetFullPath,
+      is_dir: false,
+      size: 0,
+      mod_time: new Date().toISOString(),
+    };
+    openFile(targetFile);
+  }, [
+    open,
+    safeInitialFilePath,
+    selectedFilePath,
+    normalizePath,
+    currentPath,
+    isFileListMode,
+    filePathList,
+    openFile,
+  ]);
 
   // Helper to check if file is markdown
   const isMarkdownFile = useCallback((filePath: string | null) => {
@@ -1745,7 +1822,9 @@ export function FileViewerModal({
 
       {/* Desktop Right Panel (≥ 1024px) */}
       {open && isDesktop && (
-        <div className="fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-2xl z-50 flex flex-col overflow-hidden"
+        <div className={
+          `fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-2xl z-50 flex flex-col overflow-hidden`
+        }
         style={{ width: panelWidth }}
         >
           {/* Header */}
