@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
 import { Notebook, Eye, Trash2, Loader2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
@@ -54,6 +55,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const [editContent, setEditContent] = useState('');
   const [editCategory, setEditCategory] = useState<'instructions' | 'preferences' | 'rules' | 'notes' | 'general'>('general');
   const [savingEdit, setSavingEdit] = useState(false);
+  const [editIsActive, setEditIsActive] = useState<boolean>(true);
 
   const fetchEntries = async () => {
     try {
@@ -61,7 +63,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
-      const res = await fetch(`${API_BASE}/dagad`, {
+      const res = await fetch(`${API_BASE}/dagad?include_inactive=true`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
         credentials: 'include',
       });
@@ -147,6 +149,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     setEditTitle(entry.title);
     setEditContent(entry.content);
     setEditCategory(entry.category);
+    setEditIsActive(entry.is_active);
   };
 
   const saveEdit = async () => {
@@ -167,6 +170,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           title: editTitle,
           content: editContent,
           category: editCategory,
+          is_active: editIsActive,
         }),
       });
       if (!res.ok) {
@@ -183,6 +187,34 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
       toast.error(e?.message || 'Failed to update entry');
     } finally {
       setSavingEdit(false);
+    }
+  };
+
+  const toggleActive = async (entry: Entry, next: boolean) => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${API_BASE}/dagad/${entry.entry_id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ is_active: next }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const detail = data?.detail || res.statusText || 'Unknown error';
+        throw new Error(`Failed to update active state: ${res.status} ${detail}`);
+      }
+      const updated = await res.json();
+      setEntries((prev) => prev.map((x) => (x.entry_id === entry.entry_id ? { ...x, ...updated } : x)));
+      toast.success(`Entry ${next ? 'activated' : 'deactivated'}`);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || 'Failed to update active state');
     }
   };
 
@@ -260,7 +292,11 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                            {new Date(e.created_at).toLocaleString()}
                          </div>
                        </div>
-                       <div className="flex items-center gap-2 flex-shrink-0" onClick={(ev) => ev.stopPropagation()}>
+                       <div className="flex items-center gap-3 flex-shrink-0" onClick={(ev) => ev.stopPropagation()}>
+                         <div className="flex items-center gap-2">
+                           <span className="text-xs text-muted-foreground">{e.is_active ? 'Active' : 'Inactive'}</span>
+                           <Switch checked={e.is_active} onCheckedChange={(checked) => toggleActive(e, !!checked)} />
+                         </div>
                          <button
                            type="button"
                            className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground"
@@ -394,6 +430,10 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
               <option value="general">General</option>
             </select>
             <Textarea rows={6} placeholder="Content" value={editContent} onChange={(e) => setEditContent(e.target.value)} />
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-sm text-muted-foreground">Active</span>
+              <Switch checked={editIsActive} onCheckedChange={(checked) => setEditIsActive(!!checked)} />
+            </div>
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={() => setEditEntry(null)} disabled={savingEdit}>Cancel</Button>
               <Button onClick={saveEdit} disabled={savingEdit}>
