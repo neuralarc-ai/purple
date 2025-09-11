@@ -2,8 +2,10 @@
 
 import HeroSection from '@/components/hero-section-1';
 import FeaturesSection from '@/components/features-7';
-import Features from '@/components/features-10';
+import FeatureTable from '@/components/feature-table';
 import IntegrationsSection from '@/components/integrations-7';
+import PromptMessage from '@/components/prompt-message';
+import CompareTable from '@/components/compare-table';
 import Footer from '@/components/footer';
 
 export default function HomePage() {
@@ -11,8 +13,10 @@ export default function HomePage() {
     <main className="min-h-screen bg-black">
       <HeroSection />      
       <FeaturesSection />
-      <Features />
+      <FeatureTable />
       <IntegrationsSection />
+      <PromptMessage />
+      {/* <CompareTable /> */}
       <Footer />
     </main>
   );
