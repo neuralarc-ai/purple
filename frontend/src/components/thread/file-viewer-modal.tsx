@@ -44,6 +44,7 @@ import {
 } from '@/hooks/react-query/files';
 import JSZip from 'jszip';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
+import React from 'react';
 
 // Define API_URL
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -80,6 +81,39 @@ export function FileViewerModal({
   // File navigation state
   const [currentPath, setCurrentPath] = useState('/workspace');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [panelWidth, setPanelWidth] = useState(600); // default width
+  const isResizing = useRef(false);
+  
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+  
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const newWidth = Math.min(
+      Math.max(window.innerWidth - e.clientX, 320), // min 320px
+      900 // max 900px
+    );
+    setPanelWidth(newWidth);
+  };
+  
+  const handleMouseUp = () => {
+    isResizing.current = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  };
+  
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
 
   // Add navigation state for file list mode
   const [currentFileIndex, setCurrentFileIndex] = useState<number>(-1);
@@ -176,6 +210,23 @@ export function FileViewerModal({
   // Add state for copy functionality
   const [isCopyingPath, setIsCopyingPath] = useState(false);
   const [isCopyingContent, setIsCopyingContent] = useState(false);
+
+  // Track screen size for responsive behavior
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Effect to handle screen size changes
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+
+    // Check initial size
+    checkScreenSize();
+
+    // Add resize listener
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Setup project with sandbox URL if not provided directly
   useEffect(() => {
@@ -1193,8 +1244,10 @@ export function FileViewerModal({
 
   // --- Render --- //
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[90vw] md:max-w-[1200px] w-[95vw] h-[90vh] max-h-[900px] flex flex-col p-0 gap-0 overflow-hidden">
+    <>
+      {/* Mobile/Tablet Dialog (< 1024px) - Only render on mobile */}
+      <Dialog open={open && !isDesktop} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-[90vw] md:max-w-[1200px] w-[95vw] h-[90vh] max-h-[900px] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
           <DialogTitle className="text-lg font-semibold">
             Workspace Files
@@ -1687,7 +1740,525 @@ export function FileViewerModal({
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Desktop Right Panel (≥ 1024px) */}
+      {open && isDesktop && (
+        <div className="fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-2xl z-50 flex flex-col overflow-hidden"
+        style={{ width: panelWidth }}
+        >
+          {/* Header */}
+          <div className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
+            <div className="text-lg font-semibold">
+              Workspace Files
+            </div>
+
+            {/* Download progress display */}
+            {downloadProgress && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Loader className="h-3 w-3 animate-spin" />
+                  <span>
+                    {downloadProgress.total > 0
+                      ? `${downloadProgress.current}/${downloadProgress.total}`
+                      : 'Preparing...'}
+                  </span>
+                </div>
+                <span className="max-w-[200px] truncate">
+                  {downloadProgress.currentFile}
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 ml-auto">
+              {/* Navigation arrows for file list mode */}
+              {(() => {
+                return (
+                  isFileListMode &&
+                  selectedFilePath &&
+                  filePathList &&
+                  filePathList.length > 1 &&
+                  currentFileIndex >= 0
+                );
+              })() && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={navigatePrevious}
+                    disabled={currentFileIndex <= 0}
+                    className="h-8 w-8 p-0"
+                    title="Previous file (←)"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="text-xs text-muted-foreground px-1">
+                    {currentFileIndex + 1} / {filePathList?.length || 0}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={navigateNext}
+                    disabled={currentFileIndex >= (filePathList?.length || 0) - 1}
+                    className="h-8 w-8 p-0"
+                    title="Next file (→)"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+              
+              {/* Close button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleOpenChange(false)}
+                className="h-8 w-8 p-0"
+                title="Close"
+              >
+                ✕
+              </Button>
+            </div>
+          </div>
+
+          {/* Navigation Bar */}
+          <div className="px-4 py-2 border-b flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={navigateHome}
+              className="h-8 w-8"
+              title="Go to home directory"
+            >
+              <Image
+                src="/icons/home.svg"
+                alt="home Light Logo"
+                width={20}
+                height={20}
+                className="block dark:hidden mb-0"
+              />
+              <Image
+                src="/icons/home-dark.svg"
+                alt="home Dark Logo"
+                width={20}
+                height={20}
+                className="hidden dark:block mb-0"
+              />
+            </Button>
+
+            <div className="flex items-center overflow-x-auto flex-1 min-w-0 scrollbar-hide whitespace-nowrap">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-1 py-[2px] text-sm font-medium min-w-fit flex-shrink-0"
+                onClick={navigateHome}
+              >
+                home
+              </Button>
+
+              {currentPath !== '/workspace' && (
+                <>
+                  {getBreadcrumbSegments(currentPath).map((segment) => (
+                    <Fragment key={segment.path}>
+                      <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground opacity-50 flex-shrink-0" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-sm font-medium truncate max-w-[200px]"
+                        onClick={() => navigateToBreadcrumb(segment.path)}
+                      >
+                        {segment.name}
+                      </Button>
+                    </Fragment>
+                  ))}
+                </>
+              )}
+
+              {selectedFilePath && (
+                <>
+                  <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground opacity-50 flex-shrink-0" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium truncate">
+                      {selectedFilePath.split('/').pop()}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {selectedFilePath && (
+                <>
+                  {/* Copy content button - only show for text files */}
+                  {textContentForRenderer && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyContent}
+                      disabled={isCopyingContent || isCachedFileLoading}
+                      className="h-8 gap-1"
+                    >
+                      {isCopyingContent ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                      <span className="hidden sm:inline">Copy</span>
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownload}
+                    disabled={isDownloading || isCachedFileLoading}
+                    className="h-8 gap-1"
+                  >
+                    {isDownloading ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                     <>
+                     <Image
+                     src="/icons/download.svg"
+                     alt="download Light Logo"
+                     width={20}
+                     height={20}
+                     className="block dark:hidden mb-0"
+                   />
+                   <Image
+                     src="/icons/download-dark.svg"
+                     alt="download Dark Logo"
+                     width={20}
+                     height={20}
+                     className="hidden dark:block mb-0"
+                   />
+                     </>
+                    )}
+                    <span className="hidden sm:inline">Download</span>
+                  </Button>
+
+                  {/* Replace the Export as PDF button with a dropdown */}
+                  {isMarkdownFile(selectedFilePath) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={
+                            isExportingPdf ||
+                            isCachedFileLoading ||
+                            contentError !== null
+                          }
+                          className="h-8 gap-1"
+                        >
+                          {isExportingPdf ? (
+                            <Loader className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <FileText className="h-4 w-4" />
+                          )}
+                          <span className="hidden sm:inline">Export as PDF</span>
+                          <ChevronDown className="h-3 w-3 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleExportPdf('portrait')}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <span className="rotate-90">⬌</span> Portrait
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleExportPdf('landscape')}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <span>⬌</span> Landscape
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </>
+              )}
+
+              {!selectedFilePath && (
+                <>
+                  {/* Download All button - only show when in home directory */}
+                  {currentPath === '/workspace' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDownloadAll}
+                      disabled={isDownloadingAll || isLoadingFiles}
+                      className="h-8 gap-1"
+                    >
+                      {isDownloadingAll ? (
+                        <Loader className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Archive className="h-4 w-4" />
+                      )}
+                      <span className="hidden sm:inline">Download All</span>
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleUpload}
+                    disabled={isUploading}
+                    className="h-8 gap-1"
+                  >
+                    {isUploading ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                    <span className="hidden sm:inline">Upload</span>
+                  </Button>
+                </>
+              )}
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={processUpload}
+                disabled={isUploading}
+              />
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1 overflow-hidden">
+            {selectedFilePath ? (
+              /* File Viewer */
+              <div className="h-full w-full overflow-auto">
+                {isCachedFileLoading ? (
+                  <div className="h-full w-full flex flex-col items-center justify-center">
+                    <Loader className="h-8 w-8 animate-spin text-primary mb-3" />
+                    <p className="text-sm text-muted-foreground">
+                      Loading file
+                      {selectedFilePath
+                        ? `: ${selectedFilePath.split('/').pop()}`
+                        : '...'}
+                    </p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      {(() => {
+                        // Normalize the path for consistent cache checks
+                        if (!selectedFilePath) return 'Preparing...';
+
+                        let normalizedPath = selectedFilePath;
+                        if (!normalizedPath.startsWith('/workspace')) {
+                          normalizedPath = `/workspace/${normalizedPath.startsWith('/') ? normalizedPath.substring(1) : normalizedPath}`;
+                        }
+
+                        // Detect the appropriate content type based on file extension
+                        const detectedContentType =
+                          FileCache.getContentTypeFromPath(normalizedPath);
+
+                        // Check for cache with the correct content type
+                        const isCached = FileCache.has(
+                          `${sandboxId}:${normalizedPath}:${detectedContentType}`,
+                        );
+
+                        return isCached
+                          ? 'Using cached version'
+                          : 'Fetching from server';
+                      })()}
+                    </p>
+                  </div>
+                ) : contentError ? (
+                  <div className="h-full w-full flex items-center justify-center p-4">
+                    <div className="max-w-md p-6 text-center border rounded-lg bg-muted/10">
+                      <AlertTriangle className="h-10 w-10 text-orange-500 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">
+                        Error Loading File
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {contentError}
+                      </p>
+                      <div className="flex justify-center gap-3">
+                        <Button
+                          onClick={() => {
+                            setContentError(null);
+                            openFile({
+                              path: selectedFilePath,
+                              name: selectedFilePath.split('/').pop() || '',
+                              is_dir: false,
+                              size: 0,
+                              mod_time: new Date().toISOString(),
+                            } as FileInfo);
+                          }}
+                        >
+                          Retry
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            clearSelectedFile();
+                          }}
+                        >
+                          Back to Files
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-full w-full relative">
+                    {(() => {
+                      // Safety check: don't render text content for binary files
+                      const isImageFile = FileCache.isImageFile(selectedFilePath);
+                      const isPdfFile = FileCache.isPdfFile(selectedFilePath);
+                      const extension = selectedFilePath
+                        ?.split('.')
+                        .pop()
+                        ?.toLowerCase();
+                      const isOfficeFile = [
+                        'xlsx',
+                        'xls',
+                        'docx',
+                        'doc',
+                        'pptx',
+                        'ppt',
+                      ].includes(extension || '');
+                      const isBinaryFile =
+                        isImageFile || isPdfFile || isOfficeFile;
+
+                      // For binary files, only render if we have a blob URL
+                      if (isBinaryFile && !blobUrlForRenderer) {
+                        return (
+                          <div className="h-full w-full flex items-center justify-center">
+                            <div className="text-sm text-muted-foreground">
+                              Loading{' '}
+                              {isPdfFile ? 'PDF' : isImageFile ? 'image' : 'file'}
+                              ...
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <FileRenderer
+                          key={selectedFilePath}
+                          content={isBinaryFile ? null : textContentForRenderer}
+                          binaryUrl={blobUrlForRenderer}
+                          fileName={
+                            selectedFilePath?.split('/').pop() || selectedFilePath
+                          }
+                          filePath={selectedFilePath}
+                          className="h-full w-full"
+                          project={projectWithSandbox}
+                          markdownRef={
+                            isMarkdownFile(selectedFilePath)
+                              ? markdownRef
+                              : undefined
+                          }
+                          onDownload={handleDownload}
+                          isDownloading={isDownloading}
+                          editable={editable && !isBinaryFile}
+                          onEdit={(val) => {
+                            if (!selectedFilePath) return;
+                            setTextContentForRenderer(val);
+                            if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                            saveTimerRef.current = setTimeout(async () => {
+                              try {
+                                setIsSaving(true);
+                                // Save via JSON endpoint for reliability
+                                await fetch(`${API_URL}/sandboxes/${sandboxId}/files/json`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                                  },
+                                  body: JSON.stringify({
+                                    path: selectedFilePath,
+                                    content: val,
+                                  }),
+                                });
+                                onFileEdited?.({ path: selectedFilePath, bytes: val.length });
+                              } catch (e) {
+                                // Surface a lightweight indicator; toast would be noisy on debounce
+                                console.error('Autosave failed', e);
+                              } finally {
+                                setIsSaving(false);
+                              }
+                            }, 500);
+                          }}
+                        />
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* File Explorer */
+              <div className="h-full w-full">
+                {isLoadingFiles ? (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <Loader className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : files.length === 0 ? (
+                  <div className="h-full w-full flex flex-col items-center justify-center">
+                    <Folder className="h-12 w-12 mb-2 text-muted-foreground opacity-30" />
+                    <p className="text-sm text-muted-foreground">
+                      Directory is empty
+                    </p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-full w-full p-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-4">
+                      {files.map((file) => (
+                        <button
+                          key={file.path}
+                          className={`flex flex-col items-center p-3 rounded-2xl border hover:bg-muted/50 transition-colors ${
+                            selectedFilePath === file.path
+                              ? 'bg-muted border-primary/20'
+                              : ''
+                          }`}
+                          onClick={() => {
+                            if (file.is_dir) {
+                              navigateToFolder(file);
+                            } else {
+                              openFile(file);
+                            }
+                          }}
+                        >
+                          <div className="w-12 h-12 flex items-center justify-center mb-1">
+                            {file.is_dir ? (
+                              <Folder className="h-9 w-9 text-blue-500" />
+                            ) : (
+                             
+                              (() => {
+                                const iconPath = getFileIcon(file.name);
+                                return iconPath ? (
+                                  <img 
+                                    src={iconPath} 
+                                    alt={`${file.name} icon`}
+                                    className="h-10 w-10 object-contain"
+                                  />
+                                ) : (
+                                  <File className="h-8 w-8 text-muted-foreground" />
+                                );
+                              })()
+                            )}
+                          </div>
+                          <span className="text-xs text-center font-medium truncate max-w-full">
+                            {file.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                )}
+              </div>
+            )}
+          </div>
+           {/* 👇 Resize Handle */}
+          <div
+      className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-border"
+      onMouseDown={handleMouseDown}
+    />
+        </div>
+      )}
+    </>
   );
 }
