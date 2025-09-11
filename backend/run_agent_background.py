@@ -125,15 +125,17 @@ async def run_agent_background(
         if model_name != "openai/gpt-5-mini":
             logger.debug(f"Using user-selected model: {model_name} -> {effective_model}")
         else:
-            # Use Vertex Gemini 2.5 Pro for both local and production environments
-            if model_name == "openai/gpt-5-mini":
-                effective_model = "vertex_ai/gemini-2.5-pro"
-                logger.debug(f"Using default model for background run: {effective_model}")
-            else:
-                logger.debug(f"Using default model: {effective_model}")
-    
-    # Use Vertex Gemini 2.5 Pro for both local and production environments
-    effective_model = "vertex_ai/gemini-2.5-pro"
+            # Fall through to mode-based default below
+            logger.debug("No explicit model provided; will select based on mode")
+
+    # Mode-based routing: in default mode, always force Gemini Flash
+    if (mode or 'default') == 'default':
+        effective_model = "vertex_ai/gemini-2.5-flash"
+        logger.debug(f"Forcing model to Gemini Flash in default mode (background): {effective_model}")
+    elif not model_name or model_name == "openai/gpt-5-mini":
+        # Agent mode fallback
+        effective_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
+        logger.debug(f"Using mode-based default model for background run: {effective_model} (mode={mode})")
     logger.debug(f"🚀 Using model: {effective_model} (thinking: {enable_thinking}, reasoning_effort: {reasoning_effort})")
     if agent_config:
         logger.debug(f"Using custom agent: {agent_config.get('name', 'Unknown')}")

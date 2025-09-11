@@ -320,19 +320,20 @@ async def start_agent(
     if not instance_id:
         raise HTTPException(status_code=500, detail="Agent API not initialized with instance ID")
 
-    # Use model from config if not specified in the request
+    # Use model from request or apply mode-based default
     model_name = body.model_name
     logger.debug(f"Original model_name from request: {model_name}")
 
-    # Log the model name after alias resolution
+    # In default mode, force Gemini Flash for the entire run
+    if (body.mode or 'default') == 'default':
+        model_name = "vertex_ai/gemini-2.5-flash"
+        logger.debug(f"Forcing model to Gemini Flash in default mode at start: {model_name}")
+    elif not model_name:
+        model_name = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
+        logger.debug(f"Using mode-based default model: {model_name} (mode={body.mode})")
+
+    # Resolve aliases
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
-    logger.debug(f"Resolved model name: {resolved_model}")
-
-    # Use Claude Sonnet 4 from Bedrock for both local and production environments
-    if os.getenv("ENV_MODE", "local").lower() == "production":
-        resolved_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
-
-    # Update model_name to use the resolved version (or forced one)
     model_name = resolved_model
 
     logger.info(f"🚨 API DEBUG: Received mode={body.mode}")
@@ -1072,10 +1073,13 @@ async def initiate_agent_with_files(
     # Use model from config if not specified in the request
     logger.debug(f"Original model_name from request: {model_name}")
 
-    if model_name is None:
-        # Use Claude Sonnet 4 from Bedrock for both local and production environments
+    # In default mode, force Gemini Flash
+    if (mode or 'default') == 'default':
+        model_name = "vertex_ai/gemini-2.5-flash"
+        logger.debug(f"Forcing model to Gemini Flash in default mode at initiate: {model_name}")
+    elif model_name is None:
         model_name = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
-        logger.debug(f"Using default model: {model_name}")
+        logger.debug(f"Using mode-based default model: {model_name} (mode={mode})")
 
     # Log the model name after alias resolution
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)

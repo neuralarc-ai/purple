@@ -254,8 +254,8 @@ class PromptManager:
         
         # Continue with normal system prompt logic
         default_system_content = get_system_prompt(mode)
-        logger.info(f"🚨 PROMPT DEBUG: Mode={mode}, Prompt length={len(default_system_content)}")
-        logger.debug(f"🔧 PromptManager: Mode={mode}, Default system content length={len(default_system_content)}")
+        logger.info(f"PROMPT DEBUG: Mode={mode}, Prompt length={len(default_system_content)}")
+        logger.debug(f"PromptManager: Mode={mode}, Default system content length={len(default_system_content)}")
         
         if "anthropic" not in model_name.lower():
             sample_response_path = os.path.join(os.path.dirname(__file__), 'sample_responses/1.txt')
@@ -265,22 +265,22 @@ class PromptManager:
         
         # Check if agent has builder tools enabled - use agent builder prompt ONLY when explicitly configured
         if agent_config:
-            logger.debug(f"🔧 PromptManager: Agent config found, system_prompt exists: {bool(agent_config.get('system_prompt'))}")
+            logger.debug(f"PromptManager: Agent config found, system_prompt exists: {bool(agent_config.get('system_prompt'))}")
             # Only use agent builder prompt if explicitly set in system_prompt or if this is a dedicated builder agent
             if agent_config.get('system_prompt') and 'builder' in agent_config.get('system_prompt', '').lower():
                 system_content = get_agent_builder_prompt()
-                logger.debug(f"🔧 PromptManager: Using agent builder prompt")
+                logger.debug(f"PromptManager: Using agent builder prompt")
             elif agent_config.get('system_prompt') and mode == 'agent':
                 # Only use agent's custom system prompt in agent mode
                 system_content = agent_config['system_prompt'].strip()
-                logger.debug(f"🔧 PromptManager: Using agent's custom system prompt (agent mode)")
+                logger.debug(f"PromptManager: Using agent's custom system prompt (agent mode)")
             else:
                 # Use mode-specific prompt (simple chat or agent mode)
                 system_content = default_system_content
-                logger.debug(f"🔧 PromptManager: Using mode-specific prompt (mode={mode})")
+                logger.debug(f"PromptManager: Using mode-specific prompt (mode={mode})")
         else:
             system_content = default_system_content
-            logger.debug(f"🔧 PromptManager: No agent config, using mode-specific prompt (mode={mode})")
+            logger.debug(f"PromptManager: No agent config, using mode-specific prompt (mode={mode})")
         
         # Add agent knowledge base context if available
         if client and agent_config and agent_config.get('agent_id'):
@@ -619,8 +619,8 @@ class AgentRunner:
                     enable_context_manager=self.config.enable_context_manager,
                     generation=generation
                 )
-                logger.info(f"🚨 DEBUG: Mode={self.config.mode}, execute_tools={self.config.mode == 'agent'}")
-                logger.debug(f"🔧 AgentRunner: Mode={self.config.mode}, execute_tools={self.config.mode == 'agent'}")
+                logger.info(f"DEBUG: Mode={self.config.mode}, execute_tools={self.config.mode == 'agent'}")
+                logger.debug(f"AgentRunner: Mode={self.config.mode}, execute_tools={self.config.mode == 'agent'}")
 
                 if isinstance(response, dict) and "status" in response and response["status"] == "error":
                     yield response
@@ -741,22 +741,24 @@ async def run_agent(
     trace: Optional[StatefulTraceClient] = None,
     mode: Optional[str] = 'default'  # Add mode parameter
 ):
+    # Resolve effective model based on explicit selection or mode
     effective_model = model_name
-    if model_name == "openai/gpt-5-mini" and agent_config and agent_config.get('model'):
+    if (mode or 'default') == 'default':
+        # In simple chat mode, always use Gemini Flash regardless of provided model
+        effective_model = "vertex_ai/gemini-2.5-flash"
+        logger.debug(f"Forcing model to Gemini Flash in default mode: {effective_model}")
+    elif model_name and model_name != "openai/gpt-5-mini":
+        logger.debug(f"Using user-selected model: {effective_model}")
+    elif agent_config and agent_config.get('model') and model_name == "openai/gpt-5-mini":
         effective_model = agent_config['model']
         logger.debug(f"Using model from agent config: {effective_model} (no user selection)")
-    elif model_name != "openai/gpt-5-mini":
-        logger.debug(f"Using user-selected model: {effective_model}")
     else:
-        # Use Claude Sonnet 4 from Bedrock for both local and production environments
-        if model_name == "openai/gpt-5-mini":
-            effective_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
-            logger.debug(f"Using default model: {effective_model}")
+        # Choose defaults based on mode
+        if (mode or 'default') == 'default':
+            effective_model = "vertex_ai/gemini-2.5-flash"
         else:
-            logger.debug(f"Using default model: {effective_model}")
-    
-    # Use Claude Sonnet 4 from Bedrock for both local and production environments
-    effective_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
+            effective_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
+        logger.debug(f"Using mode-based default model: {effective_model} (mode={mode})")
 
     config = AgentConfig(
         thread_id=thread_id,
