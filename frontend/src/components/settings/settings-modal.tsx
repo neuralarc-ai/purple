@@ -29,6 +29,9 @@ import { BillingModal } from '@/components/billing/billing-modal';
 import { isLocalMode } from '@/lib/config';
 import { getSubscription, createPortalSession } from '@/lib/api';
 import { toast } from 'sonner';
+// Default avatar for users who haven't selected one
+const DEFAULT_AVATAR_URL = "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-7.png";
+
 // Avatar images from Supabase storage
 const avatarList = [
   "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-1.png",
@@ -167,7 +170,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
     preferredName: '',
     workDescription: '',
     personalReferences: '',
-    avatar_url: ''
+    avatar_url: DEFAULT_AVATAR_URL
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showCustomRoleInput, setShowCustomRoleInput] = useState(false);
@@ -209,7 +212,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           preferredName: userProfile.preferred_name || '',
           workDescription: 'Other',
           personalReferences: userProfile.personal_references || '',
-          avatar_url: userProfile.avatar_url || ''
+          avatar_url: userProfile.avatar_url || DEFAULT_AVATAR_URL
         });
         setShowCustomRoleInput(true);
         setCustomRole(workDesc);
@@ -221,7 +224,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           preferredName: userProfile.preferred_name || '',
           workDescription: normalizedWorkDesc,
           personalReferences: userProfile.personal_references || '',
-          avatar_url: userProfile.avatar_url || ''
+          avatar_url: userProfile.avatar_url || DEFAULT_AVATAR_URL
         });
         setShowCustomRoleInput(false);
         setCustomRole('');
@@ -254,7 +257,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           preferredName: profile.preferred_name || '',
           workDescription: 'Other',
           personalReferences: profile.personal_references || '', // Load existing personal references
-          avatar_url: profile.avatar_url || ''
+          avatar_url: profile.avatar_url || DEFAULT_AVATAR_URL
         });
         setShowCustomRoleInput(true);
         setCustomRole(workDesc);
@@ -266,7 +269,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           preferredName: profile.preferred_name || '',
           workDescription: normalizedWorkDesc,
           personalReferences: profile.personal_references || '', // Load existing personal references
-          avatar_url: profile.avatar_url || ''
+          avatar_url: profile.avatar_url || DEFAULT_AVATAR_URL
         });
         setShowCustomRoleInput(false);
         setCustomRole('');
@@ -438,19 +441,11 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
       {/* User Profile Section */}
       <div className="flex items-center gap-4">
         <div className="flex-shrink-0 flex flex-col items-center">
-          {localProfile?.avatar_url ? (
-            <img 
-              src={localProfile.avatar_url} 
-              alt="User avatar" 
-              className="w-24 h-24 rounded-full object-cover"
-            />
-          ) : (
-            <Avatar className="h-24 w-24">
-              <AvatarFallback className="bg-green-500 text-white text-2xl font-semibold">
-                {getInitials(profileForm.fullName || preferredName || authUser?.user_metadata?.full_name || 'User')}
-              </AvatarFallback>
-            </Avatar>
-          )}
+          <img 
+            src={localProfile?.avatar_url || DEFAULT_AVATAR_URL} 
+            alt="User avatar" 
+            className="w-24 h-24 rounded-full object-cover"
+          />
           <button
             type="button"
             onClick={() => setShowAvatarModal(true)}
