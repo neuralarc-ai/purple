@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import {
   Loader2,
   ArrowUp,
-  Paperclip,
   Wand2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -27,6 +26,34 @@ import {
 import { ModeToggle } from './mode-toggle';
 import { BorderBeam } from '@/components/magicui/border-beam';
 import { isProductionMode } from '@/lib/config';
+
+// Custom Attach Icon component
+const AttachIcon = ({ className }: { className?: string }) => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path d="M14 13.5V8C14 5.79086 12.2091 4 10 4C7.79086 4 6 5.79086 6 8V13.5C6 17.0899 8.91015 20 12.5 20C16.0899 20 19 17.0899 19 13.5V4H21V13.5C21 18.1944 17.1944 22 12.5 22C7.80558 22 4 18.1944 4 13.5V8C4 4.68629 6.68629 2 10 2C13.3137 2 16 4.68629 16 8V13.5C16 15.433 14.433 17 12.5 17C10.567 17 9 15.433 9 13.5V8H11V13.5C11 14.3284 11.6716 15 12.5 15C13.3284 15 14 14.3284 14 13.5Z"></path>
+  </svg>
+);
+
+// Custom Connect Apps Icon component
+const ConnectAppsIcon = ({ className }: { className?: string }) => (
+  <svg
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
+    <path d="M2.5 7C2.5 9.48528 4.51472 11.5 7 11.5C9.48528 11.5 11.5 9.48528 11.5 7C11.5 4.51472 9.48528 2.5 7 2.5C4.51472 2.5 2.5 4.51472 2.5 7ZM2.5 17C2.5 19.4853 4.51472 21.5 7 21.5C9.48528 21.5 11.5 19.4853 11.5 17C11.5 14.5147 9.48528 12.5 7 12.5C4.51472 12.5 2.5 14.5147 2.5 17ZM12.5 17C12.5 19.4853 14.5147 21.5 17 21.5C19.4853 21.5 21.5 19.4853 21.5 17C21.5 14.5147 19.4853 12.5 17 12.5C14.5147 12.5 12.5 14.5147 12.5 17ZM9.5 7C9.5 8.38071 8.38071 9.5 7 9.5C5.61929 9.5 4.5 8.38071 4.5 7C4.5 5.61929 5.61929 4.5 7 4.5C8.38071 4.5 9.5 5.61929 9.5 7ZM9.5 17C9.5 18.3807 8.38071 19.5 7 19.5C5.61929 19.5 4.5 18.3807 4.5 17C4.5 15.6193 5.61929 14.5 7 14.5C8.38071 14.5 9.5 15.6193 9.5 17ZM19.5 17C19.5 18.3807 18.3807 19.5 17 19.5C15.6193 19.5 14.5 18.3807 14.5 17C14.5 15.6193 15.6193 14.5 17 14.5C18.3807 14.5 19.5 15.6193 19.5 17ZM16 11V8H13V6H16V3H18V6H21V8H18V11H16Z"></path>
+  </svg>
+);
 
 interface MessageInputProps {
   value: string;
@@ -301,7 +328,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             onPaste={handlePaste}
             placeholder={placeholder}
             className={cn(
-              "w-full bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-2 min-h-[100px] max-h-[200px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] scrollbar-hide",
+              "w-full text-foreground bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-2 min-h-[100px] max-h-[200px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] scrollbar-hide",
               isDraggingOver ? 'opacity-40' : '',
             )}
             disabled={loading || (disabled && !isAgentRunning)}
@@ -338,7 +365,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       }
                       onClick={handleFileUpload}
                     >
-                      <Paperclip className="h-4 w-4 text-muted-foreground stroke-[1.5]" />
+                      <AttachIcon className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -363,16 +390,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                         }
                         onClick={onOpenIntegrations}
                       >
-                        <Image
-                          src={
-                            resolvedTheme === 'dark'
-                              ? '/icons/integration-dark.svg'
-                              : '/icons/integrations.svg'
-                          }
-                          alt="Integrations"
-                          width={16}
-                          height={16}
-                        />
+                        <ConnectAppsIcon className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>

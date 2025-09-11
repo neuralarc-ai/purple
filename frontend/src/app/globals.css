@@ -333,7 +333,7 @@
   --helium-blue: oklch(0.5608 0.2416 270.34);
   --helium-green: oklch(0.9024 0.2346 134.77);
   --helium-teal: oklch(0.7197 0.1217 174.92);
-  --helium-orange: #EE5441;
+  --helium-orange: oklch(0.6514 0.193 30.11);
 }
 
 /* Custom scrollbar hiding utilities */
@@ -578,13 +578,14 @@
     word-break: break-word;
   }
 
-  /* Fix tables */
+  /* Fix tables - wrap in scrollable container */
   & table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 0.75em;
     margin-bottom: 0.75em;
     font-size: 0.9em;
+    min-width: 0; /* Allow table to shrink */
   }
 
   & th {
@@ -593,11 +594,15 @@
     text-align: left;
     font-weight: 600;
     background-color: var(--muted);
+    word-break: break-word;
+    white-space: normal;
   }
 
   & td {
     border: 1px solid var(--border);
     padding: 0.5em 0.75em;
+    word-break: break-word;
+    white-space: normal;
   }
 
   /* Fix blockquotes */
@@ -614,6 +619,13 @@
     line-height: 1.4;
     margin-top: 0.25em;
     margin-bottom: 0.75em;
+  }
+
+  /* Handle long URLs and links */
+  & a {
+    word-break: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
   }
 
   /* Dark mode adjustments */
@@ -822,7 +834,6 @@
     mix-blend-mode: normal;
 }
 
-
 @media (max-width: 512px) {
   .project-ellipsis {
     max-width: 160px;  /* adjust as needed */
@@ -839,6 +850,122 @@
    font-size: 10px;
   }
 }
+/* Overflow handling for specific problematic content when side panel is open */
+.side-panel-overflow-handler {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* Apply overflow handling only to specific elements that can cause horizontal scroll */
+.side-panel-overflow-handler a[href*="http"],
+.side-panel-overflow-handler a[href*="https://"] {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+.side-panel-overflow-handler code:not(pre code) {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.side-panel-overflow-handler pre {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Ensure tables are always wrapped in scrollable containers */
+.table-wrapper {
+  overflow-x: auto;
+  margin: 0.75em 0;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+  max-width: 100%;
+}
+
+.table-wrapper table {
+  margin: 0;
+  min-width: 100%;
+  width: max-content;
+}
+
+/* Table wrapper for horizontal scrolling - always applied */
+.table-wrapper {
+  overflow-x: auto;
+  margin: 0.75em 0;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+}
+
+.table-wrapper table {
+  margin: 0;
+  min-width: 100%;
+  width: max-content; /* Allow table to be wider than container */
+}
+
+/* Long content handling */
+.long-content {
+  word-break: break-word;
+  white-space: normal;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* URL and link handling */
+.url-content {
+  word-break: break-all;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Secure report access styling */
+.secure-report-link {
+  display: block;
+  word-break: break-all;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  padding: 0.5rem;
+  background-color: var(--muted);
+  border-radius: 0.375rem;
+  margin: 0.5rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  border: 1px solid var(--border);
+}
+
+/* Apply overflow handling to specific prose elements when needed */
+.side-panel-overflow-handler .prose.chat-markdown a[href*="http"],
+.side-panel-overflow-handler .prose.chat-markdown a[href*="https://"] {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+.side-panel-overflow-handler .prose.chat-markdown code:not(pre code) {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.side-panel-overflow-handler .prose.chat-markdown pre {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+/* Handle long text in tool call side panel */
+.tool-call-content {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+.tool-call-content * {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
 @media (max-width: 452px) {
   html, body {
     overflow-x: clip;
@@ -846,7 +973,7 @@
   * {
     min-width: 0; /* prevent child from forcing overflow */
   }
-  
+
   /* Chat input container styles */
   .dashboard-chat-input .flex.items-center.justify-between {
     display: flex;
@@ -862,21 +989,21 @@
     max-width: 100%;
     box-sizing: border-box;
   }
-  
+
   .dashboard-chat-input .flex.items-center.justify-between::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
-  
+
   .dashboard-chat-input .flex.items-center.justify-between::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
   }
-  
+
   .dashboard-chat-input .flex.items-center.gap-2 {
     flex-wrap: nowrap;
     gap: 0.25rem;
     min-width: max-content;
   }
-  
+
   .dashboard-chat-input button {
     min-width: 2rem;
     height: 2rem;
@@ -885,48 +1012,48 @@
     white-space: nowrap;
     font-size: 0.8rem;
   }
-  
+
   .dashboard-chat-input .flex.items-center.gap-2 > button,
   .dashboard-chat-input .flex.items-center.gap-2 > div {
     margin: 0 !important;
   }
-  
+
   /* Styles for screens below 420px */
   @media (max-width: 420px) {
     .dashboard-chat-input .agent-selector .flex.items-center.gap-2 {
       max-width: 120px;
     }
-    
+
     .dashboard-chat-input .agent-selector span {
       display: none;
     }
-    
+
     .dashboard-chat-input button {
       min-width: 2rem;
       width: auto;
       padding: 0 0.5rem;
     }
-    
+
     .dashboard-chat-input .flex.items-center.gap-2 {
       gap: 0.25rem;
     }
-    
+
     /* Hide text in buttons on small screens */
     .dashboard-chat-input .btn-text {
       display: none;
     }
-    
+
     /* Ensure the send button stays on the right */
     .dashboard-chat-input .flex.items-center.gap-2:last-child {
       margin-left: auto;
     }
-    
+
     /* Adjust the agent selector button */
     .dashboard-chat-input .agent-selector button {
       padding: 0 0.5rem;
       min-width: auto;
     }
-    
+
     /* Ensure the plus icon has proper spacing */
     .dashboard-chat-input .agent-selector svg:last-child {
       margin-left: 0;
@@ -941,13 +1068,5 @@
 
 .hover\:bg-helium-orange\/80:hover {
   background-color: color-mix(in srgb, var(--helium-orange) 80%, transparent);
-}
-
-.text-helium-orange {
-  color: var(--helium-orange);
-}
-
-.border-helium-orange {
-  border-color: var(--helium-orange);
 }
 

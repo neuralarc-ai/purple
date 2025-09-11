@@ -48,6 +48,9 @@ import { useAuth } from '@/components/AuthProvider';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { SettingsModal } from '@/components/settings/settings-modal';
 
+// Default avatar for users who haven't selected one
+const DEFAULT_AVATAR_URL = "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-7.png";
+
 
 // Dynamic icon component that changes path based on theme
 const DynamicIcon = ({
@@ -270,27 +273,12 @@ export function NavUserWithTeams({
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                {profile?.avatar_url ? (
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={profile.avatar_url} alt={preferredName || user.name} />
-                    <AvatarFallback className="rounded-lg">
-                      {getInitials(preferredName || user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : user.avatar ? (
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={user.avatar} alt={preferredName || user.name} />
-                    <AvatarFallback className="rounded-lg">
-                      {getInitials(preferredName || user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg">
-                      {getInitials(preferredName || user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarImage src={profile?.avatar_url || DEFAULT_AVATAR_URL} alt={preferredName || user.name} />
+                  <AvatarFallback className="rounded-lg">
+                    {getInitials(preferredName || user.name)}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-lg font-bold">{preferredName || user.name}</span>
                   <span className="truncate text-sm">{user.email}</span>
@@ -298,27 +286,12 @@ export function NavUserWithTeams({
                 {/* Show user avatar in collapsed state, more icon in expanded state */}
                 <div className="ml-auto group-data-[collapsible=icon]:mr-2">
                   <div className="group-data-[collapsible=icon]:block hidden">
-                    {profile?.avatar_url ? (
-                      <Avatar className="h-6 w-6 rounded-lg">
-                        <AvatarImage src={profile.avatar_url} alt={preferredName || user.name} />
-                        <AvatarFallback className="rounded-lg text-xs">
-                          {getInitials(preferredName || user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    ) : user.avatar ? (
-                      <Avatar className="h-6 w-6 rounded-lg">
-                        <AvatarImage src={user.avatar} alt={preferredName || user.name} />
-                        <AvatarFallback className="rounded-lg text-xs">
-                          {getInitials(preferredName || user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <Avatar className="h-6 w-6 rounded-lg">
-                        <AvatarFallback className="rounded-lg text-xs">
-                          {getInitials(preferredName || user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
+                    <Avatar className="h-6 w-6 rounded-lg">
+                      <AvatarImage src={profile?.avatar_url || DEFAULT_AVATAR_URL} alt={preferredName || user.name} />
+                      <AvatarFallback className="rounded-lg text-xs">
+                        {getInitials(preferredName || user.name)}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
                   <div className="group-data-[collapsible=icon]:hidden">
                     <DynamicIcon
