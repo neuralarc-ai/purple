@@ -1535,10 +1535,12 @@ export function ToolCallSidePanel({
           }}
         >
           {shouldShowResizable && (
+
             <div
-              className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize z-50 hover:bg-green-500/20 active:bg-green-500/40 transition-colors"
+              className="absolute left-0 top-0 bottom-0 w-0.5 cursor-ew-resize z-50 hover:bg-green-500/20 active:bg-green-500/40 transition-colors"
               onMouseDown={handleMouseDown}
             >
+              
               <div className="absolute left-0.5 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-green-500/50 rounded-full" />
             </div>
           )}
