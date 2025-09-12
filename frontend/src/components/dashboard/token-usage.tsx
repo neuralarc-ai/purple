@@ -133,7 +133,7 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total credits left</span>
               <span className="text-sm font-medium text-foreground">
-                {(subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)).toLocaleString()}
+                {totalRemainingCredits.toLocaleString()}
               </span>
             </div>
             
