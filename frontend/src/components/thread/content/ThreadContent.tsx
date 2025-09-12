@@ -35,6 +35,7 @@ import { ComposioUrlDetector } from './composio-url-detector';
 import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
 import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 // Helper function to render all attachments as standalone messages
@@ -784,6 +785,8 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     ? 'flex-1 overflow-y-auto scrollbar-none py-4 pb-0'
     : 'flex-1 overflow-y-auto scrollbar-none py-4 pb-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60';
 
+  const isMobile = useIsMobile();
+
   // In playback mode, we use visibleMessages instead of messages
   const displayMessages =
     readOnly && visibleMessages ? visibleMessages : messages;
@@ -898,7 +901,10 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
       !currentToolCall &&
       agentStatus === 'idle' ? (
         // Render empty state outside scrollable container
-        <div className="flex-1 min-h-[60vh] flex items-center justify-center">
+        <div className={cn(
+          "flex-1 min-h-[60vh] flex items-center justify-center",
+          isMobile && "pt-15"
+        )}>
           {emptyStateComponent || (
             <div className="text-center text-muted-foreground">
               {readOnly
@@ -911,7 +917,10 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
         // Render scrollable content container with column-reverse
         <div
           ref={scrollContainerRef || messagesContainerRef}
-          className={`${containerClassName} flex flex-col-reverse ${shouldJustifyToTop ? 'justify-end min-h-full' : ''}`}
+          className={cn(
+            `${containerClassName} flex flex-col-reverse ${shouldJustifyToTop ? 'justify-end min-h-full' : ''}`,
+            isMobile && "pt-15"
+          )}
           onScroll={handleScroll}
           style={isSidePanelOpen ? { overflowX: 'hidden' } : {}}
         >

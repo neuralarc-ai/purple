@@ -159,10 +159,12 @@ export function SiteHeader({
 
   return (
     <>
-      <header className={cn(
-        "bg-background sticky top-0 md:pr-4 xl:pr-8 flex h-14 shrink-0 items-center gap-2 z-20 w-full",
-        isMobile && "px-2"
-      )}>
+    <header className={cn(
+    "bg-background flex h-14 shrink-0 items-center gap-2 w-full",
+    isMobile 
+      ? "fixed top-0 left-0 right-0 px-2 z-50 border-b border-border/40 backdrop-blur-sm" 
+      : "sticky top-0 md:pr-4 xl:pr-8 z-20"
+  )}>
 
         <div className="flex flex-1 items-center gap-2 px-11">
           {isEditing ? (
