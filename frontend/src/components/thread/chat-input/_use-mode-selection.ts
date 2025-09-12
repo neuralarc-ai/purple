@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 export const STORAGE_KEY_MODE = 'suna-preferred-mode-v1';
-export const DEFAULT_MODE: 'default' | 'agent' = 'agent';
+export const DEFAULT_MODE: 'default' | 'agent' = 'default';
 
 export type ModeType = 'default' | 'agent';
 
@@ -51,6 +51,17 @@ export const useModeSelection = () => {
       setHasInitialized(true);
     }
   }, [hasInitialized]);
+
+  // Listen for global switch-to-agent requests (e.g., from message CTA)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = () => {
+      setSelectedMode('agent');
+      saveModePreference('agent');
+    };
+    window.addEventListener('switchToAgent', handler as EventListener);
+    return () => window.removeEventListener('switchToAgent', handler as EventListener);
+  }, []);
 
   // Handle mode selection change
   const handleModeChange = (mode: ModeType) => {

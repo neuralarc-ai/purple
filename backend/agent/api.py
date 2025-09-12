@@ -54,6 +54,7 @@ class AgentStartRequest(BaseModel):
     stream: Optional[bool] = True
     enable_context_manager: Optional[bool] = False
     agent_id: Optional[str] = None  # Custom agent to use
+    mode: Optional[str] = 'default'  # Mode: 'default' (simple chat) or 'agent' (full agent)
 
 class InitiateAgentResponse(BaseModel):
     thread_id: str
@@ -319,22 +320,24 @@ async def start_agent(
     if not instance_id:
         raise HTTPException(status_code=500, detail="Agent API not initialized with instance ID")
 
-    # Use model from config if not specified in the request
+    # Use model from request or apply mode-based default
     model_name = body.model_name
     logger.debug(f"Original model_name from request: {model_name}")
 
-    # Log the model name after alias resolution
+    # In default mode, force Gemini Flash for the entire run
+    if (body.mode or 'default') == 'default':
+        model_name = "vertex_ai/gemini-2.5-flash"
+        logger.debug(f"Forcing model to Gemini Flash in default mode at start: {model_name}")
+    elif not model_name:
+        model_name = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
+        logger.debug(f"Using mode-based default model: {model_name} (mode={body.mode})")
+
+    # Resolve aliases
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
-    logger.debug(f"Resolved model name: {resolved_model}")
-
-    # Use Claude Sonnet 4 from Bedrock for both local and production environments
-    if os.getenv("ENV_MODE", "local").lower() == "production":
-        resolved_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
-
-    # Update model_name to use the resolved version (or forced one)
     model_name = resolved_model
 
-    logger.debug(f"Starting new agent for thread: {thread_id} with config: model={model_name}, thinking={body.enable_thinking}, effort={body.reasoning_effort}, stream={body.stream}, context_manager={body.enable_context_manager} (Instance: {instance_id})")
+    logger.info(f"🚨 API DEBUG: Received mode={body.mode}")
+    logger.debug(f"Starting new agent for thread: {thread_id} with config: model={model_name}, thinking={body.enable_thinking}, effort={body.reasoning_effort}, stream={body.stream}, context_manager={body.enable_context_manager}, mode={body.mode} (Instance: {instance_id})")
     client = await db.client
 
 
@@ -517,6 +520,7 @@ async def start_agent(
         stream=body.stream, enable_context_manager=body.enable_context_manager,
         agent_config=agent_config,  # Pass agent configuration
         request_id=request_id,
+        mode=body.mode,  # Add mode parameter
     )
 
     return {"agent_run_id": agent_run_id, "status": "running"}
@@ -1053,6 +1057,7 @@ async def initiate_agent_with_files(
     stream: Optional[bool] = Form(True),
     enable_context_manager: Optional[bool] = Form(False),
     agent_id: Optional[str] = Form(None),  # Add agent_id parameter
+    mode: Optional[str] = Form("default"),  # Add mode parameter
     files: List[UploadFile] = File(default=[]),
     user_id: str = Depends(get_current_user_id_from_jwt)
 ):
@@ -1068,10 +1073,13 @@ async def initiate_agent_with_files(
     # Use model from config if not specified in the request
     logger.debug(f"Original model_name from request: {model_name}")
 
-    if model_name is None:
-        # Use Claude Sonnet 4 from Bedrock for both local and production environments
+    # In default mode, force Gemini Flash
+    if (mode or 'default') == 'default':
+        model_name = "vertex_ai/gemini-2.5-flash"
+        logger.debug(f"Forcing model to Gemini Flash in default mode at initiate: {model_name}")
+    elif model_name is None:
         model_name = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
-        logger.debug(f"Using default model: {model_name}")
+        logger.debug(f"Using mode-based default model: {model_name} (mode={mode})")
 
     # Log the model name after alias resolution
     resolved_model = MODEL_NAME_ALIASES.get(model_name, model_name)
@@ -1394,6 +1402,7 @@ async def initiate_agent_with_files(
             stream=stream, enable_context_manager=enable_context_manager,
             agent_config=agent_config,  # Pass agent configuration
             request_id=request_id,
+            mode=mode,  # Add mode parameter
         )
 
         return {"thread_id": thread_id, "agent_run_id": agent_run_id}

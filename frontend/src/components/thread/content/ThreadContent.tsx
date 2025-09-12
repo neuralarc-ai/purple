@@ -571,6 +571,15 @@ const ActionButtons: React.FC<{
   const isGoodDisabled = feedback === 'bad';
   const isBadDisabled = feedback === 'good';
 
+  // Detect if the assistant message suggests switching to Agent Mode
+  const rawStringContent = (() => {
+    if (typeof content === 'string') return content;
+    if (content?.text) return content.text;
+    if (content?.content) return content.content;
+    try { return JSON.stringify(content); } catch { return ''; }
+  })();
+  const suggestsAgentMode = /switch to Agent Mode|Agent Mode/i.test(rawStringContent || '');
+
   return (
     <div className="flex items-center justify-end gap-2 relative">
       {/* Copy Button */}
@@ -706,6 +715,56 @@ const ActionButtons: React.FC<{
             </TooltipTrigger>
             <TooltipContent>
               <p className="text-xs">Retry</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+
+      {/* Switch to Agent button - shows when assistant recommends Agent Mode */}
+      {suggestsAgentMode && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                className="h-6 px-2 rounded-sm"
+                onClick={() => {
+                  try {
+                    // Prefill last user prompt into the input
+                    if (finalGroupedMessages && finalGroupedMessages.length > 0) {
+                      // Use the user message right before this assistant group
+                      const userGroup = finalGroupedMessages
+                        .slice(0, groupIndex)
+                        .reverse()
+                        .find((g: any) => g.type === 'user');
+                      const userMessage = userGroup?.messages?.[0];
+                      let prompt = typeof userMessage?.content === 'string' ? userMessage.content : '';
+                      try {
+                        const parsed = prompt ? JSON.parse(prompt) : null;
+                        if (parsed && typeof parsed.content === 'string') {
+                          prompt = parsed.content;
+                        }
+                      } catch {}
+                      prompt = (prompt || '').replace(/\[Uploaded File: .*?\]/g, '').trim();
+                      if (typeof setInputValue === 'function') {
+                        setInputValue(prompt);
+                      }
+                    }
+
+                    // Dispatch a global event so input switches to Agent mode
+                    const evt = new Event('switchToAgent');
+                    window.dispatchEvent(evt);
+                    toast.success('Switched to Agent Mode');
+                  } catch (e) {
+                    console.warn('Failed to switch to agent mode', e);
+                  }
+                }}
+              >
+                Switch to Agent
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Switch to Agent Mode</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
