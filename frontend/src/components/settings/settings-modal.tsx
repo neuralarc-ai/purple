@@ -46,6 +46,24 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useUsageLogs } from '@/hooks/react-query/subscriptions/use-billing';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
+
+// Custom Settings Icon component
+const SettingsIcon = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
 
 // Dynamic icon component that changes path based on theme
 const DynamicIcon = ({
@@ -124,7 +142,7 @@ export interface SettingsModalProps {
   defaultSection?: SettingsSection;
 }
 
-type SettingsSection = 'profile' | 'billing';
+type SettingsSection = 'profile' | 'billing' | 'personalization';
 
 const workOptions = [
   'CEO',
@@ -176,6 +194,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
   const { profile, preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
   const { data: subscriptionData, refetch: refetchSubscription } = useSubscriptionData();
   const queryClient = useQueryClient();
+  const { theme, setTheme } = useTheme();
   
   // Fetch usage logs data
   const { data: usageData, isLoading: usageLoading } = useUsageLogs(usagePage, USAGE_ITEMS_PER_PAGE);
@@ -421,6 +440,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
 
       const navigationItems = [
         { id: 'profile' as SettingsSection, label: 'Profile', icon: User },
+        { id: 'personalization' as SettingsSection, label: 'Personalization', icon: SettingsIcon },
         { id: 'billing' as SettingsSection, label: 'Credits', icon: CreditIcon },
       ];
 
@@ -588,6 +608,243 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           </div>
         </div>
       )}
+    </div>
+  );
+
+  const [personalization, setPersonalization] = useState({
+    name: '',
+    role: '',
+    profile: '',
+    traits: '',
+    customInstructions: ''
+  });
+  const [isSavingPersonalization, setIsSavingPersonalization] = useState(false);
+
+  type UserPersonalization = {
+    id: string;
+    user_id: string;
+    preferred_name: string | null;
+    occupation: string | null;
+    profile: string | null;
+    vibe: string | null;
+    custom_touch: string | null;
+    created_at?: string | null;
+    updated_at?: string | null;
+  };
+
+  const handlePersonalizationChange = (field: string, value: string) => {
+    setPersonalization(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Load personalization from Supabase for current user
+  React.useEffect(() => {
+    const loadPersonalization = async () => {
+      if (!authUser?.id) return;
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('user_personalization')
+          .select('preferred_name, occupation, profile, vibe, custom_touch')
+          .eq('user_id', authUser.id)
+          .maybeSingle();
+
+        if (error) {
+          // If no row, ignore; otherwise log
+          console.error('Error loading personalization:', error);
+          return;
+        }
+
+        if (data) {
+          setPersonalization({
+            name: data.preferred_name || '',
+            role: data.occupation || '',
+            profile: data.profile || '',
+            traits: data.vibe || '',
+            customInstructions: data.custom_touch || ''
+          });
+        }
+      } catch (err) {
+        console.error('Unexpected error loading personalization:', err);
+      }
+    };
+    loadPersonalization();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.id]);
+
+  const handleSavePersonalization = async () => {
+    // Client-side length checks mirroring DB constraints
+    if (personalization.traits && personalization.traits.trim().length > 200) {
+      toast.error('Traits must be 200 characters or fewer');
+      return;
+    }
+    if (personalization.customInstructions && personalization.customInstructions.trim().length > 300) {
+      toast.error('Custom instruction must be 300 characters or fewer');
+      return;
+    }
+
+    if (!authUser?.id) {
+      toast.error('You must be signed in to save personalization');
+      return;
+    }
+
+    setIsSavingPersonalization(true);
+    try {
+      const supabase = createClient();
+      const payload = {
+        user_id: authUser.id,
+        preferred_name: personalization.name?.trim() || null,
+        occupation: personalization.role?.trim() || null,
+        profile: personalization.profile?.trim() || null,
+        vibe: personalization.traits?.trim() || null,
+        custom_touch: personalization.customInstructions?.trim() || null,
+      } satisfies Omit<UserPersonalization, 'id'> & { user_id: string };
+
+      const { error } = await supabase
+        .from('user_personalization')
+        .upsert(payload, { onConflict: 'user_id' });
+
+      if (error) {
+        console.error('Failed to save personalization:', error);
+        toast.error(`Failed to save personalization: ${error.message}`);
+        return;
+      }
+
+      toast.success('Personalization settings saved successfully');
+    } catch (err) {
+      console.error('Unexpected error saving personalization:', err);
+      toast.error('Unexpected error saving personalization');
+    } finally {
+      setIsSavingPersonalization(false);
+    }
+  };
+
+  const renderPersonalizationContent = () => (
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-foreground">Personalization Settings</h3>
+        <p className="text-sm text-muted-foreground">
+          Customize your Helium experience to better suit your preferences.
+        </p>
+      </div>
+
+      <div className="space-y-6">
+        {/* What should Helium call you? */}
+        <div className="space-y-2">
+          <Label htmlFor="userName" className="text-sm font-medium">
+            What should Helium call you?
+          </Label>
+          <Input
+            id="userName"
+            placeholder="Enter your preferred name"
+            value={personalization.name}
+            onChange={(e) => handlePersonalizationChange('name', e.target.value)}
+            className="bg-background"
+          />
+        </div>
+
+        {/* What do you do? */}
+        <div className="space-y-2">
+          <Label htmlFor="userRole" className="text-sm font-medium">
+            What do you do?
+          </Label>
+          <Input
+            id="userRole"
+            placeholder="E.g., Product Manager, Developer, Student"
+            value={personalization.role}
+            onChange={(e) => handlePersonalizationChange('role', e.target.value)}
+            className="bg-background"
+          />
+        </div>
+
+        {/* Your Profile */}
+        <div className="space-y-2">
+          <Label htmlFor="userProfile" className="text-sm font-medium">
+            Your Profile
+          </Label>
+          <Textarea
+            id="userProfile"
+            placeholder="Tell us about yourself, your interests, and your background"
+            value={personalization.profile}
+            onChange={(e) => handlePersonalizationChange('profile', e.target.value)}
+            className="min-h-[100px] bg-background"
+          />
+        </div>
+
+        {/* What traits should Helium have? */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium block mb-2">
+            What traits should Helium have?
+          </Label>
+          
+          <div className="flex flex-wrap gap-2 mb-4">
+            {['Chatty', 'Witty', 'Straight Shooting', 'Encouraging', 'Gen Z', 'Skeptical', 'Traditional', 'Forward Thinking', 'Poetic'].map((trait) => (
+              <button
+                key={trait}
+                type="button"
+                className={`px-3 py-1.5 rounded-full text-sm border ${
+                  personalization.traits?.includes(trait) 
+                    ? 'bg-primary/10 border-primary text-primary' 
+                    : 'bg-background border-border text-foreground hover:bg-muted/50'
+                }`}
+                onClick={() => {
+                  const currentTraits = personalization.traits?.split(',').filter(Boolean) || [];
+                  const newTraits = currentTraits.includes(trait)
+                    ? currentTraits.filter(t => t !== trait)
+                    : [...currentTraits, trait];
+                  handlePersonalizationChange('traits', newTraits.join(','));
+                }}
+              >
+                {trait}
+              </button>
+            ))}
+          </div>
+          
+          <div className="space-y-2">
+            <Textarea
+              id="userTraits"
+              placeholder="Additional traits (comma-separated)"
+              value={personalization.traits}
+              onChange={(e) => handlePersonalizationChange('traits', e.target.value)}
+              className="min-h-[80px] bg-background"
+            />
+          </div>
+        </div>
+
+        {/* Custom instruction for Helium */}
+        <div className="space-y-2">
+          <Label htmlFor="customInstructions" className="text-sm font-medium">
+            Custom instruction for Helium
+          </Label>
+          <Textarea
+            id="customInstructions"
+            placeholder="Provide any specific instructions for how you'd like Helium to respond"
+            value={personalization.customInstructions}
+            onChange={(e) => handlePersonalizationChange('customInstructions', e.target.value)}
+            className="min-h-[120px] bg-background"
+          />
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-3 pt-4 border-t border-border">
+          <Button 
+            variant="outline"
+            className="px-6"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSavePersonalization}
+            disabled={isSavingPersonalization}
+            className="px-6 bg-primary hover:bg-primary/90"
+          >
+            {isSavingPersonalization ? 'Saving...' : 'Save'}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 
@@ -792,6 +1049,8 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
     switch (activeSection) {
       case 'profile':
         return renderProfileContent();
+      case 'personalization':
+        return renderPersonalizationContent();
       case 'billing':
         return renderBillingContent();
       default:

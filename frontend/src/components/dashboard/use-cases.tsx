@@ -858,14 +858,12 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
         </div>
       )}
 
-      {/* Show all categories if no specific work description is set */}
-      {shouldShowAllCategories && (
-        <div className="mt-6">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent mb-2">Use Cases by Category</h2>
-            <p className="text-muted-foreground text-sm">Choose from our collection of specialized templates</p>
-          </div>
-          <div className="space-y-4">
+      {/* Show all categories if no specific work description is set and user has a profile */}
+      {shouldShowAllCategories && userWorkDescription && (
+        <div className="mt-10">
+          <h2 className="text-2xl font-bold mb-6">Use Cases by Category</h2>
+          <p className="text-muted-foreground mb-6">Select a category to explore use cases tailored for {userWorkDescription}.</p>
+          <div className="space-y-6">
             {categories.map((category) => (
               <div key={category.id} className="border border-muted/50 rounded-3xl overflow-hidden bg-sidebar-accent/30 backdrop-blur-sm shadow-sm">
                 <button
