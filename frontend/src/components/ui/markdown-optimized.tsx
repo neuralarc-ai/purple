@@ -3,13 +3,15 @@ import { cn } from '@/lib/utils';
 import { marked } from 'marked';
 import { memo, useId, useMemo } from 'react';
 import { Response } from '@/components/response';
-import { CodeBlock, CodeBlockCode } from '@/components/ui/code-block';
+import { CodeBlock } from '@/components/ui/code-block';
+import { LazyCodeBlockCode } from '@/components/ui/lazy-code-block';
 
 export type MarkdownProps = {
   children: string;
   id?: string;
   className?: string;
   components?: any; // Simplified for now, can be enhanced later
+  enableOverflowHandling?: boolean; // Add prop for conditional overflow handling
 };
 
 function parseMarkdownIntoBlocks(markdown: string): string[] {
@@ -48,10 +50,11 @@ const CUSTOM_COMPONENTS = {
 
     return (
       <CodeBlock className="rounded-md overflow-hidden my-4 border border-zinc-200 dark:border-zinc-800 max-w-full min-w-0 w-full">
-        <CodeBlockCode
+        <LazyCodeBlockCode
           code={children as string}
           language={language}
           className="text-sm"
+          threshold={30} // Lazy load code blocks with more than 30 lines
         />
       </CodeBlock>
     );
@@ -143,7 +146,7 @@ const CUSTOM_COMPONENTS = {
     return (
       <a
         href={href}
-        className="text-primary hover:underline dark:text-blue-400"
+        className="hover:underline text-helium-blue"
         target="_blank"
         rel="noopener noreferrer"
         {...props}
@@ -154,15 +157,17 @@ const CUSTOM_COMPONENTS = {
   },
   table: function Table({ children, ...props }: any) {
     return (
-      <table className="w-full border-collapse my-3 text-sm" {...props}>
-        {children}
-      </table>
+      <div className="table-wrapper overflow-x-auto my-3 border border-slate-300 dark:border-zinc-700 rounded-md">
+        <table className="w-full border-collapse text-sm min-w-0" {...props}>
+          {children}
+        </table>
+      </div>
     );
   },
   th: function TableHeader({ children, ...props }: any) {
     return (
       <th
-        className="border border-slate-300 dark:border-zinc-700 px-3 py-2 text-left font-semibold bg-slate-100 dark:bg-zinc-800"
+        className="border-r border-b border-slate-300 dark:border-zinc-700 px-3 py-2 text-left font-semibold bg-slate-100 dark:bg-zinc-800 whitespace-nowrap"
         {...props}
       >
         {children}
@@ -172,7 +177,7 @@ const CUSTOM_COMPONENTS = {
   td: function TableCell({ children, ...props }: any) {
     return (
       <td
-        className="border border-slate-300 dark:border-zinc-700 px-3 py-2"
+        className="border-r border-b border-slate-300 dark:border-zinc-700 px-3 py-2 whitespace-nowrap"
         {...props}
       >
         {children}
@@ -210,6 +215,7 @@ function MarkdownComponent({
   id,
   className,
   components = CUSTOM_COMPONENTS,
+  enableOverflowHandling = false,
 }: MarkdownProps) {
   const generatedId = useId();
   const blockId = id ?? generatedId;
@@ -219,6 +225,7 @@ function MarkdownComponent({
     <div
       className={cn(
         'prose-code:before:hidden prose-code:after:hidden',
+        enableOverflowHandling && 'thread-content-container',
         className,
       )}
     >

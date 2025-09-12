@@ -56,6 +56,7 @@ import { useUsageRealtime } from '@/hooks/useUsageRealtime';
 import { useAuth } from '@/components/AuthProvider';
 import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
 import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
+import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
 
 export default function ThreadPage({
   params,
@@ -72,6 +73,8 @@ export default function ThreadPage({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isSidebarOverlaying } = useContext(LayoutContext);
+  // Read current mode (simple chat 'default' vs 'agent')
+  const { selectedMode } = useModeSelection();
   
 
   // Enable real-time updates for usage data
@@ -426,7 +429,7 @@ export default function ThreadPage({
   const handleSubmitMessage = useCallback(
     async (
       message: string,
-      options?: { model_name?: string; enable_thinking?: boolean },
+      options?: { model_name?: string; enable_thinking?: boolean; mode?: string },
     ) => {
       if (!message.trim()) return;
       
@@ -646,16 +649,16 @@ export default function ThreadPage({
     if (initialLoadCompleted && !initialPanelOpenAttempted) {
       setInitialPanelOpenAttempted(true);
 
-      // Only auto-open on desktop, not mobile
-      if (!isMobile) {
+      // Only auto-open in agent mode on desktop
+      if (!isMobile && selectedMode === 'agent') {
         if (toolCalls.length > 0) {
           setIsSidePanelOpen(true);
           setCurrentToolIndex(toolCalls.length - 1);
-        } else {
-          if (messages.length > 0) {
-            setIsSidePanelOpen(true);
-          }
+        } else if (messages.length > 0) {
+          setIsSidePanelOpen(true);
         }
+      } else if (selectedMode === 'default') {
+        setIsSidePanelOpen(false);
       }
     }
   }, [
@@ -666,7 +669,18 @@ export default function ThreadPage({
     setIsSidePanelOpen,
     setCurrentToolIndex,
     isMobile,
+    selectedMode,
   ]);
+
+  // Keep side panel visibility in sync with mode switches
+  useEffect(() => {
+    if (!initialLoadCompleted) return;
+    if (selectedMode === 'agent') {
+      setIsSidePanelOpen(true);
+    } else {
+      setIsSidePanelOpen(false);
+    }
+  }, [selectedMode, initialLoadCompleted, setIsSidePanelOpen]);
 
   useEffect(() => {
     // Start streaming if user initiated a run (don't wait for initialLoadCompleted for first-time users)
@@ -916,8 +930,7 @@ export default function ThreadPage({
         
         <ThreadContent
           messages={messages}
-          // isSidePanelOpen={isSidePanelOpen}
-          //leftSidebarState={leftSidebarState}
+          isSidePanelOpen={isSidePanelOpen}
           streamingTextContent={streamingTextContent}
           streamingToolCall={streamingToolCall}
           agentStatus={agentStatus}
@@ -986,17 +999,12 @@ export default function ThreadPage({
           className={cn(
             'fixed bottom-6 z-20  bg-gradient-to-t from-background via-background/90 to-transparent pt-0',
             'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
-            leftSidebarState === 'expanded'
-              ? 'left-[72px] md:left-[256px]'
-              : isSidePanelOpen
-                ? 'left-[53px]'
-                : 'left-[50px]',
-            isSidePanelOpen
-              ? leftSidebarState === 'expanded'
-                ? 'right-[45vw] 2xl:right-[40.5vw] xl:right-[40.5vw] lg:right-[43vw]'
-                : 'right-[46vw]'
-              : 'right-0',
-            isMobile ? 'left-0 right-0 pb-0 pt-0' : '',
+            {
+              'left-0 right-0 pb-3': isMobile,
+              'left-[72px] md:left-[256px] right-0': leftSidebarState === 'expanded' && !isMobile && !isSidebarOverlaying,
+              'left-[53px] right-0': isSidePanelOpen && !isMobile && leftSidebarState !== 'expanded',
+              'left-10 right-0': !isSidePanelOpen && !isMobile || (leftSidebarState === 'expanded' && isSidebarOverlaying),
+            }
           )}
           style={
             isSidePanelOpen && !isMobile && panelWidth
@@ -1007,8 +1015,10 @@ export default function ThreadPage({
               : undefined
           }
         >
-          <div
+         <div
             className={cn(
+              'flex justify-center px-0',
+              isMobile ? 'px-3' : 'px-8',
               'flex justify-center w-full',
               isMobile ? 'px-3' : 'px-6',
               isSidePanelOpen && !isMobile && 'pr-0' // Remove right padding when panel is open since we're adding it to the parent
@@ -1016,6 +1026,8 @@ export default function ThreadPage({
           >
             <div
               className={cn(
+                'w-full',
+                isSidePanelOpen ? 'max-w-4xl' : 'max-w-4xl',
                 'w-full max-w-4xl',
                 isSidePanelOpen && !isMobile && 'pr-6' // Add right padding to the content
               )}

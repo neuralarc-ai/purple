@@ -91,7 +91,9 @@ function parseObjectToolResult(content: any): ParsedToolResult | null {
       toolName,
       functionName,
       xmlTagName: xmlTagName || undefined,
-      toolOutput: toolExecution.result?.output || '',
+      toolOutput: typeof toolExecution.result?.output === 'string' 
+        ? toolExecution.result.output 
+        : JSON.stringify(toolExecution.result?.output || '', null, 2),
       isSuccess: toolExecution.result?.success !== false,
       arguments: toolExecution.arguments,
       timestamp: toolExecution.execution_details?.timestamp,
@@ -115,7 +117,9 @@ function parseObjectToolResult(content: any): ParsedToolResult | null {
       return {
         toolName,
         functionName: toolName.replace(/-/g, '_'),
-        toolOutput: nestedContent.result?.output || '',
+        toolOutput: typeof nestedContent.result?.output === 'string' 
+          ? nestedContent.result.output 
+          : JSON.stringify(nestedContent.result?.output || '', null, 2),
         isSuccess: nestedContent.result?.success !== false,
       };
     }
@@ -132,9 +136,28 @@ function parseObjectToolResult(content: any): ParsedToolResult | null {
     return {
       toolName,
       functionName: toolName.replace(/-/g, '_'),
-      toolOutput: content.result?.output || '',
+      toolOutput: typeof content.result?.output === 'string' 
+        ? content.result.output 
+        : JSON.stringify(content.result?.output || '', null, 2),
       isSuccess: content.result?.success !== false,
     };
+  }
+
+  // Handle direct object content that might be tool output
+  if (typeof content === 'object' && content !== null) {
+    // Check if this looks like a tool result object
+    if ('output' in content || 'result' in content || 'data' in content) {
+      const toolName = 'unknown';
+      const output = content.output || content.result || content.data || '';
+      
+      return {
+        toolName,
+        functionName: toolName.replace(/-/g, '_'),
+        toolOutput: typeof output === 'string' ? output : JSON.stringify(output, null, 2),
+        isSuccess: content.success !== false,
+        arguments: content.arguments || content.params || {},
+      };
+    }
   }
 
   return null;
@@ -153,7 +176,10 @@ export function isToolResult(content: any): boolean {
       'tool_execution' in content ||
       ('role' in content && 'content' in content) ||
       'tool_name' in content ||
-      'xml_tag_name' in content
+      'xml_tag_name' in content ||
+      'output' in content ||
+      'result' in content ||
+      'data' in content
     );
   }
 

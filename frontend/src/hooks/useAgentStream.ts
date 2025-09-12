@@ -4,8 +4,6 @@ import {
   streamAgent,
   getAgentStatus,
   stopAgent,
-  AgentRun,
-  getMessages,
 } from '@/lib/api';
 import { toast } from 'sonner';
 import {
@@ -65,25 +63,25 @@ export interface AgentStreamCallbacks {
 }
 
 // Helper function to map API messages to UnifiedMessages
-const mapApiMessagesToUnified = (
-  messagesData: ApiMessageType[] | null | undefined,
-  currentThreadId: string,
-): UnifiedMessage[] => {
-  return (messagesData || [])
-    .filter((msg) => msg.type !== 'status')
-    .map((msg: ApiMessageType) => ({
-      message_id: msg.message_id || null,
-      thread_id: msg.thread_id || currentThreadId,
-      type: (msg.type || 'system') as UnifiedMessage['type'],
-      is_llm_message: Boolean(msg.is_llm_message),
-      content: msg.content || '',
-      metadata: msg.metadata || '{}',
-      created_at: msg.created_at || new Date().toISOString(),
-      updated_at: msg.updated_at || new Date().toISOString(),
-      agent_id: (msg as any).agent_id,
-      agents: (msg as any).agents,
-    }));
-};
+// const mapApiMessagesToUnified = (
+//   messagesData: ApiMessageType[] | null | undefined,
+//   currentThreadId: string,
+// ): UnifiedMessage[] => {
+//   return (messagesData || [])
+//     .filter((msg) => msg.type !== 'status')
+//     .map((msg: ApiMessageType) => ({
+//       message_id: msg.message_id || null,
+//       thread_id: msg.thread_id || currentThreadId,
+//       type: (msg.type || 'system') as UnifiedMessage['type'],
+//       is_llm_message: Boolean(msg.is_llm_message),
+//       content: msg.content || '',
+//       metadata: msg.metadata || '{}',
+//       created_at: msg.created_at || new Date().toISOString(),
+//       updated_at: msg.updated_at || new Date().toISOString(),
+//       agent_id: (msg as any).agent_id,
+//       agents: (msg as any).agents,
+//     }));
+// };
 
 export function useAgentStream(
   callbacks: AgentStreamCallbacks,
@@ -241,8 +239,8 @@ export function useAgentStream(
         `[useAgentStream] Finalizing stream with status: ${finalStatus}, runId: ${runId}`,
       );
 
-      const currentThreadId = threadIdRef.current; // Get current threadId from ref
-      const currentSetMessages = setMessagesRef.current; // Get current setMessages from ref
+      // const currentThreadId = threadIdRef.current; // Get current threadId from ref
+      // const currentSetMessages = setMessagesRef.current; // Get current setMessages from ref
 
       // Only finalize if this is for the current run ID or if no specific run ID is provided
       if (
@@ -480,7 +478,7 @@ export function useAgentStream(
   );
 
   const handleStreamError = useCallback(
-    (err: Error | string | Event) => {
+    async (err: Error | string | Event) => {
       if (!isMountedRef.current) return;
 
       // Extract error message
@@ -492,6 +490,22 @@ export function useAgentStream(
       } else if (err instanceof Event && err.type === 'error') {
         // Standard EventSource errors don't have much detail, might need status check
         errorMessage = 'Stream connection error';
+        
+        // For EventSource errors, check the agent status to get the actual error
+        const currentRunId = currentRunIdRef.current;
+        if (currentRunId) {
+          try {
+            console.log(`[useAgentStream] Checking agent status after stream error for run ID: ${currentRunId}`);
+            const agentStatus = await getAgentStatus(currentRunId);
+            
+            if (agentStatus.status === 'error' && agentStatus.error) {
+              errorMessage = agentStatus.error;
+              console.log(`[useAgentStream] Found actual error from agent status: ${errorMessage}`);
+            }
+          } catch (statusErr) {
+            console.warn(`[useAgentStream] Failed to get agent status after stream error: ${statusErr}`);
+          }
+        }
       }
 
       const lower = errorMessage.toLowerCase();
@@ -530,7 +544,7 @@ export function useAgentStream(
         return;
       }
     },
-    [finalizeStream],
+    [finalizeStream, getAgentStatus],
   );
 
   const handleStreamClose = useCallback(() => {

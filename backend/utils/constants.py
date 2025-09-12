@@ -238,12 +238,12 @@ def _generate_model_structures():
                 pricing["anthropic/claude-sonnet-4"] = config["pricing"]
                 if "context_window" in config:
                     context_windows["anthropic/claude-sonnet-4"] = config["context_window"]
-        elif model_name.startswith("xai/"):
-            # Add pricing for OpenRouter x-ai models
-            openrouter_name = model_name.replace("xai/", "openrouter/x-ai/")
-            pricing[openrouter_name] = config["pricing"]
-            if "context_window" in config:
-                context_windows[openrouter_name] = config["context_window"]
+        # elif model_name.startswith("xai/"):
+        #     # Add pricing for OpenRouter x-ai models
+        #     openrouter_name = model_name.replace("xai/", "openrouter/x-ai/")
+        #     pricing[openrouter_name] = config["pricing"]
+        #     if "context_window" in config:
+        #         context_windows[openrouter_name] = config["context_window"]
     
     return free_models, paid_models, aliases, pricing, context_windows
 

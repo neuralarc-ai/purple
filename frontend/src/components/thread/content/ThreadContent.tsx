@@ -99,6 +99,7 @@ export function renderMarkdownContent(
   sandboxId?: string,
   project?: Project,
   debugMode?: boolean,
+  isSidePanelOpen?: boolean,
 ) {
   // If in debug mode, just display raw content in a pre tag
   if (debugMode) {
@@ -127,6 +128,7 @@ export function renderMarkdownContent(
               key={`md-${lastIndex}`}
               content={textBeforeBlock}
               className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words"
+              enableOverflowHandling={isSidePanelOpen}
             />,
           );
         }
@@ -156,6 +158,7 @@ export function renderMarkdownContent(
               <ComposioUrlDetector
                 content={askText}
                 className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
+                enableOverflowHandling={isSidePanelOpen}
               />
               {renderAttachments(
                 attachmentArray,
@@ -199,6 +202,7 @@ export function renderMarkdownContent(
               <ComposioUrlDetector
                 content={completeText}
                 className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
+                enableOverflowHandling={isSidePanelOpen}
               />
               {renderAttachments(
                 attachmentArray,
@@ -243,12 +247,12 @@ export function renderMarkdownContent(
             <div key={`tool-${match.index}-${index}`} className="my-1">
               <button
                 onClick={() => handleToolClick(messageId, toolName)}
-                className="inline-flex items-center gap-1.5 py-1 px-1 pr-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+                className="inline-flex items-center gap-1.5 py-1 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
               >
-                <div className="border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600">
-                  <IconComponent className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600">
+                  <IconComponent className="h-3 w-3 z-40 text text-muted-foreground flex-shrink-0" />
                 </div>
-                <span className="font-mono text-xs text-foreground">
+                <span className="font-mono text-xs text-accent-foreground font-medium">
                   {getUserFriendlyToolName(toolName)}
                 </span>
                 {paramDisplay && (
@@ -277,6 +281,7 @@ export function renderMarkdownContent(
             key={`md-${lastIndex}`}
             content={remainingText}
             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words"
+            enableOverflowHandling={isSidePanelOpen}
           />,
         );
       }
@@ -288,6 +293,7 @@ export function renderMarkdownContent(
       <ComposioUrlDetector
         content={content}
         className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words"
+        enableOverflowHandling={isSidePanelOpen}
       />
     );
   }
@@ -305,6 +311,7 @@ export function renderMarkdownContent(
       <ComposioUrlDetector
         content={content}
         className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words"
+        enableOverflowHandling={isSidePanelOpen}
       />
     );
   }
@@ -318,6 +325,7 @@ export function renderMarkdownContent(
           key={`md-${lastIndex}`}
           content={textBeforeTag}
           className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none inline-block mr-1 break-words"
+          enableOverflowHandling={isSidePanelOpen}
         />,
       );
     }
@@ -343,6 +351,7 @@ export function renderMarkdownContent(
           <ComposioUrlDetector
             content={askContent}
             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
+            enableOverflowHandling={isSidePanelOpen}
           />
           {renderAttachments(
             attachments,
@@ -387,6 +396,7 @@ export function renderMarkdownContent(
           <ComposioUrlDetector
             content={completeContent}
             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
+            enableOverflowHandling={isSidePanelOpen}
           />
           {renderAttachments(
             attachments,
@@ -421,7 +431,7 @@ export function renderMarkdownContent(
         <div key={toolCallKey} className="my-1">
           <button
             onClick={() => handleToolClick(messageId, toolName)}
-            className="inline-flex items-center gap-1.5 py-1 px-1 pr-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+            className="inline-flex items-center gap-1.5 py-1 px-2 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
           >
             <div className="border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600">
               <IconComponent className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
@@ -451,6 +461,7 @@ export function renderMarkdownContent(
         key={`md-${lastIndex}`}
         content={content.substring(lastIndex)}
         className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words"
+        enableOverflowHandling={isSidePanelOpen}
       />,
     );
   }
@@ -489,6 +500,7 @@ export interface ThreadContentProps {
   setInputValue?: (value: string) => void;
   scrollToBottom?: (behavior?: ScrollBehavior) => void;
   finalGroupedMessages?: any[];
+  isSidePanelOpen?: boolean; // Add side panel state prop
   // Credit exhaustion callback
   onCreditExhaustionUpgrade?: () => void;
 }
@@ -558,6 +570,15 @@ const ActionButtons: React.FC<{
   // Disable opposite feedback button when one is selected
   const isGoodDisabled = feedback === 'bad';
   const isBadDisabled = feedback === 'good';
+
+  // Detect if the assistant message suggests switching to Agent Mode
+  const rawStringContent = (() => {
+    if (typeof content === 'string') return content;
+    if (content?.text) return content.text;
+    if (content?.content) return content.content;
+    try { return JSON.stringify(content); } catch { return ''; }
+  })();
+  const suggestsAgentMode = /switch to Agent Mode|Agent Mode/i.test(rawStringContent || '');
 
   return (
     <div className="flex items-center justify-end gap-2 relative">
@@ -698,6 +719,56 @@ const ActionButtons: React.FC<{
           </Tooltip>
         </TooltipProvider>
       )}
+
+      {/* Switch to Agent button - shows when assistant recommends Agent Mode */}
+      {suggestsAgentMode && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="secondary"
+                className="h-6 px-2 rounded-sm"
+                onClick={() => {
+                  try {
+                    // Prefill last user prompt into the input
+                    if (finalGroupedMessages && finalGroupedMessages.length > 0) {
+                      // Use the user message right before this assistant group
+                      const userGroup = finalGroupedMessages
+                        .slice(0, groupIndex)
+                        .reverse()
+                        .find((g: any) => g.type === 'user');
+                      const userMessage = userGroup?.messages?.[0];
+                      let prompt = typeof userMessage?.content === 'string' ? userMessage.content : '';
+                      try {
+                        const parsed = prompt ? JSON.parse(prompt) : null;
+                        if (parsed && typeof parsed.content === 'string') {
+                          prompt = parsed.content;
+                        }
+                      } catch {}
+                      prompt = (prompt || '').replace(/\[Uploaded File: .*?\]/g, '').trim();
+                      if (typeof setInputValue === 'function') {
+                        setInputValue(prompt);
+                      }
+                    }
+
+                    // Dispatch a global event so input switches to Agent mode
+                    const evt = new Event('switchToAgent');
+                    window.dispatchEvent(evt);
+                    toast.success('Switched to Agent Mode');
+                  } catch (e) {
+                    console.warn('Failed to switch to agent mode', e);
+                  }
+                }}
+              >
+                Switch to Agent
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Switch to Agent Mode</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
       
     </div>
   );
@@ -730,6 +801,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
   finalGroupedMessages,
   agentMetadata,
   agentData,
+  isSidePanelOpen = false,
   onCreditExhaustionUpgrade,
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -900,6 +972,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
           ref={scrollContainerRef || messagesContainerRef}
           className={`${containerClassName} flex flex-col-reverse ${shouldJustifyToTop ? 'justify-end min-h-full' : ''}`}
           onScroll={handleScroll}
+          style={isSidePanelOpen ? { overflowX: 'hidden' } : {}}
         >
           <div
             ref={contentRef}
@@ -1172,6 +1245,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                 <ComposioUrlDetector
                                   content={cleanContent}
                                   className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere"
+                                  enableOverflowHandling={isSidePanelOpen}
                                 />
                               )}
 
@@ -1350,6 +1424,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                         sandboxId,
                                         project,
                                         debugMode,
+                                        isSidePanelOpen,
                                       );
 
                                     elements.push(
@@ -1383,7 +1458,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                 group.messages.some(
                                   (msg) => msg.type === 'assistant',
                                 ) && (
-                                  <div className="flex items-center justify-between">
+                                  <div className="flex items-center justify-between mb-[2rem]">
                                     {/* Agent info on the left */}
                                     <div className="flex items-center">
                                       <div className="rounded-md flex items-center justify-center">
@@ -1463,6 +1538,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                           <StreamingText
                                             content={textBeforeTag}
                                             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere"
+                                            enableOverflowHandling={isSidePanelOpen}
                                           />
 
                                           {detectedTag && (
@@ -1547,6 +1623,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                                 <ComposioUrlDetector
                                                   content={textBeforeTag}
                                                   className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 prose-headings:mt-3 break-words overflow-wrap-anywhere"
+                                                  enableOverflowHandling={isSidePanelOpen}
                                                 />
                                               )}
                                               {showCursor && (

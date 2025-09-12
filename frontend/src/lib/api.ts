@@ -712,6 +712,7 @@ export const startAgent = async (
     reasoning_effort?: string;
     stream?: boolean;
     agent_id?: string; // Optional again
+    mode?: string; // Add mode parameter
   },
 ): Promise<{ agent_run_id: string }> => {
   try {
@@ -750,6 +751,11 @@ export const startAgent = async (
     // Only include agent_id if it's provided
     if (finalOptions.agent_id) {
       body.agent_id = finalOptions.agent_id;
+    }
+    
+    // Add mode parameter
+    if (options?.mode) {
+      body.mode = options.mode;
     }
 
     const response = await fetch(`${API_URL}/thread/${threadId}/agent/start`, {
@@ -1661,6 +1667,7 @@ export const getPublicProjects = async (): Promise<Project[]> => {
 
 export const initiateAgent = async (
   formData: FormData,
+  mode?: string, // Add mode parameter
 ): Promise<InitiateAgentResponse> => {
   try {
     const supabase = createClient();
@@ -1676,6 +1683,11 @@ export const initiateAgent = async (
       throw new Error(
         'Backend URL is not configured. Set NEXT_PUBLIC_BACKEND_URL in your environment.',
       );
+    }
+
+    // Add mode parameter to FormData if provided
+    if (mode) {
+      formData.append('mode', mode);
     }
 
     const response = await fetch(`${API_URL}/agent/initiate`, {

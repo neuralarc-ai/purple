@@ -531,7 +531,7 @@ class ResponseProcessor:
                             except json.JSONDecodeError: continue
 
                 message_data = { # Dict to be saved in 'content'
-                    "role": "assistant", "content": accumulated_content,
+                    "role": "assistant", "content": accumulated_content.strip(),
                     "tool_calls": complete_native_tool_calls or None
                 }
 
@@ -731,7 +731,7 @@ class ResponseProcessor:
                                     "index": 0,
                                     "message": {
                                         "role": "assistant",
-                                        "content": accumulated_content,
+                                        "content": accumulated_content.strip(),
                                         "tool_calls": complete_native_tool_calls or None
                                     }
                                 }
@@ -785,7 +785,7 @@ class ResponseProcessor:
                                     "index": 0,
                                     "message": {
                                         "role": "assistant",
-                                        "content": accumulated_content,
+                                        "content": accumulated_content.strip(),
                                         "tool_calls": complete_native_tool_calls or None
                                     }
                                 }
