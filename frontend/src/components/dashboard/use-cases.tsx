@@ -153,7 +153,7 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
           }
         }}
         className="
-        inline-flex items-center px-3 py-1.5 text-sm font-medium border border-border 
+        inline-flex items-center px-3 py-1.5 text-sm font-medium cursor-pointer border dark:border-sidebar 
     hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-2
     rounded-[12px] min-[489px]:rounded-full
         "
@@ -833,7 +833,7 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
                     <div
                       key={item.id}
                       onClick={() => handleUseCaseClick(item)}
-                      className="group relative p-5 rounded-2xl border dark:border-muted/50 bg-sidebar-accent/60 dakr:bg-sidebar-accent/30 backdrop-blur-sm hover:bg-card/60 hover:border-border hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden"
+                      className="group relative p-5 rounded-2xl border dark:border-muted/50 bg-sidebar dark:bg-sidebar backdrop-blur-sm hover:bg-sidebar/80 hover:border-border hover:shadow-sm transition-all duration-300 cursor-pointer overflow-hidden"
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <div className="relative z-10">

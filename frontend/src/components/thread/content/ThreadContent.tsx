@@ -121,7 +121,7 @@ export function renderMarkdownContent(
 
     while ((match = functionCallsRegex.exec(content)) !== null) {
       // Add text before the function_calls block
-      if (match.index > lastIndex) {
+      if (match && match.index > lastIndex) {
         const textBeforeBlock = content.substring(lastIndex, match.index);
         if (textBeforeBlock.trim()) {
           contentParts.push(
@@ -155,7 +155,7 @@ export function renderMarkdownContent(
 
           // Render ask tool content with attachment UI
           contentParts.push(
-            <div key={`ask-${match.index}-${index}`} className="space-y-3">
+            <div key={`ask-${match?.index}-${index}`} className="space-y-3">
               <ComposioUrlDetector
                 content={askText}
                 className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
@@ -180,7 +180,7 @@ export function renderMarkdownContent(
           );
           if (standaloneAttachments) {
             contentParts.push(
-              <div key={`ask-func-attachments-${match.index}-${index}`}>
+              <div key={`ask-func-attachments-${match?.index}-${index}`}>
                 {standaloneAttachments}
               </div>,
             );
@@ -199,7 +199,7 @@ export function renderMarkdownContent(
 
           // Render complete tool content with attachment UI
           contentParts.push(
-            <div key={`complete-${match.index}-${index}`} className="space-y-3">
+            <div key={`complete-${match?.index}-${index}`} className="space-y-3">
               <ComposioUrlDetector
                 content={completeText}
                 className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
@@ -224,7 +224,7 @@ export function renderMarkdownContent(
           );
           if (standaloneAttachments) {
             contentParts.push(
-              <div key={`complete-func-attachments-${match.index}-${index}`}>
+              <div key={`complete-func-attachments-${match?.index}-${index}`}>
                 {standaloneAttachments}
               </div>,
             );
@@ -245,7 +245,7 @@ export function renderMarkdownContent(
           }
 
           contentParts.push(
-            <div key={`tool-${match.index}-${index}`} className="my-1">
+            <div key={`tool-${match?.index}-${index}`} className="my-1">
               <button
                 onClick={() => handleToolClick(messageId, toolName)}
                 className="inline-flex items-center gap-1.5 py-1 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
@@ -270,7 +270,7 @@ export function renderMarkdownContent(
         }
       });
 
-      lastIndex = match.index + match[0].length;
+      lastIndex = (match?.index || 0) + match[0].length;
     }
 
     // Add any remaining text after the last function_calls block
@@ -319,7 +319,7 @@ export function renderMarkdownContent(
 
   while ((match = xmlRegex.exec(content)) !== null) {
     // Add text before the tag as markdown
-    if (match.index > lastIndex) {
+    if (match && match.index > lastIndex) {
       const textBeforeTag = content.substring(lastIndex, match.index);
       contentParts.push(
         <ComposioUrlDetector
@@ -333,7 +333,7 @@ export function renderMarkdownContent(
 
     const rawXml = match[0];
     const toolName = match[1] || match[2];
-    const toolCallKey = `tool-${match.index}`;
+    const toolCallKey = `tool-${match?.index}`;
 
     if (toolName === 'ask') {
       // Extract attachments from the XML attributes
@@ -348,7 +348,7 @@ export function renderMarkdownContent(
 
       // Render <ask> tag content with attachment UI (using the helper)
       contentParts.push(
-        <div key={`ask-${match.index}`} className="space-y-3">
+        <div key={`ask-${match?.index}`} className="space-y-3">
           <ComposioUrlDetector
             content={askContent}
             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
@@ -373,7 +373,7 @@ export function renderMarkdownContent(
       );
       if (standaloneAttachments) {
         contentParts.push(
-          <div key={`ask-attachments-${match.index}`}>
+          <div key={`ask-attachments-${match?.index}`}>
             {standaloneAttachments}
           </div>,
         );
@@ -393,7 +393,7 @@ export function renderMarkdownContent(
 
       // Render <complete> tag content with attachment UI (using the helper)
       contentParts.push(
-        <div key={`complete-${match.index}`} className="space-y-3">
+        <div key={`complete-${match?.index}`} className="space-y-3">
           <ComposioUrlDetector
             content={completeContent}
             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
@@ -418,7 +418,7 @@ export function renderMarkdownContent(
       );
       if (standaloneAttachments) {
         contentParts.push(
-          <div key={`complete-attachments-${match.index}`}>
+          <div key={`complete-attachments-${match?.index}`}>
             {standaloneAttachments}
           </div>,
         );
