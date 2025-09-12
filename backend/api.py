@@ -196,6 +196,10 @@ api_router.include_router(invite_codes_api.router, prefix="/invite-codes")
 from composio_integration import api as composio_api
 api_router.include_router(composio_api.router)
 
+# DAGAD API
+from dagad import api as dagad_api
+api_router.include_router(dagad_api.router)
+
 # Add prompt generation API
 from prompt_generation import api as prompt_generation_api
 api_router.include_router(prompt_generation_api.router)

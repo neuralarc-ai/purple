@@ -316,54 +316,87 @@ IMPORTANT: Always reference and utilize the knowledge base information above whe
                 logger.error(f"Error retrieving knowledge base context for agent {agent_config.get('agent_id', 'unknown')}: {e}")
                 # Continue without knowledge base context rather than failing
         
-        # Inject user personalization into the system prompt
-        if client and thread_id:
-            try:
-                user_account_id = await get_account_id_from_thread(client, thread_id)
-                if user_account_id:
-                    result = await (
-                        client
-                            .table('user_personalization')
-                            .select('preferred_name, occupation, profile, vibe, custom_touch')
-                            .eq('user_id', user_account_id)
-                            .maybe_single()
-                            .execute()
-                    )
+# Add smart user DAGAD context and user personalization if available (context-aware, not always)
+if client and thread_id:
+    try:
+        # --- Fetch recent thread context for DAGAD ---
+        account_id = await get_account_id_from_thread(client, thread_id)
+        # Build small recent thread context for relevance
+        messages_result = await client.table('messages').select('content').eq('thread_id', thread_id).order('created_at', desc=True).limit(5).execute()
+        context_parts: List[str] = []
+        for m in messages_result.data or []:
+            content = m.get('content', '')
+            if isinstance(content, dict):
+                content = content.get('content', '')
+            if content:
+                context_parts.append(str(content)[:200])
+        thread_context_str = ' '.join(context_parts)
 
-                    pdata = result.data if result and hasattr(result, 'data') else None
-                    if pdata:
-                        preferred_name = (pdata.get('preferred_name') or '').strip()
-                        occupation = (pdata.get('occupation') or '').strip()
-                        profile_text = (pdata.get('profile') or '').strip()
-                        vibe = (pdata.get('vibe') or '').strip()
-                        custom_touch = (pdata.get('custom_touch') or '').strip()
+        # --- Add smart user DAGAD context ---
+        if account_id and user_input:
+            dagad_result = await client.rpc('get_smart_user_dagad_context', {
+                'p_user_id': account_id,
+                'p_user_input': user_input,
+                'p_thread_context': thread_context_str,
+                'p_max_tokens': 2000
+            }).execute()
 
-                        # Skip empty section if all fields are blank
-                        if any([preferred_name, occupation, profile_text, vibe, custom_touch]):
-                            personalization_section = "\n\n=== USER PERSONALIZATION ===\n"
-                            
-                            # Add user identification
-                            if preferred_name:
-                                personalization_section += f"Preferred name: {preferred_name}\n"
-                            
-                            # Add professional context
-                            if occupation:
-                                personalization_section += f"Occupation: {occupation}\n"
-                            
-                            # Add user profile/bio
-                            if profile_text:
-                                personalization_section += f"Profile: {profile_text}\n"
-                            
-                            # Add traits with specific handling instructions
-                            if vibe:
-                                personalization_section += f"Traits: {vibe}\n"
-                            
-                            # Add custom instructions as explicit rules
-                            if custom_touch:
-                                personalization_section += f"Custom instructions: {custom_touch}\n"
+            if dagad_result.data and isinstance(dagad_result.data, str) and dagad_result.data.strip():
+                dagad_section = f"""
 
-                            # Comprehensive trait-based response adaptation
-                            personalization_section += """
+=== USER PREFERENCES & INSTRUCTIONS ===
+{dagad_result.data}
+=== END USER PREFERENCES & INSTRUCTIONS ===
+"""
+                system_content += dagad_section
+            else:
+                logger.debug("No relevant DAGAD context for this turn")
+
+        # --- Add user personalization ---
+        if account_id:
+            result = await (
+                client
+                    .table('user_personalization')
+                    .select('preferred_name, occupation, profile, vibe, custom_touch')
+                    .eq('user_id', account_id)
+                    .maybe_single()
+                    .execute()
+            )
+
+            pdata = result.data if result and hasattr(result, 'data') else None
+            if pdata:
+                preferred_name = (pdata.get('preferred_name') or '').strip()
+                occupation = (pdata.get('occupation') or '').strip()
+                profile_text = (pdata.get('profile') or '').strip()
+                vibe = (pdata.get('vibe') or '').strip()
+                custom_touch = (pdata.get('custom_touch') or '').strip()
+
+                # Skip empty section if all fields are blank
+                if any([preferred_name, occupation, profile_text, vibe, custom_touch]):
+                    personalization_section = "\n\n=== USER PERSONALIZATION ===\n"
+
+                    # Add user identification
+                    if preferred_name:
+                        personalization_section += f"Preferred name: {preferred_name}\n"
+
+                    # Add professional context
+                    if occupation:
+                        personalization_section += f"Occupation: {occupation}\n"
+
+                    # Add user profile/bio
+                    if profile_text:
+                        personalization_section += f"Profile: {profile_text}\n"
+
+                    # Add traits with specific handling instructions
+                    if vibe:
+                        personalization_section += f"Traits: {vibe}\n"
+
+                    # Add custom instructions as explicit rules
+                    if custom_touch:
+                        personalization_section += f"Custom instructions: {custom_touch}\n"
+
+                    # Comprehensive trait-based response adaptation
+                    personalization_section += """
 === TRAIT-BASED RESPONSE ADAPTATION ===
 CRITICAL: Adapt your responses based on the user's traits and personalization. Use the preferred name to address the user directly. Tailor examples and domain context based on occupation and profile. Apply custom instructions as explicit rules for response generation.
 
@@ -394,11 +427,11 @@ RESPONSE ADAPTATION RULES:
 
 Remember: Every response should feel like it was crafted specifically for this individual user, taking into account their personality, professional background, and communication preferences.
 """
-                            system_content += personalization_section
-                else:
-                    logger.debug("No user/account id resolved for thread; skipping personalization")
-            except Exception as e:
-                logger.error(f"Error injecting user personalization: {e}")
+                    system_content += personalization_section
+            else:
+                logger.debug("No user personalization found")
+    except Exception as e:
+        logger.error(f"Error retrieving user context or personalization: {e}")
 
         if agent_config and (agent_config.get('configured_mcps') or agent_config.get('custom_mcps')) and mcp_wrapper_instance and mcp_wrapper_instance._initialized:
             mcp_info = "\n\n--- MCP Tools Available ---\n"

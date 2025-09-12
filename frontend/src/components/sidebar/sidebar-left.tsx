@@ -35,6 +35,7 @@ import { useFeatureFlags } from '@/lib/feature-flags';
 import posthog from 'posthog-js';
 import Image from 'next/image';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
+import { DagadModal } from './dagad-modal';
 
 // Custom Plus Icon component using the plus.svg
 const PlusIcon = ({ className }: { className?: string }) => (
@@ -215,6 +216,7 @@ export function SidebarLeft({
   const { flags, loading: flagsLoading } = useFeatureFlags(['custom_agents']);
   const customAgentsEnabled = flags.custom_agents;
   const { preferredName, profile } = useUserProfileWithFallback();
+  const [showDagadModal, setShowDagadModal] = useState(false);
 
   // Close mobile menu on page navigation
   useEffect(() => {
@@ -323,6 +325,32 @@ export function SidebarLeft({
               </span>
             </SidebarMenuButton>
           </Link>
+          <SidebarMenuButton
+            className="touch-manipulation"
+            onClick={() => {
+              setShowDagadModal(true);
+              if (isMobile) setOpenMobile(false);
+            }}
+            tooltip="DAGAD"
+          >
+            <Image
+              src="/icons/prompt-dark.svg"
+              alt="DAGAD"
+              width={20}
+              height={20}
+              className="mr-1 hidden dark:block"
+            />
+            <Image
+              src="/icons/prompt-light.svg"
+              alt="DAGAD"
+              width={20}
+              height={20}
+              className="mr-1 block dark:hidden"
+            />
+            <span className="flex items-center justify-between w-full">
+              DAGAD
+            </span>
+          </SidebarMenuButton>
           {!flagsLoading && customAgentsEnabled && (
             <Link href="/agents?tab=my-agents">
               <SidebarMenuButton
@@ -374,6 +402,12 @@ export function SidebarLeft({
         <NavUserWithTeams user={user} />
       </SidebarFooter>
       <SidebarRail />
+      
+      {/* DAGAD Modal */}
+      <DagadModal 
+        open={showDagadModal} 
+        onOpenChange={setShowDagadModal} 
+      />
     </Sidebar>
   );
 }
