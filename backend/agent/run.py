@@ -332,8 +332,8 @@ IMPORTANT: Always reference and utilize the knowledge base information above whe
                         context_parts.append(str(content)[:200])
                 thread_context_str = ' '.join(context_parts)
 
-                # --- Add smart user DAGAD context ---
-                if account_id and user_input:
+                # --- Add smart user DAGAD context (only in agent mode) ---
+                if account_id and user_input and mode == 'agent':
                     dagad_result = await client.rpc('get_smart_user_dagad_context', {
                         'p_user_id': account_id,
                         'p_user_input': user_input,
@@ -351,6 +351,8 @@ IMPORTANT: Always reference and utilize the knowledge base information above whe
                         system_content += dagad_section
                     else:
                         logger.debug("No relevant DAGAD context for this turn")
+                elif mode == 'default':
+                    logger.debug("DAGAD context skipped in chat mode (default)")
 
                 # --- Add user personalization ---
                 if account_id:
