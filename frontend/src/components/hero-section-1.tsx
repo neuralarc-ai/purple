@@ -143,8 +143,8 @@ export default function HeroSection() {
                             />
                         </motion.div>
                         {/* <div className="absolute inset-0 -z-10 size-full [background:radial-gradient(90%_90%_at_50%_70%,transparent_0%,var(--color-background)_90%)]"></div> */}
-                        <div className="mx-auto max-w-7xl px-6 z-20 pt-24">
-                            <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0 text-black z-20 translate-y-1/2">
+                        <div className="mx-auto max-w-7xl px-4 sm:px-6 z-20 pt-16 sm:pt-24">
+                            <div className="flex flex-col items-center justify-center text-center text-black z-20 translate-y-8 sm:translate-y-1/2 min-h-[60vh] sm:min-h-auto">
                                 
 
                                 <AnimatePresence mode="wait">
@@ -160,7 +160,7 @@ export default function HeroSection() {
                                             preset="fade-in-blur"
                                             speedSegment={0.3}
                                             as="h1"
-                                            className="text-balance text-6xl xl:text-7xl leading-20 libre-baskerville-regular">
+                                            className="text-balance text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl leading-tight sm:leading-20 libre-baskerville-regular text-center">
                                             {contentData[currentContentIndex].title}
                                         </TextEffect>
                                         <TextEffect
@@ -169,7 +169,7 @@ export default function HeroSection() {
                                             speedSegment={0.3}
                                             delay={0.5}
                                             as="p"
-                                            className="mx-auto mt-8 max-w-2xl text-balance text-lg">
+                                            className="mx-auto mt-4 sm:mt-12 max-w-xs sm:max-w-lg md:max-w-2xl text-balance text-sm sm:text-base md:text-lg px-4 sm:px-0 text-center">
                                             {contentData[currentContentIndex].description}
                                         </TextEffect>
                                     </motion.div>
@@ -187,7 +187,7 @@ export default function HeroSection() {
                                         },
                                         ...transitionVariants,
                                     }}
-                                    className="mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
+                                    className="mt-6 sm:mt-12 flex flex-col items-center justify-center gap-2 md:flex-row">
                                     <Link
                                         href={user ? "/dashboard" : "https://waitlist.he2.ai"}
                                         target={user ? "_self" : "_blank"}

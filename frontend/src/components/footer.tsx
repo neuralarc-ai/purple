@@ -45,7 +45,7 @@ const TermsOfUseDialog = () => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="link" className="text-sm hover:text-gray-300 transition-colors duration-300 p-0 h-auto text-white">
+                <Button variant="link" className="text-sm hover:text-gray-300 transition-colors duration-300 p-0 h-auto text-black sm:text-white">
                     Terms of Use
                 </Button>
             </DialogTrigger>
@@ -119,7 +119,7 @@ const PrivacyPolicyDialog = () => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="link" className="text-sm hover:text-gray-300 transition-colors duration-300 p-0 h-auto text-white">
+                <Button variant="link" className="text-sm hover:text-gray-300 transition-colors duration-300 p-0 h-auto text-black sm:text-white">
                     Privacy Policy
                 </Button>
             </DialogTrigger>
@@ -205,29 +205,29 @@ export default function Footer() {
                     src="/home/footer.jpeg"
                     alt="Footer Background"
                     fill
-                    className="object-cover h-full"
+                    className="object-cover object-center h-full"
                     priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-transparent"></div>
             </motion.div>
             
             <div className="relative z-20 h-full flex flex-col justify-end">
-                <div className="mx-auto max-w-7xl px-6 pb-8">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-6 sm:pb-8">
                     <motion.div
                         variants={contentVariants}
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
-                        className="flex flex-col sm:flex-row justify-between items-center gap-4 text-white"
+                        className="flex flex-col sm:flex-row justify-between items-center gap-6 sm:gap-4 text-white"
                     >
                         {/* Left side - Terms of Use and Privacy Policy */}
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                        <div className="flex flex-row items-center gap-4 sm:gap-6 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-2 sm:bg-transparent sm:backdrop-blur-none sm:rounded-none sm:px-0 sm:py-0">
                             <TermsOfUseDialog />
                             <PrivacyPolicyDialog />
                         </div>
                         
                         {/* Right side - Copyright and Product by */}
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm">
+                        <div className="flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4 text-sm text-center sm:text-left">
                             <span className="text-gray-300">
                                 © 2025 Helium AI. All rights reserved.
                             </span>
