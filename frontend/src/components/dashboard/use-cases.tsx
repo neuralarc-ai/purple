@@ -833,7 +833,7 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
                     <div
                       key={item.id}
                       onClick={() => handleUseCaseClick(item)}
-                      className="group relative p-5 rounded-2xl border border-muted/50 bg-sidebar-accent/30 backdrop-blur-sm hover:bg-card/60 hover:border-border hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
+                      className="group relative p-5 rounded-2xl border dark:border-muted/50 bg-sidebar-accent/60 dakr:bg-sidebar-accent/30 backdrop-blur-sm hover:bg-card/60 hover:border-border hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden"
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       <div className="relative z-10">
