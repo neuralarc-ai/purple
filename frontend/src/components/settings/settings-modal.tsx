@@ -642,7 +642,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium" style={{ fontSize: '14px' }}>Total credits left</span>
                   <span className="text-sm font-medium" style={{ fontSize: '14px' }}>
-                    {subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)}
+                    {Math.max(0, Math.round((subscriptionData?.cost_limit || 0) * 100) - Math.round((subscriptionData?.current_usage || 0) * 100)) + (subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100))}
                   </span>
                 </div>
                 
