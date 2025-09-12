@@ -59,6 +59,31 @@ export const userProfilesApi = {
 
       if (!response.ok) {
         if (response.status === 404) {
+          // Auto-create a default profile for first-time users
+          try {
+            const defaultFullName = (session.user.user_metadata?.name as string | undefined)
+              || (session.user.email?.split('@')[0] ?? 'New User');
+            const createRes = await fetch(getApiUrl('/user-profiles/profile'), {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                full_name: defaultFullName,
+                preferred_name: defaultFullName,
+                work_description: '',
+                personal_references: null,
+                avatar_url: null,
+              }),
+            });
+            if (createRes.ok) {
+              const created = await createRes.json();
+              return created as UserProfile;
+            }
+          } catch (e) {
+            console.error('Failed to auto-create default profile:', e);
+          }
           throw new Error('Profile not found');
         }
         if (response.status === 401) {
