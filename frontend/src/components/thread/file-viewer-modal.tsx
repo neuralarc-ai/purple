@@ -45,7 +45,7 @@ import {
 import JSZip from 'jszip';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
 import React from 'react';
-import { ToolCallSidePanelContext } from '@/components/ui/sidebar';
+import { ToolCallSidePanelContext,useSidebar } from '@/components/ui/sidebar';
 
 // Define API_URL
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -82,7 +82,8 @@ export function FileViewerModal({
   // Auth for session token
   const { session } = useAuth();
   const { setIsExpanded } = React.useContext(ToolCallSidePanelContext);
-
+  const { state: sidebarState } = useSidebar();
+  const isSidebarExpanded = sidebarState === 'expanded';
   // File navigation state
   const [currentPath, setCurrentPath] = useState('/workspace');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -1822,11 +1823,13 @@ export function FileViewerModal({
 
       {/* Desktop Right Panel (≥ 1024px) */}
       {open && isDesktop && (
-        <div className={
-          `fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-2xl z-50 flex flex-col overflow-hidden`
-        }
-        style={{ width: panelWidth }}
-        >
+       <div className={
+        `fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-2xl z-30 flex flex-col overflow-hidden transition-all duration-200 ${
+          isSidebarExpanded ? 'opacity-0.0 blur-[1px] pointer-events-none' : ''
+        }`
+      }
+      style={{ width: panelWidth }}
+      >
           {/* Header */}
           <div className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
             <div className="text-lg font-semibold">
@@ -1892,7 +1895,11 @@ export function FileViewerModal({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => handleOpenChange(false)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleOpenChange(false);
+                }}
                 className="h-8 w-8 p-0"
                 title="Close"
               >
