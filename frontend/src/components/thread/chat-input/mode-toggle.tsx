@@ -63,9 +63,12 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="rounded-xl">
-              <div className="text-center p-1">
-                <div className="font-semibold text-base">Chat</div>
-                <div className="text-xs text-sidebar/70 dark:text-muted max-w-[160px]">Answer everyday questions or chat before starting tasks</div>
+              <div className="text-left p-1">
+                <div className="flex items-center gap-1 mb-1">
+                  <i className="ri-chat-1-line text-base" />
+                  <div className="libre-baskerville-bold text-base">Chat</div>
+                </div>
+                <div className="text-xs text-sidebar/70 dark:text-muted max-w-[160px]">Engage in quick conversations or ask everyday questions</div>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -91,9 +94,12 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="rounded-xl">
-              <div className="text-center p-1" >
-                <div className="font-semibold text-base">Agent</div>
-                <div className="text-xs text-sidebar/70 dark:text-muted max-w-[160px]">Tackle complex tasks and deliver results autonomously</div>
+              <div className="text-left p-1">
+                <div className="flex items-center gap-1 mb-1">
+                  <i className="ri-meteor-fill text-base" />
+                  <div className="libre-baskerville-bold text-base">Agent</div>
+                </div>
+                <div className="text-xs text-sidebar/70 dark:text-muted max-w-[160px]">Execute complex tasks and deliver outcomes autonomously</div>
               </div>
             </TooltipContent>
           </Tooltip>
