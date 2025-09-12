@@ -352,7 +352,7 @@ export function SidebarLeft({
                 onClick={() => {
                   if (isMobile) setOpenMobile(false);
                 }}
-                className="touch-manipulation px-4.5"
+                className="touch-manipulation px-4"
                 tooltip="Prompt Library"
               >
                 <Link href="/prompt-library" className="flex items-center">
