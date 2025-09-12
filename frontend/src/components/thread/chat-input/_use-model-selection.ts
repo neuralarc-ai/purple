@@ -7,9 +7,10 @@ import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model'
 
 export const STORAGE_KEY_MODEL = 'suna-preferred-model-v10';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
-export const DEFAULT_PREMIUM_MODEL_ID = 'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0';
-export const DEFAULT_FREE_MODEL_ID = 'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0';
-
+export const DEFAULT_PREMIUM_MODEL_ID =
+  'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0';
+export const DEFAULT_FREE_MODEL_ID =
+  'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0';
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
 
@@ -21,6 +22,8 @@ export interface ModelOption {
   top?: boolean;
   isCustom?: boolean;
   priority?: number;
+  recommended?: boolean;
+  lowQuality?: boolean;
 }
 
 export interface CustomModel {
@@ -31,133 +34,133 @@ export interface CustomModel {
 // SINGLE SOURCE OF TRUTH for all model data - aligned with backend constants
 export const MODELS = {
   // Premium tier models (require subscription) - Vertex AI and Bedrock only
-  
+
   // Vertex AI Models
-  'vertex_ai/gemini-2.5-pro': { 
+  'vertex_ai/gemini-2.5-pro': {
     tier: 'premium',
-    priority: 100, 
+    priority: 100,
     recommended: true,
-    lowQuality: false
+    lowQuality: false,
   },
-  'vertex_ai/gemini-2.5-flash': { 
+  'vertex_ai/gemini-2.5-flash': {
     tier: 'premium',
-    priority: 99, 
+    priority: 99,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
-  'vertex_ai/gemini-2.0-flash': { 
-    tier: 'premium', 
+  'vertex_ai/gemini-2.0-flash': {
+    tier: 'premium',
     priority: 98,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
 
   // Vertex AI Claude Models
-  'vertex_ai/claude-sonnet-4@20250514': { 
-    tier: 'premium', 
+  'vertex_ai/claude-sonnet-4@20250514': {
+    tier: 'premium',
     priority: 97,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
-  'vertex_ai/claude-3-5-sonnet@20241022': { 
-    tier: 'premium', 
+  'vertex_ai/claude-3-5-sonnet@20241022': {
+    tier: 'premium',
     priority: 96,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
-  'vertex_ai/claude-3-7-sonnet@20250219': { 
-    tier: 'premium', 
+  'vertex_ai/claude-3-7-sonnet@20250219': {
+    tier: 'premium',
     priority: 95,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
-  'vertex_ai/claude-3-5-haiku@20241022': { 
-    tier: 'premium', 
+  'vertex_ai/claude-3-5-haiku@20241022': {
+    tier: 'premium',
     priority: 94,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
 
   // Bedrock Models - Claude Sonnet Series
-  'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0': { 
+  'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0': {
     tier: 'premium',
-    priority: 91, 
+    priority: 91,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
-  'bedrock/anthropic.claude-sonnet-4-20250514-v1:1': { 
+  'bedrock/anthropic.claude-sonnet-4-20250514-v1:1': {
     tier: 'premium',
-    priority: 90, 
+    priority: 90,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
-  'bedrock/anthropic.claude-sonnet-4-20250514-v1:2': { 
+  'bedrock/anthropic.claude-sonnet-4-20250514-v1:2': {
     tier: 'premium',
-    priority: 89, 
+    priority: 89,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
-  'bedrock/anthropic.claude-sonnet-4-20250514-v1:3': { 
+  'bedrock/anthropic.claude-sonnet-4-20250514-v1:3': {
     tier: 'premium',
-    priority: 88, 
+    priority: 88,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
 
   // Bedrock Models - Claude 3.7 Sonnet Series
-  'bedrock/anthropic.claude-3-7-sonnet-20250219-v1:0': { 
+  'bedrock/anthropic.claude-3-7-sonnet-20250219-v1:0': {
     tier: 'premium',
-    priority: 87, 
+    priority: 87,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
 
   // Bedrock Models - Claude 3.5 Sonnet Series
-  'bedrock/anthropic.claude-3-5-sonnet-20241022-v1:0': { 
+  'bedrock/anthropic.claude-3-5-sonnet-20241022-v1:0': {
     tier: 'premium',
-    priority: 86, 
+    priority: 86,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
-  'bedrock/anthropic.claude-3-5-sonnet-20241022-v1:1': { 
+  'bedrock/anthropic.claude-3-5-sonnet-20241022-v1:1': {
     tier: 'premium',
-    priority: 85, 
+    priority: 85,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
 
   // Bedrock Models - Claude 3.5 Haiku Series
-  'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0': { 
+  'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0': {
     tier: 'premium',
-    priority: 84, 
+    priority: 84,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
 
   // Free tier models (available to all users) - Only Vertex AI and Bedrock
-  'vertex_ai/gemini-2.5-flash-free': { 
-    tier: 'free', 
+  'vertex_ai/gemini-2.5-flash-free': {
+    tier: 'free',
     priority: 100,
     recommended: true,
-    lowQuality: false
+    lowQuality: false,
   },
-  'vertex_ai/gemini-2.0-flash-free': { 
-    tier: 'free', 
+  'vertex_ai/gemini-2.0-flash-free': {
+    tier: 'free',
     priority: 95,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
-  'vertex_ai/claude-3-5-haiku@20241022-free': { 
-    tier: 'free', 
+  'vertex_ai/claude-3-5-haiku@20241022-free': {
+    tier: 'free',
     priority: 90,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
-  'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0-free': { 
-    tier: 'free', 
+  'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0-free': {
+    tier: 'free',
     priority: 85,
     recommended: false,
-    lowQuality: false
+    lowQuality: false,
   },
 };
 
@@ -176,12 +179,15 @@ export const canAccessModel = (
 export const formatModelName = (name: string): string => {
   return name
     .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 };
 
 // Add openrouter/ prefix to custom models
-export const getPrefixedModelId = (modelId: string, isCustom: boolean): string => {
+export const getPrefixedModelId = (
+  modelId: string,
+  isCustom: boolean,
+): string => {
   if (isCustom && !modelId.startsWith('openrouter/')) {
     return `openrouter/${modelId}`;
   }
@@ -191,19 +197,21 @@ export const getPrefixedModelId = (modelId: string, isCustom: boolean): string =
 // Helper to get custom models from localStorage
 export const getCustomModels = (): CustomModel[] => {
   if (!isLocalMode() || typeof window === 'undefined') return [];
-  
+
   try {
     const storedModels = localStorage.getItem(STORAGE_KEY_CUSTOM_MODELS);
     if (!storedModels) return [];
-    
+
     const parsedModels = JSON.parse(storedModels);
     if (!Array.isArray(parsedModels)) return [];
-    
-    return parsedModels
-      .filter((model: any) => 
-        model && typeof model === 'object' && 
-        typeof model.id === 'string' && 
-        typeof model.label === 'string');
+
+    return parsedModels.filter(
+      (model: any) =>
+        model &&
+        typeof model === 'object' &&
+        typeof model.id === 'string' &&
+        typeof model.label === 'string',
+    );
   } catch (e) {
     console.error('Error parsing custom models:', e);
     return [];
@@ -216,7 +224,10 @@ const saveModelPreference = (modelId: string): void => {
     localStorage.setItem(STORAGE_KEY_MODEL, modelId);
     // console.log('✅ useModelSelection: Saved model preference to localStorage:', modelId);
   } catch (error) {
-    console.warn('❌ useModelSelection: Failed to save model preference to localStorage:', error);
+    console.warn(
+      '❌ useModelSelection: Failed to save model preference to localStorage:',
+      error,
+    );
   }
 };
 
@@ -224,15 +235,17 @@ export const useModelSelection = () => {
   const [selectedModel, setSelectedModel] = useState(DEFAULT_FREE_MODEL_ID);
   const [customModels, setCustomModels] = useState<CustomModel[]>([]);
   const [hasInitialized, setHasInitialized] = useState(false);
-  
+
   const { data: subscriptionData } = useSubscriptionData();
   const { data: modelsData, isLoading: isLoadingModels } = useAvailableModels({
     refetchOnMount: false,
   });
-  
-  const subscriptionStatus: SubscriptionStatus = (subscriptionData?.status === 'active' || subscriptionData?.status === 'trialing')
-    ? 'active' 
-    : 'no_subscription';
+
+  const subscriptionStatus: SubscriptionStatus =
+    subscriptionData?.status === 'active' ||
+    subscriptionData?.status === 'trialing'
+      ? 'active'
+      : 'no_subscription';
 
   // Function to refresh custom models from localStorage
   const refreshCustomModels = () => {
@@ -249,54 +262,63 @@ export const useModelSelection = () => {
 
   // Generate model options list with consistent structure
   const MODEL_OPTIONS = useMemo(() => {
-    let models = [];
-    
-            // Default models if API data not available
-        if (!modelsData?.models || isLoadingModels) {
-                      models = [
-              { 
-                id: DEFAULT_FREE_MODEL_ID, 
-                label: 'Claude Sonnet 4', 
-                requiresSubscription: false,
-                priority: MODELS[DEFAULT_FREE_MODEL_ID]?.priority || 100
-              },
-              { 
-                id: DEFAULT_PREMIUM_MODEL_ID, 
-                label: 'Claude Sonnet 4', 
-                requiresSubscription: true, 
-                priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100
-              },
-            ];
+    let models: ModelOption[] = [];
+
+    // Default models if API data not available
+    if (!modelsData?.models || isLoadingModels) {
+      models = [
+        {
+          id: DEFAULT_FREE_MODEL_ID,
+          label: 'Claude Sonnet 4',
+          requiresSubscription: false,
+          priority: MODELS[DEFAULT_FREE_MODEL_ID]?.priority || 100,
+          top: true,
+          isCustom: false,
+          recommended: MODELS[DEFAULT_FREE_MODEL_ID]?.recommended || false,
+          lowQuality: MODELS[DEFAULT_FREE_MODEL_ID]?.lowQuality || false,
+        },
+        {
+          id: DEFAULT_PREMIUM_MODEL_ID,
+          label: 'Claude Sonnet 4',
+          requiresSubscription: true,
+          priority: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.priority || 100,
+          top: true,
+          isCustom: false,
+          recommended: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.recommended || false,
+          lowQuality: MODELS[DEFAULT_PREMIUM_MODEL_ID]?.lowQuality || false,
+        },
+      ];
     } else {
       // Process API-provided models
-      models = modelsData.models.map(model => {
+      models = modelsData.models.map((model) => {
         const shortName = model.short_name || model.id;
         const displayName = model.display_name || shortName;
-        
+
         // Format the display label
         let cleanLabel = displayName;
-        
+
         if (cleanLabel.includes('/')) {
           // For other models, use the existing logic
           cleanLabel = cleanLabel.split('/').pop() || cleanLabel;
           cleanLabel = cleanLabel
             .replace(/-/g, ' ')
             .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
         } else {
           // For models without slashes, format normally
           cleanLabel = cleanLabel
             .replace(/-/g, ' ')
             .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
         }
-        
+
         // Get model data from our central MODELS constant
         const modelData = MODELS[shortName] || {};
-        const isPremium = model?.requires_subscription || modelData.tier === 'premium' || false;
-        
+        const isPremium =
+          model?.requires_subscription || modelData.tier === 'premium' || false;
+
         return {
           id: shortName,
           label: cleanLabel,
@@ -304,14 +326,14 @@ export const useModelSelection = () => {
           top: modelData.priority >= 90, // Mark high-priority models as "top"
           priority: modelData.priority || 0,
           lowQuality: modelData.lowQuality || false,
-          recommended: modelData.recommended || false
+          recommended: modelData.recommended || false,
         };
       });
     }
-    
+
     // Add custom models if in local mode
     if (isLocalMode() && customModels.length > 0) {
-      const customModelOptions = customModels.map(model => ({
+      const customModelOptions = customModels.map((model) => ({
         id: model.id,
         label: model.label || formatModelName(model.id),
         requiresSubscription: false,
@@ -319,12 +341,12 @@ export const useModelSelection = () => {
         isCustom: true,
         priority: 30, // Low priority by default
         lowQuality: false,
-        recommended: false
+        recommended: false,
       }));
-      
+
       models = [...models, ...customModelOptions];
     }
-    
+
     // Sort models consistently in one place:
     // 1. First by recommended (recommended first)
     // 2. Then by priority (higher first)
@@ -336,10 +358,12 @@ export const useModelSelection = () => {
       }
 
       // Then by priority (higher first)
-      if (a.priority !== b.priority) {
-        return b.priority - a.priority;
+      const aPriority = a.priority || 0;
+      const bPriority = b.priority || 0;
+      if (aPriority !== bPriority) {
+        return bPriority - aPriority;
       }
-      
+
       // Finally by name
       return a.label.localeCompare(b.label);
     });
@@ -348,25 +372,25 @@ export const useModelSelection = () => {
 
   // Get filtered list of models the user can access (no additional sorting)
   const availableModels = useMemo(() => {
-    return isLocalMode() 
-      ? MODEL_OPTIONS 
-      : MODEL_OPTIONS.filter(model => 
-          canAccessModel(subscriptionStatus, model.requiresSubscription)
+    return isLocalMode()
+      ? MODEL_OPTIONS
+      : MODEL_OPTIONS.filter((model) =>
+          canAccessModel(subscriptionStatus, model.requiresSubscription),
         );
   }, [MODEL_OPTIONS, subscriptionStatus]);
 
   // Initialize selected model from localStorage ONLY ONCE
   useEffect(() => {
     if (typeof window === 'undefined' || hasInitialized) return;
-    
+
     // console.log('🔧 useModelSelection: Initializing model selection...');
     // console.log('🔧 useModelSelection: isLoadingModels:', isLoadingModels);
-    // console.log('🔧 useModelSelection: subscriptionStatus:', subscriptionStatus);    
-    
+    // console.log('🔧 useModelSelection: subscriptionStatus:', subscriptionStatus);
+
     try {
       const savedModel = localStorage.getItem(STORAGE_KEY_MODEL);
       // console.log('🔧 useModelSelection: Saved model from localStorage:', savedModel);
-      
+
       // If we have a saved model, validate it's still available and accessible
       if (savedModel) {
         // Wait for models to load before validating
@@ -377,59 +401,80 @@ export const useModelSelection = () => {
           setHasInitialized(true);
           return;
         }
-        
+
         // console.log('🔧 useModelSelection: Available MODEL_OPTIONS:', MODEL_OPTIONS.map(m => ({ id: m.id, requiresSubscription: m.requiresSubscription })));
-        
-        const modelOption = MODEL_OPTIONS.find(option => option.id === savedModel);
-        const isCustomModel = isLocalMode() && customModels.some(model => model.id === savedModel);
-        
+
+        const modelOption = MODEL_OPTIONS.find(
+          (option) => option.id === savedModel,
+        );
+        const isCustomModel =
+          isLocalMode() &&
+          customModels.some((model) => model.id === savedModel);
+
         // console.log('🔧 useModelSelection: modelOption found:', modelOption);
         // console.log('🔧 useModelSelection: isCustomModel:', isCustomModel);
-        
+
         // Check if saved model is still valid and accessible
         if (modelOption || isCustomModel) {
-          const isAccessible = isLocalMode() || 
-            canAccessModel(subscriptionStatus, modelOption?.requiresSubscription ?? false);
-          
+          const isAccessible =
+            isLocalMode() ||
+            canAccessModel(
+              subscriptionStatus,
+              modelOption?.requiresSubscription ?? false,
+            );
+
           // console.log('🔧 useModelSelection: isAccessible:', isAccessible);
-          
+
           if (isAccessible) {
             // console.log('✅ useModelSelection: Using saved model:', savedModel);
             setSelectedModel(savedModel);
             setHasInitialized(true);
             return;
           } else {
-            console.warn('⚠️ useModelSelection: Saved model not accessible with current subscription');
+            console.warn(
+              '⚠️ useModelSelection: Saved model not accessible with current subscription',
+            );
           }
         } else {
           // Model not found in current options, but preserve it anyway in case it's valid
           // This can happen during loading or if the API returns different models
-          console.warn('⚠️ useModelSelection: Saved model not found in available options, but preserving:', savedModel);
+          console.warn(
+            '⚠️ useModelSelection: Saved model not found in available options, but preserving:',
+            savedModel,
+          );
           setSelectedModel(savedModel);
           setHasInitialized(true);
           return;
         }
       }
-      
+
       // Fallback to default model
-      const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-        (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
+      const defaultModel = isProductionMode()
+        ? DEFAULT_PREMIUM_MODEL_ID
+        : subscriptionStatus === 'active'
+          ? DEFAULT_PREMIUM_MODEL_ID
+          : DEFAULT_FREE_MODEL_ID;
 
       // console.log('🔧 useModelSelection: Using default model:', defaultModel);
-      // console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' : 
+      // console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' :
       //   `Subscription status: ${subscriptionStatus} -> Default: ${subscriptionStatus === 'active' ? 'PREMIUM (Vertex AI Gemini 2.5 Pro)' : 'FREE (Vertex AI Gemini 2.5 Pro)'}`);
 
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
       setHasInitialized(true);
-      
     } catch (error) {
-      console.warn('❌ useModelSelection: Failed to load preferences from localStorage:', error);
-      const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-        (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
+      console.warn(
+        '❌ useModelSelection: Failed to load preferences from localStorage:',
+        error,
+      );
+      const defaultModel = isProductionMode()
+        ? DEFAULT_PREMIUM_MODEL_ID
+        : subscriptionStatus === 'active'
+          ? DEFAULT_PREMIUM_MODEL_ID
+          : DEFAULT_FREE_MODEL_ID;
 
       // console.log('🔧 useModelSelection: Using fallback default model:', defaultModel);
-      // console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' : 
+      // console.log('🔧 useModelSelection: Environment:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' :
       //   `Subscription status: ${subscriptionStatus} -> Fallback: ${subscriptionStatus === 'active' ? 'PREMIUM (Vertex AI Gemini 2.5 Pro)' : 'FREE (Vertex AI Gemini 2.5 Pro)'}`);
 
       setSelectedModel(defaultModel);
@@ -440,61 +485,95 @@ export const useModelSelection = () => {
 
   // Re-validate saved model after loading completes
   useEffect(() => {
-    if (!hasInitialized || typeof window === 'undefined' || isLoadingModels) return;
-    
+    if (!hasInitialized || typeof window === 'undefined' || isLoadingModels)
+      return;
+
     const savedModel = localStorage.getItem(STORAGE_KEY_MODEL);
     if (!savedModel || savedModel === selectedModel) return;
-    
+
     // console.log('🔧 useModelSelection: Re-validating saved model after loading:', savedModel);
-    
-    const modelOption = MODEL_OPTIONS.find(option => option.id === savedModel);
-    const isCustomModel = isLocalMode() && customModels.some(model => model.id === savedModel);
-    
+
+    const modelOption = MODEL_OPTIONS.find(
+      (option) => option.id === savedModel,
+    );
+    const isCustomModel =
+      isLocalMode() && customModels.some((model) => model.id === savedModel);
+
     // If the saved model is now invalid, switch to default
     if (!modelOption && !isCustomModel) {
-      console.warn('⚠️ useModelSelection: Saved model is invalid after loading, switching to default');
-      const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-        (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
+      console.warn(
+        '⚠️ useModelSelection: Saved model is invalid after loading, switching to default',
+      );
+      const defaultModel = isProductionMode()
+        ? DEFAULT_PREMIUM_MODEL_ID
+        : subscriptionStatus === 'active'
+          ? DEFAULT_PREMIUM_MODEL_ID
+          : DEFAULT_FREE_MODEL_ID;
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
     } else if (modelOption && !isLocalMode()) {
       // Check subscription access for non-custom models
-      const isAccessible = canAccessModel(subscriptionStatus, modelOption.requiresSubscription);
+      const isAccessible = canAccessModel(
+        subscriptionStatus,
+        modelOption.requiresSubscription,
+      );
       if (!isAccessible) {
-        console.warn('⚠️ useModelSelection: Saved model not accessible after subscription check, switching to default');
-        const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-          (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
+        console.warn(
+          '⚠️ useModelSelection: Saved model not accessible after subscription check, switching to default',
+        );
+        const defaultModel = isProductionMode()
+          ? DEFAULT_PREMIUM_MODEL_ID
+          : subscriptionStatus === 'active'
+            ? DEFAULT_PREMIUM_MODEL_ID
+            : DEFAULT_FREE_MODEL_ID;
         setSelectedModel(defaultModel);
         saveModelPreference(defaultModel);
       }
     }
-  }, [isLoadingModels, hasInitialized, MODEL_OPTIONS, customModels, subscriptionStatus]);
+  }, [
+    isLoadingModels,
+    hasInitialized,
+    MODEL_OPTIONS,
+    customModels,
+    subscriptionStatus,
+  ]);
 
   // Re-validate current model when subscription status changes
   useEffect(() => {
     if (!hasInitialized || typeof window === 'undefined') return;
-    
+
     // console.log('🔧 useModelSelection: Subscription status changed, re-validating current model...');
     // console.log('🔧 useModelSelection: Current selected model:', selectedModel);
     // console.log('🔧 useModelSelection: New subscription status:', subscriptionStatus);
-    
+
     // Skip validation if models are still loading
     if (isLoadingModels) return;
-    
-    // Check if current model is still accessible
-    const modelOption = MODEL_OPTIONS.find(option => option.id === selectedModel);
-    const isCustomModel = isLocalMode() && customModels.some(model => model.id === selectedModel);
-    
-    if (modelOption && !isCustomModel && !isLocalMode()) {
-      const isAccessible = canAccessModel(subscriptionStatus, modelOption.requiresSubscription);
-      
-      if (!isAccessible) {
-        console.warn('⚠️ useModelSelection: Current model no longer accessible, switching to default');
-        const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-          (subscriptionStatus === 'active' ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
 
-              // console.log('🔧 useModelSelection: Subscription-based default switch:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' : 
-      //   `${subscriptionStatus === 'active' ? 'PREMIUM (Vertex AI Gemini 2.5 Pro)' : 'FREE (Vertex AI Gemini 2.5 Pro)'}`);
+    // Check if current model is still accessible
+    const modelOption = MODEL_OPTIONS.find(
+      (option) => option.id === selectedModel,
+    );
+    const isCustomModel =
+      isLocalMode() && customModels.some((model) => model.id === selectedModel);
+
+    if (modelOption && !isCustomModel && !isLocalMode()) {
+      const isAccessible = canAccessModel(
+        subscriptionStatus,
+        modelOption.requiresSubscription,
+      );
+
+      if (!isAccessible) {
+        console.warn(
+          '⚠️ useModelSelection: Current model no longer accessible, switching to default',
+        );
+        const defaultModel = isProductionMode()
+          ? DEFAULT_PREMIUM_MODEL_ID
+          : subscriptionStatus === 'active'
+            ? DEFAULT_PREMIUM_MODEL_ID
+            : DEFAULT_FREE_MODEL_ID;
+
+        // console.log('🔧 useModelSelection: Subscription-based default switch:', isProductionMode() ? 'PRODUCTION (Vertex AI Gemini 2.5 Pro)' :
+        //   `${subscriptionStatus === 'active' ? 'PREMIUM (Vertex AI Gemini 2.5 Pro)' : 'FREE (Vertex AI Gemini 2.5 Pro)'}`);
 
         setSelectedModel(defaultModel);
         saveModelPreference(defaultModel);
@@ -508,28 +587,38 @@ export const useModelSelection = () => {
   const handleModelChange = (modelId: string) => {
     // console.log('🔧 useModelSelection: handleModelChange called with:', modelId);
     // console.log('🔧 useModelSelection: Available MODEL_OPTIONS:', MODEL_OPTIONS.map(m => m.id));
-    
+
     // Refresh custom models from localStorage to ensure we have the latest
     if (isLocalMode()) {
       refreshCustomModels();
     }
-    
+
     // First check if it's a custom model in local mode
-    const isCustomModel = isLocalMode() && customModels.some(model => model.id === modelId);
-    
+    const isCustomModel =
+      isLocalMode() && customModels.some((model) => model.id === modelId);
+
     // Then check if it's in standard MODEL_OPTIONS
-    const modelOption = MODEL_OPTIONS.find(option => option.id === modelId);
-    
+    const modelOption = MODEL_OPTIONS.find((option) => option.id === modelId);
+
     // console.log('🔧 useModelSelection: modelOption found:', modelOption);
     // console.log('🔧 useModelSelection: isCustomModel:', isCustomModel);
-    
+
     // Check if model exists in either custom models or standard options
     if (!modelOption && !isCustomModel) {
-      console.warn('🔧 useModelSelection: Model not found in options:', modelId, MODEL_OPTIONS, isCustomModel, customModels);
-      
+      console.warn(
+        '🔧 useModelSelection: Model not found in options:',
+        modelId,
+        MODEL_OPTIONS,
+        isCustomModel,
+        customModels,
+      );
+
       // Reset to default model when the selected model is not found
-      const defaultModel = isProductionMode() ? DEFAULT_PREMIUM_MODEL_ID : 
-        (isLocalMode() ? DEFAULT_PREMIUM_MODEL_ID : DEFAULT_FREE_MODEL_ID);
+      const defaultModel = isProductionMode()
+        ? DEFAULT_PREMIUM_MODEL_ID
+        : isLocalMode()
+          ? DEFAULT_PREMIUM_MODEL_ID
+          : DEFAULT_FREE_MODEL_ID;
       // console.log('🔧 useModelSelection: Resetting to default model:', defaultModel);
       setSelectedModel(defaultModel);
       saveModelPreference(defaultModel);
@@ -537,12 +626,18 @@ export const useModelSelection = () => {
     }
 
     // Check access permissions (except for custom models in local mode)
-    if (!isCustomModel && !isLocalMode() && 
-        !canAccessModel(subscriptionStatus, modelOption?.requiresSubscription ?? false)) {
+    if (
+      !isCustomModel &&
+      !isLocalMode() &&
+      !canAccessModel(
+        subscriptionStatus,
+        modelOption?.requiresSubscription ?? false,
+      )
+    ) {
       console.warn('🔧 useModelSelection: Model not accessible:', modelId);
       return;
     }
-    
+
     console.log('✅ useModelSelection: Setting model to:', modelId);
     setSelectedModel(modelId);
     saveModelPreference(modelId);
@@ -562,17 +657,22 @@ export const useModelSelection = () => {
     },
     subscriptionStatus,
     availableModels,
-    allModels: MODEL_OPTIONS,  // Already pre-sorted
+    allModels: MODEL_OPTIONS, // Already pre-sorted
     customModels,
     getActualModelId,
     refreshCustomModels,
     canAccessModel: (modelId: string) => {
       if (isLocalMode()) return true;
-      const model = MODEL_OPTIONS.find(m => m.id === modelId);
-      return model ? canAccessModel(subscriptionStatus, model.requiresSubscription) : false;
+      const model = MODEL_OPTIONS.find((m) => m.id === modelId);
+      return model
+        ? canAccessModel(subscriptionStatus, model.requiresSubscription)
+        : false;
     },
     isSubscriptionRequired: (modelId: string) => {
-      return MODEL_OPTIONS.find(m => m.id === modelId)?.requiresSubscription || false;
+      return (
+        MODEL_OPTIONS.find((m) => m.id === modelId)?.requiresSubscription ||
+        false
+      );
     },
     // Debug utility to check current state
     debugState: () => {
@@ -581,10 +681,23 @@ export const useModelSelection = () => {
       console.log('  hasInitialized:', hasInitialized);
       console.log('  subscriptionStatus:', subscriptionStatus);
       console.log('  isLoadingModels:', isLoadingModels);
-      console.log('  localStorage value:', localStorage.getItem(STORAGE_KEY_MODEL));
-      console.log('🔧 useModelSelection: defaultModel would be:', isProductionMode() ? `${DEFAULT_PREMIUM_MODEL_ID} (Claude Sonnet 4)` : 
-        `${subscriptionStatus === 'active' ? `${DEFAULT_PREMIUM_MODEL_ID} (Claude Sonnet 4)` : `${DEFAULT_FREE_MODEL_ID} (Claude Sonnet 4)`}`);
-      console.log('🔧 useModelSelection: availableModels:', availableModels.map(m => ({ id: m.id, requiresSubscription: m.requiresSubscription })));
-    }
+      console.log(
+        '  localStorage value:',
+        localStorage.getItem(STORAGE_KEY_MODEL),
+      );
+      console.log(
+        '🔧 useModelSelection: defaultModel would be:',
+        isProductionMode()
+          ? `${DEFAULT_PREMIUM_MODEL_ID} (Claude Sonnet 4)`
+          : `${subscriptionStatus === 'active' ? `${DEFAULT_PREMIUM_MODEL_ID} (Claude Sonnet 4)` : `${DEFAULT_FREE_MODEL_ID} (Claude Sonnet 4)`}`,
+      );
+      console.log(
+        '🔧 useModelSelection: availableModels:',
+        availableModels.map((m) => ({
+          id: m.id,
+          requiresSubscription: m.requiresSubscription,
+        })),
+      );
+    },
   };
 };
