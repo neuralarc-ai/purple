@@ -305,6 +305,49 @@ IMPORTANT: Always reference and utilize the knowledge base information above whe
                 logger.error(f"Error retrieving knowledge base context for agent {agent_config.get('agent_id', 'unknown')}: {e}")
                 # Continue without knowledge base context rather than failing
         
+        # Inject user personalization into the system prompt
+        if client and thread_id:
+            try:
+                user_account_id = await get_account_id_from_thread(client, thread_id)
+                if user_account_id:
+                    result = await (
+                        client
+                            .table('user_personalization')
+                            .select('preferred_name, occupation, profile, vibe, custom_touch')
+                            .eq('user_id', user_account_id)
+                            .maybe_single()
+                            .execute()
+                    )
+
+                    pdata = result.data if result and hasattr(result, 'data') else None
+                    if pdata:
+                        preferred_name = (pdata.get('preferred_name') or '').strip()
+                        occupation = (pdata.get('occupation') or '').strip()
+                        profile_text = (pdata.get('profile') or '').strip()
+                        vibe = (pdata.get('vibe') or '').strip()
+                        custom_touch = (pdata.get('custom_touch') or '').strip()
+
+                        # Skip empty section if all fields are blank
+                        if any([preferred_name, occupation, profile_text, vibe, custom_touch]):
+                            personalization_section = "\n\n=== USER PERSONALIZATION ===\n"
+                            if preferred_name:
+                                personalization_section += f"Preferred name: {preferred_name}\n"
+                            if occupation:
+                                personalization_section += f"Occupation: {occupation}\n"
+                            if profile_text:
+                                personalization_section += f"Profile: {profile_text}\n"
+                            if vibe:
+                                personalization_section += f"Traits: {vibe}\n"
+                            if custom_touch:
+                                personalization_section += f"Custom instructions: {custom_touch}\n"
+
+                            personalization_section += "\nUse the personalization above to tailor tone, style, and responses.\n"
+                            system_content += personalization_section
+                else:
+                    logger.debug("No user/account id resolved for thread; skipping personalization")
+            except Exception as e:
+                logger.error(f"Error injecting user personalization: {e}")
+
         if agent_config and (agent_config.get('configured_mcps') or agent_config.get('custom_mcps')) and mcp_wrapper_instance and mcp_wrapper_instance._initialized:
             mcp_info = "\n\n--- MCP Tools Available ---\n"
             mcp_info += "You have access to external MCP (Model Context Protocol) server tools.\n"
