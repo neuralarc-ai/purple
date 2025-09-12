@@ -17,39 +17,42 @@ const rows: Row[] = [
   {
     feature: 'Autonomous Task Execution',
     helium: 'Full Automation',
-    google: 'Chat Only',
-    openai: 'Chat Only',
-    claude: 'Chat Only',
-    perplexity: 'Limited Search',
+    google: 'Chat / Assist Only',
+    openai: 'Partial (Agents rolling out)',
+    claude: 'Partial (Tool use only)',
+    perplexity: 'Limited (Search/Q&A)',
   },
   {
     feature: 'App Integrations',
     helium: '100+ Integrations',
-    google: 'None',
-    openai: 'None',
-    claude: 'API Only',
-    perplexity: 'None',
+    google: 'Workspace Apps',
+    openai: 'Growing (tools, plugins)',
+    claude: 'Some API Integrations',
+    perplexity: (
+      <div className="inline-flex items-center justify-center">
+        <X className="h-5 w-5 text-rose-400" aria-hidden="true" />
+      </div>
+    ),
   },
   {
     feature: 'Web Browsing & Automation',
     helium: 'Full Browser Control',
-    google: 'Basic/ Limited',
-    openai: 'Basic/ Limited',
-    claude: 'None',
-    perplexity: 'None',
+    google: 'Basic / Limited',
+    openai: 'Advanced (Computer Use)',
+    claude: 'Limited Retrieval',
+    perplexity: 'Real-time Search Only',
   },
   {
     feature: 'File Creation & Management',
     helium: 'Full Suite',
-    google: 'Basic Export',
-    openai: (
-      <div className="inline-flex items-center gap-1">
-        <span>None</span>
-        <AlertTriangle className="h-4 w-4 text-yellow-400" aria-hidden="true" />
+    google: 'Docs, Sheets, Drive',
+    openai: 'Export / Limited Management',
+    claude: 'Drafts via API',
+    perplexity: (
+      <div className="inline-flex items-center justify-center">
+        <X className="h-5 w-5 text-rose-400" aria-hidden="true" />
       </div>
     ),
-    claude: 'Basic Export',
-    perplexity: 'None',
   },
   {
     feature: 'Workflow Automation',
@@ -58,21 +61,9 @@ const rows: Row[] = [
         <Check className="h-5 w-5 text-emerald-400" aria-hidden="true" />
       </div>
     ),
-    google: (
-      <div className="inline-flex items-center justify-center">
-        <X className="h-5 w-5 text-rose-400" aria-hidden="true" />
-      </div>
-    ),
-    openai: (
-      <div className="inline-flex items-center justify-center">
-        <X className="h-5 w-5 text-rose-400" aria-hidden="true" />
-      </div>
-    ),
-    claude: (
-      <div className="inline-flex items-center justify-center">
-        <X className="h-5 w-5 text-rose-400" aria-hidden="true" />
-      </div>
-    ),
+    google: 'Workspace Smart Tasks',
+    openai: 'Agents / Automation',
+    claude: 'Partial Tool Workflows',
     perplexity: (
       <div className="inline-flex items-center justify-center">
         <X className="h-5 w-5 text-rose-400" aria-hidden="true" />
@@ -93,65 +84,99 @@ export default function CompareTable({ className }: { className?: string }) {
             Helium AI vs. The Competition: The Complete Comparison
           </p>
         </div>
-        <div className="relative">
-          <div className="relative rounded-2xl border border-white/20 overflow-hidden">
-            <div className="relative overflow-x-auto px-2 md:px-4">
-              <table className="w-full text-left text-sm md:text-base">
-                <thead>
-                  <tr className="bg-neutral-900 text-white">
-                    <th className="sticky left-0 z-10 bg-neutral-900 backdrop-blur px-4 py-4 md:py-5 text-base md:text-lg font-extrabold w-[200px] md:w-[240px] border-b border-t border-r border-white/15 border-l rounded-tl-2xl">
-                      Features
-                    </th>
-                    <th className="px-4 py-4 md:py-5 border-b border-t border-r border-white/15">
-                      <div className="flex flex-col">
-                        <span className="text-sm md:text-base font-medium">Helium AI</span>
-                        <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-primary">$29/month</span>
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 md:py-5 border-b border-t border-r border-white/15">
-                      <div className="flex flex-col">
-                        <span className="text-sm md:text-base font-medium">Google</span>
-                        <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-primary/90">$20/month</span>
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 md:py-5 border-b border-t border-r border-white/15">
-                      <div className="flex flex-col">
-                        <span className="text-sm md:text-base font-medium">OpenAI</span>
-                        <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-primary/90">$20/month</span>
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 md:py-5 border-b border-t border-r border-white/15">
-                      <div className="flex flex-col">
-                        <span className="text-sm md:text-base font-medium">Claude Pro</span>
-                        <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-primary/90">$20/month</span>
-                      </div>
-                    </th>
-                    <th className="px-4 py-4 md:py-5 border-b border-t border-white/15 rounded-tr-2xl">
-                      <div className="flex flex-col">
-                        <span className="text-sm md:text-base font-medium">Perplexity</span>
-                        <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-primary/90">$20/month</span>
-                      </div>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, idx) => (
-                    <tr key={row.feature} className={cn('border-b border-white/10', idx % 2 === 1 && 'bg-white/5')}>
-                      <td className={cn('sticky left-0 z-10 bg-black backdrop-blur px-4 py-5 text-white border-x border-white/10', idx === rows.length - 1 && 'rounded-bl-2xl')}>
-                        <span className="font-medium">{row.feature}</span>
-                      </td>
-                      <td className="px-4 py-5 text-white bg-emerald-500/10 border-x border-white/10">
-                        {row.helium}
-                      </td>
-                      <td className="px-4 py-5 text-white/90 border-x border-white/10">{row.google}</td>
-                      <td className="px-4 py-5 text-white/90 border-x border-white/10">{row.openai}</td>
-                      <td className="px-4 py-5 text-white/90 border-x border-white/10">{row.claude}</td>
-                      <td className="px-4 py-5 text-white/90 border-x border-white/10">{row.perplexity}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* Mobile Card Layout */}
+        <div className="block md:hidden space-y-4 px-2">
+          {rows.map((row, idx) => (
+            <div key={row.feature} className="relative border border-neutral-600 rounded-2xl overflow-hidden bg-black">
+              <div className="absolute inset-0 rounded-2xl p-[1px] bg-gradient-to-r from-[var(--helium-blue)] via-[var(--helium-green)] to-[var(--helium-blue)]"></div>
+              <div className="relative bg-black rounded-2xl p-5">
+                <div className="font-medium text-white text-lg mb-5 text-center leading-tight">{row.feature}</div>
+                <div className="space-y-4">
+                  <div className="bg-emerald-500/10 rounded-lg p-4">
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Helium AI - $29/month</div>
+                    <div className="text-sm text-white/90 text-center leading-relaxed">{row.helium}</div>
+                  </div>
+                  <div className="p-2">
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Google - $20/month</div>
+                    <div className="text-sm text-white/90 text-center leading-relaxed">{row.google}</div>
+                  </div>
+                  <div className="p-2">
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">OpenAI - $20/month</div>
+                    <div className="text-sm text-white/90 text-center leading-relaxed">{row.openai}</div>
+                  </div>
+                  <div className="p-2">
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Claude Pro - $20/month</div>
+                    <div className="text-sm text-white/90 text-center leading-relaxed">{row.claude}</div>
+                  </div>
+                  <div className="p-2">
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Perplexity Pro - $20/month</div>
+                    <div className="text-sm text-white/90 text-center leading-relaxed">{row.perplexity}</div>
+                  </div>
+                </div>
+              </div>
             </div>
+          ))}
+        </div>
+
+        {/* Desktop Table Layout */}
+        <div className="hidden md:block overflow-x-auto">
+          <div className="relative border-1 border-neutral-600 rounded-2xl">
+            <div className="absolute inset-0 rounded-2xl p-[1px] bg-gradient-to-r from-[var(--helium-blue)] via-[var(--helium-green)] to-[var(--helium-blue)]"></div>
+            <table className="relative w-full text-left text-sm md:text-base bg-black rounded-2xl overflow-hidden">
+              <thead>
+                <tr className="bg-neutral-800 text-white">
+                  <th className="sticky left-0 z-10 bg-neutral-800 px-7 md:px-8 py-3 font-bold w-[200px] md:w-[240px] border-l border-r border-white/20 rounded-tl-2xl">
+                    Features
+                  </th>
+                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20 bg-emerald-500/10">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm md:text-base font-medium">Helium AI</span>
+                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$29/month</span>
+                    </div>
+                  </th>
+                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm md:text-base font-medium">Google</span>
+                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$20/month</span>
+                    </div>
+                  </th>
+                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm md:text-base font-medium">OpenAI</span>
+                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$20/month</span>
+                    </div>
+                  </th>
+                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm md:text-base font-medium">Claude Pro</span>
+                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$20/month</span>
+                    </div>
+                  </th>
+                  <th className="px-7 md:px-8 py-3 font-bold rounded-tr-2xl">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm md:text-base font-medium">Perplexity Pro</span>
+                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$20/month</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, idx) => (
+                  <tr key={row.feature} className={cn('border-b border-white/10', idx % 2 === 1 && 'bg-white/5')}>
+                    <td className={cn('sticky left-0 z-10 bg-black px-7 md:px-8 py-3 text-white border-l border-r border-white/20', idx === rows.length - 1 && 'rounded-bl-2xl')}>
+                      <span className="font-medium">{row.feature}</span>
+                    </td>
+                    <td className="px-7 md:px-8 py-3 text-white bg-emerald-500/10 border-r border-white/20">
+                      {row.helium}
+                    </td>
+                    <td className="px-7 md:px-8 py-3 text-white/90 border-r border-white/20">{row.google}</td>
+                    <td className="px-7 md:px-8 py-3 text-white/90 border-r border-white/20">{row.openai}</td>
+                    <td className="px-7 md:px-8 py-3 text-white/90 border-r border-white/20">{row.claude}</td>
+                    <td className="px-7 md:px-8 py-3 text-white/90">{row.perplexity}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

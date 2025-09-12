@@ -75,45 +75,79 @@ export default function FeatureTable({ className }: { className?: string }) {
         <h2 className="text-xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-white text-center mb-6">
           What Can Helium Do for Your Business?
         </h2>
-        <div className="relative rounded-2xl group">
-          <div aria-hidden className="pointer-events-none absolute inset-0 rounded-2xl p-[1.5px] opacity-0 transition-opacity duration-300 group-hover:opacity-100 [background:linear-gradient(135deg,var(--helium-blue),var(--helium-green))]" />
-          <div aria-hidden className="pointer-events-none absolute -inset-2 -z-10 rounded-3xl blur-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-40 [background:radial-gradient(60%_60%_at_50%_50%,color-mix(in_oklab,var(--helium-blue)_60%,transparent)_0%,transparent_70%),radial-gradient(60%_60%_at_50%_50%,color-mix(in_oklab,var(--helium-green)_50%,transparent)_0%,transparent_70%)]" />
-          <MagicCard className="relative rounded-2xl border border-white/10 transition-colors bg-black backdrop-blur overflow-hidden" gradientFrom="var(--helium-blue)" gradientTo="var(--helium-green)">
-            <div className="relative overflow-x-auto px-2">
-              <table className="w-full text-left text-sm md:text-base">
-                <thead>
-                  <tr className="bg-neutral-900 text-white">
-                    <th className="sticky left-0 z-10 bg-black backdrop-blur px-4 py-4 md:py-5 font-bold w-[200px] md:w-[220px] border-b border-t border-r border-white/15 border-l rounded-tl-2xl">Department</th>
-                    <th className="px-4 py-4 md:py-5 font-bold border-b border-t border-r border-white/15">Performance Boost</th>
-                    <th className="px-4 py-4 md:py-5 font-bold border-b border-t border-r border-white/15">Cost Savings</th>
-                    <th className="px-4 py-4 md:py-5 font-bold border-b border-t border-r border-white/15">Real-Time Intelligence</th>
-                    <th className="px-4 py-4 md:py-5 font-bold border-b border-t border-white/15">Efficiency Gains</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row, idx) => (
-                    <tr key={row.department} className={cn('border-b border-white/20', idx % 2 === 1 && 'bg-white/5')}>
-                      <td className={cn('sticky left-0 z-10 bg-black backdrop-blur px-4 py-4 text-white border-x border-white/20', idx === rows.length - 1 && 'rounded-bl-2xl')}>
-                        {(() => {
-                          const Icon = getDepartmentIcon(row.department);
-                          return (
-                            <div className="flex items-center gap-3">
-                              <Icon className="h-5 w-5 text-white flex-shrink-0" aria-hidden="true" />
-                              <span className="font-semibold">{row.department}</span>
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-4 py-4 text-white/90 border-x border-white/20">{row.performance}</td>
-                      <td className="px-4 py-4 text-white/90 border-x border-white/20">{row.savings}</td>
-                      <td className="px-4 py-4 text-white/90 border-x border-white/20">{row.intelligence}</td>
-                      <td className="px-4 py-4 text-white/90 border-x border-white/20">{row.efficiency}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </MagicCard>
+        {/* Mobile Card Layout */}
+        <div className="block md:hidden space-y-4">
+          {rows.map((row, idx) => {
+            const Icon = getDepartmentIcon(row.department);
+            return (
+              <div key={row.department} className="relative border border-neutral-600 rounded-2xl overflow-hidden bg-black">
+                <div className="absolute inset-0 rounded-2xl p-[1px] bg-gradient-to-r from-[var(--helium-blue)] via-[var(--helium-green)] to-[var(--helium-blue)]"></div>
+                <div className="relative bg-black rounded-2xl p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Icon className="h-5 w-5 text-white" aria-hidden="true" />
+                    <span className="font-semibold text-white text-lg">{row.department}</span>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-sm font-semibold text-white/80 mb-1">Performance Boost</div>
+                      <div className="text-sm text-white/90">{row.performance}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white/80 mb-1">Cost Savings</div>
+                      <div className="text-sm text-white/90">{row.savings}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white/80 mb-1">Real-Time Intelligence</div>
+                      <div className="text-sm text-white/90">{row.intelligence}</div>
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white/80 mb-1">Efficiency Gains</div>
+                      <div className="text-sm text-white/90">{row.efficiency}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desktop Table Layout */}
+        <div className="hidden md:block overflow-x-auto">
+          <div className="relative border-1 border-neutral-600 rounded-2xl">
+            <div className="absolute inset-0 rounded-2xl p-[1px] bg-gradient-to-r from-[var(--helium-blue)] via-[var(--helium-green)] to-[var(--helium-blue)]"></div>
+            <table className="relative w-full text-left text-sm md:text-base bg-black rounded-2xl overflow-hidden">
+            <thead>
+              <tr className="bg-neutral-800 text-white">
+                <th className="sticky left-0 z-10 bg-neutral-800 px-6 py-2 font-bold w-[240px] md:w-[280px] border-l border-r border-white/20 rounded-tl-2xl">
+                  Department
+                </th>
+                <th className="px-6 py-2 font-bold border-r border-white/20">Performance Boost</th>
+                <th className="px-6 py-2 font-bold border-r border-white/20">Cost Savings</th>
+                <th className="px-6 py-2 font-bold border-r border-white/20">Real-Time Intelligence</th>
+                <th className="px-6 py-2 font-bold rounded-tr-2xl">Efficiency Gains</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, idx) => (
+                <tr key={row.department} className={cn('border-b border-white/10', idx % 2 === 1 && 'bg-white/5')}>
+                  <td className={cn('sticky left-0 z-10 bg-black px-6 py-2 text-white border-l border-r border-white/20', idx === rows.length - 1 && 'rounded-bl-2xl')}>
+                    <div className="flex items-center gap-3">
+                      {(() => {
+                        const Icon = getDepartmentIcon(row.department);
+                        return <Icon className="h-5 w-5 text-white" aria-hidden="true" />;
+                      })()}
+                      <span className="font-semibold text-white">{row.department}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-2 text-white/90 border-r border-white/20">{row.performance}</td>
+                  <td className="px-6 py-2 text-white/90 border-r border-white/20">{row.savings}</td>
+                  <td className="px-6 py-2 text-white/90 border-r border-white/20">{row.intelligence}</td>
+                  <td className="px-6 py-2 text-white/90">{row.efficiency}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          </div>
         </div>
       </div>
     </section>
