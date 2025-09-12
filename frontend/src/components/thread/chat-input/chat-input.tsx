@@ -30,8 +30,6 @@ import { BillingModal } from '@/components/billing/billing-modal';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
 import { BorderBeam } from '@/components/magicui/border-beam';
-import { SecurityPopup } from './security-popup';
-import { useSecurityInterception } from '@/hooks/useSecurityInterception';
 
 export interface ChatInputHandles {
   getPendingFiles: () => File[];
@@ -153,16 +151,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     const [billingModalOpen, setBillingModalOpen] = useState(false);
     const [wasManuallyStopped, setWasManuallyStopped] = useState(false);
     const [submitTimeout, setSubmitTimeout] = useState<NodeJS.Timeout | null>(null);
-    
-    // Security interception hook
-    const {
-      showPopup: showSecurityPopup,
-      popupMessage: securityPopupMessage,
-      popupType: securityPopupType,
-      shouldBlock: shouldBlockRequest,
-      closePopup: closeSecurityPopup,
-      shouldProceedWithRequest,
-    } = useSecurityInterception();
     
     const {
       selectedModel,
@@ -400,17 +388,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       setSubmitTimeout(timeout);
 
       try {
-        // Check for security concerns first
-      // The useSecurityInterception hook handles all security validation
-      if (!shouldProceedWithRequest(value)) {
-        // Security popup is already shown by the hook
-        return;
-      }
-
-      // if (isAgentRunning && onStopAgent) {
-        //   onStopAgent();
-        //   return;
-        // }
+        // Submit the message
         setWasManuallyStopped(false);
         let message = value;
 
@@ -430,13 +408,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           thinkingEnabled = true;
         }
 
-      // Security check: block injections and malware content
-      // The useSecurityInterception hook handles all security validation
-      if (!shouldProceedWithRequest(message)) {
-        // Security popup is already shown by the hook
-        return;
-      }
-
         // Determine mode-based configuration
         const modeConfig = getModeConfiguration(selectedMode, thinkingEnabled);
 
@@ -450,6 +421,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           agent_id: selectedAgentId,
           model_name: baseModelName,
           enable_thinking: thinkingEnabled,
+          mode: selectedMode,  // Add the actual mode parameter
           ...modeConfig,
         });
 
@@ -670,14 +642,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
               }
             }}
           >
-            {/* Security Popup - Positioned above the input */}
-            <SecurityPopup
-              isVisible={showSecurityPopup}
-              onClose={closeSecurityPopup}
-              message={securityPopupMessage}
-              type={securityPopupType}
-              showCloseButton={true}
-            />
             
             <div className="w-full text-sm flex flex-col justify-between items-start rounded-lg">
               <CardContent className={`w-full p-2 pb-3 border-black/15 dark:border-muted bg-white dark:bg-sidebar rounded-[28px] relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border`}>

@@ -113,7 +113,7 @@ export function ThreadLayout({
   const panelRef = React.useRef<HTMLDivElement>(null);
   const resizeHandleRef = React.useRef<HTMLDivElement>(null);
   const startWidth = React.useRef<number>(0);
-
+  const width = panelWidth || Math.floor(window.innerWidth * 0.5);
   // Call the onPanelWidthChange callback when panelWidth changes
   React.useEffect(() => {
     if (onPanelWidthChange && panelWidth) {

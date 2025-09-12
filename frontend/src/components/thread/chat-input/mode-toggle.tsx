@@ -1,6 +1,5 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Atom, MessageCircle, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
   Tooltip,
@@ -27,15 +26,14 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
   return (
     <TooltipProvider>
       <div className={cn("flex items-center", className)}>
-        <div className="relative bg-none h-8 border dark:border-muted-foreground/30 rounded-full p-1 flex items-center gap-1">
+        <div className="relative bg-none h-8 border dark:border-muted-foreground/20 rounded-full p-0.5 flex items-center dakr:bg-background/30">
           {/* Animated sliding background */}
           <motion.div
             className={cn(
-              "absolute w-6 h-6 rounded-full backdrop-blur-2xl",
-              isChatMode ? "bg-helium-yellow" : "bg-helium-green"
+              "absolute w-9 h-6.5 rounded-full shadow-xs backdrop-blur-2xl bg-muted dark:bg-muted",              
             )}
             animate={{
-              x: isChatMode ? 0 : 28, // 28px = gap (1) + width (6.5) + padding adjustments
+              x: isChatMode ? 0 : 36, // 28px = gap (1) + width (6.5) + padding adjustments
             }}
             transition={{
               type: "spring",
@@ -49,9 +47,9 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
             <TooltipTrigger asChild>
               <button
                 className={cn(
-                  "relative flex items-center cursor-pointer justify-center w-6 h-6 rounded-full transition-all duration-200 z-10",
+                  "relative flex items-center cursor-pointer justify-center w-9 h-6.5 rounded-full transition-all duration-200 z-10",
                   isChatMode 
-                    ? "dark:text-muted" 
+                    ? "dark:text-foreground" 
                     : "text-muted-foreground"
                 )}
                 onClick={() => {
@@ -61,7 +59,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
                 }}
                 disabled={disabled}
               >
-                <MessageSquare className="h-4 w-4" strokeWidth={1.5} />
+                <i className="ri-chat-1-line text-base" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="rounded-xl">
@@ -77,9 +75,9 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
             <TooltipTrigger asChild>
               <button
                 className={cn(
-                  "relative flex items-center cursor-pointer justify-center w-6 h-6 rounded-full transition-all duration-200 z-10",
+                  "relative flex items-center cursor-pointer justify-center w-9 h-6.5 rounded-full transition-all duration-200 z-10",
                   !isChatMode 
-                    ? "dark:text-muted " 
+                    ? "dark:text-foreground" 
                     : "text-muted-foreground"
                 )}
                 onClick={() => {
@@ -89,7 +87,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
                 }}
                 disabled={disabled}
               >
-                <Atom className="h-4 w-4" strokeWidth={1.5} />          
+                <i className="ri-meteor-fill text-base" />          
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="rounded-xl">

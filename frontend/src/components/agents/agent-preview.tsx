@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
+import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
 import {
   ChatInput,
   ChatInputHandles
@@ -14,9 +15,7 @@ import { useStartAgentMutation, useStopAgentMutation } from '@/hooks/react-query
 import { BillingError } from '@/lib/api';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
 import { HeliumLogo } from '../sidebar/helium-logo';
-import { SecurityPopup } from '@/components/thread/chat-input/security-popup';
-import { useSecurityInterception } from '@/hooks/useSecurityInterception';
-import { SECURITY_ALERT_VARIANTS, HARM_ALERT_VARIANT } from '@/lib/security-database';
+import { toast } from 'sonner';
 
 interface Agent {
   agent_id: string;
@@ -48,19 +47,16 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
   const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
   const [hasStartedConversation, setHasStartedConversation] = useState(false);
 
-  // Security interception hook
-  const {
-    showPopup: showSecurityPopup,
-    popupMessage: securityPopupMessage,
-    popupType: securityPopupType,
-    shouldBlock: shouldBlockRequest,
-    closePopup: closeSecurityPopup,
-    shouldProceedWithRequest,
-    openPopup,
-    isHarmfulContent,
-  } = useSecurityInterception();
-
   const isHeliumAgent = agentMetadata?.is_helium_default || false;
+  
+  // Credit exhaustion handling
+  const {
+    isExhausted,
+    showBanner,
+    handleCreditError,
+    clearCreditExhaustion,
+    hideBanner,
+  } = useCreditExhaustion();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputHandles>(null);
@@ -196,20 +192,7 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
     };
 
     const pickVariant = (seedSource: string): string => {
-      // Check if this is harmful content to use specific variant
-      const isHarmful = isHarmfulContent(seedSource || '');
-      
-      if (isHarmful) {
-        return HARM_ALERT_VARIANT;
-      }
-      
-      // Use randomized variant for general security issues
-      const pool = SECURITY_ALERT_VARIANTS;
-      if (!pool || pool.length === 0) return DENIAL_TEXT;
-      let seed = 0;
-      const basis = seedSource || '';
-      for (let i = 0; i < basis.length; i++) seed = (seed * 31 + basis.charCodeAt(i)) >>> 0;
-      return pool[seed % pool.length] || DENIAL_TEXT;
+      return DENIAL_TEXT;
     };
 
     // Check latest assistant message
@@ -220,15 +203,14 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       !!text && text.toLowerCase().includes(DENIAL_TEXT.toLowerCase());
 
     if (matchesDenial(lastAssistantText)) {
-      openPopup(pickVariant(lastAssistantText), 'error', true);
       return;
     }
 
     // Also check streaming text while it is coming in
     if (matchesDenial(streamingTextContent || '')) {
-      openPopup(pickVariant(streamingTextContent || ''), 'error', true);
+      return;
     }
-  }, [messages, streamingTextContent, openPopup]);
+  }, [messages, streamingTextContent]);
 
   const handleSubmitFirstMessage = async (
     message: string,
@@ -243,12 +225,6 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
   ) => {
     if (!message.trim() && !chatInputRef.current?.getPendingFiles().length) return;
     
-    // Check for security concerns on submission only
-    if (!shouldProceedWithRequest(message)) {
-      // Security popup is already shown by the hook
-      return;
-    }
-
     // Set loading state immediately
     setIsSubmitting(true);
     setLocalLoading(true); // Set local loading state for instant feedback
@@ -285,7 +261,10 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       }
 
       // Submit the request
-      const result = await initiateAgentMutation.mutateAsync(formData);
+      const result = await initiateAgentMutation.mutateAsync({
+        formData,
+        mode: options?.mode
+      });
 
       if (result.thread_id) {
         setThreadId(result.thread_id);
@@ -401,12 +380,6 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
     ) => {
       if (!message.trim() || !threadId) return;
       
-      // Check for security concerns on submission only
-      if (!shouldProceedWithRequest(message)) {
-        // Security popup is already shown by the hook
-        return;
-      }
-
       setIsSubmitting(true);
 
       const optimisticUserMessage: UnifiedMessage = {
@@ -443,7 +416,8 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
         if (results[1].status === 'rejected') {
           const error = results[1].reason;
           if (error instanceof BillingError) {
-            toast.error('Billing limit reached. Please upgrade your plan.');
+            // Handle credit exhaustion with the new banner
+            handleCreditError(error);
             setMessages(prev => prev.filter(m => m.message_id !== optimisticUserMessage.message_id));
             return;
           }
@@ -455,6 +429,13 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
 
       } catch (err) {
         console.error('[PREVIEW] Error sending message:', err);
+        
+        // Handle credit errors with the new banner
+        if (handleCreditError(err)) {
+          setMessages((prev) => prev.filter((m) => m.message_id !== optimisticUserMessage.message_id));
+          return;
+        }
+        
         toast.error(err instanceof Error ? err.message : 'Operation failed');
         setMessages((prev) => prev.filter((m) => m.message_id !== optimisticUserMessage.message_id));
       } finally {
@@ -530,14 +511,17 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       <div className="flex-shrink-0">
         <div className="px-8 md:pb-4">
           <div className="w-full">
-            {/* Security Popup - Positioned above the input */}
-            <SecurityPopup
-              isVisible={showSecurityPopup}
-              onClose={closeSecurityPopup}
-              message={securityPopupMessage}
-              type={securityPopupType}
-              showCloseButton={true}
-            />
+            {/* Credit Exhaustion Banner */}
+            {showBanner && (
+              <div className="mb-4">
+                <CreditExhaustionBanner 
+                  onUpgrade={() => {
+                    // Clear credit exhaustion state when user clicks upgrade
+                    clearCreditExhaustion();
+                  }}
+                />
+              </div>
+            )}
             
             <ChatInput
               ref={chatInputRef}
@@ -546,7 +530,7 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
               placeholder={`Message ${agent.name || 'agent'}...`}
               value={inputValue}
               onChange={setInputValue}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isExhausted}
               isAgentRunning={agentStatus === 'running' || agentStatus === 'connecting'}
               onStopAgent={handleStopAgent}
               agentName={agent.name}

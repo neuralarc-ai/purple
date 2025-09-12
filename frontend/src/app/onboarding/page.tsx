@@ -117,7 +117,7 @@ export default function OnboardingPage() {
           if (profileData && !profileError) {
             setHasCompletedOnboarding(true);
             // Redirect to dashboard if already completed onboarding
-            router.push('/dashboard');
+            router.push('/');
             return;
           }
         }
@@ -178,13 +178,13 @@ export default function OnboardingPage() {
       const selectedRole = roles.find(role => role.id === data.role);
       const roleName = data.role === 'other' ? data.otherRole.trim() : (selectedRole ? selectedRole.name : data.role);
 
-      console.log('Submitting onboarding data:', {
-        terms_accepted: data.termsAccepted,
-        privacy_accepted: data.privacyAccepted,
-        display_name: data.displayName.trim(),
-        role: roleName,
-        referral_source: data.referralSource,
-      });
+      // console.log('Submitting onboarding data:', {
+      //   terms_accepted: data.termsAccepted,
+      //   privacy_accepted: data.privacyAccepted,
+      //   display_name: data.displayName.trim(),
+      //   role: roleName,
+      //   referral_source: data.referralSource,
+      // });
 
       const response = await fetch('/api/user-profiles/onboarding', {
         method: 'POST',
@@ -201,7 +201,7 @@ export default function OnboardingPage() {
         }),
       });
 
-      console.log('Frontend response status:', response.status);
+      // console.log('Frontend response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -219,12 +219,12 @@ export default function OnboardingPage() {
       }
 
       const result = await response.json();
-      console.log('Frontend success response:', result);
+      // console.log('Frontend success response:', result);
       
       if (result.success) {
         // Send welcome email
         try {
-          console.log('Sending welcome email...');
+          // console.log('Sending welcome email...');
           const emailResponse = await fetch('/api/user-profiles/send-welcome-email', {
             method: 'POST',
             headers: {
@@ -238,7 +238,7 @@ export default function OnboardingPage() {
 
           if (emailResponse.ok) {
             const emailResult = await emailResponse.json();
-            console.log('Welcome email sent successfully:', emailResult);
+            // console.log('Welcome email sent successfully:', emailResult);
           } else {
             console.warn('Failed to send welcome email, but onboarding completed');
           }
@@ -248,8 +248,8 @@ export default function OnboardingPage() {
         }
 
         // Redirect to dashboard
-        console.log('Onboarding completed successfully, redirecting to dashboard');
-        window.location.href = '/dashboard';
+        // console.log('Onboarding completed successfully, redirecting to dashboard');
+        window.location.href = '/';
       } else {
         throw new Error(result.message || 'Failed to complete onboarding');
       }

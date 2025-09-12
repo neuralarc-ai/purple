@@ -37,6 +37,6 @@ HELIUM_CONFIG = {
 def get_helium_model() -> str:
     """
     Get the appropriate model for Helium based on environment.
-    Use Vertex AI Gemini 2.5 Pro for both local and production environments.
+    Use Claude Sonnet 4 from Bedrock for both local and production environments.
     """
     return "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"

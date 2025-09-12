@@ -41,12 +41,12 @@ router = APIRouter(prefix="/billing", tags=["billing"])
 
 def get_plan_info(price_id: str) -> dict:
     PLAN_TIERS = {
-        config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'tier': 1, 'type': 'monthly', 'name': 'Ridiculously Cheap - $24.99/month'},
-        config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'tier': 2, 'type': 'monthly', 'name': 'Serious Business - $94.99/month'},
+        config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'tier': 1, 'type': 'monthly', 'name': 'Outrageously Smart - $24.99/month'},
+        config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'tier': 2, 'type': 'monthly', 'name': 'Supremely Serious - $94.99/month'},
         
         # Yearly plans
-        config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'tier': 1, 'type': 'yearly', 'name': 'Ridiculously Cheap - $254.89/year'},
-        config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'tier': 2, 'type': 'yearly', 'name': 'Serious Business - $968.88/year'},
+        config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'tier': 1, 'type': 'yearly', 'name': 'Outrageously Smart - $254.89/year'},
+        config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'tier': 2, 'type': 'yearly', 'name': 'Supremely Serious - $968.88/year'},
     }
     
     return PLAN_TIERS.get(price_id, {'tier': 0, 'type': 'unknown', 'name': 'Unknown'})
@@ -95,13 +95,13 @@ def get_model_pricing(model: str) -> tuple[float, float] | None:
 
 
 SUBSCRIPTION_TIERS = {
-    config.STRIPE_FREE_TIER_ID: {'name': 'free', 'minutes': 60, 'cost': 7.99},  # 799 credits = $7.99
+    config.STRIPE_FREE_TIER_ID: {'name': 'free', 'minutes': 60, 'cost': 15.00},  # 1,500 credits = $15.00
     # Monthly tiers
-    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 30.00},  # 3,000 credits/month
-    config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 100.00},  # 10,000 credits/month
+    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 45.00},  # 4,500 credits/month
+    config.STRIPE_TIER_SERIOUS_BUSINESS_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 115.00},  # 11,500 credits/month
     # Yearly tiers (same usage limits, different billing period) - displayed as monthly equivalent
-    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 360.00},  # 36,000 credits/month (billed yearly)
-    config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 1200.00},  # 120,000 credits/month (billed yearly)
+    config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 540.00},  # 54,000 credits/month (billed yearly)
+    config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 1380.00},  # 138,000 credits/month (billed yearly)
 }
 
 # Pydantic models for request/response validation
@@ -716,7 +716,7 @@ async def check_subscription_commitment(subscription_id: str) -> dict:
         }
 
 async def is_user_on_highest_tier(user_id: str) -> bool:
-    """Check if user is on the highest subscription tier (Serious Business)."""
+    """Check if user is on the highest subscription tier (Supremely Serious)."""
     try:
         subscription = await get_user_subscription(user_id)
         if not subscription:
@@ -730,7 +730,7 @@ async def is_user_on_highest_tier(user_id: str) -> bool:
         
         logger.info(f"User {user_id} subscription price_id: {price_id}")
         
-        # Check if it's the highest tier price ID (Serious Business only)
+        # Check if it's the highest tier price ID (Supremely Serious only)
         highest_tier_price_ids = [
             config.STRIPE_TIER_SERIOUS_BUSINESS_ID,  # Monthly highest tier
             config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID,  # Yearly highest tier

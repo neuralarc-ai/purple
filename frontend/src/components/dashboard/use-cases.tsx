@@ -98,31 +98,31 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
     {
       id: 'image',
       title: 'Image',
-      prompt: 'Create a high-quality image of [describe the scene, object, or concept] in [style, e.g., minimalistic, realistic, 3D, cartoon] with [color theme or mood if needed]',
+      prompt: 'Analyze the uploaded image in detail. Describe all visible elements including objects, text, and context. Highlight key patterns or relationships and suggest possible interpretations. Recommend how this image could be improved or repurposed for use in [presentation/report/marketing].',
       icon: <ImageIcon className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
     },
     {
       id: 'analysis',
       title: 'Analysis',
-      prompt: 'Analyze the following [data/text/report] and provide [insights, trends, or recommendations] in a structured format.',
+      prompt: 'Perform a comprehensive analysis of the following [dataset/document/scenario]. Identify key patterns, trends, and anomalies. Generate clear insights that highlight risks and opportunities. Provide actionable recommendations and, if helpful, suggest visualizations like charts or tables.',
       icon: <BarChart2 className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
     },
     {
       id: 'webpage',
       title: 'Webpage',
-      prompt: 'Generate a responsive webpage for [business/product/event] using modern design principles. Include [sections, e.g., hero banner, about, contact form, testimonials] and ensure it\'s optimized for both desktop and mobile.',
+      prompt: 'Generate a complete webpage for [company/product/service]. Include sections such as a hero banner with headline and call-to-action, an about section, product or service highlights, testimonials, and a contact form. Use a modern, responsive design with clear headings, structured layout, and engaging content tailored to the target audience.',
       icon: <FileCode className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
     },
     {
       id: 'summarize-document',
       title: 'Summarize Document',
-      prompt: 'Summarize the following [document/text/article/PDF] into [key points, bullet points, or an executive summary], highlighting the most important details.',
+      prompt: 'Summarize the following document: [upload text or file]. Create a concise overview broken into sections that highlight main arguments, evidence, and conclusions. Ensure the summary is clear, decision-focused, and easy to share with [team/clients/stakeholders].',
       icon: <FileText className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
     },
     {
       id: 'spreadsheet',
       title: 'Spreadsheet',
-      prompt: 'Create a spreadsheet for [purpose, e.g., budget, inventory, schedule] with the following columns: [list columns]. Include [specific requirements, e.g., formulas, formatting, data validation].',
+      prompt: 'Analyze the attached spreadsheet: [upload file]. Generate a summary of key patterns, trends, and important metrics. Highlight anomalies or errors if found. Recommend optimizations and suggest visualizations (charts/tables/graphs) that make the data easier to interpret.',
       icon: <Table className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
     },
     {
@@ -803,14 +803,13 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
 
   return (
     <div
-      className={`w-full max-w-6xl h-full flex flex-col justify-between mx-auto px-4 py-6 transition-all duration-700 ease-out ${isVisible
+      className={`w-full max-w-7xl h-full flex flex-col justify-between mx-auto px-6 py-8 transition-all duration-700 ease-out ${isVisible
           ? 'translate-y-0 opacity-100'
           : 'translate-y-8 opacity-0'
         }`}
     >
       {/* Original Use Cases - Always show these */}
       <div className="mb-10">
-        {/* <h2 className="text-2xl font-bold mb-4">Quick Actions</h2> */}
         <div className="flex flex-col items-center gap-2">
           {renderOriginalUseCaseRow(firstRow)}
           {secondRow.length > 0 && renderOriginalUseCaseRow(secondRow)}
@@ -819,31 +818,37 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
 
       {/* Categorized Use Cases */}
       {!shouldShowAllCategories && (
-        <div className="mt-10">
-          {/* <h2 className="text-2xl font-bold mb-6">Use Cases for {userWorkDescription}</h2> */}
-          <div className="space-y-6">
+        <div className="mt-6">
+          <div className="space-y-4">
             {filteredCategories.map((category) => (
-              <div key={category.id} className="border rounded-2xl overflow-hidden">
+              <div key={category.id} className="overflow-hidden">
                 {/* <div className="w-full flex items-center justify-between p-4 bg-muted/50">
                   <div className="flex items-center">
                     {category.icon}
                     <h3 className="font-medium">{category.name}</h3>
                   </div>
                 </div> */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted/10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 bg-background/50">
                   {category.items.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => handleUseCaseClick(item)}
-                      className="p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="group relative p-5 rounded-2xl border dark:border-muted/50 bg-sidebar-accent/60 dakr:bg-sidebar-accent/30 backdrop-blur-sm hover:bg-card/60 hover:border-border hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden"
                     >
-                      <div className="flex items-center mb-2">
-                        {item.icon}
-                        <h4 className="font-medium">{item.title}</h4>
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                            {React.cloneElement(item.icon as React.ReactElement, {
+                              className: "h-4 w-4 text-primary"
+                            })}
+                          </div>
+                          <h4 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors duration-300">{item.title}</h4>
+                        </div>
+                        <p className="text-xs text-muted-foreground/80 line-clamp-3 leading-relaxed group-hover:text-muted-foreground transition-colors duration-300">
+                          {item.prompt}
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {item.prompt}
-                      </p>
                     </div>
                   ))}
                 </div>
@@ -853,43 +858,57 @@ export const UseCases: React.FC<UseCasesProps> = ({ onUseCaseSelect, router, onL
         </div>
       )}
 
-      {/* Show all categories if no specific work description is set */}
-      {shouldShowAllCategories && (
+      {/* Show all categories if no specific work description is set and user has a profile */}
+      {shouldShowAllCategories && userWorkDescription && (
         <div className="mt-10">
           <h2 className="text-2xl font-bold mb-6">Use Cases by Category</h2>
+          <p className="text-muted-foreground mb-6">Select a category to explore use cases tailored for {userWorkDescription}.</p>
           <div className="space-y-6">
             {categories.map((category) => (
-              <div key={category.id} className="border rounded-2xl overflow-hidden">
+              <div key={category.id} className="border border-muted/50 rounded-3xl overflow-hidden bg-sidebar-accent/30 backdrop-blur-sm shadow-sm">
                 <button
                   onClick={() => toggleCategory(category.name)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
+                  className="w-full flex items-center justify-between p-5 hover:bg-muted/30 transition-all duration-200 text-left group"
                 >
-                  <div className="flex items-center">
-                    {category.icon}
-                    <h3 className="font-medium">{category.name}</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors duration-200">
+                      {React.cloneElement(category.icon as React.ReactElement, {
+                        className: "h-4 w-4 text-primary"
+                      })}
+                    </div>
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors duration-200">{category.name}</h3>
                   </div>
-                  {expandedCategories[category.name] ? (
-                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  )}
+                  <div className="p-1 rounded-lg bg-muted/50 group-hover:bg-muted transition-colors duration-200">
+                    {expandedCategories[category.name] ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
+                    )}
+                  </div>
                 </button>
 
                 {expandedCategories[category.name] && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-muted/10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 p-6 bg-background/50">
                     {category.items.map((item) => (
                       <div
                         key={item.id}
                         onClick={() => handleUseCaseClick(item)}
-                        className="p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
+                        className="group relative p-5 rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm hover:bg-card/60 hover:border-border hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
                       >
-                        <div className="flex items-center mb-2">
-                          {item.icon}
-                          <h4 className="font-medium">{item.title}</h4>
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        <div className="relative z-10">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
+                              {React.cloneElement(item.icon as React.ReactElement, {
+                                className: "h-4 w-4 text-primary"
+                              })}
+                            </div>
+                            <h4 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors duration-300">{item.title}</h4>
+                          </div>
+                          <p className="text-xs text-muted-foreground/80 line-clamp-3 leading-relaxed group-hover:text-muted-foreground transition-colors duration-300">
+                            {item.prompt}
+                          </p>
                         </div>
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {item.prompt}
-                        </p>
                       </div>
                     ))}
                   </div>

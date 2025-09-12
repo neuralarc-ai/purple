@@ -15,6 +15,54 @@ interface Category {
 
 const categoriesData: Category[] = [
   {
+    id: 'ceo',
+    name: 'CEO',
+    useCases: [
+      {
+        id: 'ceo-1',
+        title: 'Investor Update',
+        description: 'Draft a quarterly investor update',
+        prompt: 'Create a comprehensive quarterly investor update for [company name] covering key metrics, achievements, challenges, and strategic priorities. Include financial highlights, product milestones, team updates, and market positioning.',
+      },
+      {
+        id: 'ceo-2',
+        title: 'Company All-Hands',
+        description: 'Prepare a company-wide presentation',
+        prompt: 'Draft an engaging all-hands presentation for [company name] covering company performance, strategic initiatives, and cultural priorities. Include key metrics, wins, challenges, and a Q&A section.'
+      },
+      {
+        id: 'ceo-3',
+        title: 'Board Meeting Prep',
+        description: 'Prepare board meeting materials',
+        prompt: 'Create a board meeting package for [company name] including: executive summary, financial performance, key metrics, strategic initiatives, risks, and decision items. Format for clear, concise presentation.'
+      }
+    ],
+  },
+  {
+    id: 'founder',
+    name: 'Founder',
+    useCases: [
+      {
+        id: 'founder-1',
+        title: 'Pitch Deck',
+        description: 'Create an investor pitch deck',
+        prompt: 'Help me create a compelling pitch deck for [startup name]. We are a [brief description] solving [problem] with [solution]. Include slides for problem, solution, market size, business model, traction, team, and ask.',
+      },
+      {
+        id: 'founder-2',
+        title: 'Fundraising Strategy',
+        description: 'Develop a funding roadmap',
+        prompt: 'Create a 12-month fundraising strategy for [startup name]. We are looking to raise [$X] to achieve [key milestones]. Include target investors, timeline, key metrics to highlight, and preparation needed for each stage.'
+      },
+      {
+        id: 'founder-3',
+        title: 'Hiring Plan',
+        description: 'Build a hiring roadmap',
+        prompt: 'Develop a hiring plan for [startup name] as we scale from [current team size] to [target team size] over [timeframe]. Prioritize roles, define hiring timelines, and outline the interview process for each position.'
+      }
+    ],
+  },
+  {
     id: 'legal',
     name: 'Legal',
     useCases: [

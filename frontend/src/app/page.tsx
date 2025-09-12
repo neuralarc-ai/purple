@@ -1,30 +1,23 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/components/AuthProvider';
-import { Loader2 } from 'lucide-react';
+import HeroSection from '@/components/hero-section-1';
+import FeaturesSection from '@/components/features-7';
+import FeatureTable from '@/components/feature-table';
+import IntegrationsSection from '@/components/integrations-7';
+import PromptMessage from '@/components/prompt-message';
+import CompareTable from '@/components/compare-table';
+import Footer from '@/components/footer';
 
-export default function RootPage() {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading) {
-      if (user) {
-        // User is authenticated, redirect to dashboard
-        router.push('/dashboard');
-      } else {
-        // User is not authenticated, redirect to auth
-        router.push('/auth');
-      }
-    }
-  }, [user, isLoading, router]);
-
-  // Show loading state while checking authentication
+export default function HomePage() {
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
+    <main className="min-h-screen bg-black">
+      <HeroSection />      
+      <FeaturesSection />
+      <FeatureTable />
+      <IntegrationsSection />
+      <PromptMessage />
+      {/* <CompareTable /> */}
+      <Footer />
+    </main>
   );
 }

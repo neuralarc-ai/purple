@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "boring-avatars": "^2.0.1",
-    "nodemailer": "^7.0.6",
-    "resend": "^6.0.2"
-  }
-}

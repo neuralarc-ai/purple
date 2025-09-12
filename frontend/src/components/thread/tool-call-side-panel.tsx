@@ -284,31 +284,31 @@ export function ToolCallSidePanel({
   const isMediumScreen = useMediumScreen();
   const isCustomBreakpoint = useCustomBreakpoint();
   const [isResizing, setIsResizing] = React.useState(false);
+  const [isSmallScreen, setIsSmallScreen] = React.useState(false);
   // Initialize panel width based on screen size
   const getInitialPanelWidth = () => {
     if (typeof window === 'undefined') return 480; // Default server-side
 
     const screenWidth = window.innerWidth;
 
-    if (screenWidth >= 1920) return Math.min(800, screenWidth * 0.4);
-    if (screenWidth >= 1500) return Math.min(750, screenWidth * 0.35);
-    if (screenWidth >= 1366) return Math.min(700, screenWidth * 0.4);
-    if (screenWidth >= 1280) return Math.min(600, screenWidth * 0.45);
-    if (screenWidth >= 1024) return Math.min(500, screenWidth * 0.5);
-
-    return Math.min(400, screenWidth * 0.6);
+    // Default to 50% width for all screen sizes to maintain 50-50 split
+    return Math.floor(screenWidth * 0.45);
   };
 
   const [panelWidth, setPanelWidth] = React.useState<number | null>(null);
   const panelRef = React.useRef<HTMLDivElement>(null);
-  const minWidth = 560;
+  const minWidth = 360;
   const maxWidth = typeof window !== 'undefined' ? Math.floor(window.innerWidth * 0.7) : 1000; // 70% of viewport width
   const defaultWidth = 480;
 
-  // Initialize panel width on client side only
+  // Initialize panel width and screen size on client side only
   React.useEffect(() => {
-    if (panelWidth === null && typeof window !== 'undefined') {
-      setPanelWidth(getInitialPanelWidth());
+    if (typeof window !== 'undefined') {
+      if (panelWidth === null) {
+        setPanelWidth(getInitialPanelWidth());
+      }
+      // Initialize small screen state
+      setIsSmallScreen(window.innerWidth < 768);
     }
   }, []);
 
@@ -358,10 +358,11 @@ export function ToolCallSidePanel({
 
   // Calculate if we should show resizable panel
   const shouldShowResizable = React.useMemo(() => {
+    if (isSmallScreen) return false; // Disable resize for screens below 768px
     if (isMediumScreen) return false;
     if (isCustomBreakpoint && isLeftSidebarExpanded) return false;
     return true;
-  }, [isMediumScreen, isCustomBreakpoint, isLeftSidebarExpanded]);
+  }, [isSmallScreen, isMediumScreen, isCustomBreakpoint, isLeftSidebarExpanded]);
 
   // Handle resizing
   // Refs for smooth resizing performance
@@ -520,7 +521,10 @@ export function ToolCallSidePanel({
       // Update fullscreen state
       const isMobileView = window.matchMedia('(max-width: 1023px)').matches;
       const isLargeScreen = window.innerWidth >= 1024;
+      const isSmallScreenView = window.innerWidth < 768;
+      
       setIsFullScreen(isMobileView);
+      setIsSmallScreen(isSmallScreenView);
 
       if (isMobileView) {
         setPanelWidth(null);
@@ -621,7 +625,7 @@ export function ToolCallSidePanel({
     // Default desktop behavior (≥1228px)
     if (isLeftSidebarExpanded) {
       return {
-        widthClass: 'w-[40vw]',
+        widthClass: 'w-[50vw]',
         panelStyle: {
           minWidth: `${minWidth}px`,
           maxWidth: `${maxWidth}px`,
@@ -630,7 +634,7 @@ export function ToolCallSidePanel({
       };
     } else {
       return {
-        widthClass: 'w-[45vw]',
+        widthClass: 'w-[50vw]',
         panelStyle: {
           minWidth: `${minWidth}px`,
           maxWidth: `${maxWidth}px`,
@@ -791,7 +795,7 @@ export function ToolCallSidePanel({
 
     const isNavigatingToLatest = newIndex === totalCalls - 1;
 
-    console.log(`[INTERNAL_NAV] ${source}: ${internalIndex} -> ${newIndex}, mode will be: ${isNavigatingToLatest ? 'live' : 'manual'}`);
+    // console.log(`[INTERNAL_NAV] ${source}: ${internalIndex} -> ${newIndex}, mode will be: ${isNavigatingToLatest ? 'live' : 'manual'}`);
 
     setInternalIndex(newIndex);
 
@@ -882,20 +886,20 @@ export function ToolCallSidePanel({
 
     // TODO: Implement runtime tracking API endpoint
     // For now, this is a no-op to prevent 404 errors
-    console.log('Runtime tracking: Fetching database runtime (not yet implemented)', { threadId });
+    // console.log('Runtime tracking: Fetching database runtime (not yet implemented)', { threadId });
     setDatabaseRuntime(0); // Set to 0 since we can't fetch from non-existent endpoint
   }, [threadId]);
 
   const createAgentRun = React.useCallback(async (runId: string, threadId: string) => {
     // TODO: Implement runtime tracking API endpoint
     // For now, this is a no-op to prevent 404 errors
-    console.log('Runtime tracking: Agent run created (not yet implemented)', { runId, threadId });
+    // console.log('Runtime tracking: Agent run created (not yet implemented)', { runId, threadId });
   }, []);
 
   const completeAgentRun = React.useCallback(async (runId: string, totalRuntime: number) => {
     // TODO: Implement runtime tracking API endpoint
     // For now, this is a no-op to prevent 404 errors
-    console.log('Runtime tracking: Agent run completed (not yet implemented)', { runId, totalRuntime });
+    // console.log('Runtime tracking: Agent run completed (not yet implemented)', { runId, totalRuntime });
 
     // Refresh runtime from database after completion if needed
     if (threadId) {
@@ -906,7 +910,7 @@ export function ToolCallSidePanel({
   const updateHeartbeat = React.useCallback(async (runId: string) => {
     // TODO: Implement runtime tracking API endpoint
     // For now, this is a no-op to prevent 404 errors
-    console.log('Runtime tracking: Heartbeat update (not yet implemented)', { runId });
+    // console.log('Runtime tracking: Heartbeat update (not yet implemented)', { runId });
   }, []);
 
   const renderStatusButton = React.useCallback(() => {
@@ -1050,10 +1054,10 @@ export function ToolCallSidePanel({
       // Complete agent run in database - use generated agentRunId if prop one is not available
       const runIdToUse = agentRunId || generatedAgentRunId;
       if (runIdToUse) {
-        console.log('Completing agent run:', { runIdToUse, totalRuntime });
+        // console.log('Completing agent run:', { runIdToUse, totalRuntime });
         completeAgentRun(runIdToUse, totalRuntime);
       } else {
-        console.log('Missing agentRunId for completion');
+        // console.log('Missing agentRunId for completion');
       }
     }
   }, [agentStatus, agentStartTime, accumulatedTime, databaseRuntime, threadId, agentRunId, generatedAgentRunId, createAgentRun, completeAgentRun]);
@@ -1062,7 +1066,7 @@ export function ToolCallSidePanel({
   React.useEffect(() => {
     if (agentRunId && agentStatus === 'running' && !agentStartTime) {
       // We have an agentRunId and agent is running, but we haven't started tracking yet
-      console.log('AgentRunId available, starting runtime tracking:', { agentRunId, threadId });
+      // console.log('AgentRunId available, starting runtime tracking:', { agentRunId, threadId });
       setAgentStartTime(Date.now());
       setElapsedTime(0);
       setFinalRuntime(null);
@@ -1079,7 +1083,7 @@ export function ToolCallSidePanel({
     if (agentStatus === 'running' && !agentRunId && !agentStartTime) {
       // Generate a new agentRunId if we don't have one
       const newAgentRunId = crypto.randomUUID();
-      console.log('Generated new agentRunId:', newAgentRunId);
+
       setGeneratedAgentRunId(newAgentRunId);
 
       // Create the agent run record immediately
@@ -1092,22 +1096,22 @@ export function ToolCallSidePanel({
     }
   }, [agentStatus, agentRunId, agentStartTime, threadId, createAgentRun]);
 
-  // Timer effect for updating elapsed time
-  React.useEffect(() => {
-    if (!agentStartTime || agentStatus !== 'running') return;
+  // Timer effect for updating elapsed time - DISABLED to reduce load
+  // React.useEffect(() => {
+  //   if (!agentStartTime || agentStatus !== 'running') return;
 
-    const interval = setInterval(() => {
-      setElapsedTime(Date.now() - agentStartTime);
+  //   const interval = setInterval(() => {
+  //     setElapsedTime(Date.now() - agentStartTime);
 
-      // Update heartbeat in database every 5 seconds
-      const runIdToUse = agentRunId || generatedAgentRunId;
-      if (runIdToUse && Date.now() % 5000 < 1000) {
-        updateHeartbeat(runIdToUse);
-      }
-    }, 1000);
+  //     // Update heartbeat in database every 5 seconds
+  //     const runIdToUse = agentRunId || generatedAgentRunId;
+  //     if (runIdToUse && Date.now() % 5000 < 1000) {
+  //       updateHeartbeat(runIdToUse);
+  //     }
+  //   }, 1000);
 
-    return () => clearInterval(interval);
-  }, [agentStartTime, agentStatus, agentRunId, generatedAgentRunId, updateHeartbeat]);
+  //   return () => clearInterval(interval);
+  // }, [agentStartTime, agentStatus, agentRunId, generatedAgentRunId, updateHeartbeat]);
 
   React.useEffect(() => {
     if (!isStreaming) return;
@@ -1130,7 +1134,7 @@ export function ToolCallSidePanel({
       <div
         ref={panelRef}
         className={cn(
-          "fixed right-0 top-0 h-full bg-background border-l border-border transition-all duration-300 ease-in-out overflow-hidden",
+          "fixed right-0 top-0 h-full bg-background border-l border-border transition-all duration-300 ease-in-out overflow-hidden thread-content-container",
           isFullScreen ? "w-full" : "w-[var(--panel-width)]",
           isOpen ? "opacity-100 translate-x-0" : "opacity-0 translate-x-full"
         )}
@@ -1154,28 +1158,12 @@ export function ToolCallSidePanel({
                     <div className="ml-2 flex items-center gap-2">
                       <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                         {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                        Helium's Core
+                        Helium Core
                       </h2>
-                      {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                        <div className={cn(
-                          "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                          agentStatus === 'running'
-                            ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                            : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                        )}>
-                          {agentStatus === 'running' ? (
-                            <>
-                              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                              <span>
-                                {formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                              <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                            </>
-                          )}
+                      {agentStatus === 'running' && (
+                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                          <span>Running</span>
                         </div>
                       )}
                     </div>
@@ -1215,28 +1203,9 @@ export function ToolCallSidePanel({
               <div className="ml-2 flex items-center gap-2">
                 <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                   {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                  Helium's Core
+                  Helium Core
                 </h2>
-                {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                  <div className={cn(
-                    "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                    agentStatus === 'running'
-                      ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                      : "bg-blue-50 text-blue-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                  )}>
-                    {agentStatus === 'running' ? (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                        <span>{formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                        <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                      </>
-                    )}
-                  </div>
-                )}
+
               </div>
               <Button
                 variant="ghost"
@@ -1284,28 +1253,9 @@ export function ToolCallSidePanel({
                 <div className="ml-2 flex items-center gap-2">
                   <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                     {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                    Helium's Core
+                    Helium Core
                   </h2>
-                  {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                    <div className={cn(
-                      "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                      agentStatus === 'running'
-                        ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                        : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                    )}>
-                      {agentStatus === 'running' ? (
-                        <>
-                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                          <span>{formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                          <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                        </>
-                      )}
-                    </div>
-                  )}
+
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 flex items-center gap-1.5">
@@ -1351,28 +1301,9 @@ export function ToolCallSidePanel({
               <div className="ml-2 flex items-center gap-2">
                 <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                   {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                  Helium's Core
+                  Helium Core
                 </h2>
-                {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                  <div className={cn(
-                    "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                    agentStatus === 'running'
-                      ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                      : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                  )}>
-                    {agentStatus === 'running' ? (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                        <span>{formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                        <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                      </>
-                    )}
-                  </div>
-                )}
+
               </div>
               <Button
                 variant="ghost"
@@ -1423,28 +1354,9 @@ export function ToolCallSidePanel({
             <motion.div layoutId="tool-icon" className="ml-2 flex items-center gap-2">
               <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                 {/* {agentName ? `${agentName}'s Computer` : 'Helium\'s Brain'} */}
-                Helium's Core
+                Helium Core
               </h2>
-              {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                <div className={cn(
-                  "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                  agentStatus === 'running'
-                    ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                    : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                )}>
-                  {agentStatus === 'running' ? (
-                    <>
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                      <span>{formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}</span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                      <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                    </>
-                  )}
-                </div>
-              )}
+
             </motion.div>
 
             {displayToolCall.toolResult?.content && !isStreaming && (
@@ -1494,7 +1406,7 @@ export function ToolCallSidePanel({
           </div>
         </motion.div>
 
-        <div className="flex-1 p-4 pt-0 overflow-auto scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700 scrollbar-track-transparent">
+        <div className="flex-1 p-4 pt-0 overflow-auto scrollbar-thin scrollbar-thumb-zinc-300 dark:scrollbar-thumb-zinc-700 scrollbar-track-transparent tool-call-content">
           {toolView}
         </div>
       </div>
@@ -1524,7 +1436,7 @@ export function ToolCallSidePanel({
             }
           }}
           className={cn(
-            'fixed top-1 bottom-1 md:top-3 right-2 md:bottom-6  shadow-md shadow-foreground/5 dark:shadow-sidebar/50 border rounded-[22px] flex flex-col z-[51] md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
+            'fixed top-1 bottom-1 md:top-3 right-2 md:bottom-6 shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border rounded-[22px] flex flex-col z-[51] md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
             widthClass,
             'bg-background',
             isResizing && 'select-none',
@@ -1547,10 +1459,12 @@ export function ToolCallSidePanel({
           }}
         >
           {shouldShowResizable && (
+
             <div
-              className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize z-50 hover:bg-green-500/20 active:bg-green-500/40 transition-colors"
+              className="absolute left-0 top-0 bottom-0 w-0.5 cursor-ew-resize z-50 hover:bg-green-500/20 active:bg-green-500/40 transition-colors"
               onMouseDown={handleMouseDown}
             >
+              
               <div className="absolute left-0.5 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-green-500/50 rounded-full" />
             </div>
           )}

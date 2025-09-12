@@ -13,7 +13,6 @@ import { useAccounts } from '@/hooks/use-accounts';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
 import NewTeamForm from '@/components/basejump/new-team-form';
 import { agentApi } from '@/lib/api-enhanced';
-import BoringAvatar from 'boring-avatars';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -49,6 +48,9 @@ import { useAuth } from '@/components/AuthProvider';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { SettingsModal } from '@/components/settings/settings-modal';
 
+// Default avatar for users who haven't selected one
+const DEFAULT_AVATAR_URL = "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/avatars/avatar-7.png";
+
 
 // Dynamic icon component that changes path based on theme
 const DynamicIcon = ({
@@ -80,6 +82,30 @@ const DynamicIcon = ({
   );
 };
 
+// Custom Settings Icon component
+const SettingsIcon = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M12 14V16C8.68629 16 6 18.6863 6 22H4C4 17.5817 7.58172 14 12 14ZM12 13C8.685 13 6 10.315 6 7C6 3.685 8.685 1 12 1C15.315 1 18 3.685 18 7C18 10.315 15.315 13 12 13ZM12 11C14.21 11 16 9.21 16 7C16 4.79 14.21 3 12 3C9.79 3 8 4.79 8 7C8 9.21 9.79 11 12 11ZM14.5946 18.8115C14.5327 18.5511 14.5 18.2794 14.5 18C14.5 17.7207 14.5327 17.449 14.5945 17.1886L13.6029 16.6161L14.6029 14.884L15.5952 15.4569C15.9883 15.0851 16.4676 14.8034 17 14.6449V13.5H19V14.6449C19.5324 14.8034 20.0116 15.0851 20.4047 15.4569L21.3971 14.8839L22.3972 16.616L21.4055 17.1885C21.4673 17.449 21.5 17.7207 21.5 18C21.5 18.2793 21.4673 18.551 21.4055 18.8114L22.3972 19.3839L21.3972 21.116L20.4048 20.543C20.0117 20.9149 19.5325 21.1966 19.0001 21.355V22.5H17.0001V21.3551C16.4677 21.1967 15.9884 20.915 15.5953 20.5431L14.603 21.1161L13.6029 19.384L14.5946 18.8115ZM18 19.5C18.8284 19.5 19.5 18.8284 19.5 18C19.5 17.1716 18.8284 16.5 18 16.5C17.1716 16.5 16.5 17.1716 16.5 18C16.5 18.8284 17.1716 19.5 18 19.5Z"></path>
+  </svg>
+);
+
+// Custom Subscription Icon component
+const SubscriptionIcon = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill="currentColor"
+    className={className}
+  >
+    <path d="M20.0833 15.1999L21.2854 15.9212C21.5221 16.0633 21.5989 16.3704 21.4569 16.6072C21.4146 16.6776 21.3557 16.7365 21.2854 16.7787L12.5144 22.0412C12.1977 22.2313 11.8021 22.2313 11.4854 22.0412L2.71451 16.7787C2.47772 16.6366 2.40093 16.3295 2.54301 16.0927C2.58523 16.0223 2.64413 15.9634 2.71451 15.9212L3.9166 15.1999L11.9999 20.0499L20.0833 15.1999ZM20.0833 10.4999L21.2854 11.2212C21.5221 11.3633 21.5989 11.6704 21.4569 11.9072C21.4146 11.9776 21.3557 12.0365 21.2854 12.0787L11.9999 17.6499L2.71451 12.0787C2.47772 11.9366 2.40093 11.6295 2.54301 11.3927C2.58523 11.3223 2.64413 11.2634 2.71451 11.2212L3.9166 10.4999L11.9999 15.3499L20.0833 10.4999ZM12.5144 1.30864L21.2854 6.5712C21.5221 6.71327 21.5989 7.0204 21.4569 7.25719C21.4146 7.32757 21.3557 7.38647 21.2854 7.42869L11.9999 12.9999L2.71451 7.42869C2.47772 7.28662 2.40093 6.97949 2.54301 6.7427C2.58523 6.67232 2.64413 6.61343 2.71451 6.5712L11.4854 1.30864C11.8021 1.11864 12.1977 1.11864 12.5144 1.30864ZM11.9999 3.33233L5.88723 6.99995L11.9999 10.6676L18.1126 6.99995L11.9999 3.33233Z"></path>
+  </svg>
+);
+
 export function NavUserWithTeams({
   user,
 }: {
@@ -97,7 +123,7 @@ export function NavUserWithTeams({
   // Debug: Log profile data to see what's being fetched
   React.useEffect(() => {
     console.log('NavUserWithTeams - Profile data:', profile);
-    console.log('NavUserWithTeams - Profile avatar:', profile?.avatar);
+    console.log('NavUserWithTeams - Profile avatar_url:', profile?.avatar_url);
   }, [profile]);
   
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
@@ -241,45 +267,18 @@ export function NavUserWithTeams({
     <>
       <SidebarMenu>
         <SidebarMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                {profile?.avatar ? (
-                  <div className="h-8 w-8 rounded-lg overflow-hidden">
-                    {profile.avatar.startsWith('{') ? (
-                      <BoringAvatar
-                        name={preferredName || user.name}
-                        colors={JSON.parse(profile.avatar).colors}
-                        variant="beam"
-                        size={32}
-                      />
-                    ) : (
-                      <Avatar className="h-8 w-8 rounded-lg">
-                        <AvatarImage src={profile.avatar} alt={preferredName || user.name} />
-                        <AvatarFallback className="rounded-lg">
-                          {getInitials(preferredName || user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
-                  </div>
-                ) : user.avatar ? (
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src={user.avatar} alt={preferredName || user.name} />
-                    <AvatarFallback className="rounded-lg">
-                      {getInitials(preferredName || user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                ) : (
-                  <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarFallback className="rounded-lg">
-                      {getInitials(preferredName || user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                )}
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarImage src={profile?.avatar_url || DEFAULT_AVATAR_URL} alt={preferredName || user.name} />
+                  <AvatarFallback className="rounded-lg">
+                    {getInitials(preferredName || user.name)}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-lg font-bold">{preferredName || user.name}</span>
                   <span className="truncate text-sm">{user.email}</span>
@@ -287,38 +286,12 @@ export function NavUserWithTeams({
                 {/* Show user avatar in collapsed state, more icon in expanded state */}
                 <div className="ml-auto group-data-[collapsible=icon]:mr-2">
                   <div className="group-data-[collapsible=icon]:block hidden">
-                    {profile?.avatar ? (
-                      <div className="h-6 w-6 rounded-lg overflow-hidden">
-                        {profile.avatar.startsWith('{') ? (
-                          <BoringAvatar
-                            name={preferredName || user.name}
-                            colors={JSON.parse(profile.avatar).colors}
-                            variant="beam"
-                            size={24}
-                          />
-                        ) : (
-                          <Avatar className="h-6 w-6 rounded-lg">
-                            <AvatarImage src={profile.avatar} alt={preferredName || user.name} />
-                            <AvatarFallback className="rounded-lg text-xs">
-                              {getInitials(preferredName || user.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                      </div>
-                    ) : user.avatar ? (
-                      <Avatar className="h-6 w-6 rounded-lg">
-                        <AvatarImage src={user.avatar} alt={preferredName || user.name} />
-                        <AvatarFallback className="rounded-lg text-xs">
-                          {getInitials(preferredName || user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    ) : (
-                      <Avatar className="h-6 w-6 rounded-lg">
-                        <AvatarFallback className="rounded-lg text-xs">
-                          {getInitials(preferredName || user.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
+                    <Avatar className="h-6 w-6 rounded-lg">
+                      <AvatarImage src={profile?.avatar_url || DEFAULT_AVATAR_URL} alt={preferredName || user.name} />
+                      <AvatarFallback className="rounded-lg text-xs">
+                        {getInitials(preferredName || user.name)}
+                      </AvatarFallback>
+                    </Avatar>
                   </div>
                   <div className="group-data-[collapsible=icon]:hidden">
                     <DynamicIcon
@@ -501,12 +474,14 @@ export function NavUserWithTeams({
                   className="rounded-full cursor-pointer"
                   onClick={() => setShowSettingsModal(true)}
                 >
+                  <SettingsIcon className="h-4 w-4 mr-2" />
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem 
                   className="rounded-full cursor-pointer"
                   onClick={() => setShowBillingModal(true)}
                 >
+                  <SubscriptionIcon className="h-4 w-4 mr-2" />
                   Manage Subscription
                 </DropdownMenuItem>
                 {!flagLoading && customAgentsEnabled && (

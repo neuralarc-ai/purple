@@ -44,10 +44,8 @@ export const metadata: Metadata = {
     'data analysis',
   ],
   authors: [{ name: 'Neural Arc Inc.', url: 'https://he2.ai' }],
-  creator:
-    'Neural Arc Inc.',
-  publisher:
-    'Neural Arc Inc',
+  creator: 'Neural Arc Inc.',
+  publisher: 'Neural Arc Inc',
   category: 'Technology',
   applicationName: 'Helium',
   formatDetection: {
@@ -117,9 +115,22 @@ export default function RootLayout({
       <head>
         {/* Libre Baskerville Font */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
-        
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap"
+          rel="stylesheet"
+        />
+
+        {/* Remix Icons */}
+        <link
+          href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+          rel="stylesheet"
+        />
+
         {/* Google Tag Manager */}
         <Script id="google-tag-manager" strategy="afterInteractive">
           {`(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -128,7 +139,11 @@ export default function RootLayout({
           'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
           })(window,document,'script','dataLayer','GTM-PCHSN4M2');`}
         </Script>
-        <Script async src="https://cdn.tolt.io/tolt.js" data-tolt={process.env.NEXT_PUBLIC_TOLT_REFERRAL_ID}></Script>
+        <Script
+          async
+          src="https://cdn.tolt.io/tolt.js"
+          data-tolt={process.env.NEXT_PUBLIC_TOLT_REFERRAL_ID}
+        ></Script>
       </head>
 
       <body

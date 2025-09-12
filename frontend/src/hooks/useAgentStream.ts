@@ -4,8 +4,6 @@ import {
   streamAgent,
   getAgentStatus,
   stopAgent,
-  AgentRun,
-  getMessages,
 } from '@/lib/api';
 import { toast } from 'sonner';
 import {
@@ -65,31 +63,32 @@ export interface AgentStreamCallbacks {
 }
 
 // Helper function to map API messages to UnifiedMessages
-const mapApiMessagesToUnified = (
-  messagesData: ApiMessageType[] | null | undefined,
-  currentThreadId: string,
-): UnifiedMessage[] => {
-  return (messagesData || [])
-    .filter((msg) => msg.type !== 'status')
-    .map((msg: ApiMessageType) => ({
-      message_id: msg.message_id || null,
-      thread_id: msg.thread_id || currentThreadId,
-      type: (msg.type || 'system') as UnifiedMessage['type'],
-      is_llm_message: Boolean(msg.is_llm_message),
-      content: msg.content || '',
-      metadata: msg.metadata || '{}',
-      created_at: msg.created_at || new Date().toISOString(),
-      updated_at: msg.updated_at || new Date().toISOString(),
-      agent_id: (msg as any).agent_id,
-      agents: (msg as any).agents,
-    }));
-};
+// const mapApiMessagesToUnified = (
+//   messagesData: ApiMessageType[] | null | undefined,
+//   currentThreadId: string,
+// ): UnifiedMessage[] => {
+//   return (messagesData || [])
+//     .filter((msg) => msg.type !== 'status')
+//     .map((msg: ApiMessageType) => ({
+//       message_id: msg.message_id || null,
+//       thread_id: msg.thread_id || currentThreadId,
+//       type: (msg.type || 'system') as UnifiedMessage['type'],
+//       is_llm_message: Boolean(msg.is_llm_message),
+//       content: msg.content || '',
+//       metadata: msg.metadata || '{}',
+//       created_at: msg.created_at || new Date().toISOString(),
+//       updated_at: msg.updated_at || new Date().toISOString(),
+//       agent_id: (msg as any).agent_id,
+//       agents: (msg as any).agents,
+//     }));
+// };
 
 export function useAgentStream(
   callbacks: AgentStreamCallbacks,
   threadId: string,
   setMessages: (messages: UnifiedMessage[]) => void,
   agentId?: string, // Optional agent ID for invalidation
+  onCreditError?: (error: any) => void, // Optional credit error handler
 ): UseAgentStreamResult {
   const queryClient = useQueryClient();
 
@@ -240,8 +239,8 @@ export function useAgentStream(
         `[useAgentStream] Finalizing stream with status: ${finalStatus}, runId: ${runId}`,
       );
 
-      const currentThreadId = threadIdRef.current; // Get current threadId from ref
-      const currentSetMessages = setMessagesRef.current; // Get current setMessages from ref
+      // const currentThreadId = threadIdRef.current; // Get current threadId from ref
+      // const currentSetMessages = setMessagesRef.current; // Get current setMessages from ref
 
       // Only finalize if this is for the current run ID or if no specific run ID is provided
       if (
@@ -307,7 +306,7 @@ export function useAgentStream(
           }
         });
         
-        console.log(`[useAgentStream] Invalidated agent queries for refetch instead of page reload - Agent ID: ${agentId}`);
+        // console.log(`[useAgentStream] Invalidated agent queries for refetch instead of page reload - Agent ID: ${agentId}`);
       }
 
       if (
@@ -479,7 +478,7 @@ export function useAgentStream(
   );
 
   const handleStreamError = useCallback(
-    (err: Error | string | Event) => {
+    async (err: Error | string | Event) => {
       if (!isMountedRef.current) return;
 
       // Extract error message
@@ -491,14 +490,44 @@ export function useAgentStream(
       } else if (err instanceof Event && err.type === 'error') {
         // Standard EventSource errors don't have much detail, might need status check
         errorMessage = 'Stream connection error';
+        
+        // For EventSource errors, check the agent status to get the actual error
+        const currentRunId = currentRunIdRef.current;
+        if (currentRunId) {
+          try {
+            console.log(`[useAgentStream] Checking agent status after stream error for run ID: ${currentRunId}`);
+            const agentStatus = await getAgentStatus(currentRunId);
+            
+            if (agentStatus.status === 'error' && agentStatus.error) {
+              errorMessage = agentStatus.error;
+              console.log(`[useAgentStream] Found actual error from agent status: ${errorMessage}`);
+            }
+          } catch (statusErr) {
+            console.warn(`[useAgentStream] Failed to get agent status after stream error: ${statusErr}`);
+          }
+        }
       }
 
       const lower = errorMessage.toLowerCase();
       const isExpected =
         lower.includes('not found') || lower.includes('not running');
+        
+      const isCreditError =
+        lower.includes('credit') && 
+        (lower.includes('insufficient') || 
+         lower.includes('exhausted') || 
+         lower.includes('used up') ||
+         lower.includes('limit reached') ||
+         lower.includes('not enough') ||
+         lower.includes('balance') ||
+         lower.includes('required') ||
+         lower.includes('need'));
 
       if (isExpected) {
         console.info('[useAgentStream] Streaming skipped/ended:', errorMessage);
+      } else if (isCreditError && onCreditError) {
+        // Handle credit errors with the credit error handler
+        onCreditError(err);
       } else {
         console.error('[useAgentStream] Streaming error:', errorMessage, err);
         setError(errorMessage);
@@ -515,16 +544,16 @@ export function useAgentStream(
         return;
       }
     },
-    [finalizeStream],
+    [finalizeStream, getAgentStatus],
   );
 
   const handleStreamClose = useCallback(() => {
     if (!isMountedRef.current) return;
 
     const runId = currentRunIdRef.current;
-    console.log(
-      `[useAgentStream] Stream closed for run ID: ${runId}, status: ${status}`,
-    );
+    // console.log(
+    //   `[useAgentStream] Stream closed for run ID: ${runId}, status: ${status}`,
+    // );
 
     if (!runId) {
       console.warn('[useAgentStream] Stream closed but no active agentRunId.');
@@ -546,22 +575,22 @@ export function useAgentStream(
     // Immediately check the agent status when the stream closes unexpectedly
     // This covers cases where the agent finished but the final message wasn't received,
     // or if the agent errored out on the backend.
-    console.log(`[useAgentStream] Checking final status for run ID: ${runId}`);
+    // console.log(`[useAgentStream] Checking final status for run ID: ${runId}`);
     getAgentStatus(runId)
       .then((agentStatus) => {
         if (!isMountedRef.current) return; // Check mount status again
 
         // Check if this is still the current run ID
         if (currentRunIdRef.current !== runId) {
-          console.log(
-            `[useAgentStream] Run ID changed during status check in handleStreamClose, ignoring`,
-          );
+          // console.log(
+          //   `[useAgentStream] Run ID changed during status check in handleStreamClose, ignoring`,
+          // );
           return;
         }
 
-        console.log(
-          `[useAgentStream] Final status for run ID ${runId}: ${agentStatus.status}`,
-        );
+        // console.log(
+        //   `[useAgentStream] Final status for run ID ${runId}: ${agentStatus.status}`,
+        // );
 
         if (agentStatus.status === 'running') {
           setError('Stream closed unexpectedly while agent was running.');
@@ -585,20 +614,27 @@ export function useAgentStream(
         }
 
         const errorMessage = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[useAgentStream] Error checking agent status for ${runId} after stream close: ${errorMessage}`,
-        );
-
+        
         const isNotFoundError =
           errorMessage.includes('not found') ||
           errorMessage.includes('404') ||
           errorMessage.includes('does not exist');
+          
+        const isNotRunningError =
+          errorMessage.includes('not running') ||
+          errorMessage.includes('is not running');
 
-        if (isNotFoundError) {
-          // Revert to agent_not_running for this specific case
+        if (isNotFoundError || isNotRunningError) {
+          // These are expected conditions when an agent finishes running
+          console.info(
+            `[useAgentStream] Agent run ${runId} finished: ${errorMessage}`,
+          );
           finalizeStream('agent_not_running', runId);
         } else {
-          // For other errors checking status, finalize with generic error
+          // Only log as error for unexpected conditions
+          console.error(
+            `[useAgentStream] Error checking agent status for ${runId} after stream close: ${errorMessage}`,
+          );
           finalizeStream('error', runId);
         }
       });
@@ -633,11 +669,11 @@ export function useAgentStream(
     async (runId: string) => {
       if (!isMountedRef.current) return;
 
-      console.log(`[useAgentStream] Starting stream for run ID: ${runId}`);
+      // console.log(`[useAgentStream] Starting stream for run ID: ${runId}`);
 
       // Clean up any previous stream
       if (streamCleanupRef.current) {
-        console.log(`[useAgentStream] Cleaning up previous stream`);
+        // console.log(`[useAgentStream] Cleaning up previous stream`);
         streamCleanupRef.current();
         streamCleanupRef.current = null;
       }
@@ -816,7 +852,7 @@ export function useAgentStream(
 
   const logManual = useCallback(async (payload: { event_type: string; data?: Record<string, any>; description?: string }) => {
     // Implementation would typically call an API endpoint
-    console.log('Manual event logged:', payload);
+    // console.log('Manual event logged:', payload);
   }, []);
 
   return {
