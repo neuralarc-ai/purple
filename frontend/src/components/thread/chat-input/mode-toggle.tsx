@@ -26,11 +26,11 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
   return (
     <TooltipProvider>
       <div className={cn("flex items-center", className)}>
-        <div className="relative bg-none h-8 border dark:border-muted-foreground/20 rounded-full p-0.5 flex items-center bg-background/30">
+        <div className="relative bg-none h-8 border dark:border-muted-foreground/20 rounded-full p-0.5 flex items-center dakr:bg-background/30">
           {/* Animated sliding background */}
           <motion.div
             className={cn(
-              "absolute w-9 h-6.5 rounded-full shadow-xs backdrop-blur-2xl bg-sidebar dark:bg-muted ",              
+              "absolute w-9 h-6.5 rounded-full shadow-xs backdrop-blur-2xl bg-muted dark:bg-muted",              
             )}
             animate={{
               x: isChatMode ? 0 : 36, // 28px = gap (1) + width (6.5) + padding adjustments

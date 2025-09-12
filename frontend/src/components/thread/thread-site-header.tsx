@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from "@/components/ui/button"
-import { Info } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { toast } from "sonner"
 import {
@@ -19,7 +18,6 @@ import { cn } from "@/lib/utils"
 import { ShareModal } from "@/components/sidebar/share-modal"
 import { useQueryClient } from "@tanstack/react-query";
 import { threadKeys } from "@/hooks/react-query/threads/keys";
-import Image from 'next/image';
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { useThreadTokenUsage } from "@/hooks/react-query/threads/use-thread-token-usage";
 import { useUsageRealtime } from "@/hooks/useUsageRealtime";
@@ -215,7 +213,7 @@ export function SiteHeader({
                   size="icon"
                   className="h-9 w-9 cursor-pointer"
                 >
-                  <Info className="h-4 w-4" />
+                  <i className="ri-information-line text-base text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
@@ -322,8 +320,7 @@ export function SiteHeader({
                   onClick={onViewFiles}
                   className="h-9 w-9 cursor-pointer"
                 >
-                  <Image src="/icons/folder-open-light.svg" alt="folder open" width={21} height={21} className="block dark:hidden mb-0" />
-                  <Image src="/icons/folder-open-dark.svg" alt="folder open" width={21} height={21} className="hidden dark:block mb-0" />
+                  <i className="ri-folder-open-line text-base text-muted-foreground" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side={isMobile ? "bottom" : "bottom"}>
@@ -339,8 +336,7 @@ export function SiteHeader({
                   onClick={openShareModal}
                   className="h-9 w-9 cursor-pointer"
                 >
-                 <Image src="/icons/share-light.svg" alt="share" width={16} height={16} className="block dark:hidden mb-0" />
-                 <Image src="/icons/share-dark.svg" alt="share" width={16} height={16} className="hidden dark:block mb-0" />
+                  <i className="ri-share-2-line text-base text-muted-foreground" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side={isMobile ? "bottom" : "bottom"}>
@@ -357,7 +353,7 @@ export function SiteHeader({
                     className="h-9 w-9 cursor-pointer"
                     asChild
                   >
-                    <AnimatedThemeToggler className="h-4 w-4" />
+                    <AnimatedThemeToggler className="h-4 w-4 p-4.5 text-muted-foreground" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side={isMobile ? "bottom" : "bottom"}>
