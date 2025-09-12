@@ -131,117 +131,127 @@ export function CreditPurchaseModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
-                <DialogHeader className="text-center pb-3">
-                    <DialogTitle className="text-[32px] font-bold">
-                        Buy add-on credits
-                    </DialogTitle>
-                </DialogHeader>
+            <DialogContent className="sm:max-w-6xl max-h-[95vh] overflow-hidden p-0">
+                <div className="flex h-full">
+                    {/* Left Side - Pricing Image */}
+                    <div className="hidden md:flex md:w-1/2 relative overflow-hidden">
+                        {/* Background Image */}
+                        <img 
+                            src="/images/pricing.png" 
+                            alt="Pricing" 
+                            className="absolute inset-0 w-full h-full object-cover"
+                        />
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/40"></div>
+                        {/* Content */}
+                        <div className="relative z-10 flex flex-col justify-start items-start p-8 lg:p-12 h-full">
+                            <div className="mt-8">
+                                <h1 className="text-3xl lg:text-4xl font-bold text-white mb-4">
+                                    Buy add-on credits
+                                </h1>
+                                <p className="text-white text-lg lg:text-xl max-w-md">
+                                    Choose your credit package to continue using premium features
+                                </p>
+                            </div>
+                        </div>
+                    </div>
 
-                <div className="space-y-4">
-                    {/* Credit Purchase Options */}
-                    <div>
-                        <div className="flex flex-col md:flex-row gap-4 justify-center items-stretch">
-                            {CREDIT_PACKAGES.map((pkg, index) => (
-                                <Card
-                                    key={pkg.credits}
-                                    className={`cursor-pointer transition-all duration-200 hover:scale-105 bg-muted/30 border-border flex-1 ${
-                                        selectedPackage?.credits === pkg.credits
-                                            ? 'ring-2 ring-primary shadow-lg scale-105'
-                                            : 'hover:shadow-lg border-2 hover:border-primary/20'
-                                    } ${pkg.popular ? 'border-2 border-primary/30' : ''}`}
-                                    onClick={() => handlePackageSelect(pkg)}
-                                >
-                                    <CardContent className="p-3 text-center relative flex flex-col h-full">
-                                        {pkg.popular && (
-                                            <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground text-xs font-medium px-2 py-1">
-                                                Popular
-                                            </Badge>
-                                        )}
+                    {/* Right Side - Credit Packages */}
+                    <div className="w-full md:w-1/2 bg-white p-8 flex flex-col">
+                        {/* Credit Packages Grid */}
+                        <div className="flex-1">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-0">
+                                {CREDIT_PACKAGES.map((pkg, index) => (
+                                    <div
+                                        key={pkg.credits}
+                                        className={`relative cursor-pointer transition-all duration-200 hover:bg-gray-50 p-12 flex flex-col justify-center items-center min-h-[600px] ${
+                                            selectedPackage?.credits === pkg.credits
+                                                ? 'bg-gray-50'
+                                                : ''
+                                        } ${pkg.popular ? 'bg-gray-50' : ''}`}
+                                        onClick={() => handlePackageSelect(pkg)}
+                                    >
                                         
-                                        {/* Credit card icons based on package size */}
-                                        <div className="flex justify-center items-center mb-3 min-h-[32px]">
-                                            {pkg.credits === 1000 && (
-                                                <svg 
-                                                    xmlns="http://www.w3.org/2000/svg" 
-                                                    viewBox="0 0 24 24" 
-                                                    fill="currentColor"
-                                                    className="h-8 w-8 text-foreground"
-                                                >
-                                                    <path d="M4 7V17H18V7H4ZM3 5H19C19.5523 5 20 5.44772 20 6V18C20 18.5523 19.5523 19 19 19H3C2.44772 19 2 18.5523 2 18V6C2 5.44772 2.44772 5 3 5ZM21 9H23V15H21V9Z"></path>
-                                                </svg>
-                                            )}
-                                            {pkg.credits === 2500 && (
-                                                <svg 
-                                                    xmlns="http://www.w3.org/2000/svg" 
-                                                    viewBox="0 0 24 24" 
-                                                    fill="currentColor"
-                                                    className="h-8 w-8 text-foreground"
-                                                >
-                                                    <path d="M4 7V17H18V7H4ZM3 5H19C19.5523 5 20 5.44772 20 6V18C20 18.5523 19.5523 19 19 19H3C2.44772 19 2 18.5523 2 18V6C2 5.44772 2.44772 5 3 5ZM5 8H9V16H5V8ZM21 9H23V15H21V9Z"></path>
-                                                </svg>
-                                            )}
-                                            {pkg.credits === 5000 && (
-                                                <svg 
-                                                    xmlns="http://www.w3.org/2000/svg" 
-                                                    viewBox="0 0 24 24" 
-                                                    fill="currentColor"
-                                                    className="h-10 w-10 text-primary"
-                                                >
-                                                    <path d="M8 19H3C2.44772 19 2 18.5523 2 18V6C2 5.44772 2.44772 5 3 5H9.625L8.45833 7H4V17H8V19ZM12.375 19L13.5417 17H18V7H14V5H19C19.5523 5 20 5.44772 20 6V18C20 18.5523 19.5523 19 19 19H12.375ZM21 9H23V15H21V9ZM12 11H15L10 19V13H7L12 5V11Z"></path>
-                                                </svg>
-                                            )}
-                                        </div>
-                                        
-                                        <div className="space-y-1 flex-grow">
-                                            <div className="text-lg text-foreground mt-2">
+                                        <div className="text-center space-y-16">
+                                            {/* Icon */}
+                                            <div className="flex justify-center">
+                                                <div className="flex items-center justify-center w-16 h-16 bg-gray-100 rounded-lg">
+                                                    {pkg.credits === 1000 && (
+                                                        <svg className="w-8 h-8 text-gray-600" fill="currentColor" viewBox="0 0 640 640">
+                                                            <path d="M535.3 70.7C541.7 64.6 551 62.4 559.6 65.2C569.4 68.5 576 77.7 576 88L576 274.9C576 406.1 467.9 512 337.2 512C260.2 512 193.8 462.5 169.7 393.3C134.3 424.1 112 469.4 112 520C112 533.3 101.3 544 88 544C74.7 544 64 533.3 64 520C64 445.1 102.2 379.1 160.1 340.3C195.4 316.7 237.5 304 280 304L360 304C373.3 304 384 293.3 384 280C384 266.7 373.3 256 360 256L280 256C240.3 256 202.7 264.8 169 280.5C192.3 210.5 258.2 160 336 160C402.4 160 451.8 137.9 484.7 116C503.9 103.2 520.2 87.9 535.4 70.7z"/>
+                                                        </svg>
+                                                    )}
+                                                    {pkg.credits === 2500 && (
+                                                        <svg className="w-8 h-8 text-gray-600" fill="currentColor" viewBox="0 0 640 640">
+                                                            <path d="M576 96C576 204.1 499.4 294.3 397.6 315.4C389.7 257.3 363.6 205 325.1 164.5C365.2 104 433.9 64 512 64L544 64C561.7 64 576 78.3 576 96zM64 160C64 142.3 78.3 128 96 128L128 128C251.7 128 352 228.3 352 352L352 544C352 561.7 337.7 576 320 576C302.3 576 288 561.7 288 544L288 384C164.3 384 64 283.7 64 160z"/>
+                                                        </svg>
+                                                    )}
+                                                    {pkg.credits === 5000 && (
+                                                        <svg className="w-8 h-8 text-black" fill="currentColor" viewBox="0 0 640 640">
+                                                            <path d="M320 32C327 32 333.7 35.1 338.3 40.5L474.3 200.5C480.4 207.6 481.7 217.6 477.8 226.1C473.9 234.6 465.4 240 456 240L431.1 240L506.3 328.5C512.4 335.6 513.7 345.6 509.8 354.1C505.9 362.6 497.4 368 488 368L449.5 368L538.3 472.5C544.4 479.6 545.7 489.6 541.8 498.1C537.9 506.6 529.4 512 520 512L352 512L352 576C352 593.7 337.7 608 320 608C302.3 608 288 593.7 288 576L288 512L120 512C110.6 512 102.1 506.6 98.2 498.1C94.3 489.6 95.6 479.6 101.7 472.5L190.5 368L152 368C142.6 368 134.1 362.6 130.2 354.1C126.3 345.6 127.6 335.6 133.7 328.5L208.9 240L184 240C174.6 240 166.1 234.6 162.2 226.1C158.3 217.6 159.6 207.6 165.7 200.5L301.7 40.5C306.3 35.1 313 32 320 32z"/>
+                                                        </svg>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Title */}
+                                            <h3 className="text-xl font-semibold text-black">
                                                 {pkg.credits.toLocaleString()} credits
+                                            </h3>
+                                            
+                                            {/* Subtitle */}
+                                            <p className="text-sm text-gray-600">
+                                                Premium Package
+                                            </p>
+                                            
+                                            {/* Price - Most Prominent */}
+                                            <div className="text-3xl font-bold text-black">
+                                                ${pkg.price}
                                             </div>
-                                            <div className="text-sm text-gray-500 font-bold">
-                                                <span className="text-xs">$</span>{pkg.price}
-                                            </div>
+                                            
+                                            {/* Additional Info */}
+                                            <p className="text-sm text-gray-600">
+                                                One-time purchase
+                                            </p>
+                                            
+                                            {/* Button */}
+                                            <Button
+                                                variant="default"
+                                                size="lg"
+                                                className={`px-8 py-3 rounded-full font-semibold transition-all text-base ${
+                                                    pkg.popular 
+                                                        ? 'bg-orange-500 hover:bg-orange-600 text-white' 
+                                                        : 'bg-white hover:bg-gray-100 text-black border border-gray-300'
+                                                }`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePurchase(pkg.price);
+                                                }}
+                                            >
+                                                {pkg.popular ? (
+                                                    <div className="flex items-center justify-center space-x-2">
+                                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M8 5V19L19 12L8 5Z"/>
+                                                        </svg>
+                                                        <span>Buy now</span>
+                                                    </div>
+                                                ) : (
+                                                    'Buy now'
+                                                )}
+                                            </Button>
                                         </div>
-                                        
-                                        <Button
-                                            variant="default"
-                                            size="sm"
-                                            className="w-full mt-2 bg-white text-black hover:bg-gray-100 rounded-full px-4 py-1 text-base font-bold"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handlePackageSelect(pkg);
-                                                handleConfirmPurchase();
-                                            }}
-                                        >
-                                            Buy now
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    </div>
-                    
-                    {/* Rules Section */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-bold text-foreground">Rules</h3>
-                        <div className="space-y-2 text-sm text-muted-foreground">
-                            <div className="flex items-start gap-2">
-                                <span className="font-bold">1.</span>
-                                <span>Only Helium Premium and Team versions can buy add-on credits.</span>
+                                    </div>
+                                ))}
                             </div>
-                            <div className="flex items-start gap-2">
-                                <span className="font-bold">2.</span>
-                                <span>Add-on credits can only be used during the membership period and do not expire.</span>
-                            </div>
-                           
                         </div>
+                        
+                        {error && (
+                            <Alert variant="destructive" className="mt-6 border-red-200 bg-red-50">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription className="text-red-800">{error}</AlertDescription>
+                            </Alert>
+                        )}
                     </div>
-                    
-                    {error && (
-                        <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-950/20">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription className="text-red-800 dark:text-red-200">{error}</AlertDescription>
-                        </Alert>
-                    )}
                 </div>
             </DialogContent>
         </Dialog>
