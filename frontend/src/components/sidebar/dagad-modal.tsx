@@ -14,14 +14,17 @@ import {
 } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
-import { Notebook, Eye, Trash2, Loader2, Pencil } from 'lucide-react';
+import { Notebook, Eye, Trash2, Loader2, Pencil, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 type Entry = {
   entry_id: string;
   title: string;
   description?: string;
-  content: string;
+  content?: string;
+  image_url?: string;
+  image_alt_text?: string;
+  image_metadata?: Record<string, any>;
   category: 'instructions' | 'preferences' | 'rules' | 'notes' | 'general';
   priority: 1 | 2 | 3;
   is_active: boolean;
@@ -56,6 +59,14 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const [editCategory, setEditCategory] = useState<'instructions' | 'preferences' | 'rules' | 'notes' | 'general'>('general');
   const [savingEdit, setSavingEdit] = useState(false);
   const [editIsActive, setEditIsActive] = useState<boolean>(true);
+  
+  // Image handling state
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [editSelectedImage, setEditSelectedImage] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [editUploadingImage, setEditUploadingImage] = useState(false);
 
   const fetchEntries = async () => {
     try {
@@ -85,12 +96,81 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     }
   };
 
+  const uploadImage = async (file: File, isEdit: boolean = false): Promise<string | null> => {
+    try {
+      if (isEdit) {
+        setEditUploadingImage(true);
+      } else {
+        setUploadingImage(true);
+      }
+      
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      // Convert file to base64
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // Remove data URL prefix
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch(`${API_BASE}/dagad/upload-image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          base64_data: base64,
+          alt_text: file.name,
+          metadata: { 
+            original_name: file.name,
+            size: file.size,
+            type: file.type 
+          }
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        return data.image_url;
+      } else {
+        const data = await res.json().catch(() => ({}));
+        const detail = data?.detail || res.statusText || 'Unknown error';
+        throw new Error(`Failed to upload image: ${res.status} ${detail}`);
+      }
+    } catch (e) {
+      console.error('Failed to upload image', e);
+      throw e;
+    } finally {
+      if (isEdit) {
+        setEditUploadingImage(false);
+      } else {
+        setUploadingImage(false);
+      }
+    }
+  };
+
   const createEntry = async () => {
-    if (!title.trim() || !content.trim()) return;
+    if (!title.trim() || (!content.trim() && !selectedImage)) return;
+    
     try {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
+
+      let imageUrl: string | null = null;
+      if (selectedImage) {
+        imageUrl = await uploadImage(selectedImage);
+      }
 
       const res = await fetch(`${API_BASE}/dagad`, {
         method: 'POST',
@@ -99,13 +179,26 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         credentials: 'include',
-        body: JSON.stringify({ title, content, category, priority: 1, is_global: false, auto_inject: true }),
+        body: JSON.stringify({ 
+          title, 
+          content: content.trim() || null, 
+          image_url: imageUrl,
+          image_alt_text: selectedImage?.name,
+          category, 
+          priority: 1, 
+          is_global: false, 
+          auto_inject: true 
+        }),
       });
+      
       if (res.ok) {
         setTitle('');
         setContent('');
+        setSelectedImage(null);
+        setImagePreview(null);
         await fetchEntries();
         setErrorMsg(null);
+        toast.success('Entry created successfully');
       } else {
         const data = await res.json().catch(() => ({}));
         const detail = data?.detail || res.statusText || 'Unknown error';
@@ -144,12 +237,32 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     }
   };
 
+  const handleImageSelect = (file: File) => {
+    setSelectedImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleEditImageSelect = (file: File) => {
+    setEditSelectedImage(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setEditImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const openEdit = (entry: Entry) => {
     setEditEntry(entry);
     setEditTitle(entry.title);
-    setEditContent(entry.content);
+    setEditContent(entry.content || '');
     setEditCategory(entry.category);
     setEditIsActive(entry.is_active);
+    setEditImagePreview(entry.image_url || null);
+    setEditSelectedImage(null);
   };
 
   const saveEdit = async () => {
@@ -159,6 +272,12 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
+
+      let imageUrl: string | null = editEntry.image_url || null;
+      if (editSelectedImage) {
+        imageUrl = await uploadImage(editSelectedImage, true);
+      }
+
       const res = await fetch(`${API_BASE}/dagad/${editEntry.entry_id}`, {
         method: 'PUT',
         headers: {
@@ -168,7 +287,9 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
         credentials: 'include',
         body: JSON.stringify({
           title: editTitle,
-          content: editContent,
+          content: editContent.trim() || null,
+          image_url: imageUrl,
+          image_alt_text: editSelectedImage?.name || editEntry.image_alt_text,
           category: editCategory,
           is_active: editIsActive,
         }),
@@ -260,7 +381,55 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                 </select>
               </div>
               <Textarea rows={4} placeholder="Content" value={content} onChange={(e) => setContent(e.target.value)} />
-              <Button onClick={createEntry}>Add Entry</Button>
+              
+              {/* Image Upload Section */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Image (optional)</label>
+                {!imagePreview ? (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageSelect(file);
+                      }}
+                      className="hidden"
+                      id="image-upload"
+                    />
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-600">Click to upload an image</p>
+                      <p className="text-xs text-gray-400">PNG, JPG, GIF up to 10MB</p>
+                    </label>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <img src={imagePreview} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedImage(null);
+                        setImagePreview(null);
+                      }}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <Button onClick={createEntry} disabled={uploadingImage}>
+                {uploadingImage ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Uploading...
+                  </span>
+                ) : (
+                  'Add Entry'
+                )}
+              </Button>
             </CardContent>
           </Card>
 
@@ -287,6 +456,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                            <h3 className="font-medium text-sm truncate">{e.title}</h3>
                            <Badge variant="secondary" className="text-xs">{e.category}</Badge>
                            {e.auto_inject && <Badge variant="destructive" className="text-xs">Auto</Badge>}
+                           {e.image_url && <ImageIcon className="h-4 w-4 text-blue-500" />}
                          </div>
                          <div className="text-xs text-muted-foreground">
                            {new Date(e.created_at).toLocaleString()}
@@ -366,12 +536,25 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                 </div>
               )}
               
-              <div className="p-4 bg-background/50 rounded-md border">
-                <h4 className="font-medium text-sm mb-3">Content</h4>
-                <div className="text-sm whitespace-pre-wrap leading-relaxed">
-                  {selectedEntry.content}
+              {selectedEntry.image_url && (
+                <div className="p-4 bg-background/50 rounded-md border">
+                  <h4 className="font-medium text-sm mb-3">Image</h4>
+                  <img 
+                    src={selectedEntry.image_url} 
+                    alt={selectedEntry.image_alt_text || selectedEntry.title}
+                    className="w-full max-w-md rounded-lg"
+                  />
                 </div>
-              </div>
+              )}
+              
+              {selectedEntry.content && (
+                <div className="p-4 bg-background/50 rounded-md border">
+                  <h4 className="font-medium text-sm mb-3">Content</h4>
+                  <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                    {selectedEntry.content}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
@@ -430,15 +613,56 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
               <option value="general">General</option>
             </select>
             <Textarea rows={6} placeholder="Content" value={editContent} onChange={(e) => setEditContent(e.target.value)} />
+            
+            {/* Image Upload Section for Edit */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Image (optional)</label>
+              {!editImagePreview ? (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleEditImageSelect(file);
+                    }}
+                    className="hidden"
+                    id="edit-image-upload"
+                  />
+                  <label htmlFor="edit-image-upload" className="cursor-pointer">
+                    <Upload className="h-6 w-6 mx-auto text-gray-400 mb-1" />
+                    <p className="text-xs text-gray-600">Click to upload an image</p>
+                  </label>
+                </div>
+              ) : (
+                <div className="relative">
+                  <img src={editImagePreview} alt="Preview" className="w-full h-24 object-cover rounded-lg" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditSelectedImage(null);
+                      setEditImagePreview(editEntry?.image_url || null);
+                    }}
+                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+            </div>
+            
             <div className="flex items-center justify-between pt-1">
               <span className="text-sm text-muted-foreground">Active</span>
               <Switch checked={editIsActive} onCheckedChange={(checked) => setEditIsActive(!!checked)} />
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" onClick={() => setEditEntry(null)} disabled={savingEdit}>Cancel</Button>
-              <Button onClick={saveEdit} disabled={savingEdit}>
-                {savingEdit ? (
-                  <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Saving</span>
+              <Button onClick={saveEdit} disabled={savingEdit || editUploadingImage}>
+                {savingEdit || editUploadingImage ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> 
+                    {editUploadingImage ? 'Uploading...' : 'Saving'}
+                  </span>
                 ) : (
                   'Save'
                 )}

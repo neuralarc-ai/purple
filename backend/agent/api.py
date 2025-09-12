@@ -330,7 +330,7 @@ async def start_agent(
 
     # Use Vertex AI Gemini 2.5 Pro for both local and production environments
     if os.getenv("ENV_MODE", "local").lower() == "production":
-        resolved_model = "vertex_ai/gemini-2.5-pro"
+        resolved_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
 
     # Update model_name to use the resolved version (or forced one)
     model_name = resolved_model
@@ -1074,7 +1074,7 @@ async def initiate_agent_with_files(
 
     if model_name is None:
         # Use Vertex AI Gemini 2.5 Pro for both local and production environments
-        model_name = "vertex_ai/gemini-2.5-pro"
+        model_name = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
         logger.debug(f"Using default model: {model_name}")
 
     # Log the model name after alias resolution
