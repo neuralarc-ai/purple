@@ -52,6 +52,17 @@ export const useModeSelection = () => {
     }
   }, [hasInitialized]);
 
+  // Listen for global switch-to-agent requests (e.g., from message CTA)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handler = () => {
+      setSelectedMode('agent');
+      saveModePreference('agent');
+    };
+    window.addEventListener('switchToAgent', handler as EventListener);
+    return () => window.removeEventListener('switchToAgent', handler as EventListener);
+  }, []);
+
   // Handle mode selection change
   const handleModeChange = (mode: ModeType) => {
     // console.log('🔧 useModeSelection: handleModeChange called with:', mode);
