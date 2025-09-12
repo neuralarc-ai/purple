@@ -193,6 +193,21 @@ class ThreadManager:
                                 message_id=saved_message['message_id'],
                                 model=model or "unknown"
                             )
+                            # Persist usage log for durable accounting of subscription usage
+                            total_tokens = prompt_tokens + completion_tokens
+                            try:
+                                await client.table('usage_logs').insert({
+                                    'user_id': user_id,
+                                    'thread_id': thread_id,
+                                    'message_id': saved_message['message_id'],
+                                    'total_prompt_tokens': prompt_tokens,
+                                    'total_completion_tokens': completion_tokens,
+                                    'total_tokens': total_tokens,
+                                    'estimated_cost': float(token_cost),
+                                    'content': content
+                                }).execute()
+                            except Exception as log_e:
+                                logger.error(f"Failed to insert usage_logs for message {saved_message.get('message_id')}: {str(log_e)}", exc_info=True)
                     except Exception as billing_e:
                         logger.error(f"Error handling credit usage for message {saved_message.get('message_id')}: {str(billing_e)}", exc_info=True)
                 return saved_message
