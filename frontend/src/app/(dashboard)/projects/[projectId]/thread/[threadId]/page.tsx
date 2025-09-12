@@ -132,6 +132,9 @@ export default function ThreadPage({
   } | null>(null);
   const [panelWidth, setPanelWidth] = useState<number | null>(null);
   const [fileViewerWidth, setFileViewerWidth] = useState<number | null>(null);
+  
+  // Track when we are intentionally opening the file viewer so exclusivity effect doesn't fight it
+  const isOpeningFileViewerRef = useRef(false);
 
   // Refs - simplified for flex-column-reverse
   const latestMessageRef = useRef<HTMLDivElement>(null);
@@ -573,17 +576,36 @@ export default function ThreadPage({
 
   const handleOpenFileViewer = useCallback(
     (filePath?: string, filePathList?: string[]) => {
-      // Ensure tool panel is closed before opening file viewer
-      setIsSidePanelOpen(false);
+      // Mark that we are intentionally opening the file viewer
+      isOpeningFileViewerRef.current = true;
+
+      // Update target file states immediately
       if (filePath) {
         setFileToView(filePath);
       } else {
         setFileToView(null);
       }
       setFilePathList(filePathList);
-      setFileViewerOpen(true);
+
+      // If the tool panel is open, close it first to avoid the mutual-exclusive effect
+      // closing the file viewer in the same render frame. Then open the file viewer after
+      // the panel begins closing (match the 200ms panel transition used elsewhere).
+      if (isSidePanelOpen) {
+        // Mark as user-closed to prevent auto-reopen by useToolCalls
+        userClosedPanelRef.current = true;
+        setIsSidePanelOpen(false);
+        setTimeout(() => {
+          setFileViewerOpen(true);
+          // Clear the intent flag after open
+          setTimeout(() => { isOpeningFileViewerRef.current = false; }, 50);
+        }, 210);
+      } else {
+        setFileViewerOpen(true);
+        // Clear the intent flag after open
+        setTimeout(() => { isOpeningFileViewerRef.current = false; }, 50);
+      }
     },
-    [],
+    [isSidePanelOpen, setIsSidePanelOpen],
   );
 
   const toolViewAssistant = useCallback(
@@ -696,7 +718,7 @@ export default function ThreadPage({
 
   // Mutual exclusivity: if tool panel opens, close file viewer
   useEffect(() => {
-    if (isSidePanelOpen && fileViewerOpen) {
+    if (isSidePanelOpen && fileViewerOpen && !isOpeningFileViewerRef.current) {
       setFileViewerOpen(false);
     }
   }, [isSidePanelOpen, fileViewerOpen]);

@@ -15,13 +15,11 @@ import {
   Upload,
   Download,
   ChevronRight,
-  Home,
   ChevronLeft,
   Loader,
   AlertTriangle,
   FileText,
   ChevronDown,
-  Archive,
   Copy,
   Check,
 } from 'lucide-react';
@@ -1325,10 +1323,23 @@ export function FileViewerModal({
     <>
       {/* Mobile/Tablet Dialog (< 1024px) - Only render on mobile */}
       <Dialog open={open && !isDesktop} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-[90vw] md:max-w-[1200px] w-[95vw] h-[90vh] max-h-[900px] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogContent showCloseButton={false} className="sm:max-w-[90vw] md:max-w-[1200px] w-[95vw] h-[90vh] max-h-[900px] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
-          <DialogTitle className="text-lg font-semibold">
-            Workspace Files
+          <DialogTitle className="text-base md:text-lg font-medium truncate max-w-[45vw] flex items-center gap-2">
+            {(() => {
+              const name = selectedFilePath ? selectedFilePath.split('/').pop() || '' : '';
+              const icon = getFileIcon(name);
+              return (
+                <>
+                  {icon ? (
+                      <img src={icon} alt="file icon" className="h-5 w-5 md:h-6 md:w-6" />
+                    ) : (
+                      <File className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+                    )}
+                    <span className="text-sm md:text-base">{name || 'Files'}</span>
+                </>
+              );
+            })()}
           </DialogTitle>
 
           {/* Download progress display */}
@@ -1348,7 +1359,7 @@ export function FileViewerModal({
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             {/* Navigation arrows for file list mode */}
             {(() => {
               return (
@@ -1385,126 +1396,42 @@ export function FileViewerModal({
                 </Button>
               </>
             )}
-          </div>
-        </DialogHeader>
 
-        {/* Navigation Bar */}
-        <div className="px-4 py-2 border-b flex items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={navigateHome}
-            className="h-8 w-8"
-            title="Go to home directory"
-          >
-            <Image
-              src="/icons/home.svg"
-              alt="home Light Logo"
-              width={20}
-              height={20}
-              className="block dark:hidden mb-0"
-            />
-            <Image
-              src="/icons/home-dark.svg"
-              alt="home Dark Logo"
-              width={20}
-              height={20}
-              className="hidden dark:block mb-0"
-            />
-          </Button>
-
-          <div className="flex items-center overflow-x-auto flex-1 min-w-0 scrollbar-hide whitespace-nowrap">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-1 py-[2px] text-sm font-medium min-w-fit flex-shrink-0"
-              onClick={navigateHome}
-            >
-              home
-            </Button>
-
-            {currentPath !== '/workspace' && (
-              <>
-                {getBreadcrumbSegments(currentPath).map((segment) => (
-                  <Fragment key={segment.path}>
-                    <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground opacity-50 flex-shrink-0" />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-sm font-medium truncate max-w-[200px]"
-                      onClick={() => navigateToBreadcrumb(segment.path)}
-                    >
-                      {segment.name}
-                    </Button>
-                  </Fragment>
-                ))}
-              </>
-            )}
-
+            {/* File actions in header */}
             {selectedFilePath && (
               <>
-                <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground opacity-50 flex-shrink-0" />
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium truncate">
-                    {selectedFilePath.split('/').pop()}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {selectedFilePath && (
-              <>
-                {/* Copy content button - only show for text files */}
                 {textContentForRenderer && (
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
                     onClick={handleCopyContent}
                     disabled={isCopyingContent || isCachedFileLoading}
-                    className="h-8 gap-1"
+                    className="h-7 w-7 md:h-8 md:w-8 p-0 px-0 !p-0 !px-0"
+                    title="Copy"
                   >
                     {isCopyingContent ? (
                       <Check className="h-4 w-4" />
                     ) : (
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-3 w-3" />
                     )}
-                    <span className="hidden sm:inline">Copy</span>
                   </Button>
                 )}
 
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="ghost"
+                  size="icon"
                   onClick={handleDownload}
                   disabled={isDownloading || isCachedFileLoading}
-                  className="h-8 gap-1"
+                  className="h-7 w-7 md:h-8 md:w-8 p-0 px-0 !p-0 !px-0"
+                  title="Download"
                 >
                   {isDownloading ? (
                     <Loader className="h-4 w-4 animate-spin" />
                   ) : (
-                   <>
-                   <Image
-                   src="/icons/download.svg"
-                   alt="download Light Logo"
-                   width={20}
-                   height={20}
-                   className="block dark:hidden mb-0"
-                 />
-                 <Image
-                   src="/icons/download-dark.svg"
-                   alt="download Dark Logo"
-                   width={20}
-                   height={20}
-                   className="hidden dark:block mb-0"
-                 />
-                   </>
+                    <Download className="h-3 w-3" />
                   )}
-                  <span className="hidden sm:inline">Download</span>
                 </Button>
 
-                {/* Replace the Export as PDF button with a dropdown */}
                 {isMarkdownFile(selectedFilePath) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -1546,52 +1473,24 @@ export function FileViewerModal({
               </>
             )}
 
-            {!selectedFilePath && (
-              <>
-                {/* Download All button - only show when in home directory */}
-                {currentPath === '/workspace' && (
+            {/* Close button for mobile header */}
                   <Button
-                    variant="outline"
+              variant="ghost"
                     size="sm"
-                    onClick={handleDownloadAll}
-                    disabled={isDownloadingAll || isLoadingFiles}
-                    className="h-8 gap-1"
-                  >
-                    {isDownloadingAll ? (
-                      <Loader className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Archive className="h-4 w-4" />
-                    )}
-                    <span className="hidden sm:inline">Download All</span>
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleOpenChange(false);
+              }}
+              className="h-8 w-8 p-0"
+              title="Close"
+            >
+              ✕
                   </Button>
-                )}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUpload}
-                  disabled={isUploading}
-                  className="h-8 gap-1"
-                >
-                  {isUploading ? (
-                    <Loader className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
-                  <span className="hidden sm:inline">Upload</span>
-                </Button>
-              </>
-            )}
-
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={processUpload}
-              disabled={isUploading}
-            />
           </div>
-        </div>
+        </DialogHeader>
+
+        {/* Navigation Bar removed per request */}
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
@@ -1823,17 +1722,30 @@ export function FileViewerModal({
 
       {/* Desktop Right Panel (≥ 1024px) */}
       {open && isDesktop && (
-       <div className={
-        `fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-2xl z-30 flex flex-col overflow-hidden transition-all duration-200 ${
-          isSidebarExpanded ? 'opacity-0.0 blur-[1px] pointer-events-none' : ''
-        }`
-      }
-      style={{ width: panelWidth }}
-      >
+        <div className={
+        `fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-2xl z-[60] flex flex-col overflow-hidden transition-all duration-200 ${
+            isSidebarExpanded ? 'opacity-0.0 blur-[1px] pointer-events-none' : ''
+          }`
+        }
+        style={{ width: panelWidth }}
+        >
           {/* Header */}
           <div className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
-            <div className="text-lg font-semibold">
-              Workspace Files
+            <div className="text-base md:text-lg font-medium truncate max-w-[45vw] flex items-center gap-2">
+              {(() => {
+                const name = selectedFilePath ? selectedFilePath.split('/').pop() || '' : '';
+                const icon = getFileIcon(name);
+                return (
+                  <>
+                    {icon ? (
+                      <img src={icon} alt="file icon" className="h-5 w-5 md:h-6 md:w-6" />
+                    ) : (
+                      <File className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+                    )}
+                    <span className="text-sm md:text-base">{name || 'Files'}</span>
+                  </>
+                );
+              })()}
             </div>
 
             {/* Download progress display */}
@@ -1891,92 +1803,9 @@ export function FileViewerModal({
                 </>
               )}
               
-              {/* Close button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleOpenChange(false);
-                }}
-                className="h-8 w-8 p-0"
-                title="Close"
-              >
-                ✕
-              </Button>
-            </div>
-          </div>
-
-          {/* Navigation Bar */}
-          <div className="px-4 py-2 border-b flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={navigateHome}
-              className="h-8 w-8"
-              title="Go to home directory"
-            >
-              <Image
-                src="/icons/home.svg"
-                alt="home Light Logo"
-                width={20}
-                height={20}
-                className="block dark:hidden mb-0"
-              />
-              <Image
-                src="/icons/home-dark.svg"
-                alt="home Dark Logo"
-                width={20}
-                height={20}
-                className="hidden dark:block mb-0"
-              />
-            </Button>
-
-            <div className="flex items-center overflow-x-auto flex-1 min-w-0 scrollbar-hide whitespace-nowrap">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-1 py-[2px] text-sm font-medium min-w-fit flex-shrink-0"
-                onClick={navigateHome}
-              >
-                home
-              </Button>
-
-              {currentPath !== '/workspace' && (
-                <>
-                  {getBreadcrumbSegments(currentPath).map((segment) => (
-                    <Fragment key={segment.path}>
-                      <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground opacity-50 flex-shrink-0" />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-sm font-medium truncate max-w-[200px]"
-                        onClick={() => navigateToBreadcrumb(segment.path)}
-                      >
-                        {segment.name}
-                      </Button>
-                    </Fragment>
-                  ))}
-                </>
-              )}
-
+              {/* File actions in header */}
               {selectedFilePath && (
                 <>
-                  <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground opacity-50 flex-shrink-0" />
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium truncate">
-                      {selectedFilePath.split('/').pop()}
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {selectedFilePath && (
-                <>
-                  {/* Copy content button - only show for text files */}
                   {textContentForRenderer && (
                     <Button
                       variant="outline"
@@ -2024,7 +1853,6 @@ export function FileViewerModal({
                     <span className="hidden sm:inline">Download</span>
                   </Button>
 
-                  {/* Replace the Export as PDF button with a dropdown */}
                   {isMarkdownFile(selectedFilePath) && (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -2066,52 +1894,20 @@ export function FileViewerModal({
                 </>
               )}
 
-              {!selectedFilePath && (
-                <>
-                  {/* Download All button - only show when in home directory */}
-                  {currentPath === '/workspace' && (
+              {/* Close button */}
                     <Button
-                      variant="outline"
+                variant="ghost"
                       size="sm"
-                      onClick={handleDownloadAll}
-                      disabled={isDownloadingAll || isLoadingFiles}
-                      className="h-8 gap-1"
-                    >
-                      {isDownloadingAll ? (
-                        <Loader className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Archive className="h-4 w-4" />
-                      )}
-                      <span className="hidden sm:inline">Download All</span>
+                onClick={() => handleOpenChange(false)}
+                className="h-8 w-8 p-0"
+                title="Close"
+              >
+                ✕
                     </Button>
-                  )}
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleUpload}
-                    disabled={isUploading}
-                    className="h-8 gap-1"
-                  >
-                    {isUploading ? (
-                      <Loader className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Upload className="h-4 w-4" />
-                    )}
-                    <span className="hidden sm:inline">Upload</span>
-                  </Button>
-                </>
-              )}
-
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={processUpload}
-                disabled={isUploading}
-              />
             </div>
           </div>
+
+          {/* Navigation Bar removed per request */}
 
           {/* Content Area */}
           <div className="flex-1 overflow-hidden">
