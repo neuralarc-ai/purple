@@ -1846,8 +1846,8 @@ export function FileViewerModal({
       {/* Desktop Right Panel (≥ 1024px) */}
       {open && isDesktop && (
         <div className={
-        `fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-2xl z-[60] flex flex-col overflow-hidden transition-all duration-200 ${
-            isSidebarExpanded ? 'opacity-0.0 blur-[1px] pointer-events-none' : ''
+        `fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-2xl z-29 flex flex-col overflow-hidden transition-all duration-200 ${
+            isSidebarExpanded ? 'opacity-0.0 pointer-events-none' : ''
           }`
         }
         style={{ width: panelWidth }}
