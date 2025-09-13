@@ -64,7 +64,7 @@ class Configuration:
     STRIPE_CREDITS_LARGE_PRICE_ID_PROD: str = 'price_1S2VYHAnxOD5rXBGIL73U202'  # $55.99
     
     # Trial plan - Production
-    STRIPE_TRIAL_PLAN_ID_PROD: str = 'price_1S6d9oAnxOD5rXBGxqv8ZSJZ'  # $1.99 - 1 week trial
+    STRIPE_TRIAL_PLAN_ID_PROD: str = 'price_1S6oPuAnxOD5rXBGc2TGjjXu'  # $1.99 - 1 week trial
     
     # Credit package price IDs - Staging  
     STRIPE_CREDITS_TEST_PRICE_ID_STAGING: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $1.00 - 500 credits (TESTING)
@@ -73,7 +73,7 @@ class Configuration:
     STRIPE_CREDITS_LARGE_PRICE_ID_STAGING: str = 'price_1RxXPYG6l1KZGqIrQprPgDme'  # $55.99
     
     # Trial plan - Staging
-    STRIPE_TRIAL_PLAN_ID_STAGING: str = 'price_1S6d9oAnxOD5rXBGxqv8ZSJZ'  # $1.99 - 1 week trial
+    STRIPE_TRIAL_PLAN_ID_STAGING: str = 'price_1S6oPuAnxOD5rXBGc2TGjjXu'  # $1.99 - 1 week trial
     
     # Feature Flags - Environment Variable Configuration
     # These flags can be controlled via environment variables (e.g., ENABLE_CUSTOM_AGENTS=true)
