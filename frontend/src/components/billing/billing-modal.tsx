@@ -164,14 +164,13 @@ export function BillingModal({ open, onOpenChange, returnUrl = typeof window !==
                                                     
                                                     console.log('Full response:', response);
                                                     console.log('Response data:', response?.data);
-                                                    console.log('Response status:', response?.status);
                                                     
                                                     if (response?.data?.url) {
                                                         console.log('Redirecting to:', response.data.url);
                                                         window.location.href = response.data.url;
-                                                    } else if (response?.url) {
-                                                        console.log('Redirecting to:', response.url);
-                                                        window.location.href = response.url;
+                                                    } else if (response?.data?.session_url) {
+                                                        console.log('Redirecting to:', response.data.session_url);
+                                                        window.location.href = response.data.session_url;
                                                     } else {
                                                         console.error('Unexpected response structure:', response);
                                                         throw new Error('No checkout URL received. Response: ' + JSON.stringify(response));
