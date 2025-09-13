@@ -235,15 +235,15 @@ export default function InvitePage() {
         </div>
 
         {/* Two Card Layout */}
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
           {/* Left Card - Invite Code */}
-          <div className="bg-white flex flex-col justify-center items-center rounded-2xl mb-12 shadow-lg p-6 ">
-            <div className="text-center mb-12">
-              <h2 className="text-xl font-bold text-black mb-2">Have an invite code?</h2>
-              <p className="text-gray-600 text-sm">Enter your code to unlock access instantly.</p>
+          <div className="bg-white h-[500px] sm:h-[550px] lg:h-[600px] flex flex-col justify-center items-center rounded-2xl shadow-lg p-4 sm:p-6">
+            <div className="text-center mb-8 sm:mb-10 lg:mb-12">
+              <h2 className="text-lg sm:text-xl font-bold text-black mb-2">Have an invite code?</h2>
+              <p className="text-gray-600 text-xs sm:text-sm">Enter your code to unlock access instantly.</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4 w-full max-w-sm">
               <div className="space-y-2">
                 <Label htmlFor="inviteCode" className="text-sm font-medium text-black">
                   Invite Code
@@ -257,21 +257,21 @@ export default function InvitePage() {
                     updateInviteData({ inviteCode: value });
                   }}
                   maxLength={7}
-                  className="text-2xl h-12 text-center font-mono border-gray-200"
+                  className="text-xl sm:text-2xl h-10 sm:h-12 text-center font-mono border-gray-200"
                 />
                 {inviteError && (
-                  <p className="text-sm text-red-600">{inviteError}</p>
+                  <p className="text-xs sm:text-sm text-red-600">{inviteError}</p>
                 )}
               </div>
 
               <Button
                 onClick={handleInviteSubmit}
                 disabled={!inviteData.inviteCode.trim() || isSubmitting}
-                className="w-full h-10 bg-gray-800 hover:bg-gray-900 text-white"
+                className="w-full h-9 sm:h-10 bg-gray-800 hover:bg-gray-900 text-white text-sm sm:text-base"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-2" />
                     Validating...
                   </>
                 ) : (
@@ -282,7 +282,7 @@ export default function InvitePage() {
               <Button
                 variant="ghost"
                 onClick={() => setShowWaitlistModal(true)}
-                className="w-full h-10 border border-gray-200 text-gray-600 hover:bg-gray-50"
+                className="w-full h-9 sm:h-10 border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm sm:text-base"
               >
                 Join Waitlist
               </Button>
@@ -290,29 +290,30 @@ export default function InvitePage() {
           </div>
 
           {/* Right Card - Illustration and Trial */}
-          <div className="bg-black rounded-2xl p-6 mb-12 shadow-lg flex flex-col">
-            {/* Illustration */}
-            <div className="flex-1 flex items-center justify-center mb-4">
-              <Image
-                src="/images/Benefit.png"
-                alt="Helium Benefits"
-                width={200}
-                height={100}
-                className="w-full h-full object-center object-cover rounded-lg"
-                priority
-              />
+          <div className="bg-black rounded-2xl shadow-lg flex flex-col h-[500px] sm:h-[550px] lg:h-[600px] overflow-hidden">
+            {/* Illustration - Full Size */}
+            <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
+              <div className="relative w-full h-full">
+                <Image
+                  src="/images/Benefit.png"
+                  alt="Helium Benefits"
+                  fill
+                  className="object-contain rounded-lg"
+                  priority
+                />
+              </div>
             </div>
 
             {/* Trial Button */}
-            <div className="text-center">
+            <div className="text-center p-3 sm:p-4">
               <Button
-                className="w-full h-10 bg-white text-black hover:bg-gray-100 font-semibold"
+                className="w-full h-9 sm:h-10 bg-white text-black hover:bg-gray-100 font-semibold text-sm sm:text-base"
                 onClick={handleStartTrial}
                 disabled={isStartingTrial}
               >
                 {isStartingTrial ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-2" />
                     Starting trial...
                   </>
                 ) : (
