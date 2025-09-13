@@ -1728,65 +1728,115 @@ export function FileViewerModal({
               )}
             </div>
           ) : (
-            /* File Explorer */
-            <div className="h-full w-full">
-              {isLoadingFiles ? (
-                <div className="h-full w-full flex items-center justify-center">
-                  <Loader className="h-6 w-6 animate-spin text-primary" />
+            /* File Explorer with Category Filtering */
+            <div className="h-full w-full flex flex-col">
+              {/* Category Filter Tabs */}
+              <div className="flex-shrink-0 px-4 py-3 border-b">
+                <div className="flex gap-1">
+                  {[
+                    { key: 'all', label: 'All' },
+                    { key: 'documents', label: 'Documents' },
+                    { key: 'images', label: 'Images' },
+                    { key: 'code', label: 'Code' },
+                    { key: 'links', label: 'Links' }
+                  ].map((category) => (
+                    <button
+                      key={category.key}
+                      onClick={() => setSelectedCategory(category.key as any)}
+                      className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                        selectedCategory === category.key
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {category.label}
+                    </button>
+                  ))}
                 </div>
-              ) : files.length === 0 ? (
-                <div className="h-full w-full flex flex-col items-center justify-center">
-                  <Folder className="h-12 w-12 mb-2 text-muted-foreground opacity-30" />
-                  <p className="text-sm text-muted-foreground">
-                    Directory is empty
-                  </p>
-                </div>
-              ) : (
-                <ScrollArea className="h-full w-full p-2">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 p-4">
-                    {files.map((file) => (
-                      <button
-                        key={file.path}
-                        className={`flex flex-col items-center p-3 rounded-2xl border hover:bg-muted/50 transition-colors ${
-                          selectedFilePath === file.path
-                            ? 'bg-muted border-primary/20'
-                            : ''
-                        }`}
-                        onClick={() => {
-                          if (file.is_dir) {
-                            navigateToFolder(file);
-                          } else {
-                            openFile(file);
-                          }
-                        }}
-                      >
-                        <div className="w-12 h-12 flex items-center justify-center mb-1">
-                          {file.is_dir ? (
-                            <Folder className="h-9 w-9 text-blue-500" />
-                          ) : (
-                           
-                            (() => {
-                              const iconPath = getFileIcon(file.name);
-                              return iconPath ? (
-                                <img 
-                                  src={iconPath} 
-                                  alt={`${file.name} icon`}
-                                  className="h-10 w-10 object-contain"
-                                />
-                              ) : (
-                                <File className="h-8 w-8 text-muted-foreground" />
-                              );
-                            })()
-                          )}
-                        </div>
-                        <span className="text-xs text-center font-medium truncate max-w-full">
-                          {file.name}
-                        </span>
-                      </button>
-                    ))}
+              </div>
+
+              {/* File List */}
+              <div className="flex-1 overflow-hidden">
+                {isLoadingFiles ? (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <Loader className="h-6 w-6 animate-spin text-primary" />
                   </div>
-                </ScrollArea>
-              )}
+                ) : (() => {
+                  const filteredFiles = getFilteredFiles();
+                  return filteredFiles.length === 0 ? (
+                    <div className="h-full w-full flex flex-col items-center justify-center">
+                      <Folder className="h-12 w-12 mb-2 text-muted-foreground opacity-30" />
+                      <p className="text-sm text-muted-foreground">
+                        {selectedCategory === 'all' ? 'Directory is empty' : `No ${selectedCategory} found`}
+                      </p>
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-full w-full">
+                      {/* List View */}
+                      <div className="p-4">
+                        <div className="space-y-1">
+                          {filteredFiles.map((file) => (
+                            <button
+                              key={file.path}
+                              className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left ${
+                                selectedFilePath === file.path
+                                  ? 'bg-muted border-primary/20'
+                                  : ''
+                              }`}
+                              onClick={() => {
+                                if (file.is_dir) {
+                                  navigateToFolder(file);
+                                } else {
+                                  openFile(file);
+                                }
+                              }}
+                            >
+                              {/* File Icon */}
+                              <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                                {file.is_dir ? (
+                                  <Folder className="h-6 w-6 text-blue-500" />
+                                ) : (() => {
+                                  const iconPath = getFileIcon(file.name);
+                                  return iconPath ? (
+                                    <img 
+                                      src={iconPath} 
+                                      alt={`${file.name} icon`}
+                                      className="h-6 w-6 object-contain"
+                                    />
+                                  ) : (
+                                    <File className="h-5 w-5 text-muted-foreground" />
+                                  );
+                                })()
+                                }
+                              </div>
+                              
+                              {/* File Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm truncate">
+                                  {file.name}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {formatFileDate(file.mod_time)} • {file.size ? `${Math.round(file.size / 1024)}KB` : '—'}
+                                </div>
+                              </div>
+                              
+                              {/* File Type Badge */}
+                              <div className="flex-shrink-0">
+                                {!file.is_dir && (
+                                  <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                                    {file.name.split('.').pop()?.toUpperCase() || 'FILE'}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </ScrollArea>
+                  );
+                })()
+                }
+              </div>
             </div>
           )}
         </div>
