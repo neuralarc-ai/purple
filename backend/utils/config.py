@@ -59,15 +59,15 @@ class Configuration:
     
     # Credit package price IDs - Production
     STRIPE_CREDITS_TEST_ID_PROD: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $1.00 - 500 credits (TESTING)
-    STRIPE_CREDITS_SMALL_PRICE_ID_PROD: str = 'price_1S2VXvAnxOD5rXBGylPu8TTc'  # $11.99
-    STRIPE_CREDITS_MEDIUM_PRICE_ID_PROD: str = 'price_1S2VY6AnxOD5rXBGWs7gO2rv'  # $28.99
-    STRIPE_CREDITS_LARGE_PRICE_ID_PROD: str = 'price_1S2VYHAnxOD5rXBGIL73U202'  # $55.99
+    STRIPE_CREDITS_SMALL_PRICE_ID_PROD: str = 'price_1S2VXvAnxOD5rXBGylPu8TTc'  # $9.99 - 5,000 credits
+    STRIPE_CREDITS_MEDIUM_PRICE_ID_PROD: str = 'price_1S2VY6AnxOD5rXBGWs7gO2rv'  # $18.99 - 10,000 credits
+    STRIPE_CREDITS_LARGE_PRICE_ID_PROD: str = 'price_1S2VYHAnxOD5rXBGIL73U202'  # $44.99 - 25,000 credits
     
     # Credit package price IDs - Staging  
     STRIPE_CREDITS_TEST_PRICE_ID_STAGING: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $1.00 - 500 credits (TESTING)
-    STRIPE_CREDITS_SMALL_PRICE_ID_STAGING: str = 'price_1RxXOvG6l1KZGqIrMqsiYQvk'  # $11.99
-    STRIPE_CREDITS_MEDIUM_PRICE_ID_STAGING: str = 'price_1RxXPNG6l1KZGqIrQprPgDme'  # $28.99
-    STRIPE_CREDITS_LARGE_PRICE_ID_STAGING: str = 'price_1RxXPYG6l1KZGqIrQprPgDme'  # $55.99
+    STRIPE_CREDITS_SMALL_PRICE_ID_STAGING: str = 'price_1RxXOvG6l1KZGqIrMqsiYQvk'  # $9.99 - 5,000 credits
+    STRIPE_CREDITS_MEDIUM_PRICE_ID_STAGING: str = 'price_1RxXPNG6l1KZGqIrQprPgDme'  # $18.99 - 10,000 credits
+    STRIPE_CREDITS_LARGE_PRICE_ID_STAGING: str = 'price_1RxXPYG6l1KZGqIrQprPgDme'  # $44.99 - 25,000 credits
     
     # Feature Flags - Environment Variable Configuration
     # These flags can be controlled via environment variables (e.g., ENABLE_CUSTOM_AGENTS=true)

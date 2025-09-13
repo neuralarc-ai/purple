@@ -33,9 +33,9 @@ interface CreditPackage {
 }
 
 const CREDIT_PACKAGES: CreditPackage[] = [
-    { credits: 1000, price: 11.99, creditsPerDollar: 83.4 },
-    { credits: 2500, price: 28.99, creditsPerDollar: 86.2 },
-    { credits: 5000, price: 55.99, popular: true, creditsPerDollar: 89.3 },
+    { credits: 5000, price: 9.99, creditsPerDollar: 500.5 },
+    { credits: 10000, price: 18.99, creditsPerDollar: 526.6 },
+    { credits: 25000, price: 44.99, popular: true, creditsPerDollar: 555.7 },
 ];
 
 export function CreditPurchaseModal({ 
@@ -176,17 +176,17 @@ export function CreditPurchaseModal({
                                             {/* Icon */}
                                             <div className="flex justify-center">
                                                 <div className="flex items-center justify-center w-16 h-16 bg-gray-100 rounded-lg">
-                                                    {pkg.credits === 1000 && (
+                                                    {pkg.credits === 5000 && (
                                                         <svg className="w-8 h-8 text-gray-600" fill="currentColor" viewBox="0 0 640 640">
                                                             <path d="M535.3 70.7C541.7 64.6 551 62.4 559.6 65.2C569.4 68.5 576 77.7 576 88L576 274.9C576 406.1 467.9 512 337.2 512C260.2 512 193.8 462.5 169.7 393.3C134.3 424.1 112 469.4 112 520C112 533.3 101.3 544 88 544C74.7 544 64 533.3 64 520C64 445.1 102.2 379.1 160.1 340.3C195.4 316.7 237.5 304 280 304L360 304C373.3 304 384 293.3 384 280C384 266.7 373.3 256 360 256L280 256C240.3 256 202.7 264.8 169 280.5C192.3 210.5 258.2 160 336 160C402.4 160 451.8 137.9 484.7 116C503.9 103.2 520.2 87.9 535.4 70.7z"/>
                                                         </svg>
                                                     )}
-                                                    {pkg.credits === 2500 && (
+                                                    {pkg.credits === 10000 && (
                                                         <svg className="w-8 h-8 text-gray-600" fill="currentColor" viewBox="0 0 640 640">
                                                             <path d="M576 96C576 204.1 499.4 294.3 397.6 315.4C389.7 257.3 363.6 205 325.1 164.5C365.2 104 433.9 64 512 64L544 64C561.7 64 576 78.3 576 96zM64 160C64 142.3 78.3 128 96 128L128 128C251.7 128 352 228.3 352 352L352 544C352 561.7 337.7 576 320 576C302.3 576 288 561.7 288 544L288 384C164.3 384 64 283.7 64 160z"/>
                                                         </svg>
                                                     )}
-                                                    {pkg.credits === 5000 && (
+                                                    {pkg.credits === 25000 && (
                                                         <svg className="w-8 h-8 text-black" fill="currentColor" viewBox="0 0 640 640">
                                                             <path d="M320 32C327 32 333.7 35.1 338.3 40.5L474.3 200.5C480.4 207.6 481.7 217.6 477.8 226.1C473.9 234.6 465.4 240 456 240L431.1 240L506.3 328.5C512.4 335.6 513.7 345.6 509.8 354.1C505.9 362.6 497.4 368 488 368L449.5 368L538.3 472.5C544.4 479.6 545.7 489.6 541.8 498.1C537.9 506.6 529.4 512 520 512L352 512L352 576C352 593.7 337.7 608 320 608C302.3 608 288 593.7 288 576L288 512L120 512C110.6 512 102.1 506.6 98.2 498.1C94.3 489.6 95.6 479.6 101.7 472.5L190.5 368L152 368C142.6 368 134.1 362.6 130.2 354.1C126.3 345.6 127.6 335.6 133.7 328.5L208.9 240L184 240C174.6 240 166.1 234.6 162.2 226.1C158.3 217.6 159.6 207.6 165.7 200.5L301.7 40.5C306.3 35.1 313 32 320 32z"/>
                                                         </svg>
@@ -196,7 +196,7 @@ export function CreditPurchaseModal({
                                             
                                             {/* Title */}
                                             <h3 className="text-xl font-semibold text-black">
-                                                {pkg.credits.toLocaleString()} credits
+                                                {pkg.credits.toLocaleString()}<br />credits
                                             </h3>
                                             
                                             {/* Subtitle */}
