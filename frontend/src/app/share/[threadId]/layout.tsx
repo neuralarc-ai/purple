@@ -18,9 +18,14 @@ export async function generateMetadata({ params }): Promise<Metadata> {
 
   try {
     const threadData = await getThread(threadId);
+    
+    if (!threadData || !threadData.project_id) {
+      return fallbackMetaData;
+    }
+    
     const projectData = await getProject(threadData.project_id);
 
-    if (!threadData || !projectData) {
+    if (!projectData) {
       return fallbackMetaData;
     }
 

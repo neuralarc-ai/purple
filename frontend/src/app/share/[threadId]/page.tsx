@@ -329,7 +329,7 @@ export default function ThreadPage({
           }),
           getMessages(threadId).catch((err) => {
             console.warn('Failed to load messages:', err);
-            return [];
+            return [] as BaseApiMessageType[];
           }),
         ]);
 
@@ -727,7 +727,7 @@ export default function ThreadPage({
           isStreamingText={playbackState.isStreamingText}
           currentToolCall={playbackState.currentToolCall}
           sandboxId={sandboxId || ''}
-          project={project}
+          project={project || undefined}
         />
         {renderWelcomeOverlay()}
         {renderFloatingControls()}
@@ -746,7 +746,7 @@ export default function ThreadPage({
         currentIndex={currentToolIndex}
         onNavigate={handleSidePanelNavigate}
         externalNavigateToIndex={externalNavIndex}
-        project={project}
+        project={project || undefined}
         onFileClick={handleOpenFileViewer}
       />
 
@@ -755,7 +755,7 @@ export default function ThreadPage({
         onOpenChange={setFileViewerOpen}
         sandboxId={sandboxId || ''}
         initialFilePath={fileToView}
-        project={project}
+        project={project || undefined}
       />
     </div>
   );

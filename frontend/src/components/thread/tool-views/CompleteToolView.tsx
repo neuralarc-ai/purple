@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
   CheckCircle2,
   CheckCircle,
-  AlertTriangle,
   Loader2,
   ListChecks,
   Sparkles,
@@ -218,7 +217,7 @@ export function CompleteToolView({
               <div className="space-y-1">
                 <div>
                   <Markdown className="text-sm leading-none prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 [&>:last-child]:mb-0">
-                    {text || completeData.summary || completeData.result}
+                    {(text || completeData.summary || completeData.result) ?? ''}
                   </Markdown>
                 </div>
               </div>
@@ -365,7 +364,7 @@ export function CompleteToolView({
                       </div>
                       <div className="flex-1 min-w-0">
                         <Markdown className="text-sm leading-none prose prose-sm dark:prose-invert chat-markdown max-w-none [&>:first-child]:mt-0 [&>:last-child]:mb-0">
-                          {task}
+                          {task ?? ''}
                         </Markdown>
                       </div>
                     </div>

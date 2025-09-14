@@ -244,15 +244,15 @@ export function PhoneVerificationPage({
             <h3 className="font-semibold">Debug Info:</h3>
             {aalData && (
               <div>
-                <strong>AAL:</strong> {aalData.current_level} →{' '}
-                {aalData.next_level}
-                (action: {aalData.action_required})
+                <strong>AAL:</strong> {aalData?.current_level} →{' '}
+                {aalData?.next_level}
+                (action: {aalData?.action_required})
               </div>
             )}
             {factors && (
               <div>
                 <strong>Factors:</strong>{' '}
-                {factors.factors
+                {factors?.factors
                   ?.map((f) => `${f.factor_type}:${f.status}:${f.id}`)
                   .join(', ') || 'none'}
               </div>

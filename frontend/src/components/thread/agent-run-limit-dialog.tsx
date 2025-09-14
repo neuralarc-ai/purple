@@ -203,7 +203,7 @@ export const AgentRunLimitDialog: React.FC<AgentRunLimitDialogProps> = ({
       // Get thread name from first user message if available
       let threadName = '';
       if (threadQuery.data?.messages?.length > 0) {
-        const firstUserMessage = threadQuery.data.messages.find((msg: any) => msg.type === 'user');
+        const firstUserMessage = threadQuery.data?.messages?.find((msg: any) => msg.type === 'user');
         if (firstUserMessage?.content) {
           threadName = firstUserMessage.content.substring(0, 50);
           if (firstUserMessage.content.length > 50) threadName += '...';

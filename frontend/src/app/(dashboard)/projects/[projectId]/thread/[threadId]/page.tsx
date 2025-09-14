@@ -866,7 +866,7 @@ export default function ThreadPage({
         debugMode={debugMode}
         isMobile={isMobile}
         initialLoadCompleted={initialLoadCompleted}
-        agentName={agent && agent.name}
+        agentName={agent?.name || undefined}
       >
         <ThreadError error={error} />
       </ThreadLayout>
@@ -913,7 +913,7 @@ export default function ThreadPage({
         debugMode={debugMode}
         isMobile={isMobile}
         initialLoadCompleted={initialLoadCompleted}
-        agentName={agent && agent.name}
+        agentName={agent?.name || undefined}
         disableInitialAnimation={!initialLoadCompleted && toolCalls.length > 0}
         onLogManual={async (payload) => {
           try {
@@ -938,10 +938,10 @@ export default function ThreadPage({
           handleOpenFileViewer={handleOpenFileViewer}
           readOnly={false}
           streamHookStatus={streamHookStatus}
-          sandboxId={sandboxId}
-          project={project}
+          sandboxId={sandboxId || undefined}
+          project={project || undefined}
           debugMode={debugMode}
-          agentName={agent && agent.name}
+          agentName={agent?.name || undefined}
           agentAvatar={undefined}
           agentMetadata={agent?.metadata}
           agentData={agent}
@@ -1055,7 +1055,7 @@ export default function ThreadPage({
                 onFileBrowse={handleOpenFileViewer}
                 sandboxId={sandboxId || undefined}
                 messages={messages}
-                agentName={agent && agent.name}
+                agentName={agent?.name || undefined}
                 selectedAgentId={selectedAgentId}
                 onAgentSelect={setSelectedAgent}
                 toolCalls={toolCalls}

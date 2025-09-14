@@ -387,7 +387,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
         preferredName: userProfile.preferred_name,
         workDescription: userProfile.work_description && !workOptions.includes(userProfile.work_description) ? 'Other' : normalizeWorkDescription(userProfile.work_description),
         personalReferences: userProfile.personal_references || '',
-        avatar_url: userProfile.avatar_url,
+        avatar_url: userProfile.avatar_url || DEFAULT_AVATAR_URL,
       });
       
       // Handle custom role display

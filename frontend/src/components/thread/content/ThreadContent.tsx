@@ -248,7 +248,7 @@ export function renderMarkdownContent(
             <div key={`tool-${match?.index}-${index}`} className="my-1">
               <button
                 onClick={() => handleToolClick(messageId, toolName)}
-                className="inline-flex items-center gap-1.5 py-1 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
+                className="inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
               >
                 <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600">
                   <IconComponent className="h-3 w-3 z-40 text text-muted-foreground flex-shrink-0" />
@@ -1717,9 +1717,9 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
 
                     {/* Tool call content */}
                     <div className="space-y-2">
-                      <div className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-medium text-primary bg-primary/10 rounded-md border border-primary/20">
-                        <CircleDashed className="h-3.5 w-3.5 text-primary flex-shrink-0 animate-spin animation-duration-2000" />
-                        <span className="font-mono text-xs text-primary">
+                      <div className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar">
+                        <CircleDashed className="h-3 w-3 z-40 text text-muted-foreground flex-shrink-0" />
+                        <span className="font-mono text-xs text-accent-foreground font-medium">
                           {currentToolCall.name || 'Using Tool'}
                         </span>
                       </div>

@@ -128,7 +128,7 @@ const formatErrorMessage = (message: string, context?: ErrorContext): string => 
     return message;
   }
 
-  const parts = [];
+  const parts: string[] = [];
   
   if (context.operation) {
     parts.push(`Failed to ${context.operation}`);

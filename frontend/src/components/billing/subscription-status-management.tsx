@@ -63,12 +63,12 @@ export default function SubscriptionStatusManagement({
 
   // Get the effective cancellation date (could be period end or cancel_at for yearly commitments)
   const getEffectiveCancellationDate = () => {
-    if (subscription.cancel_at) {
+    if (subscription?.cancel_at) {
       // Yearly commitment cancellation - use cancel_at timestamp
       return formatDate(subscription.cancel_at);
     }
     // Regular cancellation - use current period end
-    return formatDate(subscription.current_period_end);
+    return formatDate(subscription?.current_period_end || 0);
   };
 
   const formatEndDate = (dateString: string) => {

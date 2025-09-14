@@ -158,7 +158,7 @@ export const AgentTriggersConfiguration: React.FC<AgentTriggersConfigurationProp
         <Dialog open={!!configuringProvider} onOpenChange={() => setConfiguringProvider(null)}>
           <TriggerConfigDialog
             provider={configuringProvider}
-            existingConfig={editingTrigger}
+            existingConfig={editingTrigger || undefined}
             onSave={handleSaveTrigger}
             onCancel={() => setConfiguringProvider(null)}
             isLoading={createTriggerMutation.isPending || updateTriggerMutation.isPending}

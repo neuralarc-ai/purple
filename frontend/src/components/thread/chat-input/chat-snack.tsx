@@ -44,7 +44,7 @@ export const ChatSnack: React.FC<ChatSnackProps> = ({
     const [currentView, setCurrentView] = React.useState(0);
 
     // Determine what notifications we have - match exact rendering conditions
-    const notifications = [];
+    const notifications: ('tool' | 'usage')[] = [];
 
     // Tool notification: only if we have tool calls and showToolPreview is true
     if (showToolPreview && toolCalls.length > 0) {
