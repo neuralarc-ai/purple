@@ -24,6 +24,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Notebook, Trash2, Loader2, Pencil, Upload, X, Image as ImageIcon, Info, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 type Entry = {
   entry_id: string;
@@ -592,7 +593,32 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
                   {/* Category */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground/80">Category</label>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium text-foreground/80">Category</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label="Category help"
+                            className="inline-flex h-5 w-5 items-center justify-center rounded hover:bg-muted/50 text-muted-foreground"
+                          >
+                            <Info className="h-4 w-4" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-80 text-sm">
+                          <div className="space-y-2">
+                            <div className="font-medium">Category guide</div>
+                            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                              <li><span className="text-foreground">Instructions</span> → Step-by-step tasks.</li>
+                              <li><span className="text-foreground">Preferences</span> → Style, tone, format choices.</li>
+                              <li><span className="text-foreground">Rules</span> → Strict constraints to follow.</li>
+                              <li><span className="text-foreground">Notes</span> → Context or references.</li>
+                              <li><span className="text-foreground">General</span> → Anything else.</li>
+                            </ul>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                     <Select value={category} onValueChange={(value) => setCategory(value as any)}>
                       <SelectTrigger className="bg-background/50 border-border/50">
                         <SelectValue placeholder="Select category" />
