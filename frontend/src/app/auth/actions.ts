@@ -37,8 +37,8 @@ async function checkUserOnboardingStatus(userId: string) {
       .single();
 
     if (profileError && profileError.code === 'PGRST116') {
-      // No profile found - user needs onboarding
-      return '/onboarding';
+      // No profile found - send user to invite flow first
+      return '/invite';
     } else if (profileData) {
       // User has profile - redirect to dashboard
       return '/dashboard';

@@ -102,6 +102,8 @@ SUBSCRIPTION_TIERS = {
     # Yearly tiers (same usage limits, different billing period) - displayed as monthly equivalent
     config.STRIPE_TIER_RIDICULOUSLY_CHEAP_YEARLY_ID: {'name': 'tier_ridiculously_cheap', 'minutes': 120, 'cost': 540.00},  # 54,000 credits/month (billed yearly)
     config.STRIPE_TIER_SERIOUS_BUSINESS_YEARLY_ID: {'name': 'tier_serious_business', 'minutes': 360, 'cost': 1380.00},  # 138,000 credits/month (billed yearly)
+    # Trial plan
+    config.STRIPE_TRIAL_PLAN_ID: {'name': 'trial', 'minutes': 60, 'cost': 1.99},  # 1 week trial
 }
 
 # Pydantic models for request/response validation
@@ -111,6 +113,10 @@ class CreateCheckoutSessionRequest(BaseModel):
     cancel_url: str
     tolt_referral: Optional[str] = None
     commitment_type: Optional[str] = "monthly"  # "monthly" or "yearly"
+
+class CreateTrialCheckoutRequest(BaseModel):
+    success_url: str
+    cancel_url: str
 
 class CreatePortalSessionRequest(BaseModel):
     return_url: str
@@ -1174,6 +1180,86 @@ async def create_checkout_session(
             error_detail = str(e)
         raise HTTPException(status_code=500, detail=f"Error creating checkout session: {error_detail}")
 
+@router.post("/create-trial-checkout")
+async def create_trial_checkout(
+    request: CreateTrialCheckoutRequest,
+    current_user_id: str = Depends(get_current_user_id_from_jwt)
+):
+    """Create a Stripe Checkout session for the 1-week trial plan."""
+    try:
+        # Get Supabase client
+        db = DBConnection()
+        client = await db.client
+        
+        # Get user email from auth.users
+        user_result = await client.auth.admin.get_user_by_id(current_user_id)
+        if not user_result: 
+            raise HTTPException(status_code=404, detail="User not found")
+        email = user_result.user.email
+        
+        # Get or create Stripe customer
+        customer_id = await get_stripe_customer_id(client, current_user_id)
+        if not customer_id: 
+            customer_id = await create_stripe_customer(client, current_user_id, email)
+        
+        # Get the trial price ID
+        trial_price_id = config.STRIPE_TRIAL_PLAN_ID
+        
+        # Verify the price exists
+        try:
+            price = await stripe.Price.retrieve_async(trial_price_id, expand=['product'])
+            product_id = price['product']['id']
+        except stripe.error.InvalidRequestError:
+            raise HTTPException(status_code=400, detail=f"Invalid trial price ID: {trial_price_id}")
+        
+        # Check if user already has an active subscription
+        existing_subscription = await get_user_subscription(current_user_id)
+        if existing_subscription:
+            # User already has a subscription, redirect to onboarding instead
+            return {
+                "status": "existing_subscription",
+                "message": "You already have an active subscription. Redirecting to onboarding.",
+                "redirect_url": request.success_url
+            }
+        
+        # Create checkout session for trial (one-time payment)
+        session = await stripe.checkout.Session.create_async(
+            customer=customer_id,
+            payment_method_types=['card'],
+            line_items=[{'price': trial_price_id, 'quantity': 1}],
+            mode='payment',  # Trial is a one-time payment, not a subscription
+            success_url=request.success_url,
+            cancel_url=request.cancel_url,
+            metadata={
+                'user_id': current_user_id,
+                'product_id': product_id,
+                'plan_type': 'trial',
+                'trial_days': '7'  # Track trial period in metadata
+            },
+            allow_promotion_codes=True
+        )
+        
+        # Update customer status to potentially active (will be confirmed by webhook)
+        await client.schema('basejump').from_('billing_customers').update(
+            {'active': True}
+        ).eq('id', customer_id).execute()
+        logger.debug(f"Updated customer {customer_id} active status to TRUE after creating trial checkout session")
+        
+        return {
+            "session_id": session['id'], 
+            "url": session['url'], 
+            "status": "trial_checkout"
+        }
+        
+    except Exception as e:
+        logger.exception(f"Error creating trial checkout session: {str(e)}")
+        # Check if it's a Stripe error with more details
+        if hasattr(e, 'json_body') and e.json_body and 'error' in e.json_body:
+            error_detail = e.json_body['error'].get('message', str(e))
+        else:
+            error_detail = str(e)
+        raise HTTPException(status_code=500, detail=f"Error creating trial checkout session: {error_detail}")
+
 @router.post("/create-portal-session")
 async def create_portal_session(
     request: CreatePortalSessionRequest,
@@ -1486,6 +1572,49 @@ async def stripe_webhook(request: Request):
                     # Don't fail the webhook, but log the error
                 
                 return {"status": "success", "message": "Credit purchase processed"}
+            
+            # Check if this is a trial payment
+            elif session.get('metadata', {}).get('plan_type') == 'trial':
+                user_id = session['metadata']['user_id']
+                trial_days = int(session['metadata'].get('trial_days', '7'))
+                payment_intent_id = session.get('payment_intent')
+                
+                logger.debug(f"Processing trial payment for user {user_id}: {trial_days} days")
+                
+                try:
+                    # Create a trial subscription record
+                    trial_end_date = datetime.now(timezone.utc) + timedelta(days=trial_days)
+                    
+                    # Insert trial subscription record
+                    trial_subscription = await client.table('subscriptions').insert({
+                        'user_id': user_id,
+                        'stripe_subscription_id': f"trial_{payment_intent_id}",
+                        'stripe_customer_id': session['customer'],
+                        'status': 'trialing',
+                        'current_period_start': datetime.now(timezone.utc).isoformat(),
+                        'current_period_end': trial_end_date.isoformat(),
+                        'trial_end': trial_end_date.isoformat(),
+                        'plan_name': 'trial',
+                        'created_at': datetime.now(timezone.utc).isoformat(),
+                        'updated_at': datetime.now(timezone.utc).isoformat()
+                    }).execute()
+                    
+                    # Update customer status to active
+                    await client.schema('basejump').from_('billing_customers').update(
+                        {'active': True}
+                    ).eq('id', session['customer']).execute()
+                    
+                    logger.info(f"Successfully created trial subscription for user {user_id} until {trial_end_date}")
+                    
+                    # Clear cache for this user
+                    await Cache.delete(f"monthly_usage:{user_id}")
+                    await Cache.delete(f"user_subscription:{user_id}")
+                    
+                except Exception as e:
+                    logger.error(f"Error processing trial payment: {str(e)}")
+                    # Don't fail the webhook, but log the error
+                
+                return {"status": "success", "message": "Trial payment processed"}
         
         # Handle payment failed for credit purchases
         if event.type == 'payment_intent.payment_failed':

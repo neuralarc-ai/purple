@@ -105,10 +105,11 @@ function LoginContent() {
   const handleSignIn = async (prevState: any, formData: FormData) => {
     markEmailAsUsed();
 
+    // Only pass through an explicit returnUrl if provided by the caller.
+    // Do not force a default here so the backend can route first-time users
+    // through /invite -> /onboarding before /dashboard.
     if (returnUrl) {
       formData.append('returnUrl', returnUrl);
-    } else {
-      formData.append('returnUrl', '/dashboard');
     }
     const result = await signIn(prevState, formData);
 
@@ -248,15 +249,15 @@ function LoginContent() {
               <MailCheck className="h-12 w-12 text-green-500" />
             </div>
 
-            <h1 className="text-3xl font-semibold text-foreground mb-4">
+            <h1 className="text-3xl font-semibold text-black mb-4">
               Check your email
             </h1>
 
-            <p className="text-muted-foreground mb-2">
+            <p className="text-muted-foreground  mb-2">
               We've sent a confirmation link to:
             </p>
 
-            <p className="text-lg font-medium mb-6">
+            <p className="text-lg font-medium text-black mb-6">
               {registrationEmail || 'your email address'}
             </p>
 
@@ -472,28 +473,26 @@ function LoginContent() {
                   </div>
                 </div>
               </form>
-              {/* Sign up/Sign in link - only show if not in production */}
-              {!isProduction && (
-                <div className="mt-4 text-center text-sm">
-                  <Link
-                    href={
-                      isSignUp
-                        ? `/auth${returnUrl ? `?returnUrl=${returnUrl}` : ''}`
-                        : `/auth?mode=signup${returnUrl ? `&returnUrl=${returnUrl}` : ''}`
-                    }
-                    className="text-muted-foreground"
-                  >
-                    {isSignUp ? (
-                      'Already have an account? Sign in'
-                    ) : (
-                      <>
-                        Don’t have an account?{' '}
-                        <span className="text-black font-medium dark:max-[480px]:text-[#949494]">SignUp</span>
-                      </>
-                    )}
-                  </Link>
-                </div>
-              )}
+              {/* Sign up/Sign in link - show in all environments */}
+              <div className="mt-4 text-center text-sm">
+                <Link
+                  href={
+                    isSignUp
+                      ? `/auth${returnUrl ? `?returnUrl=${returnUrl}` : ''}`
+                      : `/auth?mode=signup${returnUrl ? `&returnUrl=${returnUrl}` : ''}`
+                  }
+                  className="text-muted-foreground"
+                >
+                  {isSignUp ? (
+                    'Already have an account? Sign in'
+                  ) : (
+                    <>
+                      Don’t have an account?{' '}
+                      <span className="text-black font-medium dark:max-[480px]:text-[#949494]">SignUp</span>
+                    </>
+                  )}
+                </Link>
+              </div>
               {/* Social login section */}
               {
                 <>
