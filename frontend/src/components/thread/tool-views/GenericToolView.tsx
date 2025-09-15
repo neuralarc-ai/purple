@@ -859,7 +859,12 @@ export function GenericToolView({
     const safeOutput = typeof output === 'string' ? output : String(output);
 
     // Try to parse the error output to extract meaningful information
-    let errorInfo = {
+    let errorInfo: {
+      type: string;
+      message: string;
+      details: any;
+      suggestions: string[];
+    } = {
       type: 'general',
       message: safeOutput,
       details: null,

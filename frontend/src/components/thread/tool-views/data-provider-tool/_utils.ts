@@ -78,8 +78,8 @@ const parseDataProviderCall = (message: string) => {
   const tagRegex = /<execute-data-provider-call\b(?=[^>]*\bservice_name="([^"]+)")(?=[^>]*\broute="([^"]+)")[^>]*>/;
   const tagMatch = message.match(tagRegex);
 
-  let serviceName = null;
-  let route = null;
+  let serviceName: string | null = null;
+  let route: string | null = null;
 
   if (tagMatch) {
     serviceName = tagMatch[1];
@@ -89,7 +89,7 @@ const parseDataProviderCall = (message: string) => {
   const contentRegex = /<execute-data-provider-call\b[^>]*>\s*(\{[\s\S]*?\})\s*<\/execute-data-provider-call>/;
   const contentMatch = message.match(contentRegex);
 
-  let jsonContent = null;
+  let jsonContent: any = null;
   if (contentMatch) {
     let jsonString = contentMatch[1].trim();
     jsonString = jsonString.replace(/\\"/g, '"');

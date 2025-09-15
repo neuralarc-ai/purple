@@ -356,7 +356,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       type="button"
                       size="icon"
                       variant="outline"
-                      className="w-8 h-8 flex-shrink-0 dark:border-muted-foreground/30 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
+                      className="w-8 h-8 flex-shrink-0 dark:border-muted-foreground/20 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
                       disabled={
                         !isLoggedIn ||
                         loading ||
@@ -381,7 +381,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                         type="button"
                         size="icon"
                         variant="outline"
-                        className="w-8 h-8 flex-shrink-0 dark:border-muted-foreground/30 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
+                        className="w-8 h-8 flex-shrink-0 dark:border-muted-foreground/20 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
                         disabled={
                           !isLoggedIn ||
                           loading ||
@@ -405,7 +405,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                   variant="ghost"                  
                   onClick={handleImprovePrompt}
                   className={cn(
-                    'h-8 w-8 bg-transparent dark:border-muted-foreground/30 shadow-none group transition-all duration-200 text-sm relative overflow-hidden',
+                    'h-8 w-8 bg-transparent dark:border-muted-foreground/20 shadow-none group transition-all duration-200 text-sm relative overflow-hidden',
                     'border border-muted-foreground/20 rounded-full bg-white dark:bg-sidebar hover:bg-background/50! ',
                     'disabled:opacity-100',
                     isImprovingPrompt && 'cursor-not-allowed border-none'

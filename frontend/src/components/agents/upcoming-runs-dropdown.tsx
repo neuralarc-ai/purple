@@ -106,7 +106,7 @@ const RunItem: React.FC<RunItemProps> = ({ run }) => {
 export const UpcomingRunsDropdown: React.FC<UpcomingRunsDropdownProps> = ({ agentId }) => {
   const { data: upcomingRuns, isLoading, error } = useAgentUpcomingRuns(agentId, 5);
   const [isOpen, setIsOpen] = useState(false);
-  const hasRuns = upcomingRuns?.upcoming_runs?.length > 0;
+  const hasRuns = (upcomingRuns?.upcoming_runs?.length || 0) > 0;
   return (
     <TooltipProvider>
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -170,15 +170,15 @@ export const UpcomingRunsDropdown: React.FC<UpcomingRunsDropdownProps> = ({ agen
           </DropdownMenuItem>
         )}
         
-        {hasRuns && upcomingRuns.upcoming_runs.map((run) => (
+        {hasRuns && upcomingRuns?.upcoming_runs?.map((run) => (
           <RunItem key={run.trigger_id} run={run} />
         ))}
         
-        {hasRuns && upcomingRuns.total_count > 5 && (
+        {hasRuns && (upcomingRuns?.total_count || 0) > 5 && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-center text-sm text-muted-foreground">
-              Showing 5 of {upcomingRuns.total_count} upcoming runs
+              Showing 5 of {upcomingRuns?.total_count || 0} upcoming runs
             </DropdownMenuItem>
           </>
         )}

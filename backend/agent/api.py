@@ -323,7 +323,6 @@ async def start_agent(
     # Use model from request or apply mode-based default
     model_name = body.model_name
     logger.debug(f"Original model_name from request: {model_name}")
-
     # In default mode, force Gemini Flash for the entire run
     if (body.mode or 'default') == 'default':
         model_name = "vertex_ai/gemini-2.5-flash"

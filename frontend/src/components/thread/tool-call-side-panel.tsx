@@ -291,13 +291,8 @@ export function ToolCallSidePanel({
 
     const screenWidth = window.innerWidth;
 
-    if (screenWidth >= 1920) return Math.min(800, screenWidth * 0.4);
-    if (screenWidth >= 1500) return Math.min(750, screenWidth * 0.35);
-    if (screenWidth >= 1366) return Math.min(700, screenWidth * 0.4);
-    if (screenWidth >= 1280) return Math.min(600, screenWidth * 0.45);
-    if (screenWidth >= 1024) return Math.min(500, screenWidth * 0.5);
-
-    return Math.min(400, screenWidth * 0.6);
+    // Default to 50% width for all screen sizes to maintain 50-50 split
+    return Math.floor(screenWidth * 0.45);
   };
 
   const [panelWidth, setPanelWidth] = React.useState<number | null>(null);
@@ -630,7 +625,7 @@ export function ToolCallSidePanel({
     // Default desktop behavior (≥1228px)
     if (isLeftSidebarExpanded) {
       return {
-        widthClass: 'w-[40vw]',
+        widthClass: 'w-[50vw]',
         panelStyle: {
           minWidth: `${minWidth}px`,
           maxWidth: `${maxWidth}px`,
@@ -639,7 +634,7 @@ export function ToolCallSidePanel({
       };
     } else {
       return {
-        widthClass: 'w-[45vw]',
+        widthClass: 'w-[50vw]',
         panelStyle: {
           minWidth: `${minWidth}px`,
           maxWidth: `${maxWidth}px`,
@@ -1163,7 +1158,7 @@ export function ToolCallSidePanel({
                     <div className="ml-2 flex items-center gap-2">
                       <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                         {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                        Helium's Core
+                        Helium Core
                       </h2>
                       {agentStatus === 'running' && (
                         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800">
@@ -1208,28 +1203,9 @@ export function ToolCallSidePanel({
               <div className="ml-2 flex items-center gap-2">
                 <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                   {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                  Helium's Core
+                  Helium Core
                 </h2>
-                {/* {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                  <div className={cn(
-                    "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                    agentStatus === 'running'
-                      ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                      : "bg-blue-50 text-blue-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                  )}>
-                    {agentStatus === 'running' ? (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                        <span>{formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                        <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                      </>
-                    )}
-                  </div>
-                )} */}
+
               </div>
               <Button
                 variant="ghost"
@@ -1277,28 +1253,9 @@ export function ToolCallSidePanel({
                 <div className="ml-2 flex items-center gap-2">
                   <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                     {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                    Helium's Core
+                    Helium Core
                   </h2>
-                  {/* {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                    <div className={cn(
-                      "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                      agentStatus === 'running'
-                        ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                        : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                    )}>
-                      {agentStatus === 'running' ? (
-                        <>
-                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                          <span>{formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                          <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                        </>
-                      )}
-                    </div>
-                  )} */}
+
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 flex items-center gap-1.5">
@@ -1344,28 +1301,9 @@ export function ToolCallSidePanel({
               <div className="ml-2 flex items-center gap-2">
                 <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                   {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                  Helium's Core
+                  Helium Core
                 </h2>
-                {/* {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                  <div className={cn(
-                    "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                    agentStatus === 'running'
-                      ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                      : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                  )}>
-                    {agentStatus === 'running' ? (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                        <span>{formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                        <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                      </>
-                    )}
-                  </div>
-                )} */}
+
               </div>
               <Button
                 variant="ghost"
@@ -1416,28 +1354,9 @@ export function ToolCallSidePanel({
             <motion.div layoutId="tool-icon" className="ml-2 flex items-center gap-2">
               <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                 {/* {agentName ? `${agentName}'s Computer` : 'Helium\'s Brain'} */}
-                Helium's Core
+                Helium Core
               </h2>
-              {(agentStatus === 'running' || finalRuntime !== null || databaseRuntime > 0) && (
-                <div className={cn(
-                  "flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border",
-                  agentStatus === 'running'
-                    ? "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800"
-                    : "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                )}>
-                  {agentStatus === 'running' ? (
-                    <>
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                      <span>{formatElapsedTime(databaseRuntime + accumulatedTime + elapsedTime)}</span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                      <span>Total: {formatElapsedTime(databaseRuntime + (finalRuntime || 0))}</span>
-                    </>
-                  )}
-                </div>
-              )}
+
             </motion.div>
 
             {displayToolCall.toolResult?.content && !isStreaming && (
@@ -1540,10 +1459,12 @@ export function ToolCallSidePanel({
           }}
         >
           {shouldShowResizable && (
+
             <div
-              className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize z-50 hover:bg-green-500/20 active:bg-green-500/40 transition-colors"
+              className="absolute left-0 top-0 bottom-0 w-0.5 cursor-ew-resize z-50 hover:bg-green-500/20 active:bg-green-500/40 transition-colors"
               onMouseDown={handleMouseDown}
             >
+              
               <div className="absolute left-0.5 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-green-500/50 rounded-full" />
             </div>
           )}

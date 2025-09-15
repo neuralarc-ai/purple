@@ -35,6 +35,7 @@ import { ComposioUrlDetector } from './composio-url-detector';
 import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
 import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 // Helper function to render all attachments as standalone messages
@@ -120,7 +121,7 @@ export function renderMarkdownContent(
 
     while ((match = functionCallsRegex.exec(content)) !== null) {
       // Add text before the function_calls block
-      if (match.index > lastIndex) {
+      if (match && match.index > lastIndex) {
         const textBeforeBlock = content.substring(lastIndex, match.index);
         if (textBeforeBlock.trim()) {
           contentParts.push(
@@ -154,7 +155,7 @@ export function renderMarkdownContent(
 
           // Render ask tool content with attachment UI
           contentParts.push(
-            <div key={`ask-${match.index}-${index}`} className="space-y-3">
+            <div key={`ask-${match?.index}-${index}`} className="space-y-3">
               <ComposioUrlDetector
                 content={askText}
                 className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
@@ -179,7 +180,7 @@ export function renderMarkdownContent(
           );
           if (standaloneAttachments) {
             contentParts.push(
-              <div key={`ask-func-attachments-${match.index}-${index}`}>
+              <div key={`ask-func-attachments-${match?.index}-${index}`}>
                 {standaloneAttachments}
               </div>,
             );
@@ -198,7 +199,7 @@ export function renderMarkdownContent(
 
           // Render complete tool content with attachment UI
           contentParts.push(
-            <div key={`complete-${match.index}-${index}`} className="space-y-3">
+            <div key={`complete-${match?.index}-${index}`} className="space-y-3">
               <ComposioUrlDetector
                 content={completeText}
                 className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
@@ -223,7 +224,7 @@ export function renderMarkdownContent(
           );
           if (standaloneAttachments) {
             contentParts.push(
-              <div key={`complete-func-attachments-${match.index}-${index}`}>
+              <div key={`complete-func-attachments-${match?.index}-${index}`}>
                 {standaloneAttachments}
               </div>,
             );
@@ -244,10 +245,10 @@ export function renderMarkdownContent(
           }
 
           contentParts.push(
-            <div key={`tool-${match.index}-${index}`} className="my-1">
+            <div key={`tool-${match?.index}-${index}`} className="my-1">
               <button
                 onClick={() => handleToolClick(messageId, toolName)}
-                className="inline-flex items-center gap-1.5 py-1 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
+                className="inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
               >
                 <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600">
                   <IconComponent className="h-3 w-3 z-40 text text-muted-foreground flex-shrink-0" />
@@ -269,7 +270,7 @@ export function renderMarkdownContent(
         }
       });
 
-      lastIndex = match.index + match[0].length;
+      lastIndex = (match?.index || 0) + match[0].length;
     }
 
     // Add any remaining text after the last function_calls block
@@ -318,7 +319,7 @@ export function renderMarkdownContent(
 
   while ((match = xmlRegex.exec(content)) !== null) {
     // Add text before the tag as markdown
-    if (match.index > lastIndex) {
+    if (match && match.index > lastIndex) {
       const textBeforeTag = content.substring(lastIndex, match.index);
       contentParts.push(
         <ComposioUrlDetector
@@ -332,7 +333,7 @@ export function renderMarkdownContent(
 
     const rawXml = match[0];
     const toolName = match[1] || match[2];
-    const toolCallKey = `tool-${match.index}`;
+    const toolCallKey = `tool-${match?.index}`;
 
     if (toolName === 'ask') {
       // Extract attachments from the XML attributes
@@ -347,7 +348,7 @@ export function renderMarkdownContent(
 
       // Render <ask> tag content with attachment UI (using the helper)
       contentParts.push(
-        <div key={`ask-${match.index}`} className="space-y-3">
+        <div key={`ask-${match?.index}`} className="space-y-3">
           <ComposioUrlDetector
             content={askContent}
             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
@@ -372,7 +373,7 @@ export function renderMarkdownContent(
       );
       if (standaloneAttachments) {
         contentParts.push(
-          <div key={`ask-attachments-${match.index}`}>
+          <div key={`ask-attachments-${match?.index}`}>
             {standaloneAttachments}
           </div>,
         );
@@ -392,7 +393,7 @@ export function renderMarkdownContent(
 
       // Render <complete> tag content with attachment UI (using the helper)
       contentParts.push(
-        <div key={`complete-${match.index}`} className="space-y-3">
+        <div key={`complete-${match?.index}`} className="space-y-3">
           <ComposioUrlDetector
             content={completeContent}
             className="text-sm xl:text-base prose prose-sm dark:prose-invert chat-markdown max-w-none break-words [&>:first-child]:mt-0 prose-headings:mt-3"
@@ -417,7 +418,7 @@ export function renderMarkdownContent(
       );
       if (standaloneAttachments) {
         contentParts.push(
-          <div key={`complete-attachments-${match.index}`}>
+          <div key={`complete-attachments-${match?.index}`}>
             {standaloneAttachments}
           </div>,
         );
@@ -843,6 +844,8 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
     ? 'flex-1 overflow-y-auto scrollbar-none py-4 pb-0'
     : 'flex-1 overflow-y-auto scrollbar-none py-4 pb-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60';
 
+  const isMobile = useIsMobile();
+
   // In playback mode, we use visibleMessages instead of messages
   const displayMessages =
     readOnly && visibleMessages ? visibleMessages : messages;
@@ -957,7 +960,10 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
       !currentToolCall &&
       agentStatus === 'idle' ? (
         // Render empty state outside scrollable container
-        <div className="flex-1 min-h-[60vh] flex items-center justify-center">
+        <div className={cn(
+          "flex-1 min-h-[60vh] flex items-center justify-center",
+          isMobile && "pt-15"
+        )}>
           {emptyStateComponent || (
             <div className="text-center text-muted-foreground">
               {readOnly
@@ -970,7 +976,10 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
         // Render scrollable content container with column-reverse
         <div
           ref={scrollContainerRef || messagesContainerRef}
-          className={`${containerClassName} flex flex-col-reverse ${shouldJustifyToTop ? 'justify-end min-h-full' : ''}`}
+          className={cn(
+            `${containerClassName} flex flex-col-reverse ${shouldJustifyToTop ? 'justify-end min-h-full' : ''}`,
+            isMobile && "pt-15"
+          )}
           onScroll={handleScroll}
           style={isSidePanelOpen ? { overflowX: 'hidden' } : {}}
         >
@@ -1708,9 +1717,9 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
 
                     {/* Tool call content */}
                     <div className="space-y-2">
-                      <div className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-3 text-xs font-medium text-primary bg-primary/10 rounded-md border border-primary/20">
-                        <CircleDashed className="h-3.5 w-3.5 text-primary flex-shrink-0 animate-spin animation-duration-2000" />
-                        <span className="font-mono text-xs text-primary">
+                      <div className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar">
+                        <CircleDashed className="h-3 w-3 z-40 text text-muted-foreground flex-shrink-0" />
+                        <span className="font-mono text-xs text-accent-foreground font-medium">
                           {currentToolCall.name || 'Using Tool'}
                         </span>
                       </div>

@@ -89,7 +89,7 @@ function extractUploadData(assistantContent: any, toolContent: any): {
       const parsed = JSON.parse(toolStr);
       
       // Handle nested tool_execution structure
-      let resultData = null;
+      let resultData: any = null;
       if (parsed.tool_execution && parsed.tool_execution.result) {
         resultData = parsed.tool_execution.result;
       } else if (parsed.output) {

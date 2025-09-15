@@ -257,7 +257,7 @@ export function DashboardContent() {
 
       // Handle mode-based configuration asynchronously
       if (options?.mode) {
-        const modeConfig = getModeConfiguration(options.mode, options.enable_thinking);
+        const modeConfig = getModeConfiguration(options.mode, options.enable_thinking ?? false);
         formData.append('enable_thinking', String(options.enable_thinking ?? false));
         formData.append('reasoning_effort', modeConfig.reasoning_effort);
         formData.append('enable_context_manager', String(modeConfig.enable_context_manager));

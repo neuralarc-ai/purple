@@ -59,7 +59,7 @@ const imageVariants = {
 
 export default function FeaturesSection() {
     return (
-        <section className="py-16 md:py-32">
+        <section className="py-12 md:py-18 md:mt-6">
             <div className="mx-auto max-w-5xl space-y-12 px-6">
                 <motion.div 
                     className="relative z-10 grid items-center justify-center text-center gap-4 md:gap-12"
@@ -91,7 +91,7 @@ export default function FeaturesSection() {
                     viewport={{ once: true, margin: "-100px" }}
                     variants={cardVariants}
                 >
-                    <Card className="mx-auto mt-8 grid grid-cols-3 divide-x divide-white/20 overflow-hidden shadow-zinc-950/5 *:text-center md:mt-16 bg-black/20 border-white/30">
+                    <Card className="mx-auto mt-8 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/20 overflow-hidden shadow-zinc-950/5 *:text-center md:mt-16 bg-black/20 border-white/30">
                         <div className="group shadow-zinc-950/5">
                             <CardHeader className="pb-3">
                                 <CardDecorator>

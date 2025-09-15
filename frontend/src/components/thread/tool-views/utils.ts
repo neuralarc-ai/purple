@@ -1156,7 +1156,7 @@ export function extractSearchResults(
     
     // Fallback: Look for individual result objects
     const resultObjectPattern = /\{\s*"url":\s*"([^"]+)"\s*,\s*"title":\s*"([^"]+)"\s*,\s*"content":\s*"([^"]*)"[^}]*\}/g;
-    const results = [];
+    const results: { url: string; title: string; snippet: string; }[] = [];
     let match;
     
     while ((match = resultObjectPattern.exec(contentStr)) !== null) {

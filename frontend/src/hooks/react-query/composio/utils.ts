@@ -322,19 +322,22 @@ export const composioApi = {
 
   async getCredentialsProfiles(): Promise<ComposioToolkitGroup[]> {
     const response = await backendApi.get<ComposioCredentialsResponse>('/secure-mcp/composio-profiles');
-    return response.data.toolkits;
+    return response.data?.toolkits ?? [];
   },
 
   async getMcpUrl(profileId: string): Promise<ComposioMcpUrlResponse> {
     const response = await backendApi.get<ComposioMcpUrlResponse>(`/secure-mcp/composio-profiles/${profileId}/mcp-url`);
+    if (!response.data) {
+      throw new Error('Failed to get MCP URL');
+    }
     return response.data;
   },
 
   async getToolkitIcon(toolkitSlug: string): Promise<{ success: boolean; icon_url?: string }> {
     const response = await backendApi.get<{ success: boolean; toolkit_slug: string; icon_url?: string; message?: string }>(`/composio/toolkits/${toolkitSlug}/icon`);
     return {
-      success: response.data.success,
-      icon_url: response.data.icon_url
+      success: response.data?.success ?? false,
+      icon_url: response.data?.icon_url
     };
   },
 

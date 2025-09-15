@@ -35,6 +35,7 @@ import { useFeatureFlags } from '@/lib/feature-flags';
 import posthog from 'posthog-js';
 import Image from 'next/image';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
+import { DagadModal } from './dagad-modal';
 
 // Custom Plus Icon component using the plus.svg
 const PlusIcon = ({ className }: { className?: string }) => (
@@ -215,6 +216,7 @@ export function SidebarLeft({
   const { flags, loading: flagsLoading } = useFeatureFlags(['custom_agents']);
   const customAgentsEnabled = flags.custom_agents;
   const { preferredName, profile } = useUserProfileWithFallback();
+  const [showDagadModal, setShowDagadModal] = useState(false);
 
   // Close mobile menu on page navigation
   useEffect(() => {
@@ -279,7 +281,7 @@ export function SidebarLeft({
             <HeliumLogo size={18} />
           </Link>
           {state !== 'collapsed' && (
-            <div className="ml-2 transition-all duration-200 ease-in-out whitespace-nowrap"></div>
+            <div className="ml-2 transition-all duration-300 ease-in-out whitespace-nowrap"></div>
           )}
           <div className="ml-auto flex items-center gap-2">
             {state !== 'collapsed' && !isMobile && (
@@ -304,10 +306,10 @@ export function SidebarLeft({
         )}
       </SidebarHeader>
       <SidebarContent className="[&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] pt-0">
-        <SidebarGroup className="space-y-2">
+        <SidebarGroup className="space-y-1">
           <Link href="/dashboard">
             <SidebarMenuButton
-              className={cn('touch-manipulation', {
+              className={cn('touch-manipulation transition-all duration-300 ease-in-out', {
                 'bg-accent px-4 text-accent-foreground font-medium':
                   pathname === '/dashboard',
               })}
@@ -317,16 +319,29 @@ export function SidebarLeft({
               }}
               tooltip="New Task"
             >
-              <NewTaskIcon className="mr-1" />
-              <span className="flex items-center justify-between w-full">
+              <NewTaskIcon className="mr-1 transition-all duration-300 ease-in-out" />
+              <span className="flex items-center justify-between w-full transition-all duration-300 ease-in-out">
                 New Task
               </span>
             </SidebarMenuButton>
           </Link>
+          <SidebarMenuButton
+            className="touch-manipulation transition-all duration-300 ease-in-out"
+            onClick={() => {
+              setShowDagadModal(true);
+              if (isMobile) setOpenMobile(false);
+            }}
+            tooltip="Knowledge Base"
+          >
+            <i className="ri-book-open-line text-base mr-1 transition-all duration-300 ease-in-out" />
+            <span className="flex items-center justify-between w-full transition-all duration-300 ease-in-out">
+              Knowledge Base
+            </span>
+          </SidebarMenuButton>
           {!flagsLoading && customAgentsEnabled && (
             <Link href="/agents?tab=my-agents">
               <SidebarMenuButton
-                className={cn('touch-manipulation', {
+                className={cn('touch-manipulation transition-all duration-300 ease-in-out', {
                   'bg-accent px-4 text-accent-foreground font-medium':
                     pathname === '/agents',
                 })}
@@ -335,8 +350,8 @@ export function SidebarLeft({
                 }}
                 tooltip="Agents"
               >
-                <BotIcon className="mr-1" />
-                <span className="flex items-center justify-between w-full">
+                <BotIcon className="mr-1.5 transition-all duration-300 ease-in-out" />
+                <span className="flex items-center justify-between w-full transition-all duration-300 ease-in-out">
                   My Agents
                 </span>
               </SidebarMenuButton>
@@ -352,12 +367,12 @@ export function SidebarLeft({
                 onClick={() => {
                   if (isMobile) setOpenMobile(false);
                 }}
-                className="touch-manipulation px-4.5"
+                className="touch-manipulation px-4 transition-all duration-300 ease-in-out"
                 tooltip="Prompt Library"
               >
                 <Link href="/prompt-library" className="flex items-center">
-                  <PromptLibraryIcon className="mr-1.5" />
-                  <span>Prompt Library</span>
+                  <PromptLibraryIcon className="mr-1.5 transition-all duration-300 ease-in-out" />
+                  <span className="transition-all duration-300 ease-in-out">Prompt Library</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -374,6 +389,12 @@ export function SidebarLeft({
         <NavUserWithTeams user={user} />
       </SidebarFooter>
       <SidebarRail />
+      
+      {/* DAGAD Modal */}
+      <DagadModal 
+        open={showDagadModal} 
+        onOpenChange={setShowDagadModal} 
+      />
     </Sidebar>
   );
 }

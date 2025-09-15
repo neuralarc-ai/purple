@@ -531,10 +531,13 @@ export default function AgentConfigurationPage() {
               <div className="pt-4">
 
                 
-                {isViewingOldVersion && (
+                {isViewingOldVersion && versionData && (
                   <div className="mb-4 px-8">
                     <VersionAlert
-                      versionData={versionData}
+                      versionData={{
+                        version_id: versionData.version_id,
+                        version_name: versionData.version_name
+                      }}
                       isActivating={activateVersionMutation.isPending}
                       onActivateVersion={handleActivateVersion}
                     />
@@ -569,14 +572,21 @@ export default function AgentConfigurationPage() {
               <ConfigurationTab
                 agentId={agentId}
                 displayData={displayData}
-                versionData={versionData}
+                versionData={versionData ? {
+                  version_id: versionData.version_id,
+                  configured_mcps: versionData.configured_mcps,
+                  custom_mcps: versionData.custom_mcps,
+                  system_prompt: versionData.system_prompt,
+                  model: versionData.model,
+                  agentpress_tools: versionData.agentpress_tools
+                } : undefined}
                 isViewingOldVersion={isViewingOldVersion}
                 onFieldChange={handleFieldChange}
                 onMCPChange={handleMCPChange}
                 onSystemPromptSave={handleSystemPromptSave}
                 onModelSave={handleModelSave}
                 onToolsSave={handleToolsSave}
-                initialAccordion={initialAccordion}
+                initialAccordion={initialAccordion || undefined}
                 agentMetadata={agent?.metadata}
                 isLoading={isSaving}
               />
@@ -593,10 +603,13 @@ export default function AgentConfigurationPage() {
             <div className="flex-shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="py-2">
 
-                {isViewingOldVersion && (
+                {isViewingOldVersion && versionData && (
                   <div className="mb-4 px-8">
                     <VersionAlert
-                      versionData={versionData}
+                      versionData={{
+                        version_id: versionData.version_id,
+                        version_name: versionData.version_name
+                      }}
                       isActivating={activateVersionMutation.isPending}
                       onActivateVersion={handleActivateVersion}
                     />
@@ -630,14 +643,21 @@ export default function AgentConfigurationPage() {
               <ConfigurationTab
                 agentId={agentId}
                 displayData={displayData}
-                versionData={versionData}
+                versionData={versionData ? {
+                  version_id: versionData.version_id,
+                  configured_mcps: versionData.configured_mcps,
+                  custom_mcps: versionData.custom_mcps,
+                  system_prompt: versionData.system_prompt,
+                  model: versionData.model,
+                  agentpress_tools: versionData.agentpress_tools
+                } : undefined}
                 isViewingOldVersion={isViewingOldVersion}
                 onFieldChange={handleFieldChange}
                 onMCPChange={handleMCPChange}
                 onSystemPromptSave={handleSystemPromptSave}
                 onModelSave={handleModelSave}
                 onToolsSave={handleToolsSave}
-                initialAccordion={initialAccordion}
+                initialAccordion={initialAccordion || undefined}
                 agentMetadata={agent?.metadata}
                 isLoading={isSaving}
               />

@@ -316,6 +316,125 @@ IMPORTANT: Always reference and utilize the knowledge base information above whe
                 logger.error(f"Error retrieving knowledge base context for agent {agent_config.get('agent_id', 'unknown')}: {e}")
                 # Continue without knowledge base context rather than failing
         
+        # Add smart user DAGAD context and user personalization if available (context-aware, not always)
+        if client and thread_id:
+            try:
+                # --- Fetch recent thread context for DAGAD ---
+                account_id = await get_account_id_from_thread(client, thread_id)
+                # Build small recent thread context for relevance
+                messages_result = await client.table('messages').select('content').eq('thread_id', thread_id).order('created_at', desc=True).limit(5).execute()
+                context_parts: List[str] = []
+                for m in messages_result.data or []:
+                    content = m.get('content', '')
+                    if isinstance(content, dict):
+                        content = content.get('content', '')
+                    if content:
+                        context_parts.append(str(content)[:200])
+                thread_context_str = ' '.join(context_parts)
+
+                # --- Add smart user DAGAD context (only in agent mode) ---
+                if account_id and user_input and mode == 'agent':
+                    dagad_result = await client.rpc('get_smart_user_dagad_context', {
+                        'p_user_id': account_id,
+                        'p_user_input': user_input,
+                        'p_thread_context': thread_context_str,
+                        'p_max_tokens': 2000
+                    }).execute()
+
+                    if dagad_result.data and isinstance(dagad_result.data, str) and dagad_result.data.strip():
+                        dagad_section = f"""
+
+=== USER PREFERENCES & INSTRUCTIONS ===
+{dagad_result.data}
+=== END USER PREFERENCES & INSTRUCTIONS ===
+"""
+                        system_content += dagad_section
+                    else:
+                        logger.debug("No relevant DAGAD context for this turn")
+                elif mode == 'default':
+                    logger.debug("DAGAD context skipped in chat mode (default)")
+
+                # --- Add user personalization ---
+                if account_id:
+                    result = await (
+                        client
+                            .table('user_personalization')
+                            .select('preferred_name, occupation, profile, vibe, custom_touch')
+                            .eq('user_id', account_id)
+                            .maybe_single()
+                            .execute()
+                    )
+
+                    pdata = result.data if result and hasattr(result, 'data') else None
+                    if pdata:
+                        preferred_name = (pdata.get('preferred_name') or '').strip()
+                        occupation = (pdata.get('occupation') or '').strip()
+                        profile_text = (pdata.get('profile') or '').strip()
+                        vibe = (pdata.get('vibe') or '').strip()
+                        custom_touch = (pdata.get('custom_touch') or '').strip()
+
+                        # Skip empty section if all fields are blank
+                        if any([preferred_name, occupation, profile_text, vibe, custom_touch]):
+                            personalization_section = "\n\n=== USER PERSONALIZATION ===\n"
+
+                            # Add user identification
+                            if preferred_name:
+                                personalization_section += f"Preferred name: {preferred_name}\n"
+
+                            # Add professional context
+                            if occupation:
+                                personalization_section += f"Occupation: {occupation}\n"
+
+                            # Add user profile/bio
+                            if profile_text:
+                                personalization_section += f"Profile: {profile_text}\n"
+
+                            # Add traits with specific handling instructions
+                            if vibe:
+                                personalization_section += f"Traits: {vibe}\n"
+
+                            # Add custom instructions as explicit rules
+                            if custom_touch:
+                                personalization_section += f"Custom instructions: {custom_touch}\n"
+
+                            # Comprehensive trait-based response adaptation
+                            personalization_section += """
+=== TRAIT-BASED RESPONSE ADAPTATION ===
+CRITICAL: Adapt your responses based on the user's traits and personalization. Use the preferred name to address the user directly. Tailor examples and domain context based on occupation and profile. Apply custom instructions as explicit rules for response generation.
+
+TRAIT HANDLING EXAMPLES:
+- Chatty → Give friendly, conversational replies that feel like a natural chat; include relevant details, context, and examples, and keep the tone casual, approachable, and engaging
+- Witty → Respond with clever humor, playful wordplay, and light-hearted observations; keep the tone sharp, engaging, and fun while staying clear and professional
+- Straight Shooting → Keep answers direct, concise, and no-nonsense; focus on actionable steps, key points, or recommendations without extra fluff
+- Encouraging → Respond positively and supportively, highlighting progress, strengths, and potential; motivate the user with constructive feedback and optimism
+- Gen Z → Make responses ultra-playful, hype, and emoji-packed; use modern slang naturally (like "low-key," "vibe check," "no cap," "TBH," "fr," "bet") throughout; keep language casual, snappy, fun, and hyper-relatable; inject energy, excitement, and hype into every reply; make sentences punchy, engaging, and slightly over-the-top while staying clear and easy to understand.
+- Skeptical → Ask thoughtful, probing questions and constructively challenge assumptions; critically evaluate statements, highlight potential flaws or uncertainties, and encourage careful reasoning
+- Traditional → Maintain a formal, respectful, and conventional tone; use polite language, proper grammar, and professional phrasing suitable for business or classical correspondence
+- Forward Thinking → Emphasize innovation, future-oriented ideas, and cutting-edge approaches; explore emerging trends, anticipate challenges, and suggest visionary solutions
+- Poetic → Use creative, expressive language with metaphors, lyrical rhythm, and a touch of elegance; maintain clarity of meaning while showcasing artistic flair
+
+MULTIPLE TRAITS: When multiple traits are selected, blend them smoothly and naturally. For example:
+- Witty + Straight Shooting → Clever but concise responses
+- Encouraging + Gen Z → Supportive with modern, upbeat language
+- Traditional + Forward Thinking → Respectful tone while discussing innovation
+
+RESPONSE ADAPTATION RULES:
+1. Always use the preferred name when addressing the user
+2. Incorporate occupation-specific examples and domain knowledge
+3. Reference profile information to provide relevant context
+4. Follow custom instructions as explicit behavioral rules
+5. Adjust tone, style, and detail level based on traits
+6. Blend multiple traits harmoniously when present
+7. Ensure every response feels personally tailored to this user
+
+Remember: Every response should feel like it was crafted specifically for this individual user, taking into account their personality, professional background, and communication preferences.
+"""
+                            system_content += personalization_section
+                    else:
+                        logger.debug("No user personalization found")
+            except Exception as e:
+                logger.error(f"Error retrieving user context or personalization: {e}")
+
         if agent_config and (agent_config.get('configured_mcps') or agent_config.get('custom_mcps')) and mcp_wrapper_instance and mcp_wrapper_instance._initialized:
             mcp_info = "\n\n--- MCP Tools Available ---\n"
             mcp_info += "You have access to external MCP (Model Context Protocol) server tools.\n"

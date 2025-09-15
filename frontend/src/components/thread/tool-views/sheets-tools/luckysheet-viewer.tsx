@@ -236,7 +236,7 @@ export function LuckysheetViewer({ xlsxPath, sandboxId, className, height }: Luc
               
               if (cellStyle && typeof cellStyle === 'object') {
                 if (cellStyle.fgColor || cellStyle.bgColor || cellStyle.patternType) {
-                  let bgColor = null;
+                  let bgColor: string | null = null;
                   if (cellStyle.fgColor?.rgb) {
                     bgColor = cellStyle.fgColor.rgb;
                   } else if (cellStyle.bgColor?.rgb) {

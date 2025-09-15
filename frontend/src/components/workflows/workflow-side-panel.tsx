@@ -337,7 +337,10 @@ export function WorkflowSidePanel({
                                         value={selectedStep.conditions?.expression || ''}
                                         onChange={(e) => onUpdateStep({
                                             id: selectedStep.id,
-                                            conditions: { ...selectedStep.conditions, expression: e.target.value }
+                                            conditions: { 
+                                                type: selectedStep.conditions?.type || 'if',
+                                                expression: e.target.value 
+                                            }
                                         })}
                                         placeholder="Enter condition expression"
                                         className="mt-1"

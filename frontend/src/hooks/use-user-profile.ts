@@ -24,6 +24,7 @@ export function useUserProfileWithFallback() {
     error.message.includes('No authentication token') ||
     error.message.includes('HTTP 401')
   );
+  const isNotFound = error instanceof Error && error.message.includes('Profile not found');
   
   // If profile exists, return the preferred name, otherwise return null
   const preferredName = profile?.preferred_name || null;
@@ -32,7 +33,7 @@ export function useUserProfileWithFallback() {
     profile,
     preferredName,
     isLoading,
-    error: isAuthError ? null : error, // Don't show auth errors
+    error: (isAuthError || isNotFound) ? null : error, // Hide auth and 404 errors
     hasProfile: !!profile,
     isAuthError,
   };

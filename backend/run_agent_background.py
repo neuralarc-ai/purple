@@ -58,7 +58,7 @@ async def run_agent_background(
     thread_id: str,
     instance_id: str,
     project_id: str,
-    model_name: str = "openai/gpt-5-mini",
+    model_name: str = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0",
     enable_thinking: Optional[bool] = False,
     reasoning_effort: Optional[str] = 'low',
     stream: bool = True,

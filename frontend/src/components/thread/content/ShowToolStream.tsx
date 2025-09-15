@@ -43,7 +43,7 @@ export const ShowToolStream: React.FC<ShowToolStreamProps> = ({
   }
 
   const rawToolName = extractToolNameFromStream(content);
-  const toolName = getUserFriendlyToolName(rawToolName || '');
+  const toolName: string = getUserFriendlyToolName(rawToolName || '');
   const isEditFile = toolName === 'AI File Edit';
   const isCreateFile = toolName === 'Creating File';
   const isFullFileRewrite = toolName === 'Rewriting File';
@@ -126,7 +126,7 @@ export const ShowToolStream: React.FC<ShowToolStreamProps> = ({
           >
             {/* Tool name header */}
             <button
-              onClick={() => onToolClick?.(messageId, toolName)}
+              onClick={() => onToolClick?.(messageId ?? null, toolName as string)}
               className={`w-full flex items-center gap-1.5 py-1 px-2 text-xs text-muted-foreground hover:bg-muted/80 transition-all duration-500 ease-in-out cursor-pointer bg-muted`}
             >
               <div className=" flex items-center justify-center p-1 rounded-sm">
@@ -182,7 +182,7 @@ export const ShowToolStream: React.FC<ShowToolStreamProps> = ({
         ) : (
           // Just tool button with shimmer (first 1500ms)
           <button
-            onClick={() => onToolClick?.(messageId, toolName)}
+            onClick={() => onToolClick?.(messageId ?? null, toolName as string)}
             className="animate-shimmer inline-flex items-center gap-1.5 py-1 px-1 pr-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
           >
             <div className="border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600">
@@ -209,7 +209,7 @@ export const ShowToolStream: React.FC<ShowToolStreamProps> = ({
   return (
     <div className="my-1">
       <button
-        onClick={() => onToolClick?.(messageId, toolName)}
+        onClick={() => onToolClick?.(messageId ?? null, toolName as string)}
         className="animate-shimmer inline-flex items-center gap-1.5 py-1 px-1 pr-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
       >
         <div className="border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600">

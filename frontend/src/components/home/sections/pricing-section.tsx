@@ -259,7 +259,7 @@ function PricingTier({
   let buttonDisabled = isPlanLoading;
   let buttonVariant: ButtonVariant = null;
   let ringClass = '';
-  let statusBadge = null;
+  let statusBadge: JSX.Element | null = null;
   let buttonClassName = '';
   
   // Check plan change restrictions using comprehensive validation
