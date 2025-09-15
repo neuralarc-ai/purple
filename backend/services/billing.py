@@ -32,9 +32,9 @@ CREDIT_MIN_START_DOLLARS = 0.20
 # Credit packages with Stripe price IDs
 CREDIT_PACKAGES = {
     'credits_test': {'amount': 500, 'price': 1.00, 'stripe_price_id': config.STRIPE_CREDITS_TEST_PRICE_ID},
-    'credits_small': {'amount': 1000, 'price': 11.99, 'stripe_price_id': config.STRIPE_CREDITS_SMALL_PRICE_ID},
-    'credits_medium': {'amount': 2500, 'price': 28.99, 'stripe_price_id': config.STRIPE_CREDITS_MEDIUM_PRICE_ID},
-    'credits_large': {'amount': 5000, 'price': 55.99, 'stripe_price_id': config.STRIPE_CREDITS_LARGE_PRICE_ID},
+    'credits_small': {'amount': 5000, 'price': 9.99, 'stripe_price_id': config.STRIPE_CREDITS_SMALL_PRICE_ID},
+    'credits_medium': {'amount': 10000, 'price': 18.99, 'stripe_price_id': config.STRIPE_CREDITS_MEDIUM_PRICE_ID},
+    'credits_large': {'amount': 25000, 'price': 44.99, 'stripe_price_id': config.STRIPE_CREDITS_LARGE_PRICE_ID},
 }
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -2034,9 +2034,9 @@ async def purchase_credits(
         
         # Map specific known package prices to fixed credits
         FIXED_CREDIT_PACKAGES = {
-            11.99: 1000,  # $11.99 → 1,000 credits
-            28.99: 2500,  # $28.99 → 2,500 credits
-            55.99: 5000,  # $55.99 → 5,000 credits
+            9.99: 5000,   # $9.99 → 5,000 credits
+            18.99: 10000, # $18.99 → 10,000 credits
+            44.99: 25000, # $44.99 → 25,000 credits
         }
         
         fixed_credits = FIXED_CREDIT_PACKAGES.get(round(request.amount_dollars, 2))
