@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Check, X, AlertTriangle } from 'lucide-react';
+import { Check, X, AlertTriangle, Info } from 'lucide-react';
 
 type Row = {
   feature: string;
@@ -93,7 +93,15 @@ export default function CompareTable({ className }: { className?: string }) {
                 <div className="font-medium text-white text-lg mb-5 text-center leading-tight">{row.feature}</div>
                 <div className="space-y-4">
                   <div className="bg-emerald-500/10 rounded-lg p-4">
-                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Helium AI - $29/month</div>
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center flex items-center justify-center gap-2">
+                      Helium AI - PAYG
+                      <div className="relative group">
+                        <Info className="h-3 w-3 text-white/60 hover:text-white/80 cursor-help" />
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-neutral-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                          pay-as-you-go
+                        </div>
+                      </div>
+                    </div>
                     <div className="text-sm text-white/90 text-center leading-relaxed">{row.helium}</div>
                   </div>
                   <div className="p-2">
@@ -131,7 +139,16 @@ export default function CompareTable({ className }: { className?: string }) {
                   <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20 bg-emerald-500/10">
                     <div className="flex flex-col gap-1">
                       <span className="text-sm md:text-base font-medium">Helium AI</span>
-                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$29/month</span>
+                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white flex items-center gap-2">
+                        PAYG
+                        <div className="relative group">
+                          <Info className="h-3 w-3 text-white/60 hover:text-white/80 cursor-help" />
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-neutral-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                            pay-as-you-go<br />
+                            View Below Table for Details
+                          </div>
+                        </div>
+                      </span>
                     </div>
                   </th>
                   <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20">
@@ -177,6 +194,14 @@ export default function CompareTable({ className }: { className?: string }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+        
+        <div className="mt-8">
+          <div className="max-w-4xl mx-auto">
+             <p className="text-sm sm:text-base md:text-lg lg:text-xl sm:p-0 p-4 text-white/80 leading-relaxed">
+              Most leading AI tools that businesses use across the globe operate on monthly subscription plans with limited tokens or credits, which often leads to underutilization or overages. Helium introduces an innovative pricing model designed for flexibility and cost efficiency. Businesses can choose a prepaid credit model, allowing them to purchase credits in advance and use them at their own pace, with the option to top up anytime. Alternatively, they can select the PAYG (Pay-As-You-Go) model, which ensures they pay only for what they actually use. This approach can reduce overall AI spend for enterprises by as much as 45-55 percent, making Helium a highly economical and scalable solution for modern businesses.
+            </p>
           </div>
         </div>
       </div>

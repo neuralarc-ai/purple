@@ -15,8 +15,8 @@ export default function HomePage() {
       <HeroSection />      
       <FeaturesSection />
       <Comparison />
-      <FeatureTable />
       <IntegrationsSection />
+      <FeatureTable />
       <PromptMessage />
       <CompareTable />
       <Footer />
