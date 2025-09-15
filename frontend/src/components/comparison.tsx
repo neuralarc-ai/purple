@@ -13,10 +13,11 @@ export default function Comparison({ className }: ComparisonProps) {
   const [showGpt, setShowGpt] = useState(false);
   const [showMotionR, setShowMotionR] = useState(false);
   const [showGenspark, setShowGenspark] = useState(false);
+  const [showTaskMonk, setShowTaskMonk] = useState(false);
 
   // Prevent background scrolling when any popup is open
   useEffect(() => {
-    const isAnyPopupOpen = showClaude || showGpt || showMotionR || showGenspark;
+    const isAnyPopupOpen = showClaude || showGpt || showMotionR || showGenspark || showTaskMonk;
     
     if (isAnyPopupOpen) {
       document.body.style.overflow = 'hidden';
@@ -28,76 +29,71 @@ export default function Comparison({ className }: ComparisonProps) {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [showClaude, showGpt, showMotionR, showGenspark]);
+  }, [showClaude, showGpt, showMotionR, showGenspark, showTaskMonk]);
 
   return (
     <section className={cn("w-full px-4 md:px-8 lg:px-12 py-8 md:py-16 md:mb-12", className)}>
       <div className="mx-auto max-w-6xl">
         <h2 className="text-center text-3xl md:text-4xl font-bold tracking-tight text-white mb-8 md:mb-10">
-          See Helium in Action..
+          Benchmarking Brilliance:<br />
+          Helium vs. ChatGPT, Claude, GenSpark and Lovable
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <Card onClick={() => setShowClaude(true)} imageSrc="/home/file-creation.png">
-            <div className="flex h-full">
-              <div className="w-1/3 flex-shrink-0">
-                <img src="/home/file-creation.png" alt="File Creation" className="w-full h-full object-cover rounded-l-2xl" />
-              </div>
-              <div className="w-2/3 px-6 py-6 flex flex-col justify-center">
-                <div className="text-xs md:text-sm text-white/90 leading-tight mb-3">
-                  Design a 12-month product roadmap for an AI-powered CRM transitioning from freemium to enterprise. Include: feature prioritization, technical debt management, API strategy, security requirements, pricing restructuring, competitive tactics, and user metrics.
-                </div>
-                <div className="text-lg md:text-xl font-bold text-white">VS</div>
-                <div className="text-sm md:text-base font-semibold text-blue-300 mt-1">Claude</div>
-                <div className="text-xs text-white/70 mt-1">(Analysis)</div>
-              </div>
-            </div>
-          </Card>
-          <Card onClick={() => setShowGpt(true)} imageSrc="/home/web-search.png">
-            <div className="flex h-full">
-              <div className="w-1/3 flex-shrink-0">
-                <img src="/home/autonomous-task.png" alt="Web Search" className="w-full h-full object-cover rounded-l-2xl" />
-              </div>
-              <div className="w-2/3 px-6 py-6 flex flex-col justify-center">
-                <div className="text-xs md:text-sm text-white/90 leading-tight mb-3">
-                  Research European AI regulation compliance software market entry. Include: market sizing, regulatory mapping, competitive analysis, go-to-market timeline, resource allocation, revenue models, partnership maps, and risk frameworks.
-                </div>
-                <div className="text-lg md:text-xl font-bold text-white">VS</div>
-                <div className="text-sm md:text-base font-semibold text-blue-300 mt-1">GPT</div>
-                <div className="text-xs text-white/70 mt-1">(Research Analysis)</div>
-              </div>
-            </div>
-          </Card>
-          <Card onClick={() => setShowMotionR(true)} imageSrc="/home/browser-automation.png">
-            <div className="flex h-full">
-              <div className="w-1/3 flex-shrink-0">
-                <img src="/home/browser-automation.png" alt="Browser Automation" className="w-full h-full object-cover rounded-l-2xl" />
-              </div>
-              <div className="w-2/3 px-6 py-6 flex flex-col justify-center">
-                <div className="text-xs md:text-sm text-white/90 leading-tight mb-3">
-                  Launch "MotionR" fitness ring ($499 + $20/month) for Christmas 2024 in US/UK. Research competitors (Oura, Samsung Galaxy Ring, RingConn, Ultrahuman), analyze pricing/features, recommend pricing strategy, go-to-market plan, landing page copy, email sequences, social media calendar, and promotional webpage.
-                </div>
-                <div className="text-lg md:text-xl font-bold text-white">VS</div>
-                <div className="text-sm md:text-base font-semibold text-blue-300 mt-1">Claude</div>
-                <div className="text-xs text-white/70 mt-1">(Webpage)</div>
-              </div>
-            </div>
-          </Card>
-          <Card onClick={() => setShowGenspark(true)} imageSrc="/home/automation.png">
-            <div className="flex h-full">
-              <div className="w-1/3 flex-shrink-0">
-                <img src="/home/dashboard.png" alt="Automation" className="w-full h-full object-cover rounded-l-2xl" />
-              </div>
-              <div className="w-2/3 px-6 py-6 flex flex-col justify-center">
-                <div className="text-xs md:text-sm text-white/90 leading-tight mb-3">
-                  Research AI governance regulations across major markets (US, EU, APAC) and create a comprehensive compliance handbook document. Include: regulatory landscape mapping, compliance requirement matrices, implementation timeline charts, cost impact assessments, vendor evaluation frameworks, audit preparation checklists, risk mitigation strategies, and policy template libraries.
-                </div>
-                <div className="text-lg md:text-xl font-bold text-white">VS</div>
-                <div className="text-sm md:text-base font-semibold text-blue-300 mt-1">Genspark</div>
-                <div className="text-xs text-white/70 mt-1">(Research Analysis)</div>
-              </div>
-            </div>
-          </Card>
+        
+        <div className="text-white mb-8 md:mb-10">
+          <div className="max-w-4xl mx-auto">
+            <p className="mb-4 text-justify">
+              We put Helium to the test against four of the most popular AI tools businesses use across the globe: ChatGPT-5, Claude Sonnet-4, GenSpark AI and Loveable. Each platform was given the exact same prompt, and their outputs were evaluated for depth, accuracy, and real-world business relevance.
+            </p>
+            <p className="text-justify">
+              Below, you will find a side-by-side video comparison along with the resulting documents, enabling you to decide which solution delivers the most powerful and actionable insights for enterprises.
+            </p>
+          </div>
         </div>
+        
+        {/* Top row - 3 cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+          <div className="w-full h-[240px] md:h-[260px]">
+            <SimpleCard 
+              title="Helium / Claude"
+              prompt="Design a 12-month product roadmap for an AI-powered CRM that's transitioning from freemium to enterprise. Include: feature prioritization framework, technical debt management, API development strategy, enterprise security requirements, pricing tier restructuring, competitive differentiation tactics, and user adoption metrics. Map features to business outcomes and revenue impact."
+              onClick={() => setShowClaude(true)}
+            />
+          </div>
+          <div className="w-full h-[240px] md:h-[260px]">
+            <SimpleCard 
+              title="Helium / GPT"
+              prompt="Conduct comprehensive research on entering the European AI regulation compliance software market and produce a detailed market entry strategy document. Include: market sizing visualizations, regulatory landscape mapping, competitive analysis matrices, go-to-market timeline charts, resource allocation diagrams, revenue projection models, partnership ecosystem maps, and risk mitigation frameworks."
+              onClick={() => setShowGpt(true)}
+            />
+          </div>
+          <div className="w-full h-[240px] md:h-[260px]">
+            <SimpleCard 
+              title="Helium / Claude"
+              prompt="I am launching MotionR my fitness ring product (currently priced at $499 + $20/month subscription) for Christmas 2024 in US/UK markets. Research current holiday fitness/health sentiment and analyze competitors (Oura Ring, Samsung Galaxy Ring, RingConn, Ultrahuman Ring Air, etc.) including their pricing, features, and Christmas marketing strategies."
+              onClick={() => setShowMotionR(true)}
+            />
+          </div>
+        </div>
+
+        {/* Bottom row - 2 centered cards */}
+        <div className="flex justify-center gap-4 md:gap-6">
+          <div className="w-full max-w-sm h-[240px] md:h-[260px]">
+            <SimpleCard 
+              title="Helium / Genspark"
+              prompt="Research AI governance regulations across major markets (US, EU, APAC) and create a comprehensive compliance handbook document. Include: regulatory landscape mapping, compliance requirement matrices, implementation timeline charts, cost impact assessments, vendor evaluation frameworks, audit preparation checklists, risk mitigation strategies, and policy template libraries."
+              onClick={() => setShowGenspark(true)}
+            />
+          </div>
+          <div className="w-full max-w-sm h-[240px] md:h-[260px]">
+            <SimpleCard 
+              title="Helium / Lovable"
+              prompt="Create me a clone app of taskade.com. This app will be called Task Monk Needs to be fully functional and with all the necessary features. Create dummy login admin and password 123456 Use Dark theme that is black and white with simple outline icons Font MonoScript or Similar Has to be responsive and interactive Build this app along with a landing page that will be sticky and encourage people to login"
+              onClick={() => setShowTaskMonk(true)}
+            />
+          </div>
+        </div>
+
+        {/* Popups */}
         {showClaude && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
@@ -115,6 +111,7 @@ export default function Comparison({ className }: ComparisonProps) {
                 ×
               </button>
               <ComparisonPopup
+                title="Helium / Claude"
                 videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=Claude_edited_h77pso&profile=cld-default"
                 docs={[
                   {
@@ -137,6 +134,7 @@ export default function Comparison({ className }: ComparisonProps) {
             </div>
           </div>
         )}
+
         {showGpt && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
@@ -154,6 +152,7 @@ export default function Comparison({ className }: ComparisonProps) {
                 ×
               </button>
               <ComparisonPopup
+                title="Helium / GPT"
                 videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=Gpt_edited_at36nt&profile=cld-default"
                 docs={[
                   {
@@ -166,16 +165,17 @@ export default function Comparison({ className }: ComparisonProps) {
                   },
                 ]}
                 facts={[
-                  "GPT is faster but often delivers surface-level outputs versus Helium’s rich deliverables.",
+                  "GPT is faster but often delivers surface-level outputs versus Helium's rich deliverables.",
                   "Helium provides decision-ready structures (KPIs, phased roadmaps) that GPT typically omits.",
                 ]}
                 prompt={
-                  "Conduct comprehensive research on entering the European AI regulation compliance software market and produce a detailed market entry strategy document. Include: market sizing visualizations, regulatory landscape mapping, competitive analysis matrices, go-to-market timeline charts, resource allocation diagrams, revenue projection models, partnership ecosystem maps, and risk mitigation frameworks. Create a professional document with executive dashboard summaries, detailed strategic recommendations, implementation roadmaps, and supporting visual evidence that could guide a 50M market expansion decision."
+                  "Conduct comprehensive research on entering the European AI regulation compliance software market and produce a detailed market entry strategy document. Include: market sizing visualizations, regulatory landscape mapping, competitive analysis matrices, go-to-market timeline charts, resource allocation diagrams, revenue projection models, partnership ecosystem maps, and risk mitigation frameworks."
                 }
               />
             </div>
           </div>
         )}
+
         {showMotionR && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
@@ -193,7 +193,8 @@ export default function Comparison({ className }: ComparisonProps) {
                 ×
               </button>
               <ComparisonPopup
-                videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=Promo_1_zwgtzj&profile=cld-default"
+                title="Helium / Claude"
+                videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=MotionR_scv4ps&profile=cld-default"
                 docs={[
                   {
                     label: "Claude Doc",
@@ -201,41 +202,22 @@ export default function Comparison({ className }: ComparisonProps) {
                   },
                   {
                     label: "Helium Suite",
-                    url: "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/files/Helium-Claude%20Promo/competitive_analysis_matrix.pdf",
-                  },
-                  {
-                    label: "Budget Recommendations",
-                    url: "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/files/Helium-Claude%20Promo/motionr_budget_recommendations.pdf",
-                  },
-                  {
-                    label: "Deliverables Summary",
-                    url: "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/files/Helium-Claude%20Promo/motionr_deliverables_summary.pdf",
-                  },
-                  {
-                    label: "GTM Strategy",
-                    url: "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/files/Helium-Claude%20Promo/motionr_gtm_strategy.pdf",
-                  },
-                  {
-                    label: "Social Media Calendar",
-                    url: "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/files/Helium-Claude%20Promo/motionr_social_media_calendar.pdf",
-                  },
-                  {
-                    label: "Strategic Recommendations",
-                    url: "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/files/Helium-Claude%20Promo/motionr_strategic_recommendations.pdf",
+                    url: "https://gdkwidkzbdwjtzgjezch.supabase.co/storage/v1/object/public/files/Helium-Claude%20Promo/Helium-MotionR.zip",
                   },
                 ]}
                 facts={[
                   "Claude provided one comprehensive document with market analysis and strategy.",
-                  "Helium delivered deep analysis with 7 detailed files covering competitive analysis, budget recommendations, deliverables summary, GTM strategy, social media calendar, and strategic recommendations.",
-                  "View webpage created by Helium",
+                  "Helium delivered deep analysis with 7 detailed files covering competitive analysis, budget recommendations, deliverables summary, GTM strategy, social media calendar, and strategic recommendations. And created a webpage too below is link",
+                
                 ]}
                 prompt={
-                  "I am launching \"MotionR\"my fitness ring product (currently priced at $499 + $20/month subscription) for Christmas 2024 in US/UK markets. Research current holiday fitness/health sentiment and analyze competitors (Oura Ring, Samsung Galaxy Ring, RingConn, Ultrahuman Ring Air, etc.) including their pricing, features, and Christmas marketing strategies. Based on competitor analysis and holiday shopping sentiment, recommend: optimal pricing strategy for Christmas (should I adjust from $499?), subscription model optimization, product positioning against competitors, complete go-to-market strategy including landing page copy highlighting competitive advantages, email marketing sequence, social media content calendar with optimal posting times for all platforms, messaging framework addressing Christmas fitness/wellness emotions and New Year resolution psychology, and performance tracking KPIs. Include competitive differentiation strategy and why customers should choose my ring over Oura/Samsung. Provide everything needed for immediate execution with budget recommendations and timeline. Also design a promotional webpage for me to publish."
+                  "I am launching \"MotionR\"my fitness ring product (currently priced at $499 + $20/month subscription) for Christmas 2024 in US/UK markets. Research current holiday fitness/health sentiment and analyze competitors (Oura Ring, Samsung Galaxy Ring, RingConn, Ultrahuman Ring Air, etc.) including their pricing, features, and Christmas marketing strategies."
                 }
               />
             </div>
           </div>
         )}
+
         {showGenspark && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
@@ -253,6 +235,7 @@ export default function Comparison({ className }: ComparisonProps) {
                 ×
               </button>
               <ComparisonPopup
+                title="Helium / Genspark"
                 videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=GenSpark-Helium_wqfqea&profile=cld-default"
                 docs={[
                   {
@@ -270,7 +253,49 @@ export default function Comparison({ className }: ComparisonProps) {
                   "To view all files in detail with CSV and documentation, download the complete ZIP file.",
                 ]}
                 prompt={
-                  "Research AI governance regulations across major markets (US, EU, APAC) and create a comprehensive compliance handbook document. Include: regulatory landscape mapping, compliance requirement matrices, implementation timeline charts, cost impact assessments, vendor evaluation frameworks, audit preparation checklists, risk mitigation strategies, and policy template libraries. Format as a professional handbook with regulatory summaries, compliance roadmaps, implementation guides, budget planning tools, and monitoring frameworks suitable for legal and operations teams."
+                  "Research AI governance regulations across major markets (US, EU, APAC) and create a comprehensive compliance handbook document. Include: regulatory landscape mapping, compliance requirement matrices, implementation timeline charts, cost impact assessments, vendor evaluation frameworks, audit preparation checklists, risk mitigation strategies, and policy template libraries."
+                }
+              />
+            </div>
+          </div>
+        )}
+
+        {showTaskMonk && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            onClick={() => setShowTaskMonk(false)}
+          >
+            <div
+              className="relative w-full max-w-6xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowTaskMonk(false)}
+                className="absolute -top-3 -right-3 z-10 rounded-full bg-white text-black hover:bg-gray-200 w-8 h-8 flex items-center justify-center text-lg font-bold transition-colors"
+                title="Close"
+              >
+                ×
+              </button>
+              <ComparisonPopup
+                title="Helium / Lovable"
+                videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=TaskMonk_demo&profile=cld-default"
+                imageSrc="/home/Lovable.png"
+                docs={[
+                  {
+                    label: "Lovable",
+                    url: "https://monk-task-flow.lovable.app",
+                  },
+                  {
+                    label: "Helium",
+                    url: "https://8080-4d158702-177d-4294-ad31-3089b936b97d.proxy.daytona.works/task-monk/index.html",
+                  },
+                ]}
+                facts={[
+                  "Helium created a fully functional Task Monk app with dark theme and responsive design.",
+                  "Built with MonoScript font and simple outline icons as requested.",
+                ]}
+                prompt={
+                  "Create me a clone app of taskade.com. This app will be called \"Task Monk\" Needs to be fully functional and with all the necessary features. Create dummy login \"admin\" and password \"123456\" Use Dark theme that is black and white with simple outline icons Font MonoScript or Similar Has to be responsive and interactive Build this app along with a landing page that will be sticky and encourage people to login"
                 }
               />
             </div>
@@ -281,13 +306,46 @@ export default function Comparison({ className }: ComparisonProps) {
   );
 }
 
-function Card({ children, onClick, imageSrc }: { children: React.ReactNode; onClick?: () => void; imageSrc?: string }) {
+function SimpleCard({ title, prompt, onClick }: { 
+  title: string; 
+  prompt: string; 
+  onClick: () => void; 
+}) {
   return (
-    <button onClick={onClick} className="relative rounded-2xl border border-white/15 bg-neutral-900/80 text-white shadow-[0_10px_30px_-12px_rgba(0,0,0,0.5)] backdrop-blur p-0 flex items-stretch text-sm md:text-base font-semibold w-full hover:bg-neutral-900/90 transition-colors overflow-hidden cursor-pointer">
-      <div className="absolute inset-0 rounded-2xl pointer-events-none [mask-image:radial-gradient(90%_90%_at_50%_50%,black,transparent)]" />
-      {children}
-    </button>
+    <div className="bg-neutral-900 rounded-[12px] p-4 h-full w-full flex flex-col border border-white/15">
+      <div className="mb-4">
+        <h3 className="text-sm font-bold text-white">{title}</h3>
+      </div>
+      
+      <div className="flex-1 mb-3 overflow-hidden">
+        <div className="text-xs text-gray-400 mb-2">Prompt:</div>
+        <p className="text-xs text-gray-300 leading-relaxed text-left line-clamp-6">
+          {prompt}
+        </p>
+      </div>
+      
+      <div className="flex justify-end">
+        <button
+          onClick={onClick}
+          className="px-3 py-1 rounded-full bg-white hover:bg-gray-200 flex items-center gap-1 transition-colors cursor-pointer"
+          title="View Details"
+        >
+          <span className="text-xs font-medium text-gray-800">View Details</span>
+          <svg 
+            className="w-3 h-3 text-gray-800" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2} 
+              d="M9 5l7 7-7 7" 
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
   );
 }
-
-
