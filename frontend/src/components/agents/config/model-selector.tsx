@@ -88,7 +88,7 @@ export function AgentModelSelector({
     
     if (modelsData?.models) {
       const exactMatch = modelsData.models.find(m => m.short_name === modelId);
-      if (exactMatch) return exactMatch.short_name;
+      if (exactMatch) return exactMatch.short_name || exactMatch.id;
 
       const fullMatch = modelsData.models.find(m => m.id === modelId);
       if (fullMatch) return fullMatch.short_name || fullMatch.id;
@@ -96,7 +96,7 @@ export function AgentModelSelector({
       if (modelId.startsWith('openrouter/')) {
         const shortName = modelId.replace('openrouter/', '');
         const shortMatch = modelsData.models.find(m => m.short_name === shortName);
-        if (shortMatch) return shortMatch.short_name;
+        if (shortMatch) return shortMatch.short_name || shortMatch.id;
       }
     }
     

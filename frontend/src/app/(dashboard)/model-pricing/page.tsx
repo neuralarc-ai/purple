@@ -166,9 +166,9 @@ export default function PricingPage() {
     return filteredModels
       .map((v) => ({
         ...v,
-        display_name: allModels.find((m) => m.id === v.short_name)?.label,
-        priority: allModels.find((m) => m.id === v.short_name)?.priority,
-        requiresSubscription: allModels.find((m) => m.id === v.short_name)?.requiresSubscription,
+        display_name: allModels.find((m) => m.id === v.short_name)?.label || v.display_name || v.id,
+        priority: allModels.find((m) => m.id === v.short_name)?.priority || 0,
+        requiresSubscription: allModels.find((m) => m.id === v.short_name)?.requiresSubscription || false,
       }))
       .sort((a, b) => {
         // First by free/premium status (premium first)

@@ -72,7 +72,7 @@ export interface ScheduleTriggerConfig {
 
 export interface EventTriggerConfig {
   profile_id?: string;
-  agent_prompt: string;
+  agent_prompt?: string;
   trigger_slug: string;
   execution_type: 'agent' | 'workflow';
   composio_trigger_id?: string;

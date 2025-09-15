@@ -129,7 +129,7 @@ export function ConnectCredentialProfileToolView({
     }
   };
 
-  const isExpired = expires_at && new Date(expires_at) <= new Date();
+  const isExpired = Boolean(expires_at && new Date(expires_at) <= new Date());
 
   return (
     <Card className="gap-0 flex border shadow-none border-t border-b-0 border-x-0 p-0 rounded-none flex-col h-full overflow-hidden bg-card">

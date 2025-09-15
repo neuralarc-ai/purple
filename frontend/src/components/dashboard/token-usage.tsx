@@ -51,8 +51,8 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
     >
       <div
         className={cn(
-          "token-usage-container relative flex items-center gap-2 px-3 py-1.5 bg-muted/50 border border-border rounded-full transition-all duration-300 cursor-pointer overflow-hidden",
-          isHovered && "bg-primary/10 border-primary/20",
+          "token-usage-container relative flex items-center gap-2 px-3 py-1.5 bg-muted/50 dark:bg-muted/30 border border-border rounded-full transition-all duration-300 cursor-pointer overflow-hidden",
+          isHovered && "bg-sidebar/50 border-muted-foreground/20",
           className
         )}
         onClick={handleClick}
@@ -82,7 +82,7 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
         
         {/* Vertical Separator - Show when hovered or when total remaining credits is 0 */}
         <div className={cn(
-          "w-px h-4 bg-border flex-shrink-0 transition-all duration-300",
+          "w-px h-4 bg-muted-foreground flex-shrink-0 transition-all duration-300",
           (isHovered || totalRemainingCredits === 0) ? "opacity-100" : "opacity-0 w-0"
         )} />
         
@@ -93,7 +93,7 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
         )}>
           <span 
             className={cn(
-              "text-sm font-medium text-primary transition-transform duration-300 block whitespace-nowrap",
+              "text-sm font-semibold text-helium-blue transition-transform duration-300 block whitespace-nowrap",
               (isHovered || totalRemainingCredits === 0)
                 ? "translate-x-0" 
                 : "translate-x-full"
@@ -107,7 +107,7 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
       {/* Dropdown on Hover */}
       {isHovered && (
         <div 
-          className="token-usage-container absolute top-full right-0 mt-1 w-64 bg-sidebar border dark:border-border rounded-2xl shadow-lg z-50 p-4 animate-in slide-in-from-right-4 fade-in duration-300"
+          className="token-usage-container absolute top-full right-0 mt-1 w-64 bg-sidebar border dark:border-border rounded-3xl shadow-lg z-50 p-4 animate-in slide-in-from-right-4 fade-in duration-300"
           onMouseLeave={() => setIsHovered(false)}
         >
           <div className="space-y-3">
@@ -133,7 +133,7 @@ export function TokenUsage({ className, onUpgradeClick, onViewUsageClick }: Toke
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total credits left</span>
               <span className="text-sm font-medium text-foreground">
-                {(subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100)).toLocaleString()}
+                {totalRemainingCredits.toLocaleString()}
               </span>
             </div>
             

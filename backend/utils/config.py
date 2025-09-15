@@ -59,18 +59,21 @@ class Configuration:
     
     # Credit package price IDs - Production
     STRIPE_CREDITS_TEST_ID_PROD: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $1.00 - 500 credits (TESTING)
-    STRIPE_CREDITS_SMALL_PRICE_ID_PROD: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $11.99
-    STRIPE_CREDITS_MEDIUM_PRICE_ID_PROD: str = 'price_1S2VY6AnxOD5rXBGWs7gO2rv'  # $28.99
-    STRIPE_CREDITS_LARGE_PRICE_ID_PROD: str = 'price_1S2VYHAnxOD5rXBGIL73U202'  # $55.99
+
+
+    STRIPE_CREDITS_SMALL_PRICE_ID_PROD: str = 'price_1S2VXvAnxOD5rXBGylPu8TTc'  # $9.99 - 5,000 credits
+    STRIPE_CREDITS_MEDIUM_PRICE_ID_PROD: str = 'price_1S2VY6AnxOD5rXBGWs7gO2rv'  # $18.99 - 10,000 credits
+    STRIPE_CREDITS_LARGE_PRICE_ID_PROD: str = 'price_1S2VYHAnxOD5rXBGIL73U202'  # $44.99 - 25,000 credits
     
     # Trial plan - Production
     STRIPE_TRIAL_PLAN_ID_PROD: str = 'price_1S6oPuAnxOD5rXBGc2TGjjXu'  # $1.99 - 1 week trial
     
     # Credit package price IDs - Staging  
     STRIPE_CREDITS_TEST_PRICE_ID_STAGING: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $1.00 - 500 credits (TESTING)
-    STRIPE_CREDITS_SMALL_PRICE_ID_STAGING: str = 'price_1S2n0LAnxOD5rXBGLplkdkq6'  # $11.99
-    STRIPE_CREDITS_MEDIUM_PRICE_ID_STAGING: str = 'price_1RxXPNG6l1KZGqIrQprPgDme'  # $28.99
-    STRIPE_CREDITS_LARGE_PRICE_ID_STAGING: str = 'price_1RxXPYG6l1KZGqIrQprPgDme'  # $55.99
+
+    STRIPE_CREDITS_SMALL_PRICE_ID_STAGING: str = 'price_1RxXOvG6l1KZGqIrMqsiYQvk'  # $9.99 - 5,000 credits
+    STRIPE_CREDITS_MEDIUM_PRICE_ID_STAGING: str = 'price_1RxXPNG6l1KZGqIrQprPgDme'  # $18.99 - 10,000 credits
+    STRIPE_CREDITS_LARGE_PRICE_ID_STAGING: str = 'price_1RxXPYG6l1KZGqIrQprPgDme'  # $44.99 - 25,000 credits
     
     # Trial plan - Staging
     STRIPE_TRIAL_PLAN_ID_STAGING: str = 'price_1S6oPuAnxOD5rXBGc2TGjjXu'  # $1.99 - 1 week trial
@@ -248,8 +251,8 @@ class Configuration:
     # Sandbox configuration
     STRIPE_PRODUCT_ID_PROD: str = 'prod_SCl7AQ2C8kK1CD'
     STRIPE_PRODUCT_ID_STAGING: str = 'prod_SCgIj3G7yPOAWY'
-    SANDBOX_IMAGE_NAME = "kortix/suna:0.1.3.6"
-    SANDBOX_SNAPSHOT_NAME = "kortix/suna:0.1.3.6"
+    SANDBOX_IMAGE_NAME = "neuralarcai/he2:0.1.1"
+    SANDBOX_SNAPSHOT_NAME = "neuralarcai/he2:0.1.1"
     SANDBOX_ENTRYPOINT = "/usr/bin/supervisord -n -c /etc/supervisor/conf.d/supervisord.conf"
 
     # LangFuse configuration

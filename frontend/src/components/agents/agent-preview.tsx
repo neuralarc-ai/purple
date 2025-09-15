@@ -159,7 +159,7 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       onError: handleStreamError,
       onClose: handleStreamClose,
     },
-    threadId,
+    threadId || '',
     setMessages,
     agent.agent_id,
   );
@@ -247,7 +247,7 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
 
       // Handle mode-based configuration asynchronously
       if (options?.mode) {
-        const modeConfig = getModeConfiguration(options.mode, options.enable_thinking);
+        const modeConfig = getModeConfiguration(options.mode, options.enable_thinking ?? false);
         formData.append('enable_thinking', String(options.enable_thinking ?? false));
         formData.append('reasoning_effort', modeConfig.reasoning_effort);
         formData.append('enable_context_manager', String(modeConfig.enable_context_manager));
@@ -261,7 +261,10 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
       }
 
       // Submit the request
-      const result = await initiateAgentMutation.mutateAsync(formData);
+      const result = await initiateAgentMutation.mutateAsync({
+        formData,
+        mode: options?.mode
+      });
 
       if (result.thread_id) {
         setThreadId(result.thread_id);

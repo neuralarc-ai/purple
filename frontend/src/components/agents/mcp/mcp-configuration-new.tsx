@@ -181,7 +181,7 @@ export const MCPConfigurationNew: React.FC<MCPConfigurationProps> = ({
       {selectedMCPForTools && selectedMCPForTools.customType !== 'composio' && (
         <ToolsManager
           mode="custom"
-          agentId={selectedAgentId}
+          agentId={selectedAgentId || ''}
           mcpConfig={{
             ...selectedMCPForTools.config,
             type: selectedMCPForTools.customType

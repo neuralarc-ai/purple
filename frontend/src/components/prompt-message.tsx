@@ -12,8 +12,9 @@ export default function PromptMessage({ className }: { className?: string }) {
           <div className="flex-1">
             <div className="space-y-3 text-center md:text-left">
               <h2 className="text-2xl md:text-4xl font-extrabold tracking-tight">Prompt-Powered Automation</h2>
-              <p className="text-white/80 max-w-3xl md:max-w-none mx-auto md:mx-0">
-                Instead of manually switching between apps, just tell Helium what you need:
+              <p className="text-white/80 max-w-3xl md:max-w-none mx-auto md:mx-0 flex flex-col gap-1">
+                Instead of manually switching between apps, just tell Helium what you need,
+                <span className="font-extrabold text-lg">Below are some examples of how you can use Helium to automate your workflow:</span>
               </p>
             </div>
 

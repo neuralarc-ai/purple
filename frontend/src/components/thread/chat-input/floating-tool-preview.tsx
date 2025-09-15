@@ -140,7 +140,7 @@ const extractTaskDescription = (toolCall: ToolCallInput): string | null => {
 
 // Function to check if task is completed
 const isTaskCompleted = (toolCall: ToolCallInput): boolean => {
-  return toolCall.toolResult?.content && toolCall.toolResult.content !== 'STREAMING';
+  return Boolean(toolCall.toolResult?.content && toolCall.toolResult.content !== 'STREAMING');
 };
 
 export const FloatingToolPreview: React.FC<FloatingToolPreviewProps> = ({
@@ -195,7 +195,7 @@ export const FloatingToolPreview: React.FC<FloatingToolPreviewProps> = ({
           };
         }
         return {
-          text: taskDescription || getUserFriendlyToolName(currentToolCall.assistantCall?.name) || 'Task Running...',
+          text: taskDescription || getUserFriendlyToolName(currentToolCall.assistantCall?.name || '') || 'Task Running...',
           icon: <Loader className="h-3 w-3 text-white animate-spin" />,
           bgColor: 'bg-blue-500',
         };

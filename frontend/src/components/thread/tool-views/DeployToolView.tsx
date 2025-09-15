@@ -58,7 +58,7 @@ function extractDeployData(assistantContent: any, toolContent: any): {
           const parsed = JSON.parse(toolStr);
 
           // Handle the nested tool_execution structure
-          let resultData = null;
+          let resultData: any = null;
           if (parsed.tool_execution && parsed.tool_execution.result) {
               resultData = parsed.tool_execution.result;
               // Also extract arguments if not found in assistant content
@@ -90,13 +90,13 @@ function extractDeployData(assistantContent: any, toolContent: any): {
 
               deployResult = {
                   message: explicitMessage || null,
-                  output: typeof explicitRaw === 'string' ? explicitRaw : (explicitRaw ? JSON.stringify(explicitRaw) : null),
+                  output: typeof explicitRaw === 'string' ? explicitRaw : (explicitRaw ? JSON.stringify(explicitRaw) : undefined),
                   success: resultData.success !== undefined ? resultData.success : true,
                   url: typeof explicitUrl === 'string' ? explicitUrl : undefined,
               };
 
               // Fallback to extracting from raw output if URL not explicitly provided
-              if (!deployResult.url && deployResult.output) {
+              if (deployResult && !deployResult.url && deployResult.output) {
                   const matches = Array.from(
                       deployResult.output.matchAll(/https:\/\/[^\s"']*\.pages\.dev[^\s"']*/g)
                   ).map(m => m[0]);
@@ -133,7 +133,9 @@ function extractDeployData(assistantContent: any, toolContent: any): {
                           }
                       }
 
-                      deployResult.url = chosen;
+                      if (deployResult) {
+                          deployResult.url = chosen;
+                      }
                   }
               }
           }

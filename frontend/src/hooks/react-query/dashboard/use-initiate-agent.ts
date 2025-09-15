@@ -10,9 +10,9 @@ import { projectKeys, threadKeys } from "../sidebar/keys";
 
 export const useInitiateAgentMutation = createMutationHook<
   InitiateAgentResponse, 
-  FormData
+  { formData: FormData; mode?: string }
 >(
-  initiateAgent,
+  ({ formData, mode }) => initiateAgent(formData, mode),
   {
     errorContext: { operation: 'initiate agent', resource: 'AI assistant' },
     onSuccess: (data) => {

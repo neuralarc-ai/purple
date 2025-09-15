@@ -185,7 +185,7 @@ export const OneClickIntegrations: React.FC<OneClickIntegrationsProps> = ({
         <Dialog open={configuringSchedule} onOpenChange={setConfiguringSchedule}>
           <TriggerConfigDialog
             provider={scheduleProvider}
-            existingConfig={null}
+            existingConfig={undefined}
             onSave={handleScheduleSave}
             onCancel={() => setConfiguringSchedule(false)}
             isLoading={createTriggerMutation.isPending}

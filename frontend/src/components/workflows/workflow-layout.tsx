@@ -92,10 +92,10 @@ export function WorkflowLayout({
                 availableStepTypes={availableStepTypes}
                 categories={categories}
                 searchQuery={searchQuery}
-                onSearchChange={onSearchChange}
-                onCreateStep={onCreateStep}
-                onUpdateStep={onUpdateStep}
-                onDeleteStep={onDeleteStep}
+                onSearchChange={onSearchChange || (() => {})}
+                onCreateStep={onCreateStep || (() => {})}
+                onUpdateStep={onUpdateStep || (() => {})}
+                onDeleteStep={onDeleteStep || (() => {})}
                 isLoadingTools={isLoadingTools}
                 agentId={agentId}
                 versionData={versionData}

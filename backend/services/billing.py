@@ -32,9 +32,9 @@ CREDIT_MIN_START_DOLLARS = 0.20
 # Credit packages with Stripe price IDs
 CREDIT_PACKAGES = {
     'credits_test': {'amount': 500, 'price': 1.00, 'stripe_price_id': config.STRIPE_CREDITS_TEST_PRICE_ID},
-    'credits_small': {'amount': 1000, 'price': 11.99, 'stripe_price_id': config.STRIPE_CREDITS_SMALL_PRICE_ID},
-    'credits_medium': {'amount': 2500, 'price': 28.99, 'stripe_price_id': config.STRIPE_CREDITS_MEDIUM_PRICE_ID},
-    'credits_large': {'amount': 5000, 'price': 55.99, 'stripe_price_id': config.STRIPE_CREDITS_LARGE_PRICE_ID},
+    'credits_small': {'amount': 5000, 'price': 9.99, 'stripe_price_id': config.STRIPE_CREDITS_SMALL_PRICE_ID},
+    'credits_medium': {'amount': 10000, 'price': 18.99, 'stripe_price_id': config.STRIPE_CREDITS_MEDIUM_PRICE_ID},
+    'credits_large': {'amount': 25000, 'price': 44.99, 'stripe_price_id': config.STRIPE_CREDITS_LARGE_PRICE_ID},
 }
 
 router = APIRouter(prefix="/billing", tags=["billing"])
@@ -183,50 +183,28 @@ async def get_stripe_customer_id(client: SupabaseClient, user_id: str) -> Option
     if result:
         return result
 
-    result = await client.schema('basejump').from_('billing_customers') \
-        .select('id') \
-        .eq('account_id', user_id) \
-        .execute()
-
-    if result.data and len(result.data) > 0:
-        customer_id = result.data[0]['id']
-        await Cache.set(f"stripe_customer_id:{user_id}", customer_id, ttl=24 * 60)
-        return customer_id
-
+    # Search for existing customer in Stripe by user_id metadata
     customer_result = await stripe.Customer.search_async(
-        query=f"metadata['user_id']:'{user_id}' OR metadata['basejump_account_id']:'{user_id}'"
+        query=f"metadata['user_id']:'{user_id}'"
     )
 
     if customer_result.data and len(customer_result.data) > 0:
         customer = customer_result.data[0]
+        customer_id = customer['id']
+        
         # If the customer does not have 'user_id' in metadata, add it now
         if not customer.get('metadata', {}).get('user_id'):
             try:
                 await stripe.Customer.modify_async(
-                    customer['id'],
+                    customer_id,
                     metadata={**customer.get('metadata', {}), 'user_id': user_id}
                 )
-                logger.debug(f"Added missing user_id metadata to Stripe customer {customer['id']}")
+                logger.debug(f"Added missing user_id metadata to Stripe customer {customer_id}")
             except Exception as e:
-                logger.error(f"Failed to add user_id metadata to Stripe customer {customer['id']}: {str(e)}")
+                logger.error(f"Failed to add user_id metadata to Stripe customer {customer_id}: {str(e)}")
 
-        has_active = len((await stripe.Subscription.list_async(
-            customer=customer['id'],
-            status='active',
-            limit=1
-        )).get('data', [])) > 0
-
-        # Create or update record in billing_customers table
-        await client.schema('basejump').from_('billing_customers').upsert({
-            'id': customer['id'],
-            'account_id': user_id,
-            'email': customer.get('email'),
-            'provider': 'stripe',
-            'active': has_active
-        }).execute()
-        logger.debug(f"Updated billing_customers record for customer {customer['id']} and user {user_id}")
-
-        return customer['id']
+        await Cache.set(f"stripe_customer_id:{user_id}", customer_id, ttl=24 * 60)
+        return customer_id
 
     return None
 
@@ -237,14 +215,6 @@ async def create_stripe_customer(client, user_id: str, email: str) -> str:
         email=email,
         metadata={"user_id": user_id}
     )
-    
-    # Store customer ID in Supabase
-    await client.schema('basejump').from_('billing_customers').insert({
-        'id': customer.id,
-        'account_id': user_id,
-        'email': email,
-        'provider': 'stripe'
-    }).execute()
     
     return customer.id
 
@@ -324,176 +294,158 @@ async def get_user_subscription(user_id: str) -> Optional[Dict]:
         return None
 
 async def calculate_monthly_usage(client, user_id: str) -> float:
-    """Calculate total agent run minutes for the current month for a user."""
+    """Calculate total dollar cost for the current month using durable usage_logs."""
     result = await Cache.get(f"monthly_usage:{user_id}")
-    if result:
+    if result is not None:
         return result
 
-    start_time = time.time()
-    
-    # Use get_usage_logs to fetch all usage data (it already handles the date filtering and batching)
-    total_cost = 0.0
-    page = 0
-    items_per_page = 1000
-    
-    while True:
-        # Get usage logs for this page
-        usage_result = await get_usage_logs(client, user_id, page, items_per_page)
-        
-        if not usage_result['logs']:
-            break
-        
-        # Sum up the estimated costs from this page
-        for log_entry in usage_result['logs']:
-            # Convert credits to dollars (1 credit = $0.01)
-            total_cost += log_entry['total_credits'] / 100
-        
-        # If there are no more pages, break
-        if not usage_result['has_more']:
-            break
-            
-        page += 1
-    
-    end_time = time.time()
-    execution_time = end_time - start_time
-    logger.debug(f"Calculate monthly usage took {execution_time:.3f} seconds, total cost: {total_cost}")
-    
-    await Cache.set(f"monthly_usage:{user_id}", total_cost, ttl=5)
-    return total_cost
+    now = datetime.now(timezone.utc)
+    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    try:
+        # Sum estimated_cost for this month from usage_logs
+        # Supabase PostgREST doesn't support SUM directly with select(); use RPC fallback if present
+        # Fallback to client-side sum
+        page = 0
+        page_size = 1000
+        total_cost = 0.0
+        while True:
+            res = await client.table('usage_logs') \
+                .select('estimated_cost, created_at') \
+                .eq('user_id', user_id) \
+                .gte('created_at', start_of_month.isoformat()) \
+                .order('created_at', desc=True) \
+                .range(page * page_size, (page + 1) * page_size - 1) \
+                .execute()
+            if not res.data:
+                break
+            for row in res.data:
+                try:
+                    total_cost += float(row.get('estimated_cost') or 0.0)
+                except Exception:
+                    continue
+            if len(res.data) < page_size:
+                break
+            page += 1
+
+        await Cache.set(f"monthly_usage:{user_id}", total_cost, ttl=5)
+        return total_cost
+    except Exception as e:
+        logger.error(f"Error calculating monthly usage from usage_logs: {str(e)}")
+        return 0.0
 
 
 async def get_usage_logs(client, user_id: str, page: int = 0, items_per_page: int = 1000) -> Dict:
-    """Get detailed usage logs for a user with pagination, grouped by thread with combined credits."""
-    # Get start of current month in UTC
+    """Get detailed usage logs for a user with pagination, grouped by thread using usage_logs."""
     now = datetime.now(timezone.utc)
     start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    
-    # Get cutoff date (6 months ago)
-    cutoff_date = now - timedelta(days=180)
-    start_of_month = max(start_of_month, cutoff_date)
-    
-    # Get all threads for this user with their project information
-    threads_result = await client.table('threads') \
-        .select('''
-            thread_id,
-            project_id,
-            created_at
-        ''') \
-        .eq('account_id', user_id) \
+
+    # First, get all usage logs for the month to properly aggregate by thread
+    all_res = await client.table('usage_logs') \
+        .select('thread_id, total_prompt_tokens, total_completion_tokens, total_tokens, estimated_cost, created_at') \
+        .eq('user_id', user_id) \
         .gte('created_at', start_of_month.isoformat()) \
         .order('created_at', desc=True) \
-        .range(page * items_per_page, (page + 1) * items_per_page - 1) \
         .execute()
-    
-    if not threads_result.data:
+
+    if not all_res.data:
         return {"logs": [], "has_more": False}
+
+    # Get unique thread_ids from all usage data
+    thread_ids = [row.get('thread_id') for row in all_res.data if row.get('thread_id')]
     
-    # Get project information for all threads
-    project_ids = [thread['project_id'] for thread in threads_result.data if thread.get('project_id')]
+    # Fetch thread and project information for existing threads
+    thread_info = {}
     project_names = {}
     
-    if project_ids:
-        projects_result = await client.table('projects') \
-            .select('project_id, name') \
-            .in_('project_id', project_ids) \
+    if thread_ids:
+        # Get thread information
+        threads_result = await client.table('threads') \
+            .select('thread_id, project_id, created_at') \
+            .in_('thread_id', thread_ids) \
             .execute()
         
-        for project in projects_result.data:
-            project_names[project['project_id']] = project['name']
-    
-    # Process threads and get their usage
-    processed_logs = []
-    
-    for thread in threads_result.data:
-        thread_id = thread['thread_id']
-        project_id = thread['project_id']
-        project_name = project_names.get(project_id, 'Unknown Project')
-        thread_created_at = thread['created_at']
-        
-        # Get all messages for this thread in the current month
-        messages_result = await client.table('messages') \
-            .select('''
-                message_id,
-                created_at,
-                content
-            ''') \
-            .eq('thread_id', thread_id) \
-            .eq('type', 'assistant_response_end') \
-            .gte('created_at', start_of_month.isoformat()) \
-            .execute()
-        
-        if not messages_result.data:
-            continue
-        
-        # Calculate total credits used for this thread
-        total_credits = 0
-        total_prompt_tokens = 0
-        total_completion_tokens = 0
-        total_tokens = 0
-        request_count = 0
-        latest_message_time = thread_created_at
-        models_used = set()
-        
-        for message in messages_result.data:
-            try:
-                content = message.get('content', {})
-                usage = content.get('usage', {})
-                
-                prompt_tokens = usage.get('prompt_tokens', 0)
-                completion_tokens = usage.get('completion_tokens', 0)
-                model = content.get('model', 'unknown')
-                
-                # Calculate estimated cost and convert to credits
-                estimated_cost = calculate_token_cost(prompt_tokens, completion_tokens, model)
-                credits = int(estimated_cost * 100)  # Convert dollars to credits
-                total_credits += credits
-                
-                # Accumulate token counts
-                total_prompt_tokens += prompt_tokens
-                total_completion_tokens += completion_tokens
-                total_tokens += prompt_tokens + completion_tokens
-                request_count += 1
-                models_used.add(model)
-                
-                # Track the latest message time
-                message_time = message.get('created_at')
-                if message_time and message_time > latest_message_time:
-                    latest_message_time = message_time
-                    
-            except Exception as e:
-                logger.warning(f"Error processing message {message.get('message_id', 'unknown')}: {str(e)}")
-                continue
-        
-        # Only include threads that have usage
-        if total_credits > 0:
-            # Get the most common model used in this thread
-            primary_model = max(models_used, key=lambda m: sum(1 for msg in messages_result.data if msg.get('content', {}).get('model') == m)) if models_used else 'unknown'
+        # Get project information
+        project_ids = [thread['project_id'] for thread in threads_result.data if thread.get('project_id')]
+        if project_ids:
+            projects_result = await client.table('projects') \
+                .select('project_id, name') \
+                .in_('project_id', project_ids) \
+                .execute()
             
-            log_entry = {
-                'thread_id': thread_id,
+            for project in projects_result.data:
+                project_names[project['project_id']] = project['name']
+        
+        # Build thread info mapping
+        for thread in threads_result.data:
+            thread_id = thread['thread_id']
+            project_id = thread.get('project_id')
+            project_name = project_names.get(project_id, 'Unknown Project')
+            thread_info[thread_id] = {
                 'project_id': project_id,
                 'project_name': project_name,
-                'created_at': latest_message_time,
-                'total_credits': total_credits,
-                'request_count': request_count,
-                'total_prompt_tokens': total_prompt_tokens,
-                'total_completion_tokens': total_completion_tokens,
-                'total_tokens': total_tokens,
-                'primary_model': primary_model,
-                'models_used': list(models_used)
+                'created_at': thread['created_at']
             }
-            processed_logs.append(log_entry)
+
+    # Aggregate by thread_id
+    by_thread: Dict[str, Dict] = {}
+    for row in all_res.data:
+        thread_id = row.get('thread_id') or 'unknown'
+        
+        # Determine thread name and status
+        if thread_id == 'unknown' or thread_id is None:
+            # NULL thread_id entries are from deleted threads (created before migration)
+            thread_name = 'Deleted Thread'
+        elif thread_id in thread_info:
+            # Use project name if available, otherwise show thread ID
+            project_name = thread_info[thread_id]['project_name']
+            if project_name and project_name != 'Unknown Project':
+                thread_name = f"{project_name} Thread"
+            else:
+                thread_name = f"Thread {thread_id[:8]}..."
+        else:
+            # Thread ID exists in usage_logs but not in threads table = deleted thread
+            thread_name = 'Deleted Thread'
+        
+        entry = by_thread.setdefault(thread_id, {
+            'thread_id': thread_id,
+            'project_id': thread_info.get(thread_id, {}).get('project_id') if thread_id in thread_info else None,
+            'project_name': thread_name,  # Use thread_name as project_name for display
+            'created_at': row.get('created_at'),
+            'total_cost_dollars': 0.0,  # Store dollars first, convert to credits later
+            'request_count': 0,
+            'total_prompt_tokens': 0,
+            'total_completion_tokens': 0,
+            'total_tokens': 0,
+        })
+        entry['request_count'] += 1
+        entry['total_prompt_tokens'] += int(row.get('total_prompt_tokens') or 0)
+        entry['total_completion_tokens'] += int(row.get('total_completion_tokens') or 0)
+        entry['total_tokens'] += int(row.get('total_tokens') or 0)
+        # Sum dollars first to match calculate_monthly_usage behavior
+        entry['total_cost_dollars'] += float(row.get('estimated_cost') or 0.0)
+        # Keep latest created_at
+        if row.get('created_at') and row.get('created_at') > entry['created_at']:
+            entry['created_at'] = row['created_at']
+
+    # Convert dollars to credits after aggregation to match calculate_monthly_usage behavior
+    for entry in by_thread.values():
+        entry['total_credits'] = round(entry['total_cost_dollars'] * 100)
+        # Remove the dollars field to keep the response format consistent
+        del entry['total_cost_dollars']
     
-    # Sort by latest activity (most recent first)
-    processed_logs.sort(key=lambda x: x['created_at'], reverse=True)
+    # Sort all logs by created_at
+    processed_logs = list(by_thread.values())
+    processed_logs.sort(key=lambda x: x['created_at'] or '', reverse=True)
     
-    # Check if there are more results
-    has_more = len(processed_logs) == items_per_page
+    # Apply pagination to the aggregated results
+    start_idx = page * items_per_page
+    end_idx = start_idx + items_per_page
+    paginated_logs = processed_logs[start_idx:end_idx]
     
-    return {
-        "logs": processed_logs,
-        "has_more": has_more
-    }
+    has_more = end_idx < len(processed_logs)
+    
+    return {"logs": paginated_logs, "has_more": has_more}
 
 
 def calculate_token_cost(prompt_tokens: int, completion_tokens: int, model: str) -> float:
@@ -1109,11 +1061,8 @@ async def create_checkout_session(
                         billing_cycle_anchor='now' # Reset billing cycle
                     )
                     
-                    # Update active status in database to true (customer has active subscription)
-                    await client.schema('basejump').from_('billing_customers').update(
-                        {'active': True}
-                    ).eq('id', customer_id).execute()
-                    logger.debug(f"Updated customer {customer_id} active status to TRUE after subscription upgrade")
+                    # Customer has active subscription (no database update needed)
+                    logger.debug(f"Customer {customer_id} has active subscription after upgrade")
                     
                     latest_invoice = None
                     if updated_subscription.latest_invoice:
@@ -1176,11 +1125,8 @@ async def create_checkout_session(
                         billing_cycle_anchor='unchanged'  # Keep current billing cycle
                     )
                     
-                    # Update active status in database
-                    await client.schema('basejump').from_('billing_customers').update(
-                        {'active': True}
-                    ).eq('id', customer_id).execute()
-                    logger.debug(f"Updated customer {customer_id} active status to TRUE after subscription downgrade")
+                    # Customer has active subscription (no database update needed)
+                    logger.debug(f"Customer {customer_id} has active subscription after downgrade")
                     
                     return {
                         "subscription_id": updated_subscription.id,
@@ -1220,11 +1166,8 @@ async def create_checkout_session(
                 allow_promotion_codes=True
             )
             
-            # Update customer status to potentially active (will be confirmed by webhook)
-            await client.schema('basejump').from_('billing_customers').update(
-                {'active': True}
-            ).eq('id', customer_id).execute()
-            logger.debug(f"Updated customer {customer_id} active status to TRUE after creating checkout session")
+            # Customer status will be confirmed by webhook
+            logger.debug(f"Created checkout session for customer {customer_id}")
             
             return {"session_id": session['id'], "url": session['url'], "status": "new"}
         
@@ -1700,50 +1643,20 @@ async def stripe_webhook(request: Request):
                 return {"status": "error", "message": "No customer ID found"}
             
             if event.type == 'customer.subscription.created':
-                # Update customer active status for new subscriptions
+                # Log subscription creation
                 if subscription.get('status') in ['active', 'trialing']:
-                    await client.schema('basejump').from_('billing_customers').update(
-                        {'active': True}
-                    ).eq('id', customer_id).execute()
-                    logger.debug(f"Webhook: Updated customer {customer_id} active status to TRUE based on {event.type}")
+                    logger.debug(f"Webhook: Customer {customer_id} subscription created and active based on {event.type}")
                     
             elif event.type == 'customer.subscription.updated':
-                # Check if subscription is active
+                # Log subscription update
                 if subscription.get('status') in ['active', 'trialing']:
-                    # Update customer's active status to true
-                    await client.schema('basejump').from_('billing_customers').update(
-                        {'active': True}
-                    ).eq('id', customer_id).execute()
-                    logger.debug(f"Webhook: Updated customer {customer_id} active status to TRUE based on {event.type}")
+                    logger.debug(f"Webhook: Customer {customer_id} subscription updated and active based on {event.type}")
                 else:
-                    # Subscription is not active (e.g., past_due, canceled, etc.)
-                    # Check if customer has any other active subscriptions before updating status
-                    has_active = len(await stripe.Subscription.list_async(
-                        customer=customer_id,
-                        status='active',
-                        limit=1
-                    ).get('data', [])) > 0
-                    
-                    if not has_active:
-                        await client.schema('basejump').from_('billing_customers').update(
-                            {'active': False}
-                        ).eq('id', customer_id).execute()
-                        logger.debug(f"Webhook: Updated customer {customer_id} active status to FALSE based on {event.type}")
+                    logger.debug(f"Webhook: Customer {customer_id} subscription updated to {subscription.get('status')} based on {event.type}")
             
             elif event.type == 'customer.subscription.deleted':
-                # Check if customer has any other active subscriptions
-                has_active = len((await stripe.Subscription.list_async(
-                    customer=customer_id,
-                    status='active',
-                    limit=1
-                )).get('data', [])) > 0
-                
-                if not has_active:
-                    # If no active subscriptions left, set active to false
-                    await client.schema('basejump').from_('billing_customers').update(
-                        {'active': False}
-                    ).eq('id', customer_id).execute()
-                    logger.debug(f"Webhook: Updated customer {customer_id} active status to FALSE after subscription deletion")
+                # Log subscription deletion
+                logger.debug(f"Webhook: Customer {customer_id} subscription deleted based on {event.type}")
             
             logger.debug(f"Processed {event.type} event for customer {customer_id}")
         
@@ -2250,9 +2163,9 @@ async def purchase_credits(
         
         # Map specific known package prices to fixed credits
         FIXED_CREDIT_PACKAGES = {
-            11.99: 1000,  # $11.99 → 1,000 credits
-            28.99: 2500,  # $28.99 → 2,500 credits
-            55.99: 5000,  # $55.99 → 5,000 credits
+            9.99: 5000,   # $9.99 → 5,000 credits
+            18.99: 10000, # $18.99 → 10,000 credits
+            44.99: 25000, # $44.99 → 25,000 credits
         }
         
         fixed_credits = FIXED_CREDIT_PACKAGES.get(round(request.amount_dollars, 2))

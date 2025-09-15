@@ -393,7 +393,10 @@ export function ConditionalWorkflowBuilder({
                   type="text"
                   value={activeStep.conditions.expression || ''}
                   onChange={(e) => updateStep(activeStep.id, {
-                    conditions: { ...activeStep.conditions, expression: e.target.value }
+                    conditions: { 
+                      type: activeStep.conditions?.type || 'if',
+                      expression: e.target.value 
+                    }
                   })}
                   placeholder="e.g., user asks about pricing"
                   className="w-full bg-transparent text-sm px-3 py-2 rounded-md"
