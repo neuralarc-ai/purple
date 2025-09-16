@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
-import { Notebook, Trash2, Loader2, Pencil, Upload, X, Image as ImageIcon, Info, Plus } from 'lucide-react';
+import { Notebook, Trash2, Loader2, Pencil, Upload, X, Image as ImageIcon, Info, Plus, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
 
@@ -104,6 +104,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   
   // View state management
   const [showAddForm, setShowAddForm] = useState(false);
+  // View entry modal state
+  const [viewEntryState, setViewEntryState] = useState<Entry | null>(null);
 
   const fetchEntries = async () => {
     try {
@@ -497,7 +499,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                   {/* Table Header - Fixed */}
                   <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground sticky top-0 z-10">
                     <div className="col-span-3">Name</div>
-                    <div className="col-span-5">Content</div>
+                    <div className="col-span-4">Content</div>
+                    <div className="col-span-1 text-center">View</div>
                     <div className="col-span-2">Created at</div>
                     <div className="col-span-1 text-center">Status</div>
                     <div className="col-span-1 text-center">Actions</div>
@@ -604,10 +607,23 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                             </div>
 
                             {/* Content */}
-                            <div className="col-span-5">
+                            <div className="col-span-4">
                               <p className="text-sm text-muted-foreground truncate">
                                 {entry.content ? entry.content.substring(0, 100) + (entry.content.length > 100 ? '...' : '') : 'No content'}
                               </p>
+                            </div>
+
+                            {/* View */}
+                            <div className="col-span-1 flex justify-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => setViewEntryState(entry)}
+                                title="View entry"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </div>
 
                             {/* Created at */}
@@ -995,6 +1011,52 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                 )}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Entry Dialog */}
+      <Dialog open={!!viewEntryState} onOpenChange={() => setViewEntryState(null)}>
+        <DialogContent className="sm:max-w-2xl bg-background/95 backdrop-blur border-border/50">
+          <DialogHeader className="border-b border-border/50 pb-4">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-primary" />
+              {viewEntryState?.title || 'View Entry'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {viewEntryState?.image_url && (
+              <div className="rounded-lg overflow-hidden border border-border/30">
+                <img src={viewEntryState.image_url} alt={viewEntryState.image_alt_text || 'Image'} className="w-full max-h-80 object-contain" />
+              </div>
+            )}
+            {viewEntryState?.file_url && (
+              <div className="text-sm">
+                <div className="mb-2 text-muted-foreground">File:</div>
+                <a
+                  href={viewEntryState.file_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary underline break-all"
+                >
+                  {viewEntryState.file_name || viewEntryState.file_url}
+                </a>
+                {viewEntryState.file_mime_type && (
+                  <div className="text-xs text-muted-foreground mt-1">{viewEntryState.file_mime_type}</div>
+                )}
+              </div>
+            )}
+            {viewEntryState?.content && (
+              <div className="text-sm text-foreground/90 whitespace-pre-wrap border border-border/30 rounded-md p-3 bg-muted/20">
+                {viewEntryState.content}
+              </div>
+            )}
+            {!viewEntryState?.content && !viewEntryState?.image_url && !viewEntryState?.file_url && (
+              <div className="text-sm text-muted-foreground">No preview available for this entry.</div>
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setViewEntryState(null)} className="border-border/50">Close</Button>
           </div>
         </DialogContent>
       </Dialog>
