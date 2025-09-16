@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Brain, Zap, Sparkles } from 'lucide-react'
 import { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 
@@ -94,11 +93,15 @@ export default function FeaturesSection() {
                     <Card className="mx-auto mt-8 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/20 overflow-hidden shadow-zinc-950/5 *:text-center md:mt-16 bg-black/20 border-white/30">
                         <div className="group shadow-zinc-950/5">
                             <CardHeader className="pb-3">
-                                <CardDecorator>
-                                    <Brain
-                                        className="size-6 text-white"
-                                        aria-hidden
-                                    />
+                                <CardDecorator variant="orange">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6 text-white">
+                                        <path d="M6 18h8"/>
+                                        <path d="M3 22h18"/>
+                                        <path d="M14 22a7 7 0 1 0 0-14h-1"/>
+                                        <path d="M9 14h2"/>
+                                        <path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/>
+                                        <path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/>
+                                    </svg>
                                 </CardDecorator>
 
                                 <h3 className="mt-6 font-medium text-white">Deeper, reliable intelligence</h3>
@@ -111,11 +114,18 @@ export default function FeaturesSection() {
 
                         <div className="group shadow-zinc-950/5">
                             <CardHeader className="pb-3">
-                                <CardDecorator>
-                                    <Zap
-                                        className="size-6 text-white"
-                                        aria-hidden
-                                    />
+                                <CardDecorator variant="blue">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6 text-white">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <path d="M3 4m0 1a1 1 0 0 1 1 -1h16a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1z" />
+                                        <path d="M7 20h10" />
+                                        <path d="M9 16v4" />
+                                        <path d="M15 16v4" />
+                                        <path d="M9 12v-4" />
+                                        <path d="M12 12v-1" />
+                                        <path d="M15 12v-2" />
+                                        <path d="M12 12v-1" />
+                                    </svg>
                                 </CardDecorator>
 
                                 <h3 className="mt-6 font-medium text-white">Automates workflows</h3>
@@ -128,11 +138,14 @@ export default function FeaturesSection() {
 
                         <div className="group shadow-zinc-950/5">
                             <CardHeader className="pb-3">
-                                <CardDecorator>
-                                    <Sparkles
-                                        className="size-6 text-white"
-                                        aria-hidden
-                                    />
+                                <CardDecorator variant="green">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6 text-white">
+                                        <path d="M14 4.1 12 6"/>
+                                        <path d="m5.1 8-2.9-.8"/>
+                                        <path d="m6 12-1.9 2"/>
+                                        <path d="M7.2 2.2 8 5.1"/>
+                                        <path d="M9.037 9.69a.498.498 0 0 1 .653-.653l11 4.5a.5.5 0 0 1-.074.949l-4.349 1.041a1 1 0 0 0-.74.739l-1.04 4.35a.5.5 0 0 1-.95.074z"/>
+                                    </svg>
                                 </CardDecorator>
 
                                 <h3 className="mt-6 font-medium text-white">No-code, simple to use</h3>
@@ -149,16 +162,43 @@ export default function FeaturesSection() {
     )
 }
 
-const CardDecorator = ({ children }: { children: ReactNode }) => (
-    <div className="relative mx-auto size-36 duration-200 [--color-border:color-mix(in_oklab,var(--color-white)20%,transparent)] group-hover:[--color-border:color-mix(in_oklab,var(--color-white)20%,transparent)]">
-        <div
-            aria-hidden
-            className="absolute inset-0 bg-[linear-gradient(to_right,var(--color-helium-orange)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-helium-orange)_1px,transparent_1px)] bg-[size:24px_24px]"
-        />
-        <div
-            aria-hidden
-            className="bg-radial to-black absolute inset-0 from-transparent to-75%"
-        />
-        <div className="bg-black absolute inset-0 m-auto flex size-12 items-center justify-center border border-helium-orange">{children}</div>
-    </div>
-)
+const CardDecorator = ({ children, variant = 'orange' }: { children: ReactNode; variant?: 'orange' | 'blue' | 'green' }) => {
+    const getGridColor = () => {
+        switch (variant) {
+            case 'blue':
+                return 'var(--color-helium-blue)';
+            case 'green':
+                return 'var(--color-helium-green)';
+            default:
+                return 'var(--color-helium-orange)';
+        }
+    };
+
+    const getBorderColor = () => {
+        switch (variant) {
+            case 'blue':
+                return 'border-helium-blue';
+            case 'green':
+                return 'border-helium-green';
+            default:
+                return 'border-helium-orange';
+        }
+    };
+
+    return (
+        <div className="relative mx-auto size-36 duration-200 [--color-border:color-mix(in_oklab,var(--color-white)20%,transparent)] group-hover:[--color-border:color-mix(in_oklab,var(--color-white)20%,transparent)]">
+            <div
+                aria-hidden
+                className="absolute inset-0 bg-[linear-gradient(to_right,var(--color-helium-orange)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-helium-orange)_1px,transparent_1px)] bg-[size:24px_24px]"
+                style={{
+                    backgroundImage: `linear-gradient(to right, ${getGridColor()} 1px, transparent 1px), linear-gradient(to bottom, ${getGridColor()} 1px, transparent 1px)`
+                }}
+            />
+            <div
+                aria-hidden
+                className="bg-radial to-black absolute inset-0 from-transparent to-75%"
+            />
+            <div className={`bg-black absolute inset-0 m-auto flex size-12 items-center justify-center border ${getBorderColor()}`}>{children}</div>
+        </div>
+    );
+}
