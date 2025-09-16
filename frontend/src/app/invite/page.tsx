@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
+import { useTheme } from 'next-themes';
 
 interface InviteData {
   inviteCode: string;
@@ -25,6 +26,7 @@ interface InviteData {
 
 export default function InvitePage() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -218,7 +220,7 @@ export default function InvitePage() {
         <div className="text-center mb-12">
           <div className="flex justify-center mb-8 p-4">
             <Image
-              src="/logo-dark.svg"
+              src={theme === 'dark' ? '/logo-light.svg' : '/logo-dark.svg'}
               alt="Helium Logo"
               width={120}
               height={120}
@@ -235,17 +237,17 @@ export default function InvitePage() {
         </div>
 
         {/* Two Card Layout */}
-        <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+        <div className="grid md:grid-cols-2 gap-2 lg:gap-2">
           {/* Left Card - Invite Code */}
-          <div className="bg-white h-[500px] sm:h-[550px] lg:h-[600px] flex flex-col justify-center items-center rounded-2xl shadow-lg p-4 sm:p-6">
-            <div className="text-center mb-8 sm:mb-10 lg:mb-12">
-              <h2 className="text-lg sm:text-xl font-bold text-black mb-2">Have an invite code?</h2>
-              <p className="text-gray-600 text-xs sm:text-sm">Enter your code to unlock access instantly.</p>
+          <div className="bg-white h-[500px] sm:h-[550px] lg:h-[600px] flex flex-col justify-center items-center rounded-2xl shadow-lg p-8 w-full max-w-md mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-black mb-2">Have an invite code?</h2>
+              <p className="text-gray-600 text-lg">Enter your code to unlock access instantly.</p>
             </div>
 
-            <div className="space-y-3 sm:space-y-4 w-full max-w-sm">
+            <div className="space-y-4 w-full">
               <div className="space-y-2">
-                <Label htmlFor="inviteCode" className="text-sm font-medium text-black">
+                <Label htmlFor="inviteCode" className="text-lg font-medium text-black">
                   Invite Code
                 </Label>
                 <Input
@@ -257,7 +259,7 @@ export default function InvitePage() {
                     updateInviteData({ inviteCode: value });
                   }}
                   maxLength={7}
-                  className="text-xl sm:text-2xl h-10 sm:h-12 text-center font-mono border-gray-200"
+                  className="text-3xl! sm:text-2xl h-10 bg-gray-100 sm:h-12 text-black text-center font-mono border-gray-300"
                 />
                 {inviteError && (
                   <p className="text-xs sm:text-sm text-red-600">{inviteError}</p>
@@ -267,7 +269,7 @@ export default function InvitePage() {
               <Button
                 onClick={handleInviteSubmit}
                 disabled={!inviteData.inviteCode.trim() || isSubmitting}
-                className="w-full h-9 sm:h-10 bg-gray-800 hover:bg-gray-900 text-white text-sm sm:text-base"
+                className="w-full h-9 sm:h-10 bg-gray-800 text-white text-sm sm:text-base"
               >
                 {isSubmitting ? (
                   <>
@@ -282,7 +284,7 @@ export default function InvitePage() {
               <Button
                 variant="ghost"
                 onClick={() => setShowWaitlistModal(true)}
-                className="w-full h-9 sm:h-10 border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm sm:text-base"
+                className="w-full h-9 sm:h-10 border border-gray-800 text-gray-600 bg-white text-sm sm:text-base"
               >
                 Join Waitlist
               </Button>
@@ -295,10 +297,10 @@ export default function InvitePage() {
             <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
               <div className="relative w-full h-full">
                 <Image
-                  src="/images/Benefit.png"
+                  src="/images/invitecard.png"
                   alt="Helium Benefits"
                   fill
-                  className="object-contain rounded-lg"
+                  className="object-bottom object-cover rounded-lg"
                   priority
                 />
               </div>
