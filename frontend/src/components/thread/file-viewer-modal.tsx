@@ -89,7 +89,10 @@ export function FileViewerModal({
   // File navigation state
   const [currentPath, setCurrentPath] = useState('/workspace');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [panelWidth, setPanelWidth] = useState(600); // default width
+  const [panelWidth, setPanelWidth] = useState(() => {
+    if (typeof window === 'undefined') return 600; // SSR fallback
+    return Math.floor(window.innerWidth * 0.45); // default to 50% (50-50 split)
+  });
   const isResizing = useRef(false);
   
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -101,10 +104,34 @@ export function FileViewerModal({
   
   const handleMouseMove = (e: MouseEvent) => {
     if (!isResizing.current) return;
-    const newWidth = Math.min(
-      Math.max(window.innerWidth - e.clientX, 320), // min 320px
-      900 // max 900px
+    const screenWidth = window.innerWidth;
+    const minWidth = 320;
+    // Dynamic caps aligned with tool-call-side-panel behavior
+    let maxAllowedWidth: number;
+    if (screenWidth >= 1920) {
+      maxAllowedWidth = screenWidth * 0.7;
+    } else if (screenWidth >= 1500) {
+      maxAllowedWidth = screenWidth * 0.65;
+    } else if (screenWidth >= 1366) {
+      maxAllowedWidth = screenWidth * 0.6;
+    } else if (screenWidth >= 1280) {
+      maxAllowedWidth = screenWidth * 0.58;
+    } else if (screenWidth >= 1109) {
+      maxAllowedWidth = screenWidth * 0.52;
+    } else {
+      maxAllowedWidth = screenWidth * 0.47;
+    }
+
+    const minContentWidth = 400;
+    const leftSidebarWidth = isSidebarExpanded ? 256 : 72;
+    const spacing = 32;
+    const calculatedMaxWidth = Math.min(
+      maxAllowedWidth,
+      screenWidth - minContentWidth - leftSidebarWidth - spacing
     );
+
+    const desired = screenWidth - e.clientX; // width from right edge
+    const newWidth = Math.max(minWidth, Math.min(desired, calculatedMaxWidth));
     setPanelWidth(newWidth);
     // Realtime notify parent while dragging
     onPanelWidthChange?.(newWidth);
