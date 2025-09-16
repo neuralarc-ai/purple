@@ -34,7 +34,7 @@ export default function Comparison({ className }: ComparisonProps) {
   return (
     <section className={cn("w-full px-4 md:px-8 lg:px-12 py-8 md:py-16 mt-12 md:mt-12", className)}>
       <div className="mx-auto max-w-6xl">
-        <h2 className="text-center text-3xl md:text-4xl font-bold tracking-tight text-white mb-8 md:mb-10">
+        <h2 className="text-center text-3xl md:text-5xl font-bold tracking-tight text-white mb-8 md:mb-10">
           Benchmarking Brilliance:<br />
           Helium vs. ChatGPT, Claude, GenSpark and Lovable
         </h2>
