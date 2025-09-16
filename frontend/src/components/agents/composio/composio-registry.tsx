@@ -990,7 +990,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
   const categories = categoriesData?.categories || [];
 
   return (
-    <div className="h-full w-full overflow-hidden flex rounded-4xl border bg-background shadow-lg">
+    <div className="h-full w-full overflow-hidden flex rounded-3xl border bg-background shadow-lg">
       {/* Mobile Sidebar Overlay */}
       {showSidebar && (
         <div 
