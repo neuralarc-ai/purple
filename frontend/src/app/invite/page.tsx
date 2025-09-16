@@ -44,7 +44,17 @@ export default function InvitePage() {
     const checkAuth = async () => {
       try {
         const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        console.log('Auth check - Session:', !!session, 'Error:', error);
+        
+        if (error) {
+          console.error('Auth error:', error);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+        
         setIsAuthenticated(!!session);
 
         if (session?.access_token) {
@@ -57,12 +67,14 @@ export default function InvitePage() {
 
           if (profileData && !profileError) {
             // User has already completed onboarding - redirect to dashboard
+            console.log('User already onboarded, redirecting to dashboard');
             router.push('/');
             return;
           }
         }
       } catch (error) {
         console.error('Auth check error:', error);
+        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
@@ -158,6 +170,19 @@ export default function InvitePage() {
     setIsStartingTrial(true);
     
     try {
+      // Get fresh session before making the request
+      const supabase = createClient();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('Session error:', sessionError);
+        toast.error('Please sign in to start your trial');
+        router.push('/auth');
+        return;
+      }
+      
+      console.log('Starting trial with session:', !!session);
+      
       const response = await fetch('/api/billing/create-trial-checkout', {
         method: 'POST',
         headers: {
@@ -171,6 +196,8 @@ export default function InvitePage() {
 
       const result = await response.json();
       
+      console.log('Trial checkout response:', result);
+      
       if (result.url) {
         // Redirect to Stripe checkout
         window.location.href = result.url;
@@ -179,7 +206,8 @@ export default function InvitePage() {
         toast.info('You already have an active subscription');
         router.push('/onboarding');
       } else {
-        toast.error('Failed to create trial checkout. Please try again.');
+        console.error('Trial checkout failed:', result);
+        toast.error(result.error || 'Failed to create trial checkout. Please try again.');
       }
     } catch (error) {
       console.error('Trial checkout error:', error);
@@ -308,7 +336,7 @@ export default function InvitePage() {
             <div className="text-center p-3 sm:p-4">
               <Button
                 className="w-full h-9 sm:h-10 bg-white text-black hover:bg-gray-100 font-semibold text-sm sm:text-base"
-                onClick={handleStartTrial}
+                onClick={isAuthenticated ? handleStartTrial : () => router.push('/auth')}
                 disabled={isStartingTrial}
               >
                 {isStartingTrial ? (
@@ -316,8 +344,10 @@ export default function InvitePage() {
                     <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-2" />
                     Starting trial...
                   </>
-                ) : (
+                ) : isAuthenticated ? (
                   'Start 1-week trial for $1.99'
+                ) : (
+                  'Sign in to start trial'
                 )}
               </Button>
             </div>

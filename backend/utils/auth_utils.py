@@ -158,7 +158,7 @@ async def get_current_user_id_from_jwt(request: Request) -> str:
             structlog.get_logger().error("No 'sub' field found in JWT payload")
             raise HTTPException(
                 status_code=401,
-                detail="Invalid token payload",
+                detail="Invalid token payload - missing user ID",
                 headers={"WWW-Authenticate": "Bearer"}
             )
 
@@ -174,7 +174,7 @@ async def get_current_user_id_from_jwt(request: Request) -> str:
         structlog.get_logger().error(f"JWT decode error: {e}")
         raise HTTPException(
             status_code=401,
-            detail="Invalid token",
+            detail=f"Invalid token: {str(e)}",
             headers={"WWW-Authenticate": "Bearer"}
         )
 

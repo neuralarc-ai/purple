@@ -15,11 +15,17 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
-    // Proxy the request to the backend
+    // Get backend URL with proper fallback
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
-    const apiPath = backendUrl.endsWith('/api') ? '/billing/create-trial-checkout' : '/api/billing/create-trial-checkout';
     
-    const response = await fetch(`${backendUrl}${apiPath}`, {
+    // Ensure we're using the correct API path
+    const apiPath = '/api/billing/create-trial-checkout';
+    const fullUrl = `${backendUrl}${apiPath}`;
+    
+    console.log('Making request to:', fullUrl);
+    console.log('Authorization header:', `Bearer ${session.access_token.substring(0, 20)}...`);
+    
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -29,6 +35,11 @@ export async function POST(request: NextRequest) {
     });
 
     const result = await response.json();
+    
+    if (!response.ok) {
+      console.error('Backend error:', result);
+      return NextResponse.json(result, { status: response.status });
+    }
     
     return NextResponse.json(result, { status: response.status });
   } catch (error) {
