@@ -33,6 +33,12 @@ type Entry = {
   image_url?: string;
   image_alt_text?: string;
   image_metadata?: Record<string, any>;
+  // File support
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  file_mime_type?: string;
+  file_metadata?: Record<string, any>;
   category: 'instructions' | 'preferences' | 'rules' | 'notes' | 'general';
   priority: 1 | 2 | 3;
   is_active: boolean;
@@ -75,6 +81,26 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const [editSelectedImage, setEditSelectedImage] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
+  
+  // File handling state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadedFileInfo, setUploadedFileInfo] = useState<{
+    file_url: string;
+    file_name: string;
+    file_size: number;
+    file_mime_type: string;
+    file_metadata?: Record<string, any>;
+  } | null>(null);
+  const [editSelectedFile, setEditSelectedFile] = useState<File | null>(null);
+  const [editUploadingFile, setEditUploadingFile] = useState(false);
+  const [editUploadedFileInfo, setEditUploadedFileInfo] = useState<{
+    file_url: string;
+    file_name: string;
+    file_size: number;
+    file_mime_type: string;
+    file_metadata?: Record<string, any>;
+  } | null>(null);
   
   // View state management
   const [showAddForm, setShowAddForm] = useState(false);
@@ -170,8 +196,41 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     }
   };
 
+  const uploadFile = async (file: File, isEdit: boolean = false) => {
+    try {
+      if (isEdit) setEditUploadingFile(true); else setUploadingFile(true);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${API_BASE}/dagad/upload-file`, {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+        credentials: 'include',
+        body: form,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const detail = data?.detail || res.statusText || 'Unknown error';
+        throw new Error(`Failed to upload file: ${res.status} ${detail}`);
+      }
+      const info = await res.json();
+      if (isEdit) setEditUploadedFileInfo(info); else setUploadedFileInfo(info);
+      return info as {
+        file_url: string;
+        file_name: string;
+        file_size: number;
+        file_mime_type: string;
+        file_metadata?: Record<string, any>;
+      };
+    } finally {
+      if (isEdit) setEditUploadingFile(false); else setUploadingFile(false);
+    }
+  };
+
   const createEntry = async () => {
-    if (!title.trim() || (!content.trim() && !selectedImage)) return;
+    if (!title.trim() || (!content.trim() && !selectedImage && !selectedFile)) return;
     
     try {
       const supabase = createClient();
@@ -181,6 +240,19 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
       let imageUrl: string | null = null;
       if (selectedImage) {
         imageUrl = await uploadImage(selectedImage);
+      }
+
+      let filePayload: any = null;
+      if (selectedFile) {
+        const info = await uploadFile(selectedFile);
+        filePayload = {
+          file_url: info.file_url,
+          file_name: info.file_name,
+          file_size: info.file_size,
+          file_mime_type: info.file_mime_type,
+          file_metadata: info.file_metadata || {},
+          source_type: 'file',
+        };
       }
 
       const res = await fetch(`${API_BASE}/dagad`, {
@@ -198,7 +270,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           category, 
           priority: 1, 
           is_global: false, 
-          auto_inject: true 
+          auto_inject: true,
+          ...(filePayload || {}),
         }),
       });
       
@@ -224,6 +297,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     setCategory('general');
     setSelectedImage(null);
     setImagePreview(null);
+    setSelectedFile(null);
+    setUploadedFileInfo(null);
     setErrorMsg(null);
   };
 
@@ -284,6 +359,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     setEditIsActive(entry.is_active);
     setEditImagePreview(entry.image_url || null);
     setEditSelectedImage(null);
+    setEditSelectedFile(null); // Reset file state for edit
+    setEditUploadedFileInfo(null);
   };
 
   const saveEdit = async () => {
@@ -297,6 +374,19 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
       let imageUrl: string | null = editEntry.image_url || null;
       if (editSelectedImage) {
         imageUrl = await uploadImage(editSelectedImage, true);
+      }
+
+      let filePayload: any = null;
+      if (editSelectedFile) {
+        const info = await uploadFile(editSelectedFile, true);
+        filePayload = {
+          file_url: info.file_url,
+          file_name: info.file_name,
+          file_size: info.file_size,
+          file_mime_type: info.file_mime_type,
+          file_metadata: info.file_metadata || {},
+          source_type: 'file',
+        };
       }
 
       const res = await fetch(`${API_BASE}/dagad/${editEntry.entry_id}`, {
@@ -313,6 +403,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           image_alt_text: editSelectedImage?.name || editEntry.image_alt_text,
           category: editCategory,
           is_active: editIsActive,
+          ...(filePayload || {}),
         }),
       });
       if (!res.ok) {
@@ -657,22 +748,47 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                     )}
                   </div>
 
+                  {/* File Upload */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground/80">File (optional)</label>
+                    <div className="border-2 border-dashed border-border/40 rounded-lg p-6 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          setSelectedFile(file || null);
+                        }}
+                        className="hidden"
+                        id="kb-file-upload"
+                      />
+                      <label htmlFor="kb-file-upload" className="cursor-pointer block">
+                        <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+                        <p className="text-sm text-muted-foreground mb-1">Click to upload a file (PDF, DOCX, CSV)</p>
+                        <p className="text-xs text-muted-foreground/70">Max 20MB</p>
+                      </label>
+                      {selectedFile && (
+                        <div className="text-xs text-muted-foreground mt-2">{selectedFile.name} ({Math.round(selectedFile.size/1024)} KB)</div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Action Buttons */}
                   <div className="flex justify-end gap-3 pt-4 border-t border-border/30">
                     <Button 
                       variant="outline" 
                       onClick={handleCancelAdd}
-                      disabled={uploadingImage}
+                      disabled={uploadingImage || uploadingFile}
                       className="border-border/50"
                     >
                       Cancel
                     </Button>
                     <Button 
                       onClick={createEntry} 
-                      disabled={uploadingImage || (!title.trim() || (!content.trim() && !selectedImage))}
+                      disabled={uploadingImage || uploadingFile || (!title.trim() || (!content.trim() && !selectedImage && !selectedFile))}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
-                      {uploadingImage ? (
+                      {uploadingImage || uploadingFile ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
                           Uploading...
@@ -820,6 +936,32 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                 </div>
               )}
             </div>
+
+            {/* File Upload Section for Edit */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-foreground/70">File (optional)</label>
+              <div className="border-2 border-dashed border-border/40 rounded-lg p-4 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setEditSelectedFile(file);
+                  }}
+                  className="hidden"
+                  id="edit-file-upload"
+                />
+                <label htmlFor="edit-file-upload" className="cursor-pointer block">
+                  <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                  <p className="text-xs text-muted-foreground">Click to upload a file</p>
+                </label>
+                {(editSelectedFile || editEntry?.file_name) && (
+                  <div className="text-xs text-muted-foreground mt-2">
+                    {editSelectedFile ? `${editSelectedFile.name} (${Math.round(editSelectedFile.size/1024)} KB)` : editEntry?.file_name}
+                  </div>
+                )}
+              </div>
+            </div>
             
             <div className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-lg border border-border/30">
               <span className="text-sm font-medium text-foreground/80">Active</span>
@@ -840,13 +982,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
               </Button>
               <Button 
                 onClick={saveEdit} 
-                disabled={savingEdit || editUploadingImage || !editTitle.trim()}
+                disabled={savingEdit || editUploadingImage || editUploadingFile || !editTitle.trim()}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                {savingEdit || editUploadingImage ? (
+                {savingEdit || editUploadingImage || editUploadingFile ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
-                    {editUploadingImage ? 'Uploading...' : 'Saving...'}
+                    {(editUploadingImage || editUploadingFile) ? 'Uploading...' : 'Saving...'}
                   </>
                 ) : (
                   'Save Changes'
