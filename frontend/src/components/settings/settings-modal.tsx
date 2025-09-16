@@ -431,12 +431,12 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
             <Image
               src={localProfile.avatar_url} 
               alt="User avatar" 
-              className="w-24 h-24 rounded-full object-cover"
+              className="w-20 h-20 rounded-full object-cover"
               width={96}
               height={96}
             />
           ) : (
-            <Avatar className="h-24 w-24">
+            <Avatar className="h-20 w-20">
               <AvatarFallback className="bg-green-500 text-white text-2xl font-semibold">
                 {getInitials(profileForm.fullName || preferredName || authUser?.user_metadata?.full_name || 'User')}
               </AvatarFallback>
@@ -452,7 +452,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           </button>
         </div>
         
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 -translate-y-3">
           <div>
             <h3 className="text-lg font-semibold text-foreground">
               {preferredName || authUser?.user_metadata?.full_name || 'User'}
@@ -657,8 +657,8 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
       toast.error('Traits must be 200 characters or fewer');
       return;
     }
-    if (personalization.customInstructions && personalization.customInstructions.trim().length > 1500) {
-      toast.error('Custom instruction must be 1500 characters or fewer');
+    if (personalization.customInstructions && personalization.customInstructions.trim().length > 1000) {
+      toast.error('Custom instruction must be 1000 characters or fewer');
       return;
     }
 
