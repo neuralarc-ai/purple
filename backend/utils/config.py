@@ -183,6 +183,12 @@ class Configuration:
     GOOGLE_OAUTH_CLIENT_SECRET: Optional[str] = None
     GOOGLE_OAUTH_REDIRECT_URI: Optional[str] = None
     
+    # Azure AD OAuth configuration for backend authentication
+    AZURE_AD_CLIENT_ID: Optional[str] = None
+    AZURE_AD_CLIENT_SECRET: Optional[str] = None
+    AZURE_AD_TENANT_ID: Optional[str] = None
+    AZURE_AD_REDIRECT_URI: Optional[str] = None
+    
     # Frontend URL for OAuth redirects
     NEXT_PUBLIC_URL: Optional[str] = None
     

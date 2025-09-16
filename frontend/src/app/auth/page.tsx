@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { SubmitButton } from '@/components/ui/submit-button';
 import { Input } from '@/components/ui/input';
 import GoogleSignIn from '@/components/GoogleSignIn';
+import AzureSignIn from '@/components/AzureSignIn';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import { useState, useEffect, Suspense } from 'react';
 import { signIn, signUp, forgotPassword } from './actions';
@@ -505,6 +506,7 @@ function LoginContent() {
 
                   <div className="space-y-2.5">
                     <GoogleSignIn returnUrl={returnUrl || undefined} />
+                    <AzureSignIn returnUrl={returnUrl || undefined} />
                     {/* <button className="w-full h-10 xs:h-11 sm:h-12 border border-gray-200 bg-white text-black rounded-full flex items-center justify-center gap-2 text-xs xs:text-sm sm:text-base hover:bg-gray-50 transition-colors">
                       <Image
                         src="/auth/apple-login.svg"
