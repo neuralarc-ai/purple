@@ -11,20 +11,17 @@ import { useTheme } from 'next-themes';
 import { UploadedFile } from './chat-input';
 import { VoiceRecorder } from './voice-recorder';
 import { UnifiedConfigMenu } from './unified-config-menu';
-import { canAccessModel, SubscriptionStatus } from './_use-model-selection';
+import { SubscriptionStatus } from './_use-model-selection';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { handleFiles } from './file-upload-handler';
-import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
 import { improvePromptWithOpenRouter } from '@/lib/prompt-improvement-api';
-import Image from 'next/image';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ModeToggle } from './mode-toggle';
-import { BorderBeam } from '@/components/magicui/border-beam';
 import { isProductionMode } from '@/lib/config';
 
 // Custom Attach Icon component
@@ -328,7 +325,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             onPaste={handlePaste}
             placeholder={placeholder}
             className={cn(
-              "w-full text-foreground bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-2 min-h-[100px] max-h-[200px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] scrollbar-hide",
+              "w-full text-black dark:text-white bg-transparent dark:bg-transparent md:text-base md:placeholder:text-base border-none shadow-none focus-visible:ring-0 px-1 pb-8 pt-2 min-h-[100px] max-h-[200px] overflow-y-auto resize-none font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] scrollbar-hide",
               isDraggingOver ? 'opacity-40' : '',
             )}
             disabled={loading || (disabled && !isAgentRunning)}

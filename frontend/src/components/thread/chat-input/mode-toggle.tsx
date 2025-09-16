@@ -30,7 +30,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
           {/* Animated sliding background */}
           <motion.div
             className={cn(
-              "absolute w-9 h-6.5 rounded-full shadow-xs backdrop-blur-2xl bg-muted dark:bg-muted",              
+              "absolute w-9 h-6.5 rounded-full shadow-xs backdrop-blur-2xl bg-muted dark:bg-accent/80",              
             )}
             animate={{
               x: isChatMode ? 0 : 36, // 28px = gap (1) + width (6.5) + padding adjustments
@@ -63,12 +63,12 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="rounded-xl">
-              <div className="text-left p-1">
+              <div className="text-left p-1 max-w-[150px]">
                 <div className="flex items-center gap-1 mb-1">
                   <i className="ri-chat-1-line text-base" />
                   <div className="libre-baskerville-bold text-base">Chat</div>
                 </div>
-                <div className="text-xs text-sidebar/70 dark:text-muted max-w-[160px]">Engage in quick conversations or ask everyday questions</div>
+                <div className="text-xs text-sidebar/70 dark:text-muted">Engage in quick conversations or ask everyday questions</div>
               </div>
             </TooltipContent>
           </Tooltip>
@@ -94,12 +94,12 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="rounded-xl">
-              <div className="text-left p-1">
+              <div className="text-left p-1 max-w-[150px]">
                 <div className="flex items-center gap-1 mb-1">
                   <i className="ri-meteor-fill text-base" />
                   <div className="libre-baskerville-bold text-base">Agent</div>
                 </div>
-                <div className="text-xs text-sidebar/70 dark:text-muted max-w-[160px]">Execute complex tasks and deliver outcomes autonomously</div>
+                <div className="text-xs text-sidebar/70 dark:text-muted">Execute complex tasks and deliver outcomes autonomously</div>
               </div>
             </TooltipContent>
           </Tooltip>

@@ -72,7 +72,7 @@ export default function FeatureTable({ className }: { className?: string }) {
         <p className="text-center text-muted-foreground mb-3 md:mb-6 text-base md:text-xl">
           Stop paying for multiple subscriptions that force you to stitch together incomplete solutions. Helium AI delivers everything in one intelligent platform that actually executes tasks instead of just talking about them.
         </p>
-        <h2 className="text-xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-white text-center mb-6">
+        <h2 className="text-xl md:mt-12 md:text-3xl lg:text-4xl font-extrabold tracking-tight text-white text-center mb-6">
           What Can Helium Do for Your Business?
         </h2>
         {/* Mobile Card Layout */}

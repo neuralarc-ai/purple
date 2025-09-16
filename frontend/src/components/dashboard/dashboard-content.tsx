@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense, useEffect, useRef, useMemo } from 'react';
+import React, { useState, Suspense, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -88,9 +88,27 @@ export function DashboardContent() {
   const [showPromotionalMessage, setShowPromotionalMessage] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [useCasesLoaded, setUseCasesLoaded] = useState(false);
+  const [useCasesLoading, setUseCasesLoading] = useState(true);
 
-  // Check if user used an invite code
+  // Check if user used an invite code with caching
   const { data: inviteCodeUsage, isLoading: inviteCodeLoading } = useInviteCodeUsage();
+  
+  // Cache invite code usage result
+  const cachedInviteCodeUsage = useMemo(() => {
+    if (!inviteCodeLoading && inviteCodeUsage) {
+      // Cache the result in sessionStorage for faster retrieval
+      sessionStorage.setItem('invite_code_usage', JSON.stringify(inviteCodeUsage));
+      return inviteCodeUsage;
+    }
+    
+    // Check sessionStorage for cached result
+    const cached = sessionStorage.getItem('invite_code_usage');
+    if (cached) {
+      return JSON.parse(cached);
+    }
+    
+    return inviteCodeUsage;
+  }, [inviteCodeUsage, inviteCodeLoading]);
 
   // Handle prompt from URL
   useEffect(() => {
@@ -118,35 +136,68 @@ export function DashboardContent() {
     return message;
   }, []); // Empty dependency array - uses cached message
 
-  const [currentWelcomeMessage, setCurrentWelcomeMessage] = useState('');
+  // List of alternative messages - moved outside component for constant caching
+  const alternativeMessages = useMemo(() => [
+    "Make today the day you accelerate forward.",
+    "Great businesses are built on bold moves.",
+    "Transform decisions into measurable outcomes.",
+    "Lead with intelligence, not intuition alone.",
+    "Every login is a step closer to a smarter business.",
+    "Innovation begins the moment you take action."
+  ], []);
 
-  // Get user's preferred name or fallback to account name
+  // Function to get a random message from the list
+  const getRandomMessage = useCallback(() => {
+    // Check if we have a session-cached alternative message
+    const sessionCachedMessage = sessionStorage.getItem('dashboard_random_message');
+    if (sessionCachedMessage) {
+      return sessionCachedMessage;
+    }
+    
+    // Select a random message and cache it in sessionStorage for the session
+    const randomIndex = Math.floor(Math.random() * alternativeMessages.length);
+    const selectedMessage = alternativeMessages[randomIndex];
+    sessionStorage.setItem('dashboard_random_message', selectedMessage);
+    return selectedMessage;
+  }, [alternativeMessages]);
+
+  const [currentWelcomeMessage, setCurrentWelcomeMessage] = useState('');
+  const [randomMessage, setRandomMessage] = useState('');
+  const [isNameLoaded, setIsNameLoaded] = useState(false);
+
+  // Get user's preferred name or fallback to account name with better caching
   const cachedUserName = useMemo(() => {
-    // If we have a preferred name from the profile, use it
+    // Early return if we already have the preferred name
     if (preferredName && !profileLoading) {
-      return preferredName;
+      setIsNameLoaded(true);
+      // Cache the preferred name immediately
+      localStorage.setItem('cached_user_name', preferredName);
+      const capitalizedName = preferredName.charAt(0).toUpperCase() + preferredName.slice(1).toLowerCase();
+      localStorage.setItem('cached_capitalized_name', capitalizedName);
+      return capitalizedName;
     }
     
-    // Check localStorage first for cached name
+    // Show cached name immediately if available
     const cachedName = localStorage.getItem('cached_user_name');
-    
-    if (cachedName && personalAccount?.name === cachedName) {
-      // Return cached capitalized name if it matches current user
-      return localStorage.getItem('cached_capitalized_name') || 'there';
+    if (cachedName) {
+      const capitalizedName = localStorage.getItem('cached_capitalized_name') || 'there';
+      setIsNameLoaded(true);
+      return capitalizedName;
     }
     
-    // Process and cache new name
-    if (personalAccount?.name) {
+    // Process and cache new name when available
+    if (!profileLoading && personalAccount?.name) {
       const firstName = personalAccount.name.split(' ')[0];
       const capitalizedFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
       
       // Cache both original and capitalized names
       localStorage.setItem('cached_user_name', personalAccount.name);
       localStorage.setItem('cached_capitalized_name', capitalizedFirstName);
-      
+      setIsNameLoaded(true);
       return capitalizedFirstName;
     }
     
+    // Return default while loading
     return 'there';
   }, [preferredName, profileLoading, personalAccount?.name]);
 
@@ -157,17 +208,39 @@ export function DashboardContent() {
     setCurrentWelcomeMessage(personalizedMessage);
   }, [welcomeMessage, cachedUserName]);
 
+  // Set random message once when component mounts
+  useEffect(() => {
+    setRandomMessage(getRandomMessage());
+  }, [getRandomMessage]);
+
   // Feature flag for custom agents section
   const { enabled: customAgentsEnabled } = useFeatureFlag('custom_agents');
 
-  // Fetch agents to get the selected agent's name
-  const { data: agentsResponse } = useAgents({
+  // Fetch agents to get the selected agent's name with caching
+  const { data: agentsResponse, isLoading: agentsLoading } = useAgents({
     limit: 100,
     sort_by: 'name',
     sort_order: 'asc'
   });
 
-  const agents = agentsResponse?.agents || [];
+  // Cache agents data
+  const cachedAgents = useMemo(() => {
+    if (!agentsLoading && agentsResponse) {
+      // Cache the result in sessionStorage for faster retrieval
+      sessionStorage.setItem('dashboard_agents', JSON.stringify(agentsResponse));
+      return agentsResponse;
+    }
+    
+    // Check sessionStorage for cached result
+    const cached = sessionStorage.getItem('dashboard_agents');
+    if (cached) {
+      return JSON.parse(cached);
+    }
+    
+    return agentsResponse;
+  }, [agentsResponse, agentsLoading]);
+
+  const agents = cachedAgents?.agents || [];
   const selectedAgent = selectedAgentId
     ? agents.find(agent => agent.agent_id === selectedAgentId)
     : null;
@@ -391,6 +464,15 @@ export function DashboardContent() {
     }
   }, [autoSubmit, inputValue, isSubmitting]);
 
+  // Clean up session storage cache when component unmounts
+  useEffect(() => {
+    return () => {
+      sessionStorage.removeItem('dashboard_random_message');
+      sessionStorage.removeItem('invite_code_usage');
+      sessionStorage.removeItem('dashboard_agents');
+    };
+  }, []);
+
   return (
     <>
       <BillingModal 
@@ -433,10 +515,10 @@ export function DashboardContent() {
           </TooltipProvider>
         </div>
         
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto"> 
           <div className="min-h-full flex flex-col">
             {/* Promotional Banner - Only show for users who used invite codes */}
-            {!inviteCodeLoading && inviteCodeUsage?.has_used_invite_code && (
+            {!inviteCodeLoading && cachedInviteCodeUsage?.has_used_invite_code && (
               <PromotionalBanner onUpgradeClick={() => {
                 setShowPromotionalMessage(true);
                 setShowPaymentModal(true);
@@ -452,14 +534,22 @@ export function DashboardContent() {
               <div className="w-full max-w-[800px] flex flex-col items-start justify-center space-y-1 md:space-y-2">
                 <div className="flex flex-col items-start text-left w-full">
                   {/* Hello, {user's name} */}
-                  <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground libre-baskerville-bold mb-1">
-                    Hello, {cachedUserName}
-                  </div>
+                  {isNameLoaded ? (
+                    <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground libre-baskerville-bold mb-1">
+                      Hello, {cachedUserName}
+                    </div>
+                  ) : (
+                    <Skeleton className="h-8 w-48 mb-1" />
+                  )}
                   
-                  {/* Let's rise above the noise */}
-                  <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-muted-foreground libre-baskerville-regular">
-                    Let's rise above the noise.
-                  </div>
+                  {/* Random alternative message */}
+                  {isNameLoaded ? (
+                    <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-muted-foreground libre-baskerville-regular">
+                      {randomMessage}
+                    </div>
+                  ) : (
+                    <Skeleton className="h-8 w-96" />
+                  )}
                 </div>
                 <div className="w-full transition-all duration-700 ease-out">
                   
@@ -491,23 +581,38 @@ export function DashboardContent() {
                       disabled={isExhausted}
                     />
                   </div>
-                  <UseCases 
-                    router={router}
-                    onUseCaseSelect={(prompt) => {
-                      setInputValue(prompt);
-                      // Focus the input and set cursor to the end
-                      setTimeout(() => {
-                        const textarea = document.querySelector('textarea');
-                        if (textarea) {
-                          textarea.focus();
-                          // Move cursor to the end of the text
-                          const length = prompt.length;
-                          textarea.setSelectionRange(length, length);
-                        }
-                      }, 0);
-                    }}
-                    onLoad={() => setUseCasesLoaded(true)}                  
-                  />
+                  <div className={`${useCasesLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+                    <UseCases 
+                      router={router}
+                      onUseCaseSelect={(prompt) => {
+                        setInputValue(prompt);
+                        // Focus the input and set cursor to the end
+                        setTimeout(() => {
+                          const textarea = document.querySelector('textarea');
+                          if (textarea) {
+                            textarea.focus();
+                            // Move cursor to the end of the text
+                            const length = prompt.length;
+                            textarea.setSelectionRange(length, length);
+                          }
+                        }, 0);
+                      }}
+                      onLoad={() => {
+                        setUseCasesLoaded(true);
+                        setUseCasesLoading(false);
+                      }}                  
+                    />
+                  </div>
+                  {!useCasesLoaded && (
+                    <div className="space-y-4 -translate-y-24">
+                      <Skeleton className="h-4 w-32" />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[...Array(6)].map((_, i) => (
+                          <Skeleton key={i} className="h-28 rounded-lg" />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

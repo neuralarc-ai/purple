@@ -32,6 +32,7 @@ export default function InvitePage() {
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
   const [inviteError, setInviteError] = useState('');
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [isStartingTrial, setIsStartingTrial] = useState(false);
   const [inviteData, setInviteData] = useState<InviteData>({
     inviteCode: '',
     fullName: '',
@@ -153,6 +154,41 @@ export default function InvitePage() {
     }
   };
 
+  const handleStartTrial = async () => {
+    setIsStartingTrial(true);
+    
+    try {
+      const response = await fetch('/api/billing/create-trial-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          success_url: `${window.location.origin}/onboarding`,
+          cancel_url: `${window.location.origin}/invite?trial=cancelled`,
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.url) {
+        // Redirect to Stripe checkout
+        window.location.href = result.url;
+      } else if (result.status === 'existing_subscription') {
+        // User already has subscription, redirect to onboarding
+        toast.info('You already have an active subscription');
+        router.push('/onboarding');
+      } else {
+        toast.error('Failed to create trial checkout. Please try again.');
+      }
+    } catch (error) {
+      console.error('Trial checkout error:', error);
+      toast.error('Failed to start trial. Please try again.');
+    } finally {
+      setIsStartingTrial(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -176,11 +212,11 @@ export default function InvitePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-[#EDEDED] flex items-center justify-center p-4">
+      <div className="w-full max-w-6xl">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-16 p-4">
+        <div className="text-center mb-12">
+          <div className="flex justify-center mb-8 p-4">
             <Image
               src="/logo-dark.svg"
               alt="Helium Logo"
@@ -190,20 +226,26 @@ export default function InvitePage() {
               priority
             />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">
+          <h1 className="text-4xl font-bold text-black mb-4">
             Float into Helium – Early Access
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-lg text-gray-600">
             Enter your invite code to unlock access. Don't have one? Join the waitlist to be first in line.
           </p>
         </div>
 
-        {/* Invite Code Form */}
-        <div className="mb-6">
-          <div className="pt-6">
-            <div className="space-y-4">
-              <div className="space-y-2 w-full mx-auto">
-                <Label htmlFor="inviteCode" className="text-sm font-medium">
+        {/* Two Card Layout */}
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
+          {/* Left Card - Invite Code */}
+          <div className="bg-white h-[500px] sm:h-[550px] lg:h-[600px] flex flex-col justify-center items-center rounded-2xl shadow-lg p-4 sm:p-6">
+            <div className="text-center mb-8 sm:mb-10 lg:mb-12">
+              <h2 className="text-lg sm:text-xl font-bold text-black mb-2">Have an invite code?</h2>
+              <p className="text-gray-600 text-xs sm:text-sm">Enter your code to unlock access instantly.</p>
+            </div>
+
+            <div className="space-y-3 sm:space-y-4 w-full max-w-sm">
+              <div className="space-y-2">
+                <Label htmlFor="inviteCode" className="text-sm font-medium text-black">
                   Invite Code
                 </Label>
                 <Input
@@ -215,46 +257,72 @@ export default function InvitePage() {
                     updateInviteData({ inviteCode: value });
                   }}
                   maxLength={7}
-                  className="text-5xl! h-14 text-center font-mono"
+                  className="text-xl sm:text-2xl h-10 sm:h-12 text-center font-mono border-gray-200"
                 />
                 {inviteError && (
-                  <p className="text-sm text-destructive">{inviteError}</p>
+                  <p className="text-xs sm:text-sm text-red-600">{inviteError}</p>
                 )}
               </div>
 
               <Button
                 onClick={handleInviteSubmit}
                 disabled={!inviteData.inviteCode.trim() || isSubmitting}
-                className="w-full h-12 mx-auto"
+                className="w-full h-9 sm:h-10 bg-gray-800 hover:bg-gray-900 text-white text-sm sm:text-base"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="h-4 w-2 animate-spin mr-2" />
+                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-2" />
                     Validating...
                   </>
                 ) : (
                   'Let\'s Float'
                 )}
               </Button>
+
+              <Button
+                variant="ghost"
+                onClick={() => setShowWaitlistModal(true)}
+                className="w-full h-9 sm:h-10 border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm sm:text-base"
+              >
+                Join Waitlist
+              </Button>
+            </div>
+          </div>
+
+          {/* Right Card - Illustration and Trial */}
+          <div className="bg-black rounded-2xl shadow-lg flex flex-col h-[500px] sm:h-[550px] lg:h-[600px] overflow-hidden">
+            {/* Illustration - Full Size */}
+            <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
+              <div className="relative w-full h-full">
+                <Image
+                  src="/images/Benefit.png"
+                  alt="Helium Benefits"
+                  fill
+                  className="object-contain rounded-lg"
+                  priority
+                />
+              </div>
+            </div>
+
+            {/* Trial Button */}
+            <div className="text-center p-3 sm:p-4">
+              <Button
+                className="w-full h-9 sm:h-10 bg-white text-black hover:bg-gray-100 font-semibold text-sm sm:text-base"
+                onClick={handleStartTrial}
+                disabled={isStartingTrial}
+              >
+                {isStartingTrial ? (
+                  <>
+                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-2" />
+                    Starting trial...
+                  </>
+                ) : (
+                  'Start 1-week trial for $1.99'
+                )}
+              </Button>
             </div>
           </div>
         </div>
-
-        {/* Divider */}
-        <div className="flex items-center mb-6">
-          <div className="flex-1 h-px bg-border"></div>
-          <span className="px-4 text-sm text-muted-foreground">OR</span>
-          <div className="flex-1 h-px bg-border"></div>
-        </div>
-
-        {/* Waitlist Button */}
-        <Button
-          variant="ghost"
-          onClick={() => setShowWaitlistModal(true)}
-          className="w-full h-12 border border-border"
-        >
-          Join Waitlist
-        </Button>
       </div>
 
       {/* Welcome Modal */}

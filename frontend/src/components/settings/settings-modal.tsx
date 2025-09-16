@@ -50,19 +50,7 @@ import { createClient } from '@/lib/supabase/client';
 
 // Custom Settings Icon component
 const SettingsIcon = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
+  <i className={`ri-quill-pen-ai-line text-base -mt-2 ${className}`} />
 );
 
 // Dynamic icon component that changes path based on theme
@@ -94,27 +82,6 @@ const DynamicIcon = ({
     />
   );
 };
-
-// Custom Usage Icon Component (Air Balloon)
-const UsageIcon = () => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="16" 
-    height="16" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="1.5" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className="h-4 w-4"
-  >
-    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-    <path d="M10 19m0 1a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1z" />
-    <path d="M12 16c3.314 0 6 -4.686 6 -8a6 6 0 1 0 -12 0c0 3.314 2.686 8 6 8z" />
-    <path d="M12 9m-2 0a2 7 0 1 0 4 0a2 7 0 1 0 -4 0" />
-  </svg>
-);
 
 // Custom Credit Icon Component
 const CreditIcon = () => (
@@ -235,6 +202,13 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
         });
         setShowCustomRoleInput(false);
         setCustomRole('');
+      }
+      
+      // Update cached user data
+      if (userProfile.preferred_name) {
+        localStorage.setItem('cached_user_name', userProfile.preferred_name);
+        const capitalizedName = userProfile.preferred_name.charAt(0).toUpperCase() + userProfile.preferred_name.slice(1).toLowerCase();
+        localStorage.setItem('cached_capitalized_name', capitalizedName);
       }
       
       setHasProfile(true);
@@ -406,9 +380,12 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
       // Force a refetch to ensure immediate update
       queryClient.refetchQueries({ queryKey: ['user-profile'] });
       
-      // Clear any cached user data to force fresh data
-      localStorage.removeItem('cached_user_name');
-      localStorage.removeItem('cached_capitalized_name');
+      // Update cached user data with the new preferred name
+      if (profileData.preferred_name) {
+        localStorage.setItem('cached_user_name', profileData.preferred_name);
+        const capitalizedName = profileData.preferred_name.charAt(0).toUpperCase() + profileData.preferred_name.slice(1).toLowerCase();
+        localStorage.setItem('cached_capitalized_name', capitalizedName);
+      }
       
       toast.success('Profile updated successfully!');
       
@@ -680,8 +657,8 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
       toast.error('Traits must be 200 characters or fewer');
       return;
     }
-    if (personalization.customInstructions && personalization.customInstructions.trim().length > 300) {
-      toast.error('Custom instruction must be 300 characters or fewer');
+    if (personalization.customInstructions && personalization.customInstructions.trim().length > 1500) {
+      toast.error('Custom instruction must be 1500 characters or fewer');
       return;
     }
 
@@ -722,8 +699,8 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
   };
 
   const renderPersonalizationContent = () => (
-    <div className="space-y-6">
-      <div className="space-y-4">
+    <div className="space-y-6 pb-6">
+      <div className="space-y-2">
         <h3 className="text-lg font-semibold text-foreground">Personalization Settings</h3>
         <p className="text-sm text-muted-foreground">
           Customize your Helium experience to better suit your preferences.
@@ -769,7 +746,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
             placeholder="Tell us about yourself, your interests, and your background"
             value={personalization.profile}
             onChange={(e) => handlePersonalizationChange('profile', e.target.value)}
-            className="min-h-[100px] bg-background"
+            className="min-h-[100px] bg-background resize-none"
           />
         </div>
 
@@ -808,7 +785,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
               placeholder="Additional traits (comma-separated)"
               value={personalization.traits}
               onChange={(e) => handlePersonalizationChange('traits', e.target.value)}
-              className="min-h-[80px] bg-background"
+              className="min-h-[80px] bg-background resize-none"
             />
           </div>
         </div>
@@ -823,7 +800,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
             placeholder="Provide any specific instructions for how you'd like Helium to respond"
             value={personalization.customInstructions}
             onChange={(e) => handlePersonalizationChange('customInstructions', e.target.value)}
-            className="min-h-[120px] bg-background"
+            className="min-h-[120px] bg-background resize-none"
           />
         </div>
 
@@ -908,7 +885,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium" style={{ fontSize: '14px' }}>Free credits left</span>
                       <span className="text-sm font-medium" style={{ fontSize: '14px' }}>
-                        {Math.max(0, Math.round((subscriptionData?.cost_limit || 0) * 100) - Math.round((subscriptionData?.current_usage || 0) * 100))} / {Math.round((subscriptionData?.cost_limit || 0) * 100)}
+                        {Math.max(0, Math.round((subscriptionData?.cost_limit || 0) * 100) - Math.round((subscriptionData?.current_usage || 0) * 100))}
                       </span>
                     </div>
                     

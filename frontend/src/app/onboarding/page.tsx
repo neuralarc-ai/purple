@@ -117,7 +117,7 @@ export default function OnboardingPage() {
           if (profileData && !profileError) {
             setHasCompletedOnboarding(true);
             // Redirect to dashboard if already completed onboarding
-            router.push('/');
+            router.push('/dashboard');
             return;
           }
         }
@@ -249,7 +249,7 @@ export default function OnboardingPage() {
 
         // Redirect to dashboard
         // console.log('Onboarding completed successfully, redirecting to dashboard');
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       } else {
         throw new Error(result.message || 'Failed to complete onboarding');
       }
