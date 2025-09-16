@@ -299,7 +299,9 @@ async def health_check():
     return {
         "status": "ok", 
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "instance_id": instance_id
+        "instance_id": instance_id,
+        "environment": config.ENV_MODE.value,
+        "cors_origins": allowed_origins
     }
 
 @api_router.get("/health-docker")
