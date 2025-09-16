@@ -800,6 +800,12 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                         accept=".pdf,.doc,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
+                          if (file && file.size > 50 * 1024 * 1024) {
+                            toast.error('File is larger than 50MB. Please choose a smaller file.');
+                            e.currentTarget.value = '';
+                            setSelectedFile(null);
+                            return;
+                          }
                           setSelectedFile(file || null);
                         }}
                         className="hidden"
@@ -808,7 +814,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                       <label htmlFor="kb-file-upload" className="cursor-pointer block">
                         <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
                         <p className="text-sm text-muted-foreground mb-1">Click to upload a file (PDF, DOCX, CSV)</p>
-                        <p className="text-xs text-muted-foreground/70">Max 20MB</p>
+                        <p className="text-xs text-muted-foreground/70">Max 50MB</p>
                       </label>
                       {selectedFile && (
                         <div className="text-xs text-muted-foreground mt-2">{selectedFile.name} ({Math.round(selectedFile.size/1024)} KB)</div>

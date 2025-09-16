@@ -315,6 +315,11 @@ async def upload_dagad_file(
         bucket = "dagad-images"
         # Read file bytes
         contents = await file.read()
+
+        # Enforce max file size (50 MB)
+        MAX_FILE_MB = 50
+        if len(contents) > MAX_FILE_MB * 1024 * 1024:
+            raise HTTPException(status_code=400, detail=f"File size exceeds {MAX_FILE_MB}MB limit")
         # Generate a unique path
         import uuid, datetime
         unique_id = str(uuid.uuid4())
