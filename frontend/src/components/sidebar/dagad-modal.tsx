@@ -106,6 +106,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   // View entry modal state
   const [viewEntryState, setViewEntryState] = useState<Entry | null>(null);
+  // Toggle for showing attachments (image/file) inside the view dialog
+  const [showViewFile, setShowViewFile] = useState<boolean>(false);
+
+  // Reset attachment visibility whenever a new entry is opened or dialog closed
+  useEffect(() => {
+    setShowViewFile(false);
+  }, [viewEntryState]);
 
   const fetchEntries = async () => {
     try {
@@ -1025,32 +1032,63 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            {viewEntryState?.image_url && (
-              <div className="rounded-lg overflow-hidden border border-border/30">
-                <img src={viewEntryState.image_url} alt={viewEntryState.image_alt_text || 'Image'} className="w-full max-h-80 object-contain" />
-              </div>
-            )}
-            {viewEntryState?.file_url && (
-              <div className="text-sm">
-                <div className="mb-2 text-muted-foreground">File:</div>
-                <a
-                  href={viewEntryState.file_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-primary underline break-all"
-                >
-                  {viewEntryState.file_name || viewEntryState.file_url}
-                </a>
-                {viewEntryState.file_mime_type && (
-                  <div className="text-xs text-muted-foreground mt-1">{viewEntryState.file_mime_type}</div>
-                )}
-              </div>
-            )}
             {viewEntryState?.content && (
               <div className="text-sm text-foreground/90 whitespace-pre-wrap border border-border/30 rounded-md p-3 bg-muted/20">
                 {viewEntryState.content}
               </div>
             )}
+
+            {(viewEntryState?.image_url || viewEntryState?.file_url) && (
+              <div className="flex items-center justify-start gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowViewFile((prev) => !prev)}
+                  className="border-border/50"
+                >
+                  {showViewFile ? 'Hide file' : 'View file'}
+                </Button>
+              </div>
+            )}
+
+            {showViewFile && viewEntryState?.image_url && (
+              <div className="rounded-lg overflow-hidden border border-border/30">
+                <img
+                  src={viewEntryState.image_url}
+                  alt={viewEntryState.image_alt_text || 'Image'}
+                  className="w-full max-h-80 object-contain"
+                />
+              </div>
+            )}
+
+            {showViewFile && viewEntryState?.file_url && (
+              <div className="text-sm space-y-2">
+                {/* If it's a PDF, show inline preview; otherwise show a link */}
+                {viewEntryState.file_mime_type?.toLowerCase().includes('pdf') ? (
+                  <div className="rounded-lg overflow-hidden border border-border/30">
+                    <iframe
+                      src={`${viewEntryState.file_url}`}
+                      className="w-full h-[480px] bg-background"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <div className="mb-2 text-muted-foreground">File:</div>
+                    <a
+                      href={viewEntryState.file_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary underline break-all"
+                    >
+                      Open file
+                    </a>
+                  </div>
+                )}
+                {viewEntryState.file_mime_type && (
+                  <div className="text-xs text-muted-foreground">{viewEntryState.file_mime_type}</div>
+                )}
+              </div>
+            )}
+
             {!viewEntryState?.content && !viewEntryState?.image_url && !viewEntryState?.file_url && (
               <div className="text-sm text-muted-foreground">No preview available for this entry.</div>
             )}
@@ -1063,3 +1101,4 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     </Dialog>
   );
 }
+
