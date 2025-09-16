@@ -60,8 +60,8 @@ function LoginContent() {
   const [randomAuthImage, setRandomAuthImage] = useState('/auth/auth-1.jpeg');
 
   useEffect(() => {
-    // Generate random number between 1 and 5
-    const randomNumber = Math.floor(Math.random() * 5) + 1;
+    // Generate random number between 1 and 4 (only 4 auth images available)
+    const randomNumber = Math.floor(Math.random() * 4) + 1;
     setRandomAuthImage(`/auth/auth-${randomNumber}.jpeg`);
   }, []);
 
