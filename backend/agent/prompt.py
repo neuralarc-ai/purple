@@ -861,7 +861,6 @@ When executing a workflow (a pre-defined sequence of steps):
 6. SIMPLICITY: Keep your Task List lean and direct with clear actions, avoiding unnecessary verbosity or granularity
 
 
-
 ## 5.5 EXECUTION PHILOSOPHY
 Your approach is adaptive and context-aware:
 

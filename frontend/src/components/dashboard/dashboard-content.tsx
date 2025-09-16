@@ -138,8 +138,6 @@ export function DashboardContent() {
 
   // List of alternative messages - moved outside component for constant caching
   const alternativeMessages = useMemo(() => [
-    "While others give answers, Helium gives you decisions.",
-    "Helium is not another chatbot. It is your business command center.",
     "Make today the day you accelerate forward.",
     "Great businesses are built on bold moves.",
     "Transform decisions into measurable outcomes.",
@@ -172,7 +170,11 @@ export function DashboardContent() {
     // Early return if we already have the preferred name
     if (preferredName && !profileLoading) {
       setIsNameLoaded(true);
-      return preferredName;
+      // Cache the preferred name immediately
+      localStorage.setItem('cached_user_name', preferredName);
+      const capitalizedName = preferredName.charAt(0).toUpperCase() + preferredName.slice(1).toLowerCase();
+      localStorage.setItem('cached_capitalized_name', capitalizedName);
+      return capitalizedName;
     }
     
     // Show cached name immediately if available
@@ -602,11 +604,11 @@ export function DashboardContent() {
                     />
                   </div>
                   {!useCasesLoaded && (
-                    <div className="space-y-4 mt-8">
+                    <div className="space-y-4 -translate-y-24">
                       <Skeleton className="h-4 w-32" />
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {[...Array(6)].map((_, i) => (
-                          <Skeleton key={i} className="h-20 rounded-lg" />
+                          <Skeleton key={i} className="h-28 rounded-lg" />
                         ))}
                       </div>
                     </div>

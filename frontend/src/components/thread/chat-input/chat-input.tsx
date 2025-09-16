@@ -29,7 +29,6 @@ import { isLocalMode } from '@/lib/config';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { useRouter } from 'next/navigation';
 import posthog from 'posthog-js';
-import { BorderBeam } from '@/components/magicui/border-beam';
 
 export interface ChatInputHandles {
   getPendingFiles: () => File[];
