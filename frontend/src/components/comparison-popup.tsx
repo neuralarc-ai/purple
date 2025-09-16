@@ -11,16 +11,26 @@ type ComparisonPopupProps = {
   prompt?: string;
   title?: string;
   imageSrc?: string;
+  onClose?: () => void;
 };
 
-export default function ComparisonPopup({ className, docs, videoSrc, facts, prompt, title = "Helium / Claude", imageSrc }: ComparisonPopupProps) {
+export default function ComparisonPopup({ className, docs, videoSrc, facts, prompt, title = "Helium / Claude", imageSrc, onClose }: ComparisonPopupProps) {
   return (
     <section className={cn("w-full px-2 md:px-8 lg:px-12", className)}>
       <div className="mx-auto max-w-6xl">
         <div className="rounded-2xl border border-white/15 bg-neutral-900 text-white p-4 md:p-4">
           {/* Header */}
-          <div>
+          <div className="relative">
             <h2 className="text-[16px] md:text-[20px] font-bold text-white">{title}</h2>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="absolute top-0 right-0 text-white hover:text-gray-300 w-8 h-8 flex items-center justify-center text-lg font-bold transition-colors"
+                title="Close"
+              >
+                ×
+              </button>
+            )}
           </div>
 
           {/* Main Content */}
@@ -71,18 +81,18 @@ export default function ComparisonPopup({ className, docs, videoSrc, facts, prom
                       </p>
                       {docs && docs[idx] && (
                         <a
-                          href={docs[idx].url}
+                          href={title?.includes('Lovable') && docs[idx].label.includes('Helium') ? 'https://task-monk-demo.vercel.app' : docs[idx].url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs text-blue-300 hover:text-blue-200 underline"
                         >
-                          {title?.includes('Lovable') ? `View app created by ${docs[idx].label.includes('Helium') ? 'Helium' : docs[idx].label.split(' ')[0]}` : `View File created by ${docs[idx].label.includes('Helium') ? 'Helium' : docs[idx].label.split(' ')[0]}`}
+                          {title?.includes('Lovable') ? `View app created by ${docs[idx].label.includes('Helium') ? 'Helium' : docs[idx].label.split(' ')[0]}` : `View ${title?.includes('Claude') && docs[idx].label.includes('Helium') ? 'All Files in zip created by' : 'File created by'} ${docs[idx].label.includes('Helium') ? 'Helium' : docs[idx].label.split(' ')[0]}`}
                         </a>
                       )}
                       {title?.includes('Claude') && docs && docs[idx] && docs[idx].label === 'Helium Suite' && (
                         <div className="mt-1">
                           <a
-                            href="https://8080-4d158702-177d-4294-ad31-3089b936b97d.proxy.daytona.works/task-monk/index.html"
+                            href="https://motion-r.vercel.app"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-blue-300 hover:text-blue-200 underline"

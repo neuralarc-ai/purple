@@ -6,7 +6,7 @@ import Terminal from '@/components/magicui/terminal';
 
 export default function PromptMessage({ className }: { className?: string }) {
   return (
-    <section className={cn('w-full px-4 md:px-8 lg:px-12 mt-12 md:mt-20', className)}>
+    <section className={cn('w-full px-4 md:px-8 lg:px-12 mt-12 md:mt-28', className)}>
       <div className="mx-auto max-w-6xl text-white">
         <div className="flex flex-col md:flex-row items-start md:items-stretch gap-10 md:gap-16">
           <div className="flex-1">

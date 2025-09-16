@@ -18,7 +18,7 @@ export default function Comparison({ className }: ComparisonProps) {
   // Prevent background scrolling when any popup is open
   useEffect(() => {
     const isAnyPopupOpen = showClaude || showGpt || showMotionR || showGenspark || showTaskMonk;
-    
+
     if (isAnyPopupOpen) {
       document.body.style.overflow = 'hidden';
     } else {
@@ -32,42 +32,43 @@ export default function Comparison({ className }: ComparisonProps) {
   }, [showClaude, showGpt, showMotionR, showGenspark, showTaskMonk]);
 
   return (
-    <section className={cn("w-full px-4 md:px-8 lg:px-12 py-8 md:py-16 md:mb-12", className)}>
+    <section className={cn("w-full px-4 md:px-8 lg:px-12 py-8 md:py-16 mt-12 md:mt-12", className)}>
       <div className="mx-auto max-w-6xl">
-        <h2 className="text-center text-3xl md:text-4xl font-bold tracking-tight text-white mb-8 md:mb-10">
+        <h2 className="text-center text-3xl md:text-5xl font-bold tracking-tight text-white mb-8 md:mb-10">
           Benchmarking Brilliance:<br />
           Helium vs. ChatGPT, Claude, GenSpark and Lovable
         </h2>
-        
+
         <div className="text-white mb-8 md:mb-10">
-          <div className="max-w-4xl mx-auto">
-            <p className="mb-4 text-justify">
+          <div className="max-w-4xl mx-auto text-center">
+            <p className="mb-4">
               We put Helium to the test against four of the most popular AI tools businesses use across the globe: ChatGPT-5, Claude Sonnet-4, GenSpark AI and Loveable. Each platform was given the exact same prompt, and their outputs were evaluated for depth, accuracy, and real-world business relevance.
             </p>
-            <p className="text-justify">
+            <p>
               Below, you will find a side-by-side video comparison along with the resulting documents, enabling you to decide which solution delivers the most powerful and actionable insights for enterprises.
             </p>
           </div>
         </div>
-        
+
+
         {/* Top row - 3 cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
           <div className="w-full h-[240px] md:h-[260px]">
-            <SimpleCard 
+            <SimpleCard
               title="Helium / Claude"
               prompt="Design a 12-month product roadmap for an AI-powered CRM that's transitioning from freemium to enterprise. Include: feature prioritization framework, technical debt management, API development strategy, enterprise security requirements, pricing tier restructuring, competitive differentiation tactics, and user adoption metrics. Map features to business outcomes and revenue impact."
               onClick={() => setShowClaude(true)}
             />
           </div>
           <div className="w-full h-[240px] md:h-[260px]">
-            <SimpleCard 
+            <SimpleCard
               title="Helium / GPT"
               prompt="Conduct comprehensive research on entering the European AI regulation compliance software market and produce a detailed market entry strategy document. Include: market sizing visualizations, regulatory landscape mapping, competitive analysis matrices, go-to-market timeline charts, resource allocation diagrams, revenue projection models, partnership ecosystem maps, and risk mitigation frameworks."
               onClick={() => setShowGpt(true)}
             />
           </div>
           <div className="w-full h-[240px] md:h-[260px]">
-            <SimpleCard 
+            <SimpleCard
               title="Helium / Claude"
               prompt="I am launching MotionR my fitness ring product (currently priced at $499 + $20/month subscription) for Christmas 2024 in US/UK markets. Research current holiday fitness/health sentiment and analyze competitors (Oura Ring, Samsung Galaxy Ring, RingConn, Ultrahuman Ring Air, etc.) including their pricing, features, and Christmas marketing strategies."
               onClick={() => setShowMotionR(true)}
@@ -78,14 +79,14 @@ export default function Comparison({ className }: ComparisonProps) {
         {/* Bottom row - 2 centered cards */}
         <div className="flex justify-center gap-4 md:gap-6">
           <div className="w-full max-w-sm h-[240px] md:h-[260px]">
-            <SimpleCard 
+            <SimpleCard
               title="Helium / Genspark"
               prompt="Research AI governance regulations across major markets (US, EU, APAC) and create a comprehensive compliance handbook document. Include: regulatory landscape mapping, compliance requirement matrices, implementation timeline charts, cost impact assessments, vendor evaluation frameworks, audit preparation checklists, risk mitigation strategies, and policy template libraries."
               onClick={() => setShowGenspark(true)}
             />
           </div>
           <div className="w-full max-w-sm h-[240px] md:h-[260px]">
-            <SimpleCard 
+            <SimpleCard
               title="Helium / Lovable"
               prompt="Create me a clone app of taskade.com. This app will be called Task Monk Needs to be fully functional and with all the necessary features. Create dummy login admin and password 123456 Use Dark theme that is black and white with simple outline icons Font MonoScript or Similar Has to be responsive and interactive Build this app along with a landing page that will be sticky and encourage people to login"
               onClick={() => setShowTaskMonk(true)}
@@ -103,13 +104,6 @@ export default function Comparison({ className }: ComparisonProps) {
               className="relative w-full max-w-6xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => setShowClaude(false)}
-                className="absolute -top-3 -right-3 z-10 rounded-full bg-white text-black hover:bg-gray-200 w-8 h-8 flex items-center justify-center text-lg font-bold transition-colors"
-                title="Close"
-              >
-                ×
-              </button>
               <ComparisonPopup
                 title="Helium / Claude"
                 videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=Claude_edited_h77pso&profile=cld-default"
@@ -130,6 +124,7 @@ export default function Comparison({ className }: ComparisonProps) {
                 prompt={
                   "Design a 12-month product roadmap for an AI-powered CRM that's transitioning from freemium to enterprise. Include: feature prioritization framework, technical debt management, API development strategy, enterprise security requirements, pricing tier restructuring, competitive differentiation tactics, and user adoption metrics. Map features to business outcomes and revenue impact."
                 }
+                onClose={() => setShowClaude(false)}
               />
             </div>
           </div>
@@ -144,13 +139,6 @@ export default function Comparison({ className }: ComparisonProps) {
               className="relative w-full max-w-6xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => setShowGpt(false)}
-                className="absolute -top-3 -right-3 z-10 rounded-full bg-white text-black hover:bg-gray-200 w-8 h-8 flex items-center justify-center text-lg font-bold transition-colors"
-                title="Close"
-              >
-                ×
-              </button>
               <ComparisonPopup
                 title="Helium / GPT"
                 videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=Gpt_edited_at36nt&profile=cld-default"
@@ -171,6 +159,7 @@ export default function Comparison({ className }: ComparisonProps) {
                 prompt={
                   "Conduct comprehensive research on entering the European AI regulation compliance software market and produce a detailed market entry strategy document. Include: market sizing visualizations, regulatory landscape mapping, competitive analysis matrices, go-to-market timeline charts, resource allocation diagrams, revenue projection models, partnership ecosystem maps, and risk mitigation frameworks."
                 }
+                onClose={() => setShowGpt(false)}
               />
             </div>
           </div>
@@ -185,13 +174,6 @@ export default function Comparison({ className }: ComparisonProps) {
               className="relative w-full max-w-6xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => setShowMotionR(false)}
-                className="absolute -top-3 -right-3 z-10 rounded-full bg-white text-black hover:bg-gray-200 w-8 h-8 flex items-center justify-center text-lg font-bold transition-colors"
-                title="Close"
-              >
-                ×
-              </button>
               <ComparisonPopup
                 title="Helium / Claude"
                 videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=MotionR_scv4ps&profile=cld-default"
@@ -208,11 +190,12 @@ export default function Comparison({ className }: ComparisonProps) {
                 facts={[
                   "Claude provided one comprehensive document with market analysis and strategy.",
                   "Helium delivered deep analysis with 7 detailed files covering competitive analysis, budget recommendations, deliverables summary, GTM strategy, social media calendar, and strategic recommendations. And created a webpage too below is link",
-                
+
                 ]}
                 prompt={
                   "I am launching \"MotionR\"my fitness ring product (currently priced at $499 + $20/month subscription) for Christmas 2024 in US/UK markets. Research current holiday fitness/health sentiment and analyze competitors (Oura Ring, Samsung Galaxy Ring, RingConn, Ultrahuman Ring Air, etc.) including their pricing, features, and Christmas marketing strategies."
                 }
+                onClose={() => setShowMotionR(false)}
               />
             </div>
           </div>
@@ -227,13 +210,6 @@ export default function Comparison({ className }: ComparisonProps) {
               className="relative w-full max-w-6xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => setShowGenspark(false)}
-                className="absolute -top-3 -right-3 z-10 rounded-full bg-white text-black hover:bg-gray-200 w-8 h-8 flex items-center justify-center text-lg font-bold transition-colors"
-                title="Close"
-              >
-                ×
-              </button>
               <ComparisonPopup
                 title="Helium / Genspark"
                 videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=GenSpark-Helium_wqfqea&profile=cld-default"
@@ -255,6 +231,7 @@ export default function Comparison({ className }: ComparisonProps) {
                 prompt={
                   "Research AI governance regulations across major markets (US, EU, APAC) and create a comprehensive compliance handbook document. Include: regulatory landscape mapping, compliance requirement matrices, implementation timeline charts, cost impact assessments, vendor evaluation frameworks, audit preparation checklists, risk mitigation strategies, and policy template libraries."
                 }
+                onClose={() => setShowGenspark(false)}
               />
             </div>
           </div>
@@ -269,13 +246,6 @@ export default function Comparison({ className }: ComparisonProps) {
               className="relative w-full max-w-6xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <button
-                onClick={() => setShowTaskMonk(false)}
-                className="absolute -top-3 -right-3 z-10 rounded-full bg-white text-black hover:bg-gray-200 w-8 h-8 flex items-center justify-center text-lg font-bold transition-colors"
-                title="Close"
-              >
-                ×
-              </button>
               <ComparisonPopup
                 title="Helium / Lovable"
                 videoSrc="https://player.cloudinary.com/embed/?cloud_name=dye9sdxn9&public_id=TaskMonk_demo&profile=cld-default"
@@ -297,6 +267,7 @@ export default function Comparison({ className }: ComparisonProps) {
                 prompt={
                   "Create me a clone app of taskade.com. This app will be called \"Task Monk\" Needs to be fully functional and with all the necessary features. Create dummy login \"admin\" and password \"123456\" Use Dark theme that is black and white with simple outline icons Font MonoScript or Similar Has to be responsive and interactive Build this app along with a landing page that will be sticky and encourage people to login"
                 }
+                onClose={() => setShowTaskMonk(false)}
               />
             </div>
           </div>
@@ -306,24 +277,24 @@ export default function Comparison({ className }: ComparisonProps) {
   );
 }
 
-function SimpleCard({ title, prompt, onClick }: { 
-  title: string; 
-  prompt: string; 
-  onClick: () => void; 
+function SimpleCard({ title, prompt, onClick }: {
+  title: string;
+  prompt: string;
+  onClick: () => void;
 }) {
   return (
     <div className="bg-neutral-900 rounded-[12px] p-4 h-full w-full flex flex-col border border-white/15">
       <div className="mb-4">
         <h3 className="text-sm font-bold text-white">{title}</h3>
       </div>
-      
+
       <div className="flex-1 mb-3 overflow-hidden">
         <div className="text-xs text-gray-400 mb-2">Prompt:</div>
         <p className="text-xs text-gray-300 leading-relaxed text-left line-clamp-6">
           {prompt}
         </p>
       </div>
-      
+
       <div className="flex justify-end">
         <button
           onClick={onClick}
@@ -331,17 +302,17 @@ function SimpleCard({ title, prompt, onClick }: {
           title="View Details"
         >
           <span className="text-xs font-medium text-gray-800">View Details</span>
-          <svg 
-            className="w-3 h-3 text-gray-800" 
-            fill="none" 
-            stroke="currentColor" 
+          <svg
+            className="w-3 h-3 text-gray-800"
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth={2} 
-              d="M9 5l7 7-7 7" 
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
             />
           </svg>
         </button>
