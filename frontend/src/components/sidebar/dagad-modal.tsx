@@ -114,6 +114,26 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     setShowViewFile(false);
   }, [viewEntryState]);
 
+  // Derived file preview info for the View dialog
+  const fileMime = (viewEntryState?.file_mime_type || '').toLowerCase();
+  const fileNameLower = (viewEntryState?.file_name || viewEntryState?.file_url || '').toLowerCase();
+  const isPdf = !!viewEntryState?.file_url && (fileMime.includes('pdf') || fileNameLower.endsWith('.pdf'));
+  const isCsv = !!viewEntryState?.file_url && (fileMime.includes('csv') || fileNameLower.endsWith('.csv'));
+  const isDocx = !!viewEntryState?.file_url && (
+    fileMime.includes('officedocument.wordprocessingml.document') ||
+    fileNameLower.endsWith('.docx') ||
+    fileNameLower.endsWith('.doc')
+  );
+  const viewerUrl = viewEntryState?.file_url
+    ? (isPdf
+        ? viewEntryState.file_url
+        : isDocx
+          ? `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(viewEntryState.file_url)}`
+          : isCsv
+            ? viewEntryState.file_url
+            : null)
+    : null;
+
   const fetchEntries = async () => {
     try {
       const supabase = createClient();
@@ -1062,12 +1082,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
             {showViewFile && viewEntryState?.file_url && (
               <div className="text-sm space-y-2">
-                {/* If it's a PDF, show inline preview; otherwise show a link */}
-                {viewEntryState.file_mime_type?.toLowerCase().includes('pdf') ? (
+                {/* Render inline for PDF/CSV/DOCX via native or Google Docs Viewer */}
+                {viewerUrl ? (
                   <div className="rounded-lg overflow-hidden border border-border/30">
                     <iframe
-                      src={`${viewEntryState.file_url}`}
+                      src={viewerUrl}
                       className="w-full h-[480px] bg-background"
+                      referrerPolicy="no-referrer"
                     />
                   </div>
                 ) : (
@@ -1082,9 +1103,6 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                       Open file
                     </a>
                   </div>
-                )}
-                {viewEntryState.file_mime_type && (
-                  <div className="text-xs text-muted-foreground">{viewEntryState.file_mime_type}</div>
                 )}
               </div>
             )}
