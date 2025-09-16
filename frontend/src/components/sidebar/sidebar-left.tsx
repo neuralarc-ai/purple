@@ -310,7 +310,7 @@ export function SidebarLeft({
           <Link href="/dashboard">
             <SidebarMenuButton
               className={cn('touch-manipulation transition-all duration-300 ease-in-out', {
-                'bg-accent px-4 text-accent-foreground font-medium':
+                'bg-accent px-2 md:px-4 text-accent-foreground font-medium':
                   pathname === '/dashboard',
               })}
               onClick={() => {
@@ -367,7 +367,7 @@ export function SidebarLeft({
                 onClick={() => {
                   if (isMobile) setOpenMobile(false);
                 }}
-                className="touch-manipulation px-4 transition-all duration-300 ease-in-out"
+                className="touch-manipulation transition-all duration-300 ease-in-out"
                 tooltip="Prompt Library"
               >
                 <Link href="/prompt-library" className="flex items-center">

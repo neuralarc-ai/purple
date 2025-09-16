@@ -502,6 +502,7 @@ export interface ThreadContentProps {
   scrollToBottom?: (behavior?: ScrollBehavior) => void;
   finalGroupedMessages?: any[];
   isSidePanelOpen?: boolean; // Add side panel state prop
+  showToolPreview?: boolean; // Add floating tool preview visibility prop
   // Credit exhaustion callback
   onCreditExhaustionUpgrade?: () => void;
 }
@@ -723,52 +724,44 @@ const ActionButtons: React.FC<{
 
       {/* Switch to Agent button - shows when assistant recommends Agent Mode */}
       {suggestsAgentMode && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="secondary"
-                className="h-6 px-2 rounded-sm"
-                onClick={() => {
-                  try {
-                    // Prefill last user prompt into the input
-                    if (finalGroupedMessages && finalGroupedMessages.length > 0) {
-                      // Use the user message right before this assistant group
-                      const userGroup = finalGroupedMessages
-                        .slice(0, groupIndex)
-                        .reverse()
-                        .find((g: any) => g.type === 'user');
-                      const userMessage = userGroup?.messages?.[0];
-                      let prompt = typeof userMessage?.content === 'string' ? userMessage.content : '';
-                      try {
-                        const parsed = prompt ? JSON.parse(prompt) : null;
-                        if (parsed && typeof parsed.content === 'string') {
-                          prompt = parsed.content;
-                        }
-                      } catch {}
-                      prompt = (prompt || '').replace(/\[Uploaded File: .*?\]/g, '').trim();
-                      if (typeof setInputValue === 'function') {
-                        setInputValue(prompt);
-                      }
-                    }
-
-                    // Dispatch a global event so input switches to Agent mode
-                    const evt = new Event('switchToAgent');
-                    window.dispatchEvent(evt);
-                    toast.success('Switched to Agent Mode');
-                  } catch (e) {
-                    console.warn('Failed to switch to agent mode', e);
+        <Button
+          variant="secondary"
+          className="h-6 px-2 rounded-sm max-[494px]:px-1.5 max-[494px]:text-xs"
+          onClick={() => {
+            try {
+              // Prefill last user prompt into the input
+              if (finalGroupedMessages && finalGroupedMessages.length > 0) {
+                // Use the user message right before this assistant group
+                const userGroup = finalGroupedMessages
+                  .slice(0, groupIndex)
+                  .reverse()
+                  .find((g: any) => g.type === 'user');
+                const userMessage = userGroup?.messages?.[0];
+                let prompt = typeof userMessage?.content === 'string' ? userMessage.content : '';
+                try {
+                  const parsed = prompt ? JSON.parse(prompt) : null;
+                  if (parsed && typeof parsed.content === 'string') {
+                    prompt = parsed.content;
                   }
-                }}
-              >
-                Switch to Agent
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Switch to Agent Mode</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+                } catch {}
+                prompt = (prompt || '').replace(/\[Uploaded File: .*?\]/g, '').trim();
+                if (typeof setInputValue === 'function') {
+                  setInputValue(prompt);
+                }
+              }
+
+              // Dispatch a global event so input switches to Agent mode
+              const evt = new Event('switchToAgent');
+              window.dispatchEvent(evt);
+              toast.success('Switched to Agent Mode');
+            } catch (e) {
+              console.warn('Failed to switch to agent mode', e);
+            }
+          }}
+        >
+          <span className="max-[494px]:hidden text-white">Switch to Agent</span>
+          <span className="min-[495px]:hidden text-white">Agent</span>
+        </Button>
       )}
       
     </div>
@@ -803,6 +796,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
   agentMetadata,
   agentData,
   isSidePanelOpen = false,
+  showToolPreview = false,
   onCreditExhaustionUpgrade,
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -1467,7 +1461,11 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                 group.messages.some(
                                   (msg) => msg.type === 'assistant',
                                 ) && (
-                                  <div className="flex items-center justify-between mb-[2rem]">
+                                  <div className={cn(
+                                    "flex items-center justify-between mb-[2rem]",
+                                    // Add extra margin bottom on mobile when floating tool preview is shown
+                                    showToolPreview && "md:mb-[2rem] mb-[3.5rem]"
+                                  )}>
                                     {/* Agent info on the left */}
                                     <div className="flex items-center">
                                       <div className="rounded-md flex items-center justify-center">
