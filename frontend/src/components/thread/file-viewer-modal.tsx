@@ -89,10 +89,14 @@ export function FileViewerModal({
   // File navigation state
   const [currentPath, setCurrentPath] = useState('/workspace');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [panelWidth, setPanelWidth] = useState(() => {
-    if (typeof window === 'undefined') return 600; // SSR fallback
-    return Math.floor(window.innerWidth * 0.45); // default to 50% (50-50 split)
-  });
+  const [panelWidth, setPanelWidth] = useState<number | null>(null);
+  
+  // Initialize panel width based on screen size (similar to tool-call-side-panel)
+  const getInitialPanelWidth = () => {
+    if (typeof window === 'undefined') return 600; // Default server-side
+    const screenWidth = window.innerWidth;
+    return Math.floor(screenWidth * 0.45); // 50-50 split
+  };
   const isResizing = useRef(false);
   
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -105,7 +109,7 @@ export function FileViewerModal({
   const handleMouseMove = (e: MouseEvent) => {
     if (!isResizing.current) return;
     const screenWidth = window.innerWidth;
-    const minWidth = 320;
+    const minWidth = 400;
     // Dynamic caps aligned with tool-call-side-panel behavior
     let maxAllowedWidth: number;
     if (screenWidth >= 1920) {
@@ -144,13 +148,39 @@ export function FileViewerModal({
   };
   
   useEffect(() => {
+    if (typeof window !== 'undefined' && panelWidth === null) {
+      setPanelWidth(getInitialPanelWidth());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updatePanelWidthOnResize = () => {
+      if (!isResizing.current) {
+        const newWidth = getInitialPanelWidth();
+        setPanelWidth(prevWidth => {
+          // Only update if the change is significant (more than 50px difference)
+          return Math.abs((prevWidth || 0) - newWidth) > 50 ? newWidth : prevWidth;
+        });
+      }
+    };
+
+    window.addEventListener('resize', updatePanelWidthOnResize);
+    
+    return () => {
+      window.removeEventListener('resize', updatePanelWidthOnResize);
+    };
+  }, []);
+
+  useEffect(() => {
     window.addEventListener("mousemove", handleMouseMove);
     window.addEventListener("mouseup", handleMouseUp);
     return () => {
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, []);
+  }, [open, panelWidth, onPanelWidthChange]);
 
   // While File Viewer is open, mark right-panel as expanded so sidebar uses overlay mode
   useEffect(() => {
@@ -335,7 +365,7 @@ export function FileViewerModal({
   // Effect to handle screen size changes
   useEffect(() => {
     const checkScreenSize = () => {
-      setIsDesktop(window.innerWidth >= 1024);
+      setIsDesktop(window.innerWidth > 1024);
     };
 
     // Check initial size
@@ -1877,7 +1907,7 @@ export function FileViewerModal({
             isSidebarExpanded ? 'opacity-0.0 pointer-events-none' : ''
           }`
         }
-        style={{ width: panelWidth }}
+        style={{ width: panelWidth || getInitialPanelWidth() }}
         >
           {/* Header */}
           <div className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
