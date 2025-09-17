@@ -166,6 +166,53 @@ def _apply_gemini_caching(params: Dict[str, Any]) -> None:
         params["cache"] = True
         logger.debug("Enabled Gemini caching")
 
+def _apply_bedrock_caching(messages: List[Dict[str, Any]]) -> None:
+    """Apply AWS Bedrock prompt caching to messages using official Anthropic format.
+    
+    For AWS Bedrock Claude models, we use the same caching mechanism as Anthropic:
+    1. Static content (system prompts, tools, examples) is cached
+    2. Dynamic content (user messages) is marked as ephemeral
+    3. We use cache_control blocks to separate cached from non-cached content
+    """
+    if not messages:
+        return
+    
+    # Apply cache control to the first 4 text blocks across all messages
+    # This follows the official Anthropic prompt caching documentation
+    cache_control_count = 0
+    max_cache_control_blocks = 4  # Anthropic supports up to 4 cache breakpoints
+    
+    for message in messages:
+        if cache_control_count >= max_cache_control_blocks:
+            break
+            
+        content = message.get("content")
+        
+        if isinstance(content, str):
+            # For system messages, don't add cache_control (they get cached)
+            # For user messages, add cache_control as ephemeral
+            if message.get("role") == "system":
+                message["content"] = [
+                    {"type": "text", "text": content}
+                ]
+            else:
+                message["content"] = [
+                    {"type": "text", "text": content, "cache_control": {"type": "ephemeral"}}
+                ]
+            cache_control_count += 1
+        elif isinstance(content, list):
+            for item in content:
+                if cache_control_count >= max_cache_control_blocks:
+                    break
+                if isinstance(item, dict) and item.get("type") == "text":
+                    # For system messages, don't add cache_control
+                    # For user messages, add cache_control as ephemeral
+                    if message.get("role") != "system" and "cache_control" not in item:
+                        item["cache_control"] = {"type": "ephemeral"}
+                    cache_control_count += 1
+    
+    logger.debug("Applied AWS Bedrock prompt caching with official Anthropic format")
+
 def _configure_anthopic(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
     """Configure Anthropic-specific parameters."""
     if not ("claude" in model_name.lower() or "anthropic" in model_name.lower()):
@@ -364,8 +411,16 @@ def _configure_caching(params: Dict[str, Any], model_name: str, messages: List[D
     is_anthropic = "anthropic" in model_name.lower() or "claude" in model_name.lower()
     is_vertex_claude = (model_name.startswith("vertex_ai/") or model_name.startswith("vertex/")) and "claude" in model_name.lower()
     is_gemini = "gemini" in model_name.lower()
+    is_bedrock_claude = model_name.startswith("bedrock/") and "claude" in model_name.lower()
     
-    if is_anthropic and not is_vertex_claude:
+    if is_bedrock_claude:
+        # AWS Bedrock Claude models - use official Anthropic prompt caching format
+        # No need to set promptCaching parameter - cache_control blocks handle this
+        logger.debug(f"Enabled AWS Bedrock prompt caching for {model_name}")
+        
+        # Structure messages for Bedrock prompt caching using official Anthropic format
+        _apply_bedrock_caching(messages)
+    elif is_anthropic and not is_vertex_claude:
         # Standard Anthropic models
         _apply_anthropic_caching(messages)
         logger.debug("Applied Anthropic caching")

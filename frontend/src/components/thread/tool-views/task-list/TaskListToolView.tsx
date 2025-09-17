@@ -28,7 +28,7 @@ const TaskItem: React.FC<{ task: Task; index: number }> = ({ task, index }) => {
       <div className="flex-shrink-0">
         {isCompleted && (
           <div className="h-4 w-4 rounded-full bg-helium-teal flex items-center justify-center">
-            <Check className="h-2.5 w-2.5 text-white" />
+            <Check className="h-2.5 w-2.5 text-white stroke-4" />
           </div>
         )}
         {isCancelled && <X className="h-4 w-4 text-helium-pink" />}
@@ -41,7 +41,7 @@ const TaskItem: React.FC<{ task: Task; index: number }> = ({ task, index }) => {
       <div className="flex-1 min-w-0">
         <p
           className={cn(
-            'text-sm leading-relaxed',
+            "text-sm leading-relaxed font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]",
             isCompleted && 'text-zinc-900 dark:text-zinc-100',
             isCancelled && 'text-zinc-500 dark:text-zinc-400 line-through',
             isPending && 'text-zinc-600 dark:text-zinc-300',
@@ -61,8 +61,8 @@ const SectionHeader: React.FC<{ section: Section }> = ({ section }) => {
   ).length;
 
   return (
-    <div className="flex items-center justify-between py-3 mt-1 px-4 bg-zinc-50/80 dark:bg-zinc-900/50">
-      <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-300">
+    <div className="flex items-center justify-between py-3 mt-1 px-4">
+      <h3 className="text-base 2xl:text-lg font-semibold text-foreground font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]">
         {section.title}
       </h3>
       <div className="flex items-center gap-2">
@@ -190,7 +190,7 @@ export const TaskListToolView: React.FC<ToolViewProps> = ({
               {completedTasks === totalTasks && totalTasks > 0 && (
                 <Badge
                   variant="outline"
-                  className="h-6 py-0.5 bg-green-50 dark:bg-green-900/20 text-helium-teal border-helium-teal/80"
+                  className="h-6 py-0.5 bg-green-50 dark:bg-green-900/20 text-helium-green border-helium-green/80"
                 >
                   <Check className="h-3 w-3" />
                   All complete

@@ -19,7 +19,7 @@ from utils.auth_utils import get_current_user_id_from_jwt, get_user_id_from_stre
 from utils.logger import logger, structlog
 from services.billing import check_billing_status, can_use_model
 from utils.config import config
-from sandbox.sandbox import create_sandbox, delete_sandbox, get_or_start_sandbox
+from sandbox.sandbox import create_sandbox, delete_sandbox
 from services.llm import make_llm_api_call
 from run_agent_background import run_agent_background, _cleanup_redis_response_list, update_agent_run_status
 from utils.constants import MODEL_NAME_ALIASES
@@ -28,6 +28,7 @@ from flags.flags import is_enabled
 from .config_helper import extract_agent_config, build_unified_config
 from .utils import check_agent_run_limit
 from .versioning.version_service import get_version_service
+from services.agent_config_cache import get_or_build_agent_config, invalidate_agent_cache
 from .versioning.api import router as version_router, initialize as initialize_versioning
 from .tools.sb_presentation_tool import SandboxPresentationTool
 
@@ -44,8 +45,6 @@ instance_id = None # Global instance ID for this backend instance
 
 # TTL for Redis response lists (24 hours)
 REDIS_RESPONSE_LIST_TTL = 3600 * 24
-
-
 
 class AgentStartRequest(BaseModel):
     model_name: Optional[str] = None  # Will be set to default model in the endpoint
@@ -394,10 +393,10 @@ async def start_agent(
                 except Exception as e:
                     logger.warning(f"[AGENT LOAD] Failed to get version data: {e}")
             
-            logger.debug(f"[AGENT LOAD] About to call extract_agent_config with agent_data keys: {list(agent_data.keys())}")
+            logger.debug(f"[AGENT LOAD] About to call get_or_build_agent_config with agent_data keys: {list(agent_data.keys())}")
             logger.debug(f"[AGENT LOAD] version_data type: {type(version_data)}, has data: {version_data is not None}")
             
-            agent_config = extract_agent_config(agent_data, version_data)
+            agent_config = await get_or_build_agent_config(agent_data, version_data)
             
             if version_data:
                 logger.debug(f"Using agent {agent_config['name']} ({effective_agent_id}) version {agent_config.get('version_name', 'v1')}")
@@ -430,9 +429,9 @@ async def start_agent(
                 except Exception as e:
                     logger.warning(f"[AGENT LOAD] Failed to get default agent version data: {e}")
             
-            logger.debug(f"[AGENT LOAD] About to call extract_agent_config for DEFAULT agent with version data: {version_data is not None}")
+            logger.debug(f"[AGENT LOAD] About to call get_or_build_agent_config for DEFAULT agent with version data: {version_data is not None}")
             
-            agent_config = extract_agent_config(agent_data, version_data)
+            agent_config = await get_or_build_agent_config(agent_data, version_data)
             
             if version_data:
                 logger.debug(f"Using default agent: {agent_config['name']} ({agent_config['agent_id']}) version {agent_config.get('version_name', 'v1')}")
@@ -1124,9 +1123,9 @@ async def initiate_agent_with_files(
             except Exception as e:
                 logger.warning(f"[AGENT INITIATE] Failed to get version data: {e}")
         
-        logger.debug(f"[AGENT INITIATE] About to call extract_agent_config with version data: {version_data is not None}")
+        logger.debug(f"[AGENT INITIATE] About to call get_or_build_agent_config with version data: {version_data is not None}")
         
-        agent_config = extract_agent_config(agent_data, version_data)
+        agent_config = await get_or_build_agent_config(agent_data, version_data)
         
         if version_data:
             logger.debug(f"Using custom agent: {agent_config['name']} ({agent_id}) version {agent_config.get('version_name', 'v1')}")
@@ -1156,9 +1155,9 @@ async def initiate_agent_with_files(
                 except Exception as e:
                     logger.warning(f"[AGENT INITIATE] Failed to get default agent version data: {e}")
             
-            logger.debug(f"[AGENT INITIATE] About to call extract_agent_config for DEFAULT agent with version data: {version_data is not None}")
+            logger.debug(f"[AGENT INITIATE] About to call get_or_build_agent_config for DEFAULT agent with version data: {version_data is not None}")
             
-            agent_config = extract_agent_config(agent_data, version_data)
+            agent_config = await get_or_build_agent_config(agent_data, version_data)
             
             if version_data:
                 logger.debug(f"Using default agent: {agent_config['name']} ({agent_config['agent_id']}) version {agent_config.get('version_name', 'v1')}")

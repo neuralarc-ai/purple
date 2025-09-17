@@ -56,44 +56,6 @@ MODELS = {
         "tier_availability": ["free", "paid"]
     },
     
-    # Vertex AI Claude Models
-    "vertex_ai/claude-sonnet-4@20250514": {
-        "aliases": ["claude-sonnet-4-vertex", "vertex/claude-sonnet-4@20250514", "claude-sonnet-4@20250514"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 1_000_000,  # 1M tokens for Claude Sonnet 4
-        "tier_availability": ["paid"]
-    },
-    "vertex_ai/claude-3-5-sonnet@20241022": {
-        "aliases": ["claude-3-5-sonnet-vertex", "vertex/claude-3-5-sonnet@20241022"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 200_000,
-        "tier_availability": ["paid"]
-    },
-    "vertex_ai/claude-3-7-sonnet@20250219": {
-        "aliases": ["claude-3-7-sonnet-vertex", "vertex/claude-3-7-sonnet@20250219"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 200_000,
-        "tier_availability": ["paid"]
-    },
-    "vertex_ai/claude-3-5-haiku@20241022": {
-        "aliases": ["claude-3-5-haiku-vertex", "vertex/claude-3-5-haiku@20241022"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.25,
-            "output_cost_per_million_tokens": 1.25
-        },
-        "context_window": 200_000,
-        "tier_availability": ["free", "paid"]
-    },
-
     # Bedrock Models - Claude Sonnet Series
     "bedrock/anthropic.claude-sonnet-4-20250514-v1:0": {
         "aliases": ["claude-sonnet-4-bedrock"],
