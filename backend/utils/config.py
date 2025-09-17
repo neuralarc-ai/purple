@@ -176,11 +176,9 @@ class Configuration:
     ANTHROPIC_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     GROQ_API_KEY: Optional[str] = None
-    OPENROUTER_API_KEY: Optional[str] = None
     XAI_API_KEY: Optional[str] = None
     MORPH_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
-    OPENROUTER_API_BASE: Optional[str] = "https://openrouter.ai/api/v1"
     
     # Google Vertex AI / Gemini via LiteLLM
     VERTEXAI_PROJECT: Optional[str] = None
@@ -200,10 +198,6 @@ class Configuration:
     
     # Frontend URL for OAuth redirects
     NEXT_PUBLIC_URL: Optional[str] = None
-    
-    # OpenRouter site metadata
-    OR_SITE_URL: Optional[str] = "https://he2.ai"
-    OR_APP_NAME: Optional[str] = "Helium AI"    
     
     # AWS Bedrock credentials
     AWS_ACCESS_KEY_ID: Optional[str] = None

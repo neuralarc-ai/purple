@@ -44,7 +44,6 @@ Obtain the following API keys:
   - [Anthropic](https://console.anthropic.com/) - Recommended for best performance
   - [OpenAI](https://platform.openai.com/)
   - [Groq](https://console.groq.com/)
-  - [OpenRouter](https://openrouter.ai/)
   - [AWS Bedrock](https://aws.amazon.com/bedrock/)
 
 - **AI-Powered Code Editing (Optional but Recommended)**:
@@ -159,7 +158,6 @@ REDIS_SSL=false
 # LLM Providers
 ANTHROPIC_API_KEY=your-anthropic-key
 OPENAI_API_KEY=your-openai-key
-OPENROUTER_API_KEY=your-openrouter-key
 GEMINI_API_KEY=your-gemini-api-key
 MORPH_API_KEY=
 

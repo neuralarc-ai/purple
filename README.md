@@ -49,7 +49,7 @@ The setup process includes:
 - Setting up a Supabase project for database and authentication
 - Configuring Redis for caching and session management
 - Setting up Daytona for secure agent execution
-- Integrating with LLM providers (Anthropic, OpenAI, OpenRouter, etc.)
+- Integrating with LLM providers (Anthropic, OpenAI etc.)
 - Configuring web search and scraping capabilities (Tavily, Firecrawl)
 - Setting up QStash for background job processing and workflows
 - Configuring webhook handling for automated tasks

@@ -828,8 +828,8 @@ class ResponseProcessor:
                 logger.critical(f"Re-raising error to stop further processing: {str(e)}")
                 self.trace.event(name="re_raising_error_to_stop_further_processing", level="ERROR", status_message=(f"Re-raising error to stop further processing: {str(e)}"))
             else:
-                logger.error(f"AnthropicException - Overloaded detected - Falling back to OpenRouter: {str(e)}", exc_info=True)
-                self.trace.event(name="anthropic_exception_overloaded_detected", level="ERROR", status_message=(f"AnthropicException - Overloaded detected - Falling back to OpenRouter: {str(e)}"))
+                logger.error(f"AnthropicException - Overloaded detected", exc_info=True)
+                self.trace.event(name="anthropic_exception_overloaded_detected", level="ERROR", status_message=(f"AnthropicException - Overloaded detected"))
             raise # Use bare 'raise' to preserve the original exception with its traceback
 
         finally:
