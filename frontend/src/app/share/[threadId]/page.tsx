@@ -107,6 +107,7 @@ export default function ThreadPage({
   const [panelWidth, setPanelWidth] = useState<number | null>(null);
   const [isMdUp, setIsMdUp] = useState<boolean>(false);
   const [panelLeft, setPanelLeft] = useState<number>(0);
+  const gapPx = 8; // small visual gap between thread and Helium Core panel
 
   const initialLoadCompleted = useRef<boolean>(false);
 
@@ -798,7 +799,7 @@ export default function ThreadPage({
     <div className="flex h-screen">
       <div
         className={`flex flex-col flex-1 overflow-hidden transition-all duration-200 ease-in-out`}
-        style={isSidePanelOpen ? { marginRight: `${(panelWidth ?? 480) + (isMdUp ? 16 : 8)}px` } : undefined}
+        style={isSidePanelOpen ? { marginRight: `${(panelWidth ?? 480) + (isMdUp ? 16 : 8) + gapPx}px` } : undefined}
       >
         {renderHeader()}
         <ThreadContent
@@ -823,7 +824,7 @@ export default function ThreadPage({
       {isSidePanelOpen && (
         <div
           className="fixed top-0 bottom-0 w-px bg-border z-[59]"
-          style={{ left: panelLeft - 1 }}
+          style={{ left: panelLeft - gapPx - 1 }}
         />
       )}
 
