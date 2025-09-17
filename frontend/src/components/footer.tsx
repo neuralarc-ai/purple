@@ -193,7 +193,7 @@ const PrivacyPolicyDialog = () => {
 
 export default function Footer() {
     return (
-        <footer className="relative h-screen overflow-hidden">
+        <footer className="relative h-screen overflow-hidden mt-12 md:mt-20">
             <motion.div 
                 className="absolute inset-0 z-0 h-screen"
                 variants={imageVariants}

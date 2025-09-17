@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Check, X, AlertTriangle } from 'lucide-react';
+import { Check, X, AlertTriangle, Info } from 'lucide-react';
 
 type Row = {
   feature: string;
@@ -14,6 +14,14 @@ type Row = {
 };
 
 const rows: Row[] = [
+  {
+    feature: 'Pricing',
+    helium: 'PAYG / Prepaid-Credits',
+    google: '$249.99/month (Ultra)',
+    openai: '$200/month (Pro)',
+    claude: '$200/month (Max)',
+    perplexity: '$200/month (Max)',
+  },
   {
     feature: 'Autonomous Task Execution',
     helium: 'Full Automation',
@@ -74,7 +82,7 @@ const rows: Row[] = [
 
 export default function CompareTable({ className }: { className?: string }) {
   return (
-    <section className={cn('w-full mt-12 md:mt-20 bg-black text-white', className)}>
+    <section className={cn('w-full mt-12 md:mt-28 bg-black text-white', className)}>
       <div className="mx-auto max-w-6xl space-y-8 md:space-y-10">
         <div className="text-center">
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
@@ -93,23 +101,23 @@ export default function CompareTable({ className }: { className?: string }) {
                 <div className="font-medium text-white text-lg mb-5 text-center leading-tight">{row.feature}</div>
                 <div className="space-y-4">
                   <div className="bg-emerald-500/10 rounded-lg p-4">
-                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Helium AI - $29/month</div>
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Helium AI</div>
                     <div className="text-sm text-white/90 text-center leading-relaxed">{row.helium}</div>
                   </div>
                   <div className="p-2">
-                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Google - $20/month</div>
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Google</div>
                     <div className="text-sm text-white/90 text-center leading-relaxed">{row.google}</div>
                   </div>
                   <div className="p-2">
-                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">OpenAI - $20/month</div>
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">OpenAI</div>
                     <div className="text-sm text-white/90 text-center leading-relaxed">{row.openai}</div>
                   </div>
                   <div className="p-2">
-                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Claude Pro - $20/month</div>
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Claude Pro</div>
                     <div className="text-sm text-white/90 text-center leading-relaxed">{row.claude}</div>
                   </div>
                   <div className="p-2">
-                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Perplexity Pro - $20/month</div>
+                    <div className="text-sm font-semibold text-white/80 mb-2 text-center">Perplexity Pro</div>
                     <div className="text-sm text-white/90 text-center leading-relaxed">{row.perplexity}</div>
                   </div>
                 </div>
@@ -122,63 +130,57 @@ export default function CompareTable({ className }: { className?: string }) {
         <div className="hidden md:block overflow-x-auto">
           <div className="relative border-1 border-neutral-600 rounded-2xl">
             <div className="absolute inset-0 rounded-2xl p-[1px] bg-gradient-to-r from-[var(--helium-blue)] via-[var(--helium-green)] to-[var(--helium-blue)]"></div>
-            <table className="relative w-full text-left text-sm md:text-base bg-black rounded-2xl overflow-hidden">
+            <table className="relative w-full text-left text-sm md:text-base bg-black rounded-2xl overflow-hidden table-fixed">
               <thead>
                 <tr className="bg-neutral-800 text-white">
-                  <th className="sticky left-0 z-10 bg-neutral-800 px-7 md:px-8 py-3 font-bold w-[200px] md:w-[240px] border-l border-r border-white/20 rounded-tl-2xl">
-                    Features
+                  <th className="sticky left-0 z-10 bg-neutral-800 px-7 md:px-8 py-3 font-bold border-l border-r border-white/20 rounded-tl-2xl w-1/6">
+
                   </th>
-                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20 bg-emerald-500/10">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm md:text-base font-medium">Helium AI</span>
-                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$29/month</span>
-                    </div>
+                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20 bg-emerald-500/10 w-1/6">
+                    <span className="text-lg md:text-xl font-bold text-white">Helium AI</span>
                   </th>
-                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm md:text-base font-medium">Google</span>
-                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$20/month</span>
-                    </div>
+                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20 w-1/6">
+                    <span className="text-lg md:text-xl font-bold text-white">Google</span>
                   </th>
-                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm md:text-base font-medium">OpenAI</span>
-                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$20/month</span>
-                    </div>
+                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20 w-1/6">
+                    <span className="text-lg md:text-xl font-bold text-white">OpenAI</span>
                   </th>
-                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm md:text-base font-medium">Claude Pro</span>
-                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$20/month</span>
-                    </div>
+                  <th className="px-7 md:px-8 py-3 font-bold border-r border-white/20 w-1/6">
+                    <span className="text-lg md:text-xl font-bold text-white">Claude Pro</span>
                   </th>
-                  <th className="px-7 md:px-8 py-3 font-bold rounded-tr-2xl">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm md:text-base font-medium">Perplexity Pro</span>
-                      <span className="leading-tight text-lg md:text-2xl lg:text-2xl font-extrabold text-white">$20/month</span>
-                    </div>
+                  <th className="px-7 md:px-8 py-3 font-bold rounded-tr-2xl w-1/6">
+                    <span className="text-lg md:text-xl font-bold text-white">Perplexity Pro</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row, idx) => (
                   <tr key={row.feature} className={cn('border-b border-white/10', idx % 2 === 1 && 'bg-white/5')}>
-                    <td className={cn('sticky left-0 z-10 bg-black px-7 md:px-8 py-3 text-white border-l border-r border-white/20', idx === rows.length - 1 && 'rounded-bl-2xl')}>
+                    <td className={cn('sticky left-0 z-10 bg-black px-7 md:px-8 py-3 text-white border-l border-r border-white/20 w-1/6', idx === rows.length - 1 && 'rounded-bl-2xl')}>
                       <span className="font-medium">{row.feature}</span>
                     </td>
-                    <td className="px-7 md:px-8 py-3 text-white bg-emerald-500/10 border-r border-white/20">
+                    <td className="px-7 md:px-8 py-3 text-white bg-emerald-500/10 border-r border-white/20 w-1/6">
                       {row.helium}
                     </td>
-                    <td className="px-7 md:px-8 py-3 text-white/90 border-r border-white/20">{row.google}</td>
-                    <td className="px-7 md:px-8 py-3 text-white/90 border-r border-white/20">{row.openai}</td>
-                    <td className="px-7 md:px-8 py-3 text-white/90 border-r border-white/20">{row.claude}</td>
-                    <td className="px-7 md:px-8 py-3 text-white/90">{row.perplexity}</td>
+                    <td className="px-7 md:px-8 py-3 text-white/90 border-r border-white/20 w-1/6">{row.google}</td>
+                    <td className="px-7 md:px-8 py-3 text-white/90 border-r border-white/20 w-1/6">{row.openai}</td>
+                    <td className="px-7 md:px-8 py-3 text-white/90 border-r border-white/20 w-1/6">{row.claude}</td>
+                    <td className="px-7 md:px-8 py-3 text-white/90 w-1/6">{row.perplexity}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
+
+        <div className="mt-8">
+          <div className="max-w-6xl mx-auto px-2 md:px-4">
+            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-white/80 leading-relaxed text-center">
+              Most leading AI tools that businesses use across the globe operate on monthly subscription plans with limited tokens or credits, which often leads to underutilization or overages. Helium introduces an innovative pricing model designed for flexibility and cost efficiency. Businesses can choose a prepaid credit model, allowing them to purchase credits in advance and use them at their own pace, with the option to top up anytime. Alternatively, they can select the PAYG (Pay-As-You-Go) model, which ensures they pay only for what they actually use. This approach can reduce overall AI spend for enterprises by as much as 45–55 percent, making Helium a highly economical and scalable solution for modern businesses.
+            </p>
+          </div>
+        </div>
+
       </div>
     </section>
   );

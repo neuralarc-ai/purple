@@ -25,6 +25,7 @@ import { Notebook, Trash2, Loader2, Pencil, Upload, X, Info, Plus, Eye } from 'l
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 type Entry = {
   entry_id: string;
@@ -570,8 +571,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
         {/* Header */}
         <DialogHeader className="pb-4">
           <DialogTitle className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <Notebook className="h-5 w-5 text-primary" />
+            <div className="p-2 rounded-lg bg-sidebar-accent">
+              <i className="ri-book-open-line"></i>
             </div>
             <span className="text-foreground font-semibold text-lg">Knowledge Base</span>
           </DialogTitle>
@@ -597,9 +598,9 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
               {/* Table */}
               <div className="flex-1 min-h-0">
-                <div className="bg-card/30 backdrop-blur border border-border/30 rounded-lg overflow-hidden">
+                <div className="bg-card/30 backdrop-blur border border-muted rounded-lg overflow-hidden">
                   {/* Table Header - Fixed */}
-                  <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground sticky top-0 z-10">
+                  <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-sidebar/30 border-b border-border/30 text-sm font-medium text-muted-foreground sticky top-0 z-10">
                     <div className="col-span-3">Name</div>
                     <div className="col-span-4">Content</div>
                     <div className="col-span-1 text-center">View</div>
@@ -619,8 +620,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                       </div>
                     ) : entries.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                        <div className="p-4 rounded-full bg-muted/50 border border-border/30 mb-4">
-                          <Notebook className="h-8 w-8 text-muted-foreground" />
+                        <div className="p-2 aspect-square rounded-full bg-accent border border-border/30 mb-4">
+                          <i className="ri-book-open-line text-lg"></i>
                         </div>
                         <h4 className="text-base font-medium text-foreground/90 mb-2">No knowledge entries yet</h4>
                         <p className="text-sm text-muted-foreground max-w-sm mb-4">
@@ -631,7 +632,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                           variant="outline"
                           className="border-border/50"
                         >
-                          <Notebook className="h-4 w-4 mr-2" />
+                          <i className="ri-add-line"></i>
                           Add Your First Entry
                         </Button>
                       </div>
@@ -780,7 +781,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           ) : (
             // Add Knowledge Form
             <>
-              <div className="bg-card/30 backdrop-blur border border-border/30 rounded-lg p-6">
+              <div>
                 {errorMsg && (
                   <div className="text-sm text-destructive border border-destructive/30 rounded-lg p-3 mb-6 bg-destructive/5">
                     {errorMsg}
@@ -801,7 +802,32 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
                   {/* Category */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground/80">Category</label>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium text-foreground/80">Category</label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label="Category help"
+                            className="inline-flex h-5 w-5 items-center justify-center rounded hover:bg-muted/50 text-muted-foreground"
+                          >
+                            <Info className="h-3 w-3" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent align="start" className="w-80 text-sm">
+                          <div className="space-y-2">
+                            <div className="font-medium">Category guide</div>
+                            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                              <li><span className="text-foreground">Instructions</span> → Step-by-step tasks.</li>
+                              <li><span className="text-foreground">Preferences</span> → Style, tone, format choices.</li>
+                              <li><span className="text-foreground">Rules</span> → Strict constraints to follow.</li>
+                              <li><span className="text-foreground">Notes</span> → Context or references.</li>
+                              <li><span className="text-foreground">General</span> → Anything else.</li>
+                            </ul>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                     <Select value={category} onValueChange={(value) => setCategory(value as any)}>
                       <SelectTrigger className="bg-background/50 border-border/50">
                         <SelectValue placeholder="Select category" />

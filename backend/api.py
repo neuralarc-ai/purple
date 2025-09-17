@@ -122,13 +122,24 @@ async def log_requests_middleware(request: Request, call_next):
     
     try:
         response = await call_next(request)
+        if response is None:
+            logger.error(f"No response returned from {method} {path}")
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error: No response returned"}
+            )
         process_time = time.time() - start_time
         logger.debug(f"Request completed: {method} {path} | Status: {response.status_code} | Time: {process_time:.2f}s")
         return response
     except Exception as e:
         process_time = time.time() - start_time
         logger.error(f"Request failed: {method} {path} | Error: {str(e)} | Time: {process_time:.2f}s")
-        raise
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Internal server error: {str(e)}"}
+        )
 
 # Define allowed origins based on environment
 allowed_origins = ["https://www.he2.ai", "https://he2.ai", "http://localhost:3000"]
@@ -288,7 +299,9 @@ async def health_check():
     return {
         "status": "ok", 
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "instance_id": instance_id
+        "instance_id": instance_id,
+        "environment": config.ENV_MODE.value,
+        "cors_origins": allowed_origins
     }
 
 @api_router.get("/health-docker")

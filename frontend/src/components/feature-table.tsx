@@ -67,12 +67,12 @@ export default function FeatureTable({ className }: { className?: string }) {
     return Megaphone;
   };
   return (
-    <section className={cn('w-full px-4 md:px-8 lg:px-12 bg-black text-white', className)}>
+    <section className={cn('w-full px-4 md:px-8 lg:px-12 bg-black text-white mt-12 md:mt-20', className)}>
       <div className="mx-auto max-w-6xl">
         <p className="text-center text-muted-foreground mb-3 md:mb-6 text-base md:text-xl">
           Stop paying for multiple subscriptions that force you to stitch together incomplete solutions. Helium AI delivers everything in one intelligent platform that actually executes tasks instead of just talking about them.
         </p>
-        <h2 className="text-xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-white text-center mb-6">
+        <h2 className="text-xl md:mt-12 md:text-3xl lg:text-4xl font-extrabold tracking-tight text-white text-center mb-6">
           What Can Helium Do for Your Business?
         </h2>
         {/* Mobile Card Layout */}
