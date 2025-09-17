@@ -16,7 +16,7 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
-import TextType from '@/components/TextType';
+import { TextEffect } from '@/components/ui/text-effect';
 
 interface InviteData {
   inviteCode: string;
@@ -37,6 +37,15 @@ export default function InvitePage() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
   const [showTrialButton, setShowTrialButton] = useState(false);
+
+  // Show trial button after text anim ation completes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowTrialButton(true);
+    }, 2000); // 2 seconds delay to allow text animation to complete
+
+    return () => clearTimeout(timer);
+  }, []);
   const [inviteData, setInviteData] = useState<InviteData>({
     inviteCode: '',
     fullName: '',
@@ -231,9 +240,9 @@ export default function InvitePage() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Image with Logo Overlay (50%) */}
-      <div className="w-[50%] relative">
+    <div className="min-h-screen bg-[#EDEDED] flex flex-col lg:flex-row">
+      {/* Left Side - Image with Logo Overlay (Mobile: full width, Desktop: 50%) */}
+      <div className="w-full lg:w-[50%] h-[40vh] lg:h-auto relative">
         <Image
           src="/images/invitecard.png"
           alt="Helium Invite Card"
@@ -242,39 +251,39 @@ export default function InvitePage() {
           priority
         />
         {/* Logo Overlay */}
-        <div className="absolute inset-0 flex flex-col items-center justify-start pt-16 px-8">
-          <div className="flex justify-center mb-8">
+        <div className="absolute inset-0 flex flex-col items-center justify-center lg:justify-start pt-8 lg:pt-16 px-4 lg:px-8">
+          <div className="flex justify-center mb-4 lg:mb-8">
             <Image
               src="/logo-dark.svg"
               alt="Helium Logo"
               width={120}
               height={120}
-              className="w-16 h-16"
+              className="w-12 h-12 lg:w-16 lg:h-16"
               priority
             />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-4 text-center drop-shadow-lg">
+          <h1 className="text-xl lg:text-3xl font-bold text-white mb-2 lg:mb-4 text-center drop-shadow-lg px-4">
             Float into Helium – Early Access
           </h1>
-          <p className="text-lg text-white text-center drop-shadow-lg max-w-md">
+          <p className="text-sm lg:text-lg text-white text-center drop-shadow-lg max-w-md px-4">
             Enter your invite code to unlock access. Don't have one? Join the waitlist to be first in line or have a trial.
           </p>
         </div>
       </div>
 
-      {/* Right Side - Form and Animated Text (50%) */}
-      <div className="w-[50%] bg-[#EDEDED] flex flex-col justify-center items-center p-8">
+      {/* Right Side - Form and Animated Text (Mobile: full width, Desktop: 50%) */}
+      <div className="w-full lg:w-[50%] bg-[#EDEDED] flex flex-col justify-center items-center p-4 lg:p-8 min-h-[60vh] lg:min-h-screen">
         <div className="w-full max-w-md space-y-6">
           {/* Invite Code Form */}
-          <div className="bg-white rounded-2xl p-8 w-full">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 w-full">
             <div className="flex flex-col justify-center items-center">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-black mb-2">Have an invite code?</h2>
+            <div className="text-center mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-black mb-2">Have an invite code?</h2>
             </div>
 
             <div className="space-y-4 w-full">
               <div className="space-y-2">
-                <Label htmlFor="inviteCode" className="text-lg font-medium text-black">
+                <Label htmlFor="inviteCode" className="text-base sm:text-lg font-medium text-black">
                   Invite Code
                 </Label>
                 <Input
@@ -286,7 +295,7 @@ export default function InvitePage() {
                     updateInviteData({ inviteCode: value });
                   }}
                   maxLength={7}
-                  className="text-3xl! sm:text-2xl h-10 bg-white! sm:h-12 text-black text-center font-mono "
+                  className="text-2xl sm:text-3xl h-10 sm:h-12 bg-white! text-black text-center font-mono"
                 />
                 {inviteError && (
                   <p className="text-xs sm:text-sm text-red-600">{inviteError}</p>
@@ -297,7 +306,7 @@ export default function InvitePage() {
                 <Button
                   onClick={handleInviteSubmit}
                   disabled={!inviteData.inviteCode.trim() || isSubmitting}
-                  className="w-2/3 h-8 sm:h-9 bg-black hover:bg-black text-white text-sm sm:text-base"
+                  className="w-full sm:w-2/3 h-10 sm:h-9 bg-black hover:bg-black text-white text-sm sm:text-base"
                 >
                   {isSubmitting ? (
                     <>
@@ -312,31 +321,41 @@ export default function InvitePage() {
                 <Button
                   variant="ghost"
                   onClick={() => setShowWaitlistModal(true)}
-                  className="w-2/3 h-8 sm:h-9 border border-gray-800 text-gray-600 bg-white text-sm sm:text-base"
+                  className="w-full sm:w-2/3 h-10 sm:h-9 border border-gray-800 text-gray-600 bg-white text-sm sm:text-base"
                 >
                   Join Waitlist
                 </Button>
               </div>
             </div>
-          </div>
+            </div>
           </div>
 
           {/* Animated Text */}
           <div className="text-center">
-            <TextType 
-              text="Missing an invite? Unlock a 7-day Helium trial for $1.99."
-              typingSpeed={75}
-              showCursor={true}
-              cursorCharacter="|"
-              className="text-black text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight text-center px-4"
-              onComplete={() => setShowTrialButton(true)}
-            />
+            <div className="text-black text-lg sm:text-2xl lg:text-3xl leading-tight text-center px-2 sm:px-4">
+              <TextEffect
+                preset="fade-in-blur"
+                speedSegment={0.3}
+                as="div"
+                className="block"
+              >
+                Missing an invite?
+              </TextEffect>
+              <TextEffect
+                preset="fade-in-blur"
+                speedSegment={0.3}
+                as="div"
+                className="block"
+              >
+                Unlock a 7-day Helium trial for $1.99.
+              </TextEffect>
+            </div>
             
-            {/* Animated Trial Button - Only shows after text completes */}
+            {/* Trial Button - Only shows after text animation completes */}
             {showTrialButton && (
-              <div className="mt-8">
+              <div className="mt-6 sm:mt-8">
                 <Button
-                  className="w-2/3 h-8 sm:h-9 bg-white text-black hover:bg-gray-100 font-semibold text-sm sm:text-base border border-gray-300"
+                  className="w-full sm:w-2/3 h-10 sm:h-9 bg-white text-black hover:bg-gray-100 font-semibold text-sm sm:text-base border border-gray-300"
                   onClick={handleStartTrial}
                   disabled={isStartingTrial}
                 >
