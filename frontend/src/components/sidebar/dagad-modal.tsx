@@ -55,6 +55,7 @@ type Entry = {
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
 const MAX_CONTENT_CHARS = 5000;
 const MAX_TITLE_CHARS = 100;
+const MAX_ENTRIES = 12;
 
 // Utility to detect if a file is an image
 const isImageFile = (file: File | null | undefined) => !!file && file.type.startsWith('image/');
@@ -340,6 +341,11 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   };
 
   const createEntry = async () => {
+    if (entries.length >= MAX_ENTRIES) {
+      setErrorMsg(`You can only create up to ${MAX_ENTRIES} entries. Delete one to add another.`);
+      toast.error(`Limit reached: ${MAX_ENTRIES} entries`);
+      return;
+    }
     if (!title.trim() || (!content.trim() && !selectedImage && !selectedFile)) return;
     
     try {
@@ -592,13 +598,30 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
             <>
               {/* Add Knowledge Button */}
               <div className="mb-4">
-                <Button 
-                  onClick={() => setShowAddForm(true)}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Knowledge
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button 
+                    onClick={() => {
+                      if (entries.length >= MAX_ENTRIES) {
+                        toast.error(`You can only have up to ${MAX_ENTRIES} entries.`);
+                        return;
+                      }
+                      setShowAddForm(true);
+                    }}
+                    disabled={entries.length >= MAX_ENTRIES}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-60"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {entries.length >= MAX_ENTRIES ? 'Limit reached' : 'Add Knowledge'}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    {Math.min(entries.length, MAX_ENTRIES)}/{MAX_ENTRIES}
+                  </span>
+                </div>
+                {entries.length >= MAX_ENTRIES && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    You have reached the maximum number of entries. Delete one to add another.
+                  </div>
+                )}
               </div>
 
               {/* Table */}
@@ -988,14 +1011,14 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
               Cancel
             </Button>
             <Button
-              variant="destructive"
+              variant="outline"
               onClick={async () => {
                 if (!confirmEntry) return;
                 await deleteEntry(confirmEntry.entry_id);
                 setConfirmEntry(null);
               }}
               disabled={!!deletingId}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              className="bg-white text-black hover:text-destructive border-border/50"
             >
               {deletingId ? (
                 <>
