@@ -128,7 +128,6 @@ def load_existing_env_vars():
         "llm": {
             "OPENAI_API_KEY": backend_env.get("OPENAI_API_KEY", ""),
             "ANTHROPIC_API_KEY": backend_env.get("ANTHROPIC_API_KEY", ""),
-            "OPENROUTER_API_KEY": backend_env.get("OPENROUTER_API_KEY", ""),
             "MORPH_API_KEY": backend_env.get("MORPH_API_KEY", ""),
             "GEMINI_API_KEY": backend_env.get("GEMINI_API_KEY", ""),
 
@@ -367,8 +366,6 @@ class SetupWizard:
         # Check Morph (optional but recommended)
         if self.env_vars["llm"].get("MORPH_API_KEY"):
             config_items.append(f"{Colors.GREEN}✓{Colors.ENDC} Morph (Code Editing)")
-        elif self.env_vars["llm"].get("OPENROUTER_API_KEY"):
-            config_items.append(f"{Colors.CYAN}○{Colors.ENDC} Morph (fallback to OpenRouter)")
         else:
             config_items.append(f"{Colors.YELLOW}○{Colors.ENDC} Morph (recommended)")
 
@@ -696,7 +693,7 @@ class SetupWizard:
             )
         else:
             print_info(
-                "Helium requires at least one LLM provider. Supported: OpenAI, Anthropic, Google Gemini, OpenRouter."
+                "Helium requires at least one LLM provider. Supported: OpenAI, Anthropic, Google Gemini."
             )
 
         # Don't clear existing keys if we're updating
@@ -712,7 +709,6 @@ class SetupWizard:
                 "1": ("OpenAI", "OPENAI_API_KEY"),
                 "2": ("Anthropic", "ANTHROPIC_API_KEY"),
                 "3": ("Google Gemini", "GEMINI_API_KEY"),
-                "4": ("OpenRouter", "OPENROUTER_API_KEY"),
             }
             print(
                 f"\n{Colors.CYAN}Select LLM providers to configure (e.g., 1,3):{Colors.ENDC}"
@@ -759,7 +755,6 @@ class SetupWizard:
         print_step(6, self.total_steps, "Configure AI-Powered Code Editing (Optional)")
 
         existing_key = self.env_vars["llm"].get("MORPH_API_KEY", "")
-        openrouter_key = self.env_vars["llm"].get("OPENROUTER_API_KEY", "")
 
         if existing_key:
             print_info(f"Found existing Morph API key: {mask_sensitive_value(existing_key)}")
@@ -769,10 +764,6 @@ class SetupWizard:
         print_info("Suna uses Morph for fast, intelligent code editing.")
         print_info("This is optional but highly recommended for the best experience.")
 
-        if openrouter_key:
-            print_info(
-                f"An OpenRouter API key is already configured. It can be used as a fallback for code editing if you don't provide a Morph key."
-            )
         
         while True:
             choice = input("Do you want to add a Morph API key now? (y/n): ").lower().strip()
@@ -793,15 +784,9 @@ class SetupWizard:
                 self.env_vars["llm"]["MORPH_API_KEY"] = morph_api_key
                 print_success("Morph API key saved. AI-powered code editing is enabled.")
             else:
-                if openrouter_key:
-                    print_info("Skipping Morph key. OpenRouter will be used for code editing.")
-                else:
-                    print_warning("Skipping Morph key. Code editing will use a less capable model.")
+                print_warning("Skipping Morph key. Code editing will use a less capable model.")
         else:
-            if openrouter_key:
-                print_info("Okay, OpenRouter will be used as a fallback for code editing.")
-            else:
-                print_warning("Okay, code editing will use a less capable model without a Morph or OpenRouter key.")
+            print_warning("Okay, code editing will use a less capable model without a Morph key.")
 
     def collect_search_api_keys(self):
         """Collects API keys for search and web scraping tools."""

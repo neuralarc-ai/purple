@@ -15,7 +15,7 @@ import { SubscriptionStatus } from './_use-model-selection';
 import { useFeatureFlag } from '@/lib/feature-flags';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { handleFiles } from './file-upload-handler';
-import { improvePromptWithOpenRouter } from '@/lib/prompt-improvement-api';
+import { improvePromptWithGemini } from '@/lib/prompt-improvement-api';
 import {
   Tooltip,
   TooltipContent,
@@ -234,7 +234,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       setIsImprovingPrompt(true);
       
       try {
-        const result = await improvePromptWithOpenRouter(value);
+    const result = await improvePromptWithGemini(value);
         
         // Check if component is still mounted before updating state
         if (isMountedRef.current && result.success && result.improvedPrompt !== value) {
