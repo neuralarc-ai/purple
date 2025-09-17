@@ -480,13 +480,7 @@ def calculate_token_cost(prompt_tokens: int, completion_tokens: int, model: str)
                 if '/' in resolved_model and resolved_model != model:
                     models_to_try.append(resolved_model.split('/', 1)[1])
                     
-                # Special handling for Google models accessed via OpenRouter
-                if model.startswith('openrouter/google/'):
-                    google_model_name = model.replace('openrouter/', '')
-                    models_to_try.append(google_model_name)
-                if resolved_model.startswith('openrouter/google/'):
-                    google_model_name = resolved_model.replace('openrouter/', '')
-                    models_to_try.append(google_model_name)
+                
                 
                 # Try each model name variation until we find one that works
                 message_cost = None
@@ -1742,7 +1736,7 @@ async def get_available_models(
             all_models.add(full_name)
             
             # Only include short names that don't match their full names for aliases
-            if short_name != full_name and not short_name.startswith("openai/") and not short_name.startswith("anthropic/") and not short_name.startswith("openrouter/") and not short_name.startswith("xai/"):
+            if short_name != full_name and not short_name.startswith("openai/") and not short_name.startswith("anthropic/") and not short_name.startswith("xai/"):
                 if full_name not in model_aliases:
                     model_aliases[full_name] = short_name
         

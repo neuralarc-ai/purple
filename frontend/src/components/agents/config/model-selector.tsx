@@ -93,11 +93,7 @@ export function AgentModelSelector({
       const fullMatch = modelsData.models.find(m => m.id === modelId);
       if (fullMatch) return fullMatch.short_name || fullMatch.id;
       
-      if (modelId.startsWith('openrouter/')) {
-        const shortName = modelId.replace('openrouter/', '');
-        const shortMatch = modelsData.models.find(m => m.short_name === shortName);
-        if (shortMatch) return shortMatch.short_name || shortMatch.id;
-      }
+
     }
     
     return modelId;
@@ -247,7 +243,7 @@ export function AgentModelSelector({
 
   const handleSaveCustomModel = (formData: CustomModelFormData) => {
     const modelId = formData.id.trim();
-    const displayId = modelId.startsWith('openrouter/') ? modelId.replace('openrouter/', '') : modelId;
+    const displayId = modelId;
     const modelLabel = formData.label.trim() || formatModelName(displayId);
 
     if (!modelId) return;

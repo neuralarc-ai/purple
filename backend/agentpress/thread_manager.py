@@ -630,13 +630,10 @@ When using the tools:
                             break
                     except Exception as e:
                         if ("AnthropicException - Overloaded" in str(e)):
-                            logger.error(f"AnthropicException - Overloaded detected - Falling back to OpenRouter: {str(e)}", exc_info=True)
-                            nonlocal llm_model
-                            # Remove "-20250514" from the model name if present
-                            model_name_cleaned = llm_model.replace("-20250514", "")
-                            llm_model = f"openrouter/{model_name_cleaned}"
-                            auto_continue = True
-                            continue # Continue the loop
+                            logger.error(f"AnthropicException - Overloaded detected", exc_info=True)
+                            # stop auto-continue on overload
+                            auto_continue = False
+                            break
                         else:
                             # If there's any other exception, log it, yield an error status, and stop execution
                             logger.error(f"Error in auto_continue_wrapper generator: {str(e)}", exc_info=True)

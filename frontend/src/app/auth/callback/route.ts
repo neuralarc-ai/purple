@@ -21,6 +21,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${baseUrl}${next}`)
   }
 
+  if (success === 'azure_oauth_success' && email) {
+    console.log('✅ Backend Azure AD OAuth successful for:', email)
+    // For Azure AD, always redirect to invite page to follow the same flow as Google
+    return NextResponse.redirect(`${baseUrl}/invite`)
+  }
+
   if (error) {
     console.error('❌ Auth callback error:', error, errorDescription)
     return NextResponse.redirect(`${baseUrl}/auth?error=${encodeURIComponent(error)}`)

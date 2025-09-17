@@ -713,6 +713,8 @@ class AgentRunner:
             
             generation = self.config.trace.generation(name="thread_manager.run_thread") if self.config.trace else None
             try:
+                # Configure strict no-tools behavior for simple chat (mode == 'default')
+                simple_chat_mode = (self.config.mode == 'default')
                 response = await self.thread_manager.run_thread(
                     thread_id=self.config.thread_id,
                     system_prompt=system_message,
@@ -720,19 +722,19 @@ class AgentRunner:
                     llm_model=self.config.model_name,
                     llm_temperature=0,
                     llm_max_tokens=max_tokens,
-                    tool_choice="auto",
-                    max_xml_tool_calls=1,
+                    tool_choice=("none" if simple_chat_mode else "auto"),
+                    max_xml_tool_calls=(0 if simple_chat_mode else 1),
                     temporary_message=temporary_message,
                     processor_config=ProcessorConfig(
-                        xml_tool_calling=True,
+                        xml_tool_calling=(False if simple_chat_mode else True),
                         native_tool_calling=False,
                         execute_tools=self.config.mode == 'agent',  # Only execute tools in agent mode
-                        execute_on_stream=True,
+                        execute_on_stream=not simple_chat_mode,
                         tool_execution_strategy="parallel",
                         xml_adding_strategy="user_message"
                     ),
                     native_max_auto_continues=self.config.native_max_auto_continues,
-                    include_xml_examples=True,
+                    include_xml_examples=not simple_chat_mode,
                     enable_thinking=self.config.enable_thinking,
                     reasoning_effort=self.config.reasoning_effort,
                     enable_context_manager=self.config.enable_context_manager,

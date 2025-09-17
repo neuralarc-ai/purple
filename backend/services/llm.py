@@ -33,7 +33,7 @@ class LLMError(Exception):
 
 def setup_api_keys() -> None:
     """Set up API keys from environment variables."""
-    providers = ['OPENROUTER', 'GEMINI']
+    providers = ['GEMINI']
     for provider in providers:
         key = getattr(config, f'{provider}_API_KEY')
         if key:
@@ -41,10 +41,7 @@ def setup_api_keys() -> None:
         else:
             logger.warning(f"No API key found for provider: {provider}")
 
-    # Set up OpenRouter API base if not already set
-    # if config.OPENROUTER_API_KEY and config.OPENROUTER_API_BASE:
-    #     os.environ['OPENROUTER_API_BASE'] = config.OPENROUTER_API_BASE
-    #     logger.debug(f"Set OPENROUTER_API_BASE to {config.OPENROUTER_API_BASE}")
+    
 
     # Set up AWS Bedrock credentials
     # aws_access_key = config.AWS_ACCESS_KEY_ID
@@ -76,39 +73,7 @@ def setup_api_keys() -> None:
         logger.debug(f"Google credentials set to: {config.GOOGLE_APPLICATION_CREDENTIALS}")
 
 
-def get_openrouter_fallback(model_name: str) -> Optional[str]:
-    """Get OpenRouter fallback model for a given model name."""
-    # Skip if already using OpenRouter
-    # if model_name.startswith("openrouter/"):
-    #     return None
-    
-    # # Map models to their OpenRouter equivalents
-    # fallback_mapping = {
-    #     # "anthropic/claude-3-7-sonnet-latest": "openrouter/anthropic/claude-3.7-sonnet",
-    #     # "anthropic/claude-sonnet-4-20250514": "openrouter/anthropic/claude-sonnet-4",
-    #     # "vertex_ai/claude-3-5-sonnet@20240620": "openrouter/anthropic/claude-sonnet-4",
-    #     # "xai/grok-4": "openrouter/x-ai/grok-4",
-    #     # "gemini/gemini-2.5-pro": "openrouter/google/gemini-2.5-pro",
-    #     # "gemini/gemini-2.5-flash": "openrouter/google/gemini-2.5-flash",
-    #     "z-ai/glm-4.5:free": "openrouter/z-ai/glm-4.5-air:free",
-    # }
-    
-    # # Check for exact match first
-    # if model_name in fallback_mapping:
-    #     return fallback_mapping[model_name]
-    
-    # # Check for partial matches (e.g., bedrock models)
-    # for key, value in fallback_mapping.items():
-    #     if key in model_name:
-    #         return value
-    
-    # # Default fallbacks by provider
-    # if "claude" in model_name.lower() or "anthropic" in model_name.lower():
-    #     return "openrouter/anthropic/claude-sonnet-4"
-    # elif "xai" in model_name.lower() or "grok" in model_name.lower():
-    #     return "openrouter/x-ai/grok-4"
-    
-    return None
+
 
 def _configure_token_limits(params: Dict[str, Any], model_name: str, max_tokens: Optional[int]) -> None:
     """Configure token limits based on model type."""
@@ -224,24 +189,7 @@ def _configure_anthopic(params: Dict[str, Any], model_name: str, messages: List[
     logger.debug("Added Anthropic-specific headers")
     # Caching is now handled centrally in _configure_caching
 
-def _configure_openrouter(params: Dict[str, Any], model_name: str) -> None:
-    """Configure OpenRouter-specific parameters."""
-    if not model_name.startswith("openrouter/"):
-        return
-    
-    logger.debug(f"Preparing OpenRouter parameters for model: {model_name}")
 
-    # Add optional site URL and app name from config
-    site_url = config.OR_SITE_URL
-    app_name = config.OR_APP_NAME
-    if site_url or app_name:
-        extra_headers = params.get("extra_headers", {})
-        if site_url:
-            extra_headers["HTTP-Referer"] = site_url
-        if app_name:
-            extra_headers["X-Title"] = app_name
-        params["extra_headers"] = extra_headers
-        logger.debug(f"Added OpenRouter site URL and app name to headers")
 
 # def _configure_bedrock(params: Dict[str, Any], model_name: str, model_id: Optional[str]) -> None:
 #     """Configure Bedrock-specific parameters."""
@@ -267,13 +215,6 @@ def _configure_openrouter(params: Dict[str, Any], model_name: str) -> None:
 
 #     # Request priority service tier when calling OpenAI directly
 
-#     # Pass via both top-level and extra_body for LiteLLM compatibility
-#     if not model_name.startswith("openrouter/"):
-#         params["service_tier"] = "priority"
-#         extra_body = params.get("extra_body", {})
-#         if "service_tier" not in extra_body:
-#             extra_body["service_tier"] = "priority"
-#         params["extra_body"] = extra_body
 
 # def _configure_kimi_k2(params: Dict[str, Any], model_name: str) -> None:
 #     """Configure Kimi K2-specific parameters."""
@@ -385,15 +326,7 @@ def _configure_thinking(params: Dict[str, Any], model_name: str, enable_thinking
         params["reasoning_effort"] = effort_level
         logger.info(f"Vertex Gemini thinking enabled with reasoning_effort='{effort_level}'")
 
-# def _add_fallback_model(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
-#     """Add fallback model to the parameters."""
-#     fallback_model = get_openrouter_fallback(model_name)
-#     if fallback_model:
-#         params["fallbacks"] = [{
-#             "model": fallback_model,
-#             "messages": messages,
-#         }]
-#         logger.debug(f"Added OpenRouter fallback for model: {model_name} to {fallback_model}")
+
 
 def _add_tools_config(params: Dict[str, Any], tools: Optional[List[Dict[str, Any]]], tool_choice: str) -> None:
     """Add tools configuration to parameters."""
@@ -473,8 +406,6 @@ def prepare_params(
     _add_tools_config(params, tools, tool_choice)
     # Add Anthropic-specific parameters
     # _configure_anthopic(params, model_name, params["messages"])
-    # Add OpenRouter-specific parameters
-    _configure_openrouter(params, model_name)
     # # Add Bedrock-specific parameters
     # _configure_bedrock(params, model_name, model_id)
     
@@ -511,7 +442,7 @@ async def make_llm_api_call(
 
     Args:
         messages: List of message dictionaries for the conversation
-        model_name: Name of the model to use (e.g., "gpt-4", "claude-3", "openrouter/openai/gpt-4", "bedrock/anthropic.claude-3-sonnet-20240229-v1:0")
+        model_name: Name of the model to use (e.g., "gpt-4", "claude-3", "bedrock/anthropic.claude-3-sonnet-20240229-v1:0")
         response_format: Desired format for the response
         temperature: Sampling temperature (0-1)
         max_tokens: Maximum tokens in the response
