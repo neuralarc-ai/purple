@@ -16,6 +16,7 @@ import { StatusOverlay } from '@/components/ui/status-overlay';
 import { MaintenanceNotice } from './maintenance-notice';
 import { MaintenanceBanner } from './maintenance-banner';
 import { useMaintenanceNoticeQuery } from '@/hooks/react-query/edge-flags';
+import { createClient } from '@/lib/supabase/client';
 
 import { useProjects, useThreads } from '@/hooks/react-query/sidebar/use-sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -70,6 +71,7 @@ export default function DashboardLayoutContent({
   const { user, isLoading } = useAuth();
   const router = useRouter();
   const isMobile = useIsMobile();
+  const [isCheckingProfile, setIsCheckingProfile] = useState(true);
 
   // Enable real-time updates for usage data across all dashboard pages
   useUsageRealtime(user?.id);
@@ -109,11 +111,40 @@ export default function DashboardLayoutContent({
   // API health is now managed by useApiHealth hook
   const isApiHealthy = healthData?.status === 'ok' && !healthError;
 
-  // Check authentication status
+  // Check authentication status and invite code validation
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/auth');
-    }
+    const checkUserProfile = async () => {
+      if (!isLoading && user) {
+        try {
+          const supabase = createClient();
+          const { data: profileData, error: profileError } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+
+          if (profileError && profileError.code === 'PGRST116') {
+            // No profile found - user needs invite code validation
+            console.log('Dashboard: User needs invite code validation, redirecting to /invite');
+            router.push('/invite');
+            return;
+          }
+        } catch (error) {
+          console.error('Error checking user profile in dashboard:', error);
+          // On error, redirect to invite as a safety measure
+          router.push('/invite');
+          return;
+        }
+      }
+      
+      if (!isLoading && !user) {
+        router.push('/auth');
+      }
+      
+      setIsCheckingProfile(false);
+    };
+
+    checkUserProfile();
   }, [user, isLoading, router]);
 
   if (maintenanceNoticeQuery.data?.enabled) {
@@ -142,8 +173,8 @@ export default function DashboardLayoutContent({
     );
   }
 
-  // Show loading state while checking auth or health
-  if (isLoading || isCheckingHealth) {
+  // Show loading state while checking auth, profile, or health
+  if (isLoading || isCheckingProfile || isCheckingHealth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

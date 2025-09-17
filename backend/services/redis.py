@@ -24,7 +24,7 @@ def initialize():
     load_dotenv()
 
     # Get Redis configuration
-    redis_host = os.getenv("REDIS_HOST", "redis")
+    redis_host = os.getenv("REDIS_HOST", "localhost")  # Changed from "redis" to "localhost"
     redis_port = int(os.getenv("REDIS_PORT", 6379))
     redis_password = os.getenv("REDIS_PASSWORD", "")
     

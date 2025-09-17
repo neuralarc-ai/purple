@@ -58,6 +58,26 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
+  // Check if authenticated users have completed invite code validation for protected routes
+  if (isProtectedRoute && user) {
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (profileError && profileError.code === 'PGRST116') {
+        // No profile found - user needs invite code validation
+        return NextResponse.redirect(new URL('/invite', request.url))
+      }
+    } catch (error) {
+      console.error('Error checking user profile for protected route:', error)
+      // On error, redirect to invite as a safety measure
+      return NextResponse.redirect(new URL('/invite', request.url))
+    }
+  }
+
   // Redirect authenticated users away from auth routes
   if (isAuthRoute && user) {
     // Check if user has completed onboarding

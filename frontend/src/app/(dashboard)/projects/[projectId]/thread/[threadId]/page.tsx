@@ -946,6 +946,7 @@ export default function ThreadPage({
           agentMetadata={agent?.metadata}
           agentData={agent}
           onSubmit={handleSubmitMessage}
+          showToolPreview={!isSidePanelOpen && toolCalls.length > 0}
           onCreditExhaustionUpgrade={() => {
             // Clear credit exhaustion state when user clicks upgrade
             clearCreditExhaustion();
@@ -953,7 +954,7 @@ export default function ThreadPage({
         />
 
         {/* Disclaimer text between content and chat input */}
-        <div
+        {/* <div
           className={cn(
             'px-4 text-center',
             'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
@@ -965,7 +966,7 @@ export default function ThreadPage({
               Check important info. See Cookie Preferences.
             </p>
           </div>
-        </div>
+        </div> */}
 
         {/* Automation control banners */}
         {(paused || inTakeover) && (
@@ -997,8 +998,8 @@ export default function ThreadPage({
 
         <div
           className={cn(
-            'fixed bottom-6 z-20  bg-gradient-to-t from-background via-background/90 to-transparent pt-0',
-            'transition-[left,right] duration-200 ease-in-out will-change-[left,right]',
+            'fixed bottom-0 sm:bottom-0 z-20 bg-gradient-to-t from-background via-background/90 to-transparent pt-0',
+            'transition-[left,right,bottom] duration-200 ease-in-out will-change-[left,right,bottom]',
             {
               'left-0 right-0 pb-3': isMobile,
               'left-[72px] md:left-[256px] right-0': leftSidebarState === 'expanded' && !isMobile && !isSidebarOverlaying,
@@ -1069,6 +1070,12 @@ export default function ThreadPage({
                 showScrollToBottomIndicator={showScrollToBottom}
                 onScrollToBottom={scrollToBottom}
               />
+               <div className="text-center mt-2 pb-2">
+                <p className="text-xs text-muted-foreground">
+                  Helium can make mistakes. 
+                  Check important info. See Cookie Preferences.
+                </p>
+              </div>
             </div>
           </div>
         </div>

@@ -1187,6 +1187,14 @@ async def create_trial_checkout(
 ):
     """Create a Stripe Checkout session for the 1-week trial plan."""
     try:
+        # Validate that current_user_id is a valid UUID
+        import uuid
+        try:
+            uuid.UUID(current_user_id)
+        except ValueError:
+            logger.error(f"Invalid user ID format: {current_user_id}")
+            raise HTTPException(status_code=400, detail=f"Invalid user ID format: {current_user_id}")
+        
         # Get Supabase client
         db = DBConnection()
         client = await db.client
@@ -1251,6 +1259,9 @@ async def create_trial_checkout(
             "status": "trial_checkout"
         }
         
+    except HTTPException:
+        # Re-raise HTTP exceptions as they are (like 400 Bad Request)
+        raise
     except Exception as e:
         logger.exception(f"Error creating trial checkout session: {str(e)}")
         # Check if it's a Stripe error with more details
