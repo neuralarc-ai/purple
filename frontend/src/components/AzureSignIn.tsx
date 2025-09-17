@@ -58,7 +58,7 @@ export default function AzureSignIn({ returnUrl }: AzureSignInProps) {
     <button
       onClick={handleAzureSignIn}
       disabled={isLoading}
-      className="flex w-full items-center justify-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="flex w-full items-center justify-center gap-3 rounded-full border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <svg
         className="h-5 w-5"
