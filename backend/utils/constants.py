@@ -29,6 +29,7 @@ MODELS = {
         "context_window": 1_000_000,  # 1M tokens
         "tier_availability": ["free", "paid"]
     },
+
     # Bedrock Models - Claude Sonnet Series
     "bedrock/anthropic.claude-sonnet-4-20250514-v1:0": {
         "aliases": ["claude-sonnet-4-bedrock"],
