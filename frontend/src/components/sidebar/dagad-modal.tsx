@@ -53,6 +53,7 @@ type Entry = {
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
+const MAX_CONTENT_CHARS = 5000;
 
 // Function to get the appropriate icon for file types
 const getFileIcon = (entry: Entry) => {
@@ -847,11 +848,15 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                     <label className="text-sm font-medium text-foreground/80">Entry content</label>
                     <Textarea 
                       placeholder="Enter the knowledge content, guidelines, or information" 
-                      value={content} 
-                      onChange={(e) => setContent(e.target.value)}
-                      className="bg-background/50 border-border/50 resize-none min-h-[120px]"
+                      value={content}
+                      onChange={(e) => setContent(e.target.value.slice(0, MAX_CONTENT_CHARS))}
+                      maxLength={MAX_CONTENT_CHARS}
+                      className="bg-background/50 border-border/50 resize-none h-[120px] overflow-y-auto overflow-x-hidden break-all whitespace-pre-wrap"
                       rows={5}
                     />
+                    <div className="flex items-center justify-end text-xs text-muted-foreground">
+                      {content.length}/{MAX_CONTENT_CHARS}
+                    </div>
                   </div>
 
                   {/* Image Upload */}
@@ -1044,11 +1049,15 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
             </Select>
             <Textarea 
               placeholder="Entry content" 
-              value={editContent} 
-              onChange={(e) => setEditContent(e.target.value)}
-              className="bg-background/50 border-border/50 resize-none min-h-[120px]"
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value.slice(0, MAX_CONTENT_CHARS))}
+              maxLength={MAX_CONTENT_CHARS}
+              className="bg-background/50 border-border/50 resize-none h-[120px] overflow-y-auto overflow-x-hidden break-all whitespace-pre-wrap"
               rows={6}
             />
+            <div className="flex items-center justify-end text-xs text-muted-foreground">
+              {editContent.length}/{MAX_CONTENT_CHARS}
+            </div>
             
             {/* Image Upload Section for Edit */}
             <div className="space-y-3">
