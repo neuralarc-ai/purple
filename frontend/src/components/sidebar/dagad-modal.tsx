@@ -54,6 +54,10 @@ type Entry = {
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
 const MAX_CONTENT_CHARS = 5000;
+const MAX_TITLE_CHARS = 100;
+
+// Utility to detect if a file is an image
+const isImageFile = (file: File | null | undefined) => !!file && file.type.startsWith('image/');
 
 // Function to get the appropriate icon for file types
 const getFileIcon = (entry: Entry) => {
@@ -796,9 +800,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                     <Input 
                       placeholder="Enter a descriptive title for your knowledge entry" 
                       value={title} 
+                      maxLength={MAX_TITLE_CHARS}
                       onChange={(e) => setTitle(e.target.value)}
                       className="bg-background/50 border-border/50"
                     />
+                    <div className="flex items-center justify-end text-xs text-muted-foreground">
+                      {title.length}/{MAX_TITLE_CHARS}
+                    </div>
                   </div>
 
                   {/* Category */}
@@ -859,28 +867,10 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                     </div>
                   </div>
 
-                  {/* Image Upload */}
+                  {/* Attachment Upload (Image or Document) */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground/80">Image (optional)</label>
-                    {!imagePreview ? (
-                      <div className="border-2 border-dashed border-border/40 rounded-lg p-8 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleImageSelect(file);
-                          }}
-                          className="hidden"
-                          id="image-upload"
-                        />
-                        <label htmlFor="image-upload" className="cursor-pointer block">
-                          <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                          <p className="text-sm text-muted-foreground mb-1">Click to upload an image</p>
-                          <p className="text-xs text-muted-foreground/70">PNG, JPG, GIF up to 10MB</p>
-                        </label>
-                      </div>
-                    ) : (
+                    <label className="text-sm font-medium text-foreground/80">Attachment (optional)</label>
+                    {imagePreview ? (
                       <div className="relative rounded-lg overflow-hidden border border-border/30">
                         <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover" />
                         <button
@@ -894,38 +884,42 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                           <X className="h-4 w-4" />
                         </button>
                       </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-border/40 rounded-lg p-6 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*,.pdf,.doc,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            if (!file) return;
+                            if (!isImageFile(file) && file.size > 50 * 1024 * 1024) {
+                              toast.error('File is larger than 50MB. Please choose a smaller file.');
+                              e.currentTarget.value = '';
+                              setSelectedFile(null);
+                              return;
+                            }
+                            if (isImageFile(file)) {
+                              handleImageSelect(file);
+                              setSelectedFile(null);
+                            } else {
+                              setSelectedFile(file);
+                              setSelectedImage(null);
+                              setImagePreview(null);
+                            }
+                          }}
+                          className="hidden"
+                          id="kb-attachment-upload"
+                        />
+                        <label htmlFor="kb-attachment-upload" className="cursor-pointer block">
+                          <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+                          <p className="text-sm text-muted-foreground mb-1">Click to upload an image or file</p>
+                          <p className="text-xs text-muted-foreground/70">Images up to 10MB • Files up to 50MB</p>
+                        </label>
+                        {selectedFile && (
+                          <div className="text-xs text-muted-foreground mt-2">{selectedFile.name} ({Math.round(selectedFile.size/1024)} KB)</div>
+                        )}
+                      </div>
                     )}
-                  </div>
-
-                  {/* File Upload */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground/80">File (optional)</label>
-                    <div className="border-2 border-dashed border-border/40 rounded-lg p-6 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
-                      <input
-                        type="file"
-                        accept=".pdf,.doc,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file && file.size > 50 * 1024 * 1024) {
-                            toast.error('File is larger than 50MB. Please choose a smaller file.');
-                            e.currentTarget.value = '';
-                            setSelectedFile(null);
-                            return;
-                          }
-                          setSelectedFile(file || null);
-                        }}
-                        className="hidden"
-                        id="kb-file-upload"
-                      />
-                      <label htmlFor="kb-file-upload" className="cursor-pointer block">
-                        <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                        <p className="text-sm text-muted-foreground mb-1">Click to upload a file (PDF, DOCX, CSV)</p>
-                        <p className="text-xs text-muted-foreground/70">Max 50MB</p>
-                      </label>
-                      {selectedFile && (
-                        <div className="text-xs text-muted-foreground mt-2">{selectedFile.name} ({Math.round(selectedFile.size/1024)} KB)</div>
-                      )}
-                    </div>
                   </div>
 
                   {/* Action Buttons */}
@@ -1032,9 +1026,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
             <Input 
               placeholder="Entry title" 
               value={editTitle} 
+              maxLength={MAX_TITLE_CHARS}
               onChange={(e) => setEditTitle(e.target.value)}
               className="bg-background/50 border-border/50"
             />
+            <div className="flex items-center justify-end text-xs text-muted-foreground">
+              {editTitle.length}/{MAX_TITLE_CHARS}
+            </div>
             <Select value={editCategory} onValueChange={(value) => setEditCategory(value as any)}>
               <SelectTrigger className="bg-background/50 border-border/50">
                 <SelectValue placeholder="Select category" />
@@ -1059,27 +1057,10 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
               {editContent.length}/{MAX_CONTENT_CHARS}
             </div>
             
-            {/* Image Upload Section for Edit */}
+            {/* Attachment Upload Section for Edit */}
             <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground/70">Image (optional)</label>
-              {!editImagePreview ? (
-                <div className="border-2 border-dashed border-border/40 rounded-lg p-4 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleEditImageSelect(file);
-                    }}
-                    className="hidden"
-                    id="edit-image-upload"
-                  />
-                  <label htmlFor="edit-image-upload" className="cursor-pointer block">
-                    <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                    <p className="text-xs text-muted-foreground">Click to upload an image</p>
-                  </label>
-                </div>
-              ) : (
+              <label className="text-sm font-medium text-foreground/70">Attachment (optional)</label>
+              {editImagePreview ? (
                 <div className="relative rounded-lg overflow-hidden border border-border/30">
                   <img src={editImagePreview} alt="Preview" className="w-full h-24 object-cover" />
                   <button
@@ -1093,33 +1074,37 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                     <X className="h-3 w-3" />
                   </button>
                 </div>
+              ) : (
+                <div className="border-2 border-dashed border-border/40 rounded-lg p-4 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      if (!file) return;
+                      if (!isImageFile(file)) {
+                        setEditSelectedFile(file);
+                        setEditSelectedImage(null);
+                        setEditImagePreview(null);
+                      } else {
+                        handleEditImageSelect(file);
+                        setEditSelectedFile(null);
+                      }
+                    }}
+                    className="hidden"
+                    id="edit-attachment-upload"
+                  />
+                  <label htmlFor="edit-attachment-upload" className="cursor-pointer block">
+                    <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                    <p className="text-xs text-muted-foreground">Click to upload an image or file</p>
+                  </label>
+                  {(editSelectedFile || editEntry?.file_name) && (
+                    <div className="text-xs text-muted-foreground mt-2">
+                      {editSelectedFile ? `${editSelectedFile.name} (${Math.round(editSelectedFile.size/1024)} KB)` : editEntry?.file_name}
+                    </div>
+                  )}
+                </div>
               )}
-            </div>
-
-            {/* File Upload Section for Edit */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground/70">File (optional)</label>
-              <div className="border-2 border-dashed border-border/40 rounded-lg p-4 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    setEditSelectedFile(file);
-                  }}
-                  className="hidden"
-                  id="edit-file-upload"
-                />
-                <label htmlFor="edit-file-upload" className="cursor-pointer block">
-                  <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                  <p className="text-xs text-muted-foreground">Click to upload a file</p>
-                </label>
-                {(editSelectedFile || editEntry?.file_name) && (
-                  <div className="text-xs text-muted-foreground mt-2">
-                    {editSelectedFile ? `${editSelectedFile.name} (${Math.round(editSelectedFile.size/1024)} KB)` : editEntry?.file_name}
-                  </div>
-                )}
-              </div>
             </div>
             
             <div className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-lg border border-border/30">
