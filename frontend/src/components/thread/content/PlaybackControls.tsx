@@ -477,14 +477,14 @@ export const PlaybackControls = ({
   const renderHeader = useCallback(
     () => (
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative z-[50]">
-        <div className="flex h-14 items-center gap-4 px-4">
+        <div className="flex h-12 items-center gap-3 px-3">
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center w-6 h-6 rounded-md overflow-hidden bg-primary/10">
+              <div className="flex items-center justify-center w-6 h-6 rounded-md overflow-hidden bg-transparent">
                 <Link href="/">
                   <img
-                    src="/kortix-symbol.svg"
-                    alt="Kortix"
+                    src="/logo-dark.svg"
+                    alt="Helium"
                     width={16}
                     height={16}
                     className="object-contain"
@@ -498,7 +498,7 @@ export const PlaybackControls = ({
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <PlayButton />
             <ResetButton />
             <ForwardButton />
@@ -576,9 +576,6 @@ export const PlaybackControls = ({
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent dark:from-black/90 dark:via-black/50 dark:to-transparent" />
 
             <div className="text-center max-w-md mx-auto relative z-10 px-4">
-              <div className="rounded-full bg-primary/10 backdrop-blur-sm w-12 h-12 mx-auto flex items-center justify-center mb-4">
-                <Play className="h-5 w-5 text-primary" />
-              </div>
               <h3 className="text-lg font-medium mb-2 text-white">
                 Watch this agent in action
               </h3>
@@ -588,7 +585,7 @@ export const PlaybackControls = ({
               </p>
               <Button
                 onClick={togglePlayback}
-                className="flex items-center mx-auto bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-white/20"
+                className="mx-auto bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border-white/20 rounded-full px-6"
                 size="lg"
                 variant="outline"
               >

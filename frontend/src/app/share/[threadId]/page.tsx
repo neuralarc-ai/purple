@@ -80,6 +80,7 @@ export default function ThreadPage({
   >('idle');
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [toolCalls, setToolCalls] = useState<ToolCallInput[]>([]);
+  const [displayToolCalls, setDisplayToolCalls] = useState<ToolCallInput[]>([]);
   const [currentToolIndex, setCurrentToolIndex] = useState<number>(0);
   const [autoOpenedPanel, setAutoOpenedPanel] = useState(false);
 
@@ -103,6 +104,9 @@ export default function ThreadPage({
   const [fileViewerOpen, setFileViewerOpen] = useState(false);
   const [projectName, setProjectName] = useState<string>('');
   const [fileToView, setFileToView] = useState<string | null>(null);
+  const [panelWidth, setPanelWidth] = useState<number | null>(null);
+  const [isMdUp, setIsMdUp] = useState<boolean>(false);
+  const [panelLeft, setPanelLeft] = useState<number>(0);
 
   const initialLoadCompleted = useRef<boolean>(false);
 
@@ -476,6 +480,7 @@ export default function ThreadPage({
           });
 
           setToolCalls(historicalToolPairs);
+          setDisplayToolCalls(historicalToolPairs);
           initialLoadCompleted.current = true;
         }
       } catch (err) {
@@ -585,10 +590,89 @@ export default function ThreadPage({
     skipToEnd,
   } = playbackController;
 
+  // Track breakpoint and compute panel left edge to align divider
+  useEffect(() => {
+    const compute = () => {
+      const mdUp = typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches;
+      setIsMdUp(mdUp);
+      const rightPadding = mdUp ? 16 : 8; // matches Tailwind md:right-4 vs right-2
+      const effectiveWidth = (panelWidth ?? 480);
+      const left = (typeof window !== 'undefined') ? (window.innerWidth - (effectiveWidth + rightPadding)) : 0;
+      setPanelLeft(left);
+    };
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, [panelWidth]);
+
   useEffect(() => {
     setIsPlaying(playbackState.isPlaying);
     setCurrentMessageIndex(playbackState.currentMessageIndex);
   }, [playbackState.isPlaying, playbackState.currentMessageIndex]);
+
+  // Sync tool panel with playback current tool index deterministically
+  useEffect(() => {
+    if (!isPlaying) return;
+    // Find most recent completed tool up to current visible message index
+    const currentMessages = messages.slice(0, playbackState.currentMessageIndex);
+    let targetIndex = -1;
+    let streamingIndex = -1;
+    for (let i = 0; i < toolCalls.length; i++) {
+      const toolMsgContent = toolCalls[i].toolResult?.content;
+      const assistantContent = toolCalls[i].assistantCall?.content || '';
+      const found = currentMessages.find((m) => m.type === 'assistant' && m.content === assistantContent);
+      if (found && toolMsgContent && toolMsgContent !== 'STREAMING') {
+        targetIndex = i;
+      }
+      // If the assistant message is visible but we haven't yet reached a matching tool result in visible messages,
+      // mark this index as streaming
+      if (found && (!toolMsgContent || toolMsgContent === 'STREAMING')) {
+        streamingIndex = i;
+      }
+    }
+    // Determine if any assistant message is visible for which result is not yet revealed
+    // We approximate by checking if assistant is visible and the next tool message matching content is not in currentMessages
+    if (streamingIndex === -1) {
+      for (let i = 0; i < toolCalls.length; i++) {
+        const assistantContent = toolCalls[i].assistantCall?.content || '';
+        const assistantVisible = currentMessages.some((m) => m.type === 'assistant' && m.content === assistantContent);
+        const toolVisible = currentMessages.some((m) => m.type === 'tool' && m.content === toolCalls[i].toolResult?.content);
+        if (assistantVisible && !toolVisible) {
+          streamingIndex = i;
+          break;
+        }
+      }
+    }
+
+    // Build displayToolCalls with a STREAMING marker when appropriate
+    if (streamingIndex >= 0) {
+      const cloned = toolCalls.map((tc, idx) =>
+        idx === streamingIndex
+          ? {
+              ...tc,
+              toolResult: {
+                ...(tc.toolResult || {}),
+                content: 'STREAMING',
+                isSuccess: true,
+              },
+            }
+          : tc,
+      );
+      setDisplayToolCalls(cloned);
+      if (currentToolIndex !== streamingIndex) {
+        setExternalNavIndex(streamingIndex);
+        setCurrentToolIndex(streamingIndex);
+      }
+      return;
+    }
+
+    // No streaming; show latest completed up to current point
+    setDisplayToolCalls(toolCalls);
+    if (targetIndex >= 0 && targetIndex !== currentToolIndex) {
+      setExternalNavIndex(targetIndex);
+      setCurrentToolIndex(targetIndex);
+    }
+  }, [isPlaying, playbackState.currentMessageIndex, messages, toolCalls, currentToolIndex]);
 
   useEffect(() => {
     if (playbackState.visibleMessages.length > 0 && !userHasScrolled) {
@@ -713,7 +797,8 @@ export default function ThreadPage({
   return (
     <div className="flex h-screen">
       <div
-        className={`flex flex-col flex-1 overflow-hidden transition-all duration-200 ease-in-out ${isSidePanelOpen ? 'mr-[90%] sm:mr-[450px] md:mr-[500px] lg:mr-[550px] xl:mr-[650px]' : ''}`}
+        className={`flex flex-col flex-1 overflow-hidden transition-all duration-200 ease-in-out`}
+        style={isSidePanelOpen ? { marginRight: `${(panelWidth ?? 480) + (isMdUp ? 16 : 8)}px` } : undefined}
       >
         {renderHeader()}
         <ThreadContent
@@ -728,11 +813,19 @@ export default function ThreadPage({
           currentToolCall={playbackState.currentToolCall}
           sandboxId={sandboxId || ''}
           project={project || undefined}
+          emptyStateComponent={<></>}
         />
         {renderWelcomeOverlay()}
         {renderFloatingControls()}
         
       </div>
+
+      {isSidePanelOpen && (
+        <div
+          className="fixed top-0 bottom-0 w-px bg-border z-[59]"
+          style={{ left: panelLeft - 1 }}
+        />
+      )}
 
       <MemoizedToolCallSidePanel
         isOpen={isSidePanelOpen}
@@ -740,7 +833,7 @@ export default function ThreadPage({
           setIsSidePanelOpen(false);
           userClosedPanelRef.current = true;
         }}
-        toolCalls={toolCalls}
+        toolCalls={displayToolCalls}
         messages={messages as ApiMessageType[]}
         agentStatus="idle"
         currentIndex={currentToolIndex}
@@ -748,6 +841,7 @@ export default function ThreadPage({
         externalNavigateToIndex={externalNavIndex}
         project={project || undefined}
         onFileClick={handleOpenFileViewer}
+        onPanelWidthChange={setPanelWidth}
       />
 
       <MemoizedFileViewerModal
