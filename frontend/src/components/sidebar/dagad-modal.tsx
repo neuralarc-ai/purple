@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
-import { Notebook, Trash2, Loader2, Pencil, Upload, X, Image as ImageIcon, Info, Plus, Eye } from 'lucide-react';
+import { Notebook, Trash2, Loader2, Pencil, Upload, X, Image as ImageIcon, Info, Plus, Eye, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { toast } from 'sonner';
 import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
 
@@ -51,6 +51,40 @@ type Entry = {
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
+
+// Function to get the appropriate icon for file types
+const getFileIcon = (entry: Entry) => {
+  if (entry.image_url) {
+    return <ImageIcon className="h-3 w-3 text-primary" />;
+  }
+  
+  if (entry.file_url) {
+    const fileMime = (entry.file_mime_type || '').toLowerCase();
+    const fileNameLower = (entry.file_name || entry.file_url || '').toLowerCase();
+    
+    // Check for PDF
+    if (fileMime.includes('pdf') || fileNameLower.endsWith('.pdf')) {
+      return <FileText className="h-3 w-3 text-red-500" />;
+    }
+    
+    // Check for CSV
+    if (fileMime.includes('csv') || fileNameLower.endsWith('.csv')) {
+      return <FileSpreadsheet className="h-3 w-3 text-green-500" />;
+    }
+    
+    // Check for DOC/DOCX
+    if (fileMime.includes('officedocument.wordprocessingml.document') || 
+        fileNameLower.endsWith('.docx') || 
+        fileNameLower.endsWith('.doc')) {
+      return <FileText className="h-3 w-3 text-blue-500" />;
+    }
+    
+    // Default file icon for other types
+    return <File className="h-3 w-3 text-muted-foreground" />;
+  }
+  
+  return null;
+};
 
 interface DagadModalProps {
   open: boolean;
@@ -571,13 +605,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
+                                  {getFileIcon(entry)}
                                   <span className="font-medium text-sm text-foreground/90">
                                     {entry.title}
                                   </span>
                                   <Badge variant="secondary" className="text-xs bg-muted/70 text-muted-foreground border-border/30">
                                     {entry.category}
                                   </Badge>
-                                  {entry.image_url && <ImageIcon className="h-3 w-3 text-primary" />}
                                 </div>
                                 <p className="text-sm text-muted-foreground mb-2">
                                   {entry.content ? entry.content.substring(0, 60) + (entry.content.length > 60 ? '...' : '') : 'No content'}
@@ -623,13 +657,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                             {/* Name */}
                             <div className="col-span-3">
                               <div className="flex items-center gap-2">
+                                {getFileIcon(entry)}
                                 <span className="font-medium text-sm text-foreground/90 truncate">
                                   {entry.title}
                                 </span>
                                 <Badge variant="secondary" className="text-xs bg-muted/70 text-muted-foreground border-border/30">
                                   {entry.category}
                                 </Badge>
-                                {entry.image_url && <ImageIcon className="h-3 w-3 text-primary" />}
                               </div>
                             </div>
 
