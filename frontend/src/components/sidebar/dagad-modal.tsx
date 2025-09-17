@@ -21,7 +21,8 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
-import { Notebook, Trash2, Loader2, Pencil, Upload, X, Image as ImageIcon, Info, Plus, Eye, FileText, FileSpreadsheet, File } from 'lucide-react';
+import { Notebook, Trash2, Loader2, Pencil, Upload, X, Info, Plus, Eye } from 'lucide-react';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
 
@@ -55,7 +56,15 @@ const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/a
 // Function to get the appropriate icon for file types
 const getFileIcon = (entry: Entry) => {
   if (entry.image_url) {
-    return <ImageIcon className="h-3 w-3 text-primary" />;
+    return (
+      <Image
+        src="/images/image_4725998.svg"
+        alt="Image file"
+        width={12}
+        height={12}
+        className="h-3 w-3"
+      />
+    );
   }
   
   if (entry.file_url) {
@@ -64,23 +73,55 @@ const getFileIcon = (entry: Entry) => {
     
     // Check for PDF
     if (fileMime.includes('pdf') || fileNameLower.endsWith('.pdf')) {
-      return <FileText className="h-3 w-3 text-red-500" />;
+      return (
+        <Image
+          src="/images/pdf_4726010.svg"
+          alt="PDF file"
+          width={12}
+          height={12}
+          className="h-3 w-3"
+        />
+      );
     }
     
     // Check for CSV
     if (fileMime.includes('csv') || fileNameLower.endsWith('.csv')) {
-      return <FileSpreadsheet className="h-3 w-3 text-green-500" />;
+      return (
+        <Image
+          src="/images/excel_4725976.svg"
+          alt="CSV file"
+          width={12}
+          height={12}
+          className="h-3 w-3"
+        />
+      );
     }
     
     // Check for DOC/DOCX
     if (fileMime.includes('officedocument.wordprocessingml.document') || 
         fileNameLower.endsWith('.docx') || 
         fileNameLower.endsWith('.doc')) {
-      return <FileText className="h-3 w-3 text-blue-500" />;
+      return (
+        <Image
+          src="/images/doc_4725970.svg"
+          alt="Document file"
+          width={12}
+          height={12}
+          className="h-3 w-3"
+        />
+      );
     }
     
-    // Default file icon for other types
-    return <File className="h-3 w-3 text-muted-foreground" />;
+    // Default file icon for other types (using doc icon as fallback)
+    return (
+      <Image
+        src="/images/doc_4725970.svg"
+        alt="File"
+        width={12}
+        height={12}
+        className="h-3 w-3 opacity-50"
+      />
+    );
   }
   
   return null;
