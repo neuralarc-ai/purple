@@ -1018,7 +1018,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                 setConfirmEntry(null);
               }}
               disabled={!!deletingId}
-              className="bg-white text-black hover:text-destructive border-border/50"
+              className="bg-black text-white hover:text-red-500 border-border/50 dark:bg-white dark:text-black dark:hover:text-red-500"
             >
               {deletingId ? (
                 <>
