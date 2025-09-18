@@ -527,13 +527,34 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       }
     }, [uploadedFiles.length, selectedMode, handleModeChange]);
 
+    // Track the original text before voice input starts
+    const originalTextRef = useRef<string>('');
+    const isVoiceInputActiveRef = useRef<boolean>(false);
+
     const handleTranscription = (transcribedText: string) => {
-      // Replace the entire input value with the transcribed text
-      if (isControlled) {
-        controlledOnChange(transcribedText);
-      } else {
-        setUncontrolledValue(transcribedText);
+      if (!isVoiceInputActiveRef.current) {
+        // First transcription - store the original text
+        const currentValue = isControlled ? controlledValue : uncontrolledValue;
+        originalTextRef.current = currentValue || '';
+        isVoiceInputActiveRef.current = true;
       }
+      
+      // Combine original text with transcribed text
+      const newValue = originalTextRef.current 
+        ? `${originalTextRef.current} ${transcribedText}` 
+        : transcribedText;
+      
+      if (isControlled) {
+        controlledOnChange(newValue);
+      } else {
+        setUncontrolledValue(newValue);
+      }
+    };
+
+    const handleStopListening = () => {
+      // Reset voice input state for next use
+      isVoiceInputActiveRef.current = false;
+      originalTextRef.current = '';
     };
 
     const removeUploadedFile = async (index: number) => {
@@ -673,6 +694,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   onChange={handleChange}
                   onSubmit={handleSubmit}
                   onTranscription={handleTranscription}
+                  onStopListening={handleStopListening}
                   placeholder={placeholder}
                   loading={loading || localLoading} // Use local loading state for immediate feedback
                   disabled={disabled}

@@ -16,6 +16,7 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 import { useTheme } from 'next-themes';
+import { TextEffect } from '@/components/ui/text-effect';
 
 interface InviteData {
   inviteCode: string;
@@ -35,6 +36,16 @@ export default function InvitePage() {
   const [inviteError, setInviteError] = useState('');
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
+  const [showTrialButton, setShowTrialButton] = useState(false);
+
+  // Show trial button after text anim ation completes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowTrialButton(true);
+    }, 2000); // 2 seconds delay to allow text animation to complete
+
+    return () => clearTimeout(timer);
+  }, []);
   const [inviteData, setInviteData] = useState<InviteData>({
     inviteCode: '',
     fullName: '',
@@ -46,17 +57,7 @@ export default function InvitePage() {
     const checkAuth = async () => {
       try {
         const supabase = createClient();
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        console.log('Auth check - Session:', !!session, 'Error:', error);
-        
-        if (error) {
-          console.error('Auth error:', error);
-          setIsAuthenticated(false);
-          setIsLoading(false);
-          return;
-        }
-        
+        const { data: { session } } = await supabase.auth.getSession();
         setIsAuthenticated(!!session);
 
         if (session?.access_token) {
@@ -69,14 +70,12 @@ export default function InvitePage() {
 
           if (profileData && !profileError) {
             // User has already completed onboarding - redirect to dashboard
-            console.log('User already onboarded, redirecting to dashboard');
             router.push('/');
             return;
           }
         }
       } catch (error) {
         console.error('Auth check error:', error);
-        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
@@ -172,19 +171,12 @@ export default function InvitePage() {
     setIsStartingTrial(true);
     
     try {
-      // Get fresh session before making the request
-      const supabase = createClient();
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        console.error('Session error:', sessionError);
-        toast.error('Please sign in to start your trial');
-        router.push('/auth');
-        return;
-      }
-      
-      console.log('Starting trial with session:', !!session);
-      
+      console.log('Starting trial checkout...', {
+        success_url: `${window.location.origin}/onboarding`,
+        cancel_url: `${window.location.origin}/invite?trial=cancelled`,
+        origin: window.location.origin
+      });
+
       const response = await fetch('/api/billing/create-trial-checkout', {
         method: 'POST',
         headers: {
@@ -196,20 +188,26 @@ export default function InvitePage() {
         }),
       });
 
+      console.log('Trial checkout response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
       const result = await response.json();
-      
-      console.log('Trial checkout response:', result);
+      console.log('Trial checkout result:', result);
       
       if (result.url) {
         // Redirect to Stripe checkout
+        console.log('Redirecting to Stripe checkout:', result.url);
         window.location.href = result.url;
       } else if (result.status === 'existing_subscription') {
         // User already has subscription, redirect to onboarding
         toast.info('You already have an active subscription');
         router.push('/onboarding');
       } else {
-        console.error('Trial checkout failed:', result);
-        toast.error(result.error || 'Failed to create trial checkout. Please try again.');
+        console.error('No URL in response:', result);
+        toast.error(result.error || result.message || 'Failed to create trial checkout. Please try again.');
       }
     } catch (error) {
       console.error('Trial checkout error:', error);
@@ -242,40 +240,50 @@ export default function InvitePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#EDEDED] flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="flex justify-center mb-8 p-4">
+    <div className="min-h-screen bg-[#EDEDED] flex flex-col lg:flex-row">
+      {/* Left Side - Image with Logo Overlay (Mobile: full width, Desktop: 50%) */}
+      <div className="w-full lg:w-[50%] h-[40vh] lg:h-auto relative">
+        <Image
+          src="/images/invitecard.png"
+          alt="Helium Invite Card"
+          fill
+          className="object-cover"
+          priority
+        />
+        {/* Logo Overlay */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center lg:justify-start pt-8 lg:pt-16 px-4 lg:px-8">
+          <div className="flex justify-center mb-4 lg:mb-8">
             <Image
-              src={theme === 'dark' ? '/logo-light.svg' : '/logo-dark.svg'}
+              src="/logo-dark.svg"
               alt="Helium Logo"
               width={120}
               height={120}
-              className="w-12 h-12"
+              className="w-12 h-12 lg:w-16 lg:h-16"
               priority
             />
           </div>
-          <h1 className="text-4xl font-bold text-black mb-4">
+          <h1 className="text-xl lg:text-3xl font-bold text-white mb-2 lg:mb-4 text-center drop-shadow-lg px-4">
             Float into Helium – Early Access
           </h1>
-          <p className="text-lg text-gray-600">
-            Enter your invite code to unlock access. Don't have one? Join the waitlist to be first in line.
+          <p className="text-sm lg:text-lg text-white text-center drop-shadow-lg max-w-md px-4">
+            Enter your invite code to unlock access. Don't have one? Join the waitlist to be first in line or have a trial.
           </p>
         </div>
+      </div>
 
-        {/* Two Card Layout */}
-        <div className="grid md:grid-cols-2 gap-2 lg:gap-2">
-          {/* Left Card - Invite Code */}
-          <div className="bg-white h-[500px] sm:h-[550px] lg:h-[600px] flex flex-col justify-center items-center rounded-2xl shadow-lg p-8 w-full max-w-md mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-black mb-2">Have an invite code?</h2>
-              <p className="text-gray-600 text-lg">Enter your code to unlock access instantly.</p>
+      {/* Right Side - Form and Animated Text (Mobile: full width, Desktop: 50%) */}
+      <div className="w-full lg:w-[50%] bg-[#EDEDED] flex flex-col justify-center items-center p-4 lg:p-8 min-h-[60vh] lg:min-h-screen">
+        <div className="w-full max-w-md space-y-6">
+          {/* Invite Code Form */}
+          <div className="bg-white rounded-2xl p-4 sm:p-6 lg:p-8 w-full">
+            <div className="flex flex-col justify-center items-center">
+            <div className="text-center mb-4 sm:mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-black mb-2">Have an invite code?</h2>
             </div>
 
             <div className="space-y-4 w-full">
               <div className="space-y-2">
-                <Label htmlFor="inviteCode" className="text-lg font-medium text-black">
+                <Label htmlFor="inviteCode" className="text-base sm:text-lg font-medium text-black">
                   Invite Code
                 </Label>
                 <Input
@@ -287,72 +295,81 @@ export default function InvitePage() {
                     updateInviteData({ inviteCode: value });
                   }}
                   maxLength={7}
-                  className="text-3xl! sm:text-2xl h-10 bg-gray-100 sm:h-12 text-black text-center font-mono border-gray-300"
+                  className="text-2xl sm:text-3xl h-10 sm:h-12 bg-white! text-black text-center font-mono"
                 />
                 {inviteError && (
                   <p className="text-xs sm:text-sm text-red-600">{inviteError}</p>
                 )}
               </div>
 
-              <Button
-                onClick={handleInviteSubmit}
-                disabled={!inviteData.inviteCode.trim() || isSubmitting}
-                className="w-full h-9 sm:h-10 bg-gray-800 text-white text-sm sm:text-base"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-2" />
-                    Validating...
-                  </>
-                ) : (
-                  'Let\'s Float'
-                )}
-              </Button>
+              <div className="flex flex-col items-center space-y-3">
+                <Button
+                  onClick={handleInviteSubmit}
+                  disabled={!inviteData.inviteCode.trim() || isSubmitting}
+                  className="w-full sm:w-2/3 h-10 sm:h-9 bg-black hover:bg-black text-white text-sm sm:text-base"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-2" />
+                      Validating...
+                    </>
+                  ) : (
+                    'Let\'s Float'
+                  )}
+                </Button>
 
-              <Button
-                variant="ghost"
-                onClick={() => setShowWaitlistModal(true)}
-                className="w-full h-9 sm:h-10 border border-gray-800 text-gray-600 bg-white text-sm sm:text-base"
-              >
-                Join Waitlist
-              </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowWaitlistModal(true)}
+                  className="w-full sm:w-2/3 h-10 sm:h-9 border border-gray-800 text-gray-600 bg-white text-sm sm:text-base"
+                >
+                  Join Waitlist
+                </Button>
+              </div>
+            </div>
             </div>
           </div>
 
-          {/* Right Card - Illustration and Trial */}
-          <div className="bg-black rounded-2xl shadow-lg flex flex-col h-[500px] sm:h-[550px] lg:h-[600px] overflow-hidden">
-            {/* Illustration - Full Size */}
-            <div className="flex-1 flex items-center justify-center p-3 sm:p-4">
-              <div className="relative w-full h-full">
-                <Image
-                  src="/images/invitecard.png"
-                  alt="Helium Benefits"
-                  fill
-                  className="object-bottom object-cover rounded-lg"
-                  priority
-                />
-              </div>
-            </div>
-
-            {/* Trial Button */}
-            <div className="text-center p-3 sm:p-4">
-              <Button
-                className="w-full h-9 sm:h-10 bg-white text-black hover:bg-gray-100 font-semibold text-sm sm:text-base"
-                onClick={isAuthenticated ? handleStartTrial : () => router.push('/auth')}
-                disabled={isStartingTrial}
+          {/* Animated Text */}
+          <div className="text-center">
+            <div className="text-black text-lg sm:text-2xl lg:text-3xl leading-tight text-center px-2 sm:px-4">
+              <TextEffect
+                preset="fade-in-blur"
+                speedSegment={0.3}
+                as="div"
+                className="block"
               >
-                {isStartingTrial ? (
-                  <>
-                    <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-2" />
-                    Starting trial...
-                  </>
-                ) : isAuthenticated ? (
-                  'Start 1-week trial for $1.99'
-                ) : (
-                  'Sign in to start trial'
-                )}
-              </Button>
+                Missing an invite?
+              </TextEffect>
+              <TextEffect
+                preset="fade-in-blur"
+                speedSegment={0.3}
+                as="div"
+                className="block"
+              >
+                Unlock a 7-day Helium trial for $1.99.
+              </TextEffect>
             </div>
+            
+            {/* Trial Button - Only shows after text animation completes */}
+            {showTrialButton && (
+              <div className="mt-6 sm:mt-8">
+                <Button
+                  className="w-full sm:w-2/3 h-10 sm:h-9 bg-white text-black hover:bg-gray-100 font-semibold text-sm sm:text-base border border-gray-300"
+                  onClick={handleStartTrial}
+                  disabled={isStartingTrial}
+                >
+                  {isStartingTrial ? (
+                    <>
+                      <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin mr-2" />
+                      Starting trial...
+                    </>
+                  ) : (
+                    'Start trial'
+                  )}
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
