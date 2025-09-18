@@ -1,30 +1,27 @@
 import type { ElementType } from 'react';
 import {
-  FileText,
-  Terminal,
-  ExternalLink,
-  FileEdit,
-  Search,
-  Globe,
-  Code,
-  MessageSquare,
-  Folder,
-  FileX,
-  CloudUpload,
-  Wrench,
-  Cog,
-  Network,
-  FileSearch,
-  FilePlus,
-  PlugIcon,
-  BookOpen,
-  MessageCircleQuestion,
-  CheckCircle2,
-  Table2,
-  ListTodo,
-  List,
-  Computer,
-} from 'lucide-react';
+  RiCompass3Line,
+  RiFileEditLine,
+  RiFileSearchLine,
+  RiFileAddLine,
+  RiFileTextLine,
+  RiListRadio,
+  RiTodoLine,
+  RiTerminalBoxLine,
+  RiExportLine,
+  RiSearch2Line,
+  RiPagesLine,
+  RiGlobalLine,
+  RiTableView,
+  RiFileReduceLine,
+  RiUploadCloud2Line,
+  RiCodeAiLine,
+  RiChatAiLine,
+  RiCheckboxCircleLine,
+  RiBook2Line,
+  RiPlugLine,
+  RiApps2AiLine,
+} from 'react-icons/ri';
 
 // Flag to control whether tool result messages are rendered
 export const SHOULD_RENDER_TOOL_RESULTS = false;
@@ -87,53 +84,53 @@ export const getToolIcon = (toolName: string): ElementType => {
     case 'browser-act':
     case 'browser-extract-content':
     case 'browser-screenshot':
-      return Globe;
+      return RiCompass3Line;
 
     // File operations
     case 'create-file':
-      return FileEdit;
+      return RiFileEditLine;
     case 'str-replace':
-      return FileSearch;
+      return RiFileSearchLine;
     case 'full-file-rewrite':
-      return FilePlus;
+      return RiFileAddLine;
     case 'read-file':
-      return FileText;
+      return RiFileTextLine;
     case 'edit-file':
-      return FileEdit;
+      return RiFileEditLine;
 
     // Task operations
     case 'create-tasks':
-      return List;
+      return RiListRadio;
     case 'update-tasks':
-      return ListTodo;
+      return RiTodoLine;
 
     // Shell commands
     case 'execute-command':
-      return Terminal;
+      return RiTerminalBoxLine;
     case 'check-command-output':
-      return Terminal;
+      return RiTerminalBoxLine;
     case 'terminate-command':
-      return Terminal;
+      return RiTerminalBoxLine;
 
     // Port operations
     case 'expose-port':
-      return Computer;
+      return RiExportLine;
 
     // Web operations
     case 'web-search':
-      return Search;
+      return RiSearch2Line;
     case 'crawl-webpage':
-      return Globe;
+      return RiPagesLine;
     case 'scrape-webpage':
-        return Globe;
+        return RiPagesLine;
 
     // API and data operations
     case 'call-data-provider':
-      return ExternalLink;
+      return RiGlobalLine;
     case 'get-data-provider-endpoints':
-      return Network;
+      return RiGlobalLine;
     case 'execute-data-provider-call':
-      return Network;
+      return RiGlobalLine;
 
     // Sheets tools
     case 'create-sheet':
@@ -142,27 +139,27 @@ export const getToolIcon = (toolName: string): ElementType => {
     case 'analyze-sheet':
     case 'visualize-sheet':
     case 'format-sheet':
-      return Table2;
+      return RiTableView;
 
     // Code operations
     case 'delete-file':
-      return FileX;
+      return RiFileReduceLine;
 
     // Deployment
     case 'deploy-site':
-      return CloudUpload;
+      return RiUploadCloud2Line;
 
     // Tools and utilities
     case 'execute-code':
-      return Code;
+      return RiCodeAiLine;
 
     // User interaction
     case 'ask':
-      return MessageCircleQuestion;
+      return RiChatAiLine;
 
     // Task completion
     case 'complete':
-      return CheckCircle2;
+      return RiCheckboxCircleLine;
 
     default:
       if (toolName?.startsWith('mcp_')) {
@@ -173,18 +170,18 @@ export const getToolIcon = (toolName: string): ElementType => {
           
           // Map specific MCP tools to appropriate icons
           if (toolNamePart.includes('search') || toolNamePart.includes('web')) {
-            return Search;
+            return RiSearch2Line;
           } else if (toolNamePart.includes('research') || toolNamePart.includes('paper')) {
-            return BookOpen;
+            return RiBook2Line;
           } else if (serverName === 'exa') {
-            return Search; // Exa is primarily a search service
+            return RiSearch2Line; // Exa is primarily a search service
           }
         }
-        return PlugIcon; // Default icon for MCP tools
+        return RiPlugLine; // Default icon for MCP tools
       }
       
       // Add logging for debugging unhandled tool types
-      return Wrench; // Default icon for tools
+      return RiApps2AiLine; // Default icon for tools
   }
 };
 
