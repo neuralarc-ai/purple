@@ -12,12 +12,11 @@ import Comparison from '@/components/comparison';
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-black">
-      <HeroSection />  
-      <Comparison />    
+      <HeroSection />
+      <Comparison />
       <FeaturesSection />
-      <IntegrationsSection />
       <FeatureTable />
-      <PromptMessage />
+      <IntegrationsSection />
       <CompareTable />
       <Footer />
     </main>

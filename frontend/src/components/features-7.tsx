@@ -38,30 +38,13 @@ const cardVariants = {
     },
 }
 
-const imageVariants = {
-    hidden: {
-        opacity: 0,
-        filter: 'blur(15px)',
-        scale: 1.05,
-    },
-    visible: {
-        opacity: 1,
-        filter: 'blur(0px)',
-        scale: 1,
-        transition: {
-            duration: 1,
-            ease: [0.25, 0.46, 0.45, 0.94] as const,
-            delay: 0.3,
-        },
-    },
-}
 
 export default function FeaturesSection() {
     return (
-        <section className="py-12 md:py-18 md:mt-6">
-            <div className="mx-auto max-w-5xl space-y-12 px-6">
+        <section className="py-8 md:py-12 md:mt-4">
+            <div className="mx-auto max-w-5xl space-y-8 px-6">
                 <motion.div 
-                    className="relative z-10 grid items-center justify-center text-center gap-4 md:gap-12"
+                    className="relative z-10 grid items-center justify-center text-center gap-3 md:gap-8"
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, margin: "-100px" }}
@@ -70,48 +53,13 @@ export default function FeaturesSection() {
                     <h2 className="text-4xl xl:text-6xl font-semibold leading-none text-white">Stop switching between AI tools. <br />Start succeeding with one.</h2>
                     <p className="max-w-lg mx-auto text-white/80">Helium seamlessly integrates with your existing workflows to automate tasks, generate insights, and manage your business operations all from your intelligent digital companion.</p>
                 </motion.div>
-                <motion.div 
-                    className="relative rounded-2xl p-3 md:-mx-8 lg:col-span-3"
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, margin: "-100px" }}
-                    variants={imageVariants}
-                >
-                    <div className="aspect-88/36 relative">
-                        <div className="bg-linear-to-t z-10 rounded-2xl from-black absolute inset-0 to-transparent"></div>
-                        {/* <Image src="/home/app-screen.jpeg" className="absolute inset-0 rounded-2xl" alt="payments illustration dark" width={2797} height={1137} /> */}
-                        <Image src="/home/app-screen.jpeg" className="hidden dark:block rounded-xl" alt="payments illustration dark" width={2797} height={1137} />
-                        <Image src="/home/app-screen.jpeg" className="dark:hidden rounded-xl" alt="payments illustration light" width={2797} height={1137} />
-                    </div>
-                </motion.div>
                 <motion.div
                     initial="hidden"
                     whileInView="visible"
                     viewport={{ once: true, margin: "-100px" }}
                     variants={cardVariants}
                 >
-                    <Card className="mx-auto mt-8 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/20 overflow-hidden shadow-zinc-950/5 *:text-center md:mt-16 bg-black/20 border-white/30">
-                        <div className="group shadow-zinc-950/5">
-                            <CardHeader className="pb-3">
-                                <CardDecorator variant="orange">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6 text-white">
-                                        <path d="M6 18h8"/>
-                                        <path d="M3 22h18"/>
-                                        <path d="M14 22a7 7 0 1 0 0-14h-1"/>
-                                        <path d="M9 14h2"/>
-                                        <path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/>
-                                        <path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/>
-                                    </svg>
-                                </CardDecorator>
-
-                                <h3 className="mt-6 font-medium text-white">Deeper, reliable intelligence</h3>
-                            </CardHeader>
-
-                            <CardContent>
-                                <p className="text-sm text-white/80">Advanced AI agents that understand context and deliver accurate insights.</p>
-                            </CardContent>
-                        </div>
-
+                    <Card className="mx-auto mt-8 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/20 overflow-hidden shadow-zinc-950/5 *:text-center md:mt-16 bg-black/20 ">
                         <div className="group shadow-zinc-950/5">
                             <CardHeader className="pb-3">
                                 <CardDecorator variant="blue">
@@ -132,7 +80,28 @@ export default function FeaturesSection() {
                             </CardHeader>
 
                             <CardContent>
-                                <p className="mt-3 text-sm text-white/80">Streamline complex processes and accelerate research with intelligent automation.</p>
+                                <p className="text-base text-balance text-white/80">Streamline complex processes and accelerate research with intelligent automation. Build seamless, multi-step workflows that handle data analysis, reporting, and seamless workflow orchestration for <br /> complex tasks.</p>
+                            </CardContent>
+                        </div>
+
+                        <div className="group shadow-zinc-950/5">
+                            <CardHeader className="pb-3">
+                                <CardDecorator variant="orange">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6 text-white">
+                                        <path d="M6 18h8"/>
+                                        <path d="M3 22h18"/>
+                                        <path d="M14 22a7 7 0 1 0 0-14h-1"/>
+                                        <path d="M9 14h2"/>
+                                        <path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/>
+                                        <path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/>
+                                    </svg>
+                                </CardDecorator>
+
+                                <h3 className="mt-6 font-medium text-white">Deeper, reliable intelligence</h3>
+                            </CardHeader>
+
+                            <CardContent>
+                                <p className="text-base text-balance text-white/80">Our advanced AI agents go beyond simple answers to provide accurate, trustworthy insights. They understand context and reason through complex problems to deliver reliable information you can act on.</p>
                             </CardContent>
                         </div>
 
@@ -152,7 +121,73 @@ export default function FeaturesSection() {
                             </CardHeader>
 
                             <CardContent>
-                                <p className="mt-3 text-sm text-white/80">Build powerful AI workflows without writing code - intuitive interface for everyone.</p>
+                                <p className="text-base text-balance text-white/80">Create powerful AI workflows without writing any code. Our intuitive, drag-and-drop interface makes advanced AI accessible to everyone.</p>
+                            </CardContent>
+                        </div>
+                    </Card>
+                </motion.div>
+                
+                {/* Horizontal Divider */}
+                <div className="flex items-center justify-center my-8">
+                    <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent w-full max-w-2xl"></div>
+                </div>
+
+                {/* Second Row of Cards */}
+                <motion.div
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-100px" }}
+                    variants={cardVariants}
+                >
+                    <Card className="mx-auto grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/20 overflow-hidden shadow-zinc-950/5 *:text-center bg-black/20">
+                        <div className="group shadow-zinc-950/5">
+                            <CardHeader className="pb-3">
+                                <CardDecorator variant="purple">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6 text-white">
+                                        <path d="M12 7v14"/>
+                                        <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>
+                                    </svg>
+                                </CardDecorator>
+
+                                <h3 className="mt-6 font-medium text-white">Knowledge-Driven Responses</h3>
+                            </CardHeader>
+
+                            <CardContent>
+                                <p className="text-base text-balance text-white/80">Add your own knowledge sources to agents to receive contextually accurate answers. This ensures your agents are grounded in your specific data and provide contextual insights.</p>
+                            </CardContent>
+                        </div>
+
+                        <div className="group shadow-zinc-950/5">
+                            <CardHeader className="pb-3">
+                                <CardDecorator variant="cyan">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-6 text-white">
+                                        <path d="M16.051 12.616a1 1 0 0 1 1.909.024l.737 1.452a1 1 0 0 0 .737.535l1.634.256a1 1 0 0 1 .588 1.806l-1.172 1.168a1 1 0 0 0-.282.866l.259 1.613a1 1 0 0 1-1.541 1.134l-1.465-.75a1 1 0 0 0-.912 0l-1.465.75a1 1 0 0 1-1.539-1.133l.258-1.613a1 1 0 0 0-.282-.866l-1.156-1.153a1 1 0 0 1 .572-1.822l1.633-.256a1 1 0 0 0 .737-.535z"/>
+                                        <path d="M8 15H7a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="10" cy="7" r="4"/>
+                                    </svg>
+                                </CardDecorator>
+
+                                <h3 className="mt-6 font-medium text-white">Personalized Interactions</h3>
+                            </CardHeader>
+
+                            <CardContent>
+                                <p className="text-base text-balance text-white/80">Customize chats and responses to align with your unique persona. You can define the tone, style, and behavior to make every interaction feel on-brand.</p>
+                            </CardContent>
+                        </div>
+
+                        <div className="group shadow-zinc-950/5">
+                            <CardHeader className="pb-3">
+                                <CardDecorator variant="yellow">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6 text-white">
+                                        <path d="M11 1V2H7C5.34315 2 4 3.34315 4 5V8C4 10.7614 6.23858 13 9 13H15C17.7614 13 20 10.7614 20 8V5C20 3.34315 18.6569 2 17 2H13V1H11ZM6 5C6 4.44772 6.44772 4 7 4H17C17.5523 4 18 4.44772 18 5V8C18 9.65685 16.6569 11 15 11H9C7.34315 11 6 9.65685 6 8V5ZM9.5 9C10.3284 9 11 8.32843 11 7.5C11 6.67157 10.3284 6 9.5 6C8.67157 6 8 6.67157 8 7.5C8 8.32843 8.67157 9 9.5 9ZM14.5 9C15.3284 9 16 8.32843 16 7.5C16 6.67157 15.3284 6 14.5 6C13.6716 6 13 6.67157 13 7.5C13 8.32843 13.6716 9 14.5 9ZM6 22C6 18.6863 8.68629 16 12 16C15.3137 16 18 18.6863 18 22H20C20 17.5817 16.4183 14 12 14C7.58172 14 4 17.5817 4 22H6Z"></path>
+                                    </svg>
+                                </CardDecorator>
+
+                                <h3 className="mt-6 font-medium text-white">Task-Specific Agents</h3>
+                            </CardHeader>
+
+                            <CardContent>
+                                <p className="text-base text-balance text-white/80">Create specialized agents that are precisely tailored to your specific goals and tasks. These dedicated agents are highly efficient and effective at solving unique challenges.</p>
                             </CardContent>
                         </div>
                     </Card>
@@ -162,13 +197,20 @@ export default function FeaturesSection() {
     )
 }
 
-const CardDecorator = ({ children, variant = 'orange' }: { children: ReactNode; variant?: 'orange' | 'blue' | 'green' }) => {
+
+const CardDecorator = ({ children, variant = 'orange' }: { children: ReactNode; variant?: 'orange' | 'blue' | 'green' | 'purple' | 'cyan' | 'yellow' }) => {
     const getGridColor = () => {
         switch (variant) {
             case 'blue':
                 return 'var(--color-helium-blue)';
             case 'green':
                 return 'var(--color-helium-green)';
+            case 'purple':
+                return '#8b5cf6';
+            case 'cyan':
+                return '#06b6d4';
+            case 'yellow':
+                return '#eab308';
             default:
                 return 'var(--color-helium-orange)';
         }
@@ -180,6 +222,12 @@ const CardDecorator = ({ children, variant = 'orange' }: { children: ReactNode; 
                 return 'border-helium-blue';
             case 'green':
                 return 'border-helium-green';
+            case 'purple':
+                return 'border-purple-500';
+            case 'cyan':
+                return 'border-cyan-500';
+            case 'yellow':
+                return 'border-yellow-500';
             default:
                 return 'border-helium-orange';
         }

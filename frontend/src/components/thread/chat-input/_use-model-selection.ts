@@ -55,32 +55,6 @@ export const MODELS = {
     lowQuality: false,
   },
 
-  // Vertex AI Claude Models
-  'vertex_ai/claude-sonnet-4@20250514': {
-    tier: 'premium',
-    priority: 97,
-    recommended: false,
-    lowQuality: false,
-  },
-  'vertex_ai/claude-3-5-sonnet@20241022': {
-    tier: 'premium',
-    priority: 96,
-    recommended: false,
-    lowQuality: false,
-  },
-  'vertex_ai/claude-3-7-sonnet@20250219': {
-    tier: 'premium',
-    priority: 95,
-    recommended: false,
-    lowQuality: false,
-  },
-  'vertex_ai/claude-3-5-haiku@20241022': {
-    tier: 'premium',
-    priority: 94,
-    recommended: false,
-    lowQuality: false,
-  },
-
   // Bedrock Models - Claude Sonnet Series
   'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0': {
     tier: 'premium',
@@ -137,25 +111,6 @@ export const MODELS = {
     lowQuality: false,
   },
 
-  // Free tier models (available to all users) - Only Vertex AI and Bedrock
-  'vertex_ai/gemini-2.5-flash-free': {
-    tier: 'free',
-    priority: 100,
-    recommended: true,
-    lowQuality: false,
-  },
-  'vertex_ai/gemini-2.0-flash-free': {
-    tier: 'free',
-    priority: 95,
-    recommended: false,
-    lowQuality: false,
-  },
-  'vertex_ai/claude-3-5-haiku@20241022-free': {
-    tier: 'free',
-    priority: 90,
-    recommended: false,
-    lowQuality: false,
-  },
   'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0-free': {
     tier: 'free',
     priority: 85,
@@ -183,14 +138,11 @@ export const formatModelName = (name: string): string => {
     .join(' ');
 };
 
-// Add openrouter/ prefix to custom models
+
 export const getPrefixedModelId = (
   modelId: string,
   isCustom: boolean,
 ): string => {
-  if (isCustom && !modelId.startsWith('openrouter/')) {
-    return `openrouter/${modelId}`;
-  }
   return modelId;
 };
 

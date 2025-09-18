@@ -1,5 +1,5 @@
 /**
- * API service for prompt improvement using random free OpenRouter models
+ * API service for prompt improvement using Vertex AI Gemini models
  */
 
 export interface PromptImprovementResponse {
@@ -90,5 +90,4 @@ export async function improvePromptWithGemini(
   }
 }
 
-// Keep the old function name for backward compatibility
-export const improvePromptWithOpenRouter = improvePromptWithGemini;
+// Backward compatibility alias removed; use improvePromptWithGemini directly

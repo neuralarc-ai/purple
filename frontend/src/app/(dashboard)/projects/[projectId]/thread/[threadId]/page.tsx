@@ -1070,7 +1070,7 @@ export default function ThreadPage({
                 showScrollToBottomIndicator={showScrollToBottom}
                 onScrollToBottom={scrollToBottom}
               />
-               <div className="text-center mt-2 pb-2">
+               <div className="text-center mt-1 pb-1">
                 <p className="text-xs text-muted-foreground">
                   Helium can make mistakes. 
                   Check important info. See Cookie Preferences.

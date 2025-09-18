@@ -1,35 +1,9 @@
 # Master model configuration - single source of truth
 MODELS = {        
-    "openrouter/qwen/qwen3-coder:free": {
-        "aliases": ["qwen/qwen3-coder:free"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.00,
-            "output_cost_per_million_tokens": 0.00
-        },
-        "context_window": 32_768,  # 32k tokens
-        "tier_availability": ["free"]
-    },
-    "openrouter/mistralai/mistral-small-3.2-24b-instruct:free": {
-        "aliases": ["mistralai/mistral-small-3.2-24b-instruct:free"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.00,
-            "output_cost_per_million_tokens": 0.00
-        },
-        "context_window": 32_768,  # 32k tokens
-        "tier_availability": ["free"]
-    },
-    "openrouter/deepseek/deepseek-chat-v3.1:free": {
-        "aliases": ["deepseek/deepseek-chat-v3.1:free"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.00,
-            "output_cost_per_million_tokens": 0.00
-        },
-        "context_window": 32_768,  # 32k tokens
-        "tier_availability": ["free"]
-    },    
+        
     # Vertex AI Models
     "vertex_ai/gemini-2.5-pro": {
-        "aliases": ["gemini-2.5-pro-vertex", "vertex/gemini-2.5-pro"],
+        "aliases": ["gemini-2.5-pro-vertex"],
         "pricing": {
             "input_cost_per_million_tokens": 1.25,
             "output_cost_per_million_tokens": 10.00
@@ -38,7 +12,7 @@ MODELS = {
         "tier_availability": ["free", "paid"]
     },
     "vertex_ai/gemini-2.5-flash": {
-        "aliases": ["gemini-2.5-flash-vertex", "vertex/gemini-2.5-flash"],
+        "aliases": ["gemini-2.5-flash-vertex"],
         "pricing": {
             "input_cost_per_million_tokens": 0.15,
             "output_cost_per_million_tokens": 0.60
@@ -53,44 +27,6 @@ MODELS = {
             "output_cost_per_million_tokens": 0.60
         },
         "context_window": 1_000_000,  # 1M tokens
-        "tier_availability": ["free", "paid"]
-    },
-    
-    # Vertex AI Claude Models
-    "vertex_ai/claude-sonnet-4@20250514": {
-        "aliases": ["claude-sonnet-4-vertex", "vertex/claude-sonnet-4@20250514", "claude-sonnet-4@20250514"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 1_000_000,  # 1M tokens for Claude Sonnet 4
-        "tier_availability": ["paid"]
-    },
-    "vertex_ai/claude-3-5-sonnet@20241022": {
-        "aliases": ["claude-3-5-sonnet-vertex", "vertex/claude-3-5-sonnet@20241022"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 200_000,
-        "tier_availability": ["paid"]
-    },
-    "vertex_ai/claude-3-7-sonnet@20250219": {
-        "aliases": ["claude-3-7-sonnet-vertex", "vertex/claude-3-7-sonnet@20250219"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 200_000,
-        "tier_availability": ["paid"]
-    },
-    "vertex_ai/claude-3-5-haiku@20241022": {
-        "aliases": ["claude-3-5-haiku-vertex", "vertex/claude-3-5-haiku@20241022"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.25,
-            "output_cost_per_million_tokens": 1.25
-        },
-        "context_window": 200_000,
         "tier_availability": ["free", "paid"]
     },
 
@@ -216,16 +152,7 @@ def _generate_model_structures():
             context_windows[model_name] = config["context_window"]
         
         # Also add pricing and context windows for legacy model name variations
-        if model_name.startswith("openrouter/deepseek/"):
-            legacy_name = model_name.replace("openrouter/", "")
-            pricing[legacy_name] = config["pricing"]
-            if "context_window" in config:
-                context_windows[legacy_name] = config["context_window"]
-        elif model_name.startswith("openrouter/qwen/"):
-            legacy_name = model_name.replace("openrouter/", "")
-            pricing[legacy_name] = config["pricing"]
-            if "context_window" in config:
-                context_windows[legacy_name] = config["context_window"]
+        
         elif model_name.startswith("gemini/"):
             legacy_name = model_name.replace("gemini/", "")
             pricing[legacy_name] = config["pricing"]
@@ -238,12 +165,7 @@ def _generate_model_structures():
                 pricing["anthropic/claude-sonnet-4"] = config["pricing"]
                 if "context_window" in config:
                     context_windows["anthropic/claude-sonnet-4"] = config["context_window"]
-        # elif model_name.startswith("xai/"):
-        #     # Add pricing for OpenRouter x-ai models
-        #     openrouter_name = model_name.replace("xai/", "openrouter/x-ai/")
-        #     pricing[openrouter_name] = config["pricing"]
-        #     if "context_window" in config:
-        #         context_windows[openrouter_name] = config["context_window"]
+        
     
     return free_models, paid_models, aliases, pricing, context_windows
 

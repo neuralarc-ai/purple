@@ -33,7 +33,7 @@ class LLMError(Exception):
 
 def setup_api_keys() -> None:
     """Set up API keys from environment variables."""
-    providers = ['OPENROUTER', 'GEMINI']
+    providers = ['GEMINI']
     for provider in providers:
         key = getattr(config, f'{provider}_API_KEY')
         if key:
@@ -41,10 +41,7 @@ def setup_api_keys() -> None:
         else:
             logger.warning(f"No API key found for provider: {provider}")
 
-    # Set up OpenRouter API base if not already set
-    # if config.OPENROUTER_API_KEY and config.OPENROUTER_API_BASE:
-    #     os.environ['OPENROUTER_API_BASE'] = config.OPENROUTER_API_BASE
-    #     logger.debug(f"Set OPENROUTER_API_BASE to {config.OPENROUTER_API_BASE}")
+    
 
     # Set up AWS Bedrock credentials
     # aws_access_key = config.AWS_ACCESS_KEY_ID
@@ -76,39 +73,7 @@ def setup_api_keys() -> None:
         logger.debug(f"Google credentials set to: {config.GOOGLE_APPLICATION_CREDENTIALS}")
 
 
-def get_openrouter_fallback(model_name: str) -> Optional[str]:
-    """Get OpenRouter fallback model for a given model name."""
-    # Skip if already using OpenRouter
-    # if model_name.startswith("openrouter/"):
-    #     return None
-    
-    # # Map models to their OpenRouter equivalents
-    # fallback_mapping = {
-    #     # "anthropic/claude-3-7-sonnet-latest": "openrouter/anthropic/claude-3.7-sonnet",
-    #     # "anthropic/claude-sonnet-4-20250514": "openrouter/anthropic/claude-sonnet-4",
-    #     # "vertex_ai/claude-3-5-sonnet@20240620": "openrouter/anthropic/claude-sonnet-4",
-    #     # "xai/grok-4": "openrouter/x-ai/grok-4",
-    #     # "gemini/gemini-2.5-pro": "openrouter/google/gemini-2.5-pro",
-    #     # "gemini/gemini-2.5-flash": "openrouter/google/gemini-2.5-flash",
-    #     "z-ai/glm-4.5:free": "openrouter/z-ai/glm-4.5-air:free",
-    # }
-    
-    # # Check for exact match first
-    # if model_name in fallback_mapping:
-    #     return fallback_mapping[model_name]
-    
-    # # Check for partial matches (e.g., bedrock models)
-    # for key, value in fallback_mapping.items():
-    #     if key in model_name:
-    #         return value
-    
-    # # Default fallbacks by provider
-    # if "claude" in model_name.lower() or "anthropic" in model_name.lower():
-    #     return "openrouter/anthropic/claude-sonnet-4"
-    # elif "xai" in model_name.lower() or "grok" in model_name.lower():
-    #     return "openrouter/x-ai/grok-4"
-    
-    return None
+
 
 def _configure_token_limits(params: Dict[str, Any], model_name: str, max_tokens: Optional[int]) -> None:
     """Configure token limits based on model type."""
@@ -166,6 +131,53 @@ def _apply_gemini_caching(params: Dict[str, Any]) -> None:
         params["cache"] = True
         logger.debug("Enabled Gemini caching")
 
+def _apply_bedrock_caching(messages: List[Dict[str, Any]]) -> None:
+    """Apply AWS Bedrock prompt caching to messages using official Anthropic format.
+    
+    For AWS Bedrock Claude models, we use the same caching mechanism as Anthropic:
+    1. Static content (system prompts, tools, examples) is cached
+    2. Dynamic content (user messages) is marked as ephemeral
+    3. We use cache_control blocks to separate cached from non-cached content
+    """
+    if not messages:
+        return
+    
+    # Apply cache control to the first 4 text blocks across all messages
+    # This follows the official Anthropic prompt caching documentation
+    cache_control_count = 0
+    max_cache_control_blocks = 4  # Anthropic supports up to 4 cache breakpoints
+    
+    for message in messages:
+        if cache_control_count >= max_cache_control_blocks:
+            break
+            
+        content = message.get("content")
+        
+        if isinstance(content, str):
+            # For system messages, don't add cache_control (they get cached)
+            # For user messages, add cache_control as ephemeral
+            if message.get("role") == "system":
+                message["content"] = [
+                    {"type": "text", "text": content}
+                ]
+            else:
+                message["content"] = [
+                    {"type": "text", "text": content, "cache_control": {"type": "ephemeral"}}
+                ]
+            cache_control_count += 1
+        elif isinstance(content, list):
+            for item in content:
+                if cache_control_count >= max_cache_control_blocks:
+                    break
+                if isinstance(item, dict) and item.get("type") == "text":
+                    # For system messages, don't add cache_control
+                    # For user messages, add cache_control as ephemeral
+                    if message.get("role") != "system" and "cache_control" not in item:
+                        item["cache_control"] = {"type": "ephemeral"}
+                    cache_control_count += 1
+    
+    logger.debug("Applied AWS Bedrock prompt caching with official Anthropic format")
+
 def _configure_anthopic(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
     """Configure Anthropic-specific parameters."""
     if not ("claude" in model_name.lower() or "anthropic" in model_name.lower()):
@@ -177,24 +189,7 @@ def _configure_anthopic(params: Dict[str, Any], model_name: str, messages: List[
     logger.debug("Added Anthropic-specific headers")
     # Caching is now handled centrally in _configure_caching
 
-def _configure_openrouter(params: Dict[str, Any], model_name: str) -> None:
-    """Configure OpenRouter-specific parameters."""
-    if not model_name.startswith("openrouter/"):
-        return
-    
-    logger.debug(f"Preparing OpenRouter parameters for model: {model_name}")
 
-    # Add optional site URL and app name from config
-    site_url = config.OR_SITE_URL
-    app_name = config.OR_APP_NAME
-    if site_url or app_name:
-        extra_headers = params.get("extra_headers", {})
-        if site_url:
-            extra_headers["HTTP-Referer"] = site_url
-        if app_name:
-            extra_headers["X-Title"] = app_name
-        params["extra_headers"] = extra_headers
-        logger.debug(f"Added OpenRouter site URL and app name to headers")
 
 # def _configure_bedrock(params: Dict[str, Any], model_name: str, model_id: Optional[str]) -> None:
 #     """Configure Bedrock-specific parameters."""
@@ -220,13 +215,6 @@ def _configure_openrouter(params: Dict[str, Any], model_name: str) -> None:
 
 #     # Request priority service tier when calling OpenAI directly
 
-#     # Pass via both top-level and extra_body for LiteLLM compatibility
-#     if not model_name.startswith("openrouter/"):
-#         params["service_tier"] = "priority"
-#         extra_body = params.get("extra_body", {})
-#         if "service_tier" not in extra_body:
-#             extra_body["service_tier"] = "priority"
-#         params["extra_body"] = extra_body
 
 # def _configure_kimi_k2(params: Dict[str, Any], model_name: str) -> None:
 #     """Configure Kimi K2-specific parameters."""
@@ -338,15 +326,7 @@ def _configure_thinking(params: Dict[str, Any], model_name: str, enable_thinking
         params["reasoning_effort"] = effort_level
         logger.info(f"Vertex Gemini thinking enabled with reasoning_effort='{effort_level}'")
 
-# def _add_fallback_model(params: Dict[str, Any], model_name: str, messages: List[Dict[str, Any]]) -> None:
-#     """Add fallback model to the parameters."""
-#     fallback_model = get_openrouter_fallback(model_name)
-#     if fallback_model:
-#         params["fallbacks"] = [{
-#             "model": fallback_model,
-#             "messages": messages,
-#         }]
-#         logger.debug(f"Added OpenRouter fallback for model: {model_name} to {fallback_model}")
+
 
 def _add_tools_config(params: Dict[str, Any], tools: Optional[List[Dict[str, Any]]], tool_choice: str) -> None:
     """Add tools configuration to parameters."""
@@ -364,8 +344,16 @@ def _configure_caching(params: Dict[str, Any], model_name: str, messages: List[D
     is_anthropic = "anthropic" in model_name.lower() or "claude" in model_name.lower()
     is_vertex_claude = (model_name.startswith("vertex_ai/") or model_name.startswith("vertex/")) and "claude" in model_name.lower()
     is_gemini = "gemini" in model_name.lower()
+    is_bedrock_claude = model_name.startswith("bedrock/") and "claude" in model_name.lower()
     
-    if is_anthropic and not is_vertex_claude:
+    if is_bedrock_claude:
+        # AWS Bedrock Claude models - use official Anthropic prompt caching format
+        # No need to set promptCaching parameter - cache_control blocks handle this
+        logger.debug(f"Enabled AWS Bedrock prompt caching for {model_name}")
+        
+        # Structure messages for Bedrock prompt caching using official Anthropic format
+        _apply_bedrock_caching(messages)
+    elif is_anthropic and not is_vertex_claude:
         # Standard Anthropic models
         _apply_anthropic_caching(messages)
         logger.debug("Applied Anthropic caching")
@@ -418,8 +406,6 @@ def prepare_params(
     _add_tools_config(params, tools, tool_choice)
     # Add Anthropic-specific parameters
     # _configure_anthopic(params, model_name, params["messages"])
-    # Add OpenRouter-specific parameters
-    _configure_openrouter(params, model_name)
     # # Add Bedrock-specific parameters
     # _configure_bedrock(params, model_name, model_id)
     
@@ -456,7 +442,7 @@ async def make_llm_api_call(
 
     Args:
         messages: List of message dictionaries for the conversation
-        model_name: Name of the model to use (e.g., "gpt-4", "claude-3", "openrouter/openai/gpt-4", "bedrock/anthropic.claude-3-sonnet-20240229-v1:0")
+        model_name: Name of the model to use (e.g., "gpt-4", "claude-3", "bedrock/anthropic.claude-3-sonnet-20240229-v1:0")
         response_format: Desired format for the response
         temperature: Sampling temperature (0-1)
         max_tokens: Maximum tokens in the response

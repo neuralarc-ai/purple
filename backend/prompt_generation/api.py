@@ -46,10 +46,9 @@ Do not include any explanations, just provide the prompt text."""
             {"role": "user", "content": user_prompt}
         ]
 
-        # Use the existing LLM service with OpenRouter model
         response = await make_llm_api_call(
             messages=messages,
-            model_name="openrouter/z-ai/glm-4.5-air:free",
+            model_name="gemini/gemini-2.5-flash",
             temperature=0.8,
             max_tokens=200
         )

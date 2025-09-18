@@ -8,8 +8,27 @@ from agent.tools.data_providers.AmazonProvider import AmazonProvider
 from agent.tools.data_providers.ZillowProvider import ZillowProvider
 from agent.tools.data_providers.TwitterProvider import TwitterProvider
 
+
 class DataProvidersTool(Tool):
-    """Tool for making requests to various data providers."""
+    """
+    Tool for making requests to various data providers.
+    
+    This tool provides access to multiple external data sources including:
+    - LinkedIn: Professional profiles, company data, job listings, and posts
+    - Twitter: Social media data and trends
+    - Zillow: Real estate listings and property data
+    - Amazon: Product information and pricing
+    - Yahoo Finance: Stock market data and financial information
+    
+    The tool works in two steps:
+    1. First, use get_data_provider_endpoints to discover available endpoints for a specific provider
+    2. Then, use execute_data_provider_call to execute calls to specific endpoints
+    
+    Notes:
+    - Each provider requires proper authentication and API keys
+    - Rate limits may apply depending on the provider
+    - Data freshness varies by provider
+    """
 
     def __init__(self):
         super().__init__()
@@ -26,13 +45,14 @@ class DataProvidersTool(Tool):
         "type": "function",
         "function": {
             "name": "get_data_provider_endpoints",
-            "description": "Get available endpoints for a specific data provider",
+            "description": "Get available endpoints for a specific data provider. This function returns a list of all available endpoints for the specified data provider, including their names, descriptions, and required parameters. Use this function first to discover what operations are available before calling execute_data_provider_call.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "service_name": {
                         "type": "string",
-                        "description": "The name of the data provider (e.g., 'linkedin', 'twitter', 'zillow', 'amazon', 'yahoo_finance')"
+                        "description": "The name of the data provider to query for available endpoints. Supported providers include: 'linkedin', 'twitter', 'zillow', 'amazon', 'yahoo_finance'",
+                        "enum": ["linkedin", "twitter", "zillow", "amazon", "yahoo_finance"]
                     }
                 },
                 "required": ["service_name"]
@@ -83,21 +103,23 @@ Use this tool when you need to discover what endpoints are available.
         "type": "function",
         "function": {
             "name": "execute_data_provider_call",
-            "description": "Execute a call to a specific data provider endpoint",
+            "description": "Execute a call to a specific data provider endpoint. This function executes a call to a previously discovered endpoint from a data provider. You must first call get_data_provider_endpoints to discover available endpoints and their required parameters before using this function.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "service_name": {
                         "type": "string",
-                        "description": "The name of the API service (e.g., 'linkedin')"
+                        "description": "The name of the data provider service to call. Must be one of the supported providers: 'linkedin', 'twitter', 'zillow', 'amazon', 'yahoo_finance'",
+                        "enum": ["linkedin", "twitter", "zillow", "amazon", "yahoo_finance"]
                     },
                     "route": {
                         "type": "string",
-                        "description": "The key of the endpoint to call"
+                        "description": "The specific endpoint route to call. This must be a valid endpoint key obtained from get_data_provider_endpoints. Examples: 'person', 'company', 'search_jobs' for LinkedIn; 'stock_quote' for Yahoo Finance"
                     },
                     "payload": {
                         "type": "object",
-                        "description": "The payload to send with the API call"
+                        "description": "The payload to send with the API call. The structure depends on the specific endpoint being called. Use get_data_provider_endpoints to discover the required parameters for each endpoint.",
+                        "default": {}
                     }
                 },
                 "required": ["service_name", "route"]
@@ -129,10 +151,34 @@ Use this tool when you need to discover what endpoints are available.
         """
         Execute a call to a specific data provider endpoint.
         
-        Parameters:
-        - service_name: The name of the data provider (e.g., 'linkedin')
-        - route: The key of the endpoint to call
-        - payload: The payload to send with the data provider call (dict or JSON string)
+        This method executes a call to a previously discovered endpoint from a data provider.
+        You must first call get_data_provider_endpoints to discover available endpoints and 
+        their required parameters before using this method.
+        
+        Args:
+            service_name (str): The name of the data provider service to call. 
+                Must be one of the supported providers: 'linkedin', 'twitter', 'zillow', 
+                'amazon', 'yahoo_finance'
+            route (str): The specific endpoint route to call. This must be a valid 
+                endpoint key obtained from get_data_provider_endpoints.
+            payload (Union[Dict[str, Any], str, None]): The payload to send with the 
+                API call. The structure depends on the specific endpoint being called.
+                Defaults to None.
+        
+        Returns:
+            ToolResult: The result of the data provider call, containing either the 
+            successful response data or error information.
+            
+        Raises:
+            ValueError: If service_name or route is missing or invalid
+            Exception: If there are issues with the data provider call
+            
+        Example:
+            result = await self.execute_data_provider_call(
+                service_name="linkedin",
+                route="person",
+                payload={"link": "https://www.linkedin.com/in/johndoe/"}
+            )
         """
         try:
             # Handle payload - it can be either a dict or a JSON string

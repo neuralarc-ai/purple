@@ -235,7 +235,7 @@ export const MarketplaceAgentPreviewDialog: React.FC<MarketplaceAgentPreviewDial
                         className="flex items-center px-3 py-1.5 bg-muted/50 hover:bg-muted border"
                       >
                         <span className="text-sm font-medium">
-                          {agent.model.replace('openrouter/', '').replace('anthropic/', '')}
+                          {agent.model.replace('anthropic/', '')}
                         </span>
                       </Badge>
                     </div>

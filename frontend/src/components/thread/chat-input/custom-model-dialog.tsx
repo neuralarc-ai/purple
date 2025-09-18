@@ -77,7 +77,7 @@ export const CustomModelDialog: React.FC<CustomModelDialogProps> = ({
                 <DialogHeader>
                     <DialogTitle>{mode === 'add' ? 'Add Custom Model' : 'Edit Custom Model'}</DialogTitle>
                     <DialogDescription>
-                        Neural Arc Helium uses <b>LiteLLM</b> under the hood, which makes it compatible with over 100 models. You can easily choose any <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 underline">OpenRouter model</a> by prefixing it with <code className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono">openrouter/</code> and it should work out of the box. If you want to use other models besides OpenRouter, you might have to modify the <a href="https://github.com/he2-ai/suna/blob/main/backend/services/llm.py" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-600 underline">llm.py</a>, set the correct environment variables, and rebuild your self-hosted Docker container.
+                        Neural Arc Helium uses <b>LiteLLM</b> under the hood, which makes it compatible with many providers. To use a custom model, enter the full provider-prefixed ID supported by your deployment, then ensure corresponding credentials are configured.
                     </DialogDescription>
 
 
@@ -90,7 +90,7 @@ export const CustomModelDialog: React.FC<CustomModelDialogProps> = ({
                         </Label>
                         <Input
                             id="modelId"
-                            placeholder="e.g. openrouter/meta-llama/llama-4-maverick"
+                            placeholder="e.g. gemini/gemini-2.5-pro"
                             value={formData.id}
                             onChange={handleChange}
                             className="col-span-3"
