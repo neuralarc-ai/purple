@@ -264,11 +264,12 @@ export function ToolCallSidePanel({
   agentRunId,
   onPanelWidthChange,
 }: ToolCallSidePanelProps) {
+  const isControlledByParent = externalNavigateToIndex !== undefined;
   const { setIsExpanded } = React.useContext(ToolCallSidePanelContext);
   const [hasOpened, setHasOpened] = React.useState(false);
   const [dots, setDots] = React.useState('');
   const [internalIndex, setInternalIndex] = React.useState(0);
-  const [navigationMode, setNavigationMode] = React.useState<'live' | 'manual'>('live');
+  const [navigationMode, setNavigationMode] = React.useState<'live' | 'manual'>(isControlledByParent ? 'manual' : 'live');
   const [toolCallSnapshots, setToolCallSnapshots] = React.useState<ToolCallSnapshot[]>([]);
   const [isInitialized, setIsInitialized] = React.useState(false);
   const [agentStartTime, setAgentStartTime] = React.useState<number | null>(null);
@@ -662,7 +663,9 @@ export function ToolCallSidePanel({
         s.toolCall.toolResult.content !== 'STREAMING'
       ).length;
 
-      if (completedCount > 0) {
+      if (isControlledByParent) {
+        setInternalIndex(0);
+      } else if (completedCount > 0) {
         let lastCompletedIndex = -1;
         for (let i = newSnapshots.length - 1; i >= 0; i--) {
           const snapshot = newSnapshots[i];
@@ -677,7 +680,7 @@ export function ToolCallSidePanel({
         setInternalIndex(Math.max(0, newSnapshots.length - 1));
       }
       setIsInitialized(true);
-    } else if (hasNewSnapshots && navigationMode === 'live') {
+    } else if (!isControlledByParent && hasNewSnapshots && navigationMode === 'live') {
       const latestSnapshot = newSnapshots[newSnapshots.length - 1];
       const isLatestStreaming = latestSnapshot?.toolCall.toolResult?.content === 'STREAMING';
       if (isLatestStreaming) {
@@ -698,9 +701,9 @@ export function ToolCallSidePanel({
       } else {
         setInternalIndex(newSnapshots.length - 1);
       }
-    } else if (hasNewSnapshots && navigationMode === 'manual') {
+    } else if (!isControlledByParent && hasNewSnapshots && navigationMode === 'manual') {
     }
-  }, [toolCalls, navigationMode, toolCallSnapshots.length, isInitialized]);
+  }, [toolCalls, navigationMode, toolCallSnapshots.length, isInitialized, isControlledByParent]);
 
   React.useEffect(() => {
     if (isOpen && !isInitialized && toolCallSnapshots.length > 0) {
@@ -724,12 +727,12 @@ export function ToolCallSidePanel({
   let displayTotalCalls = totalCalls;
 
   const isCurrentToolStreaming = currentToolCall?.toolResult?.content === 'STREAMING';
-  if (isCurrentToolStreaming && totalCompletedCalls > 0) {
+  if (!isControlledByParent && isCurrentToolStreaming && totalCompletedCalls > 0) {
     const lastCompletedSnapshot = completedToolCalls[completedToolCalls.length - 1];
     displayToolCall = lastCompletedSnapshot.toolCall;
     displayIndex = totalCompletedCalls - 1;
     displayTotalCalls = totalCompletedCalls;
-  } else if (!isCurrentToolStreaming) {
+  } else if (!isControlledByParent && !isCurrentToolStreaming) {
     const completedIndex = completedToolCalls.findIndex(snapshot => snapshot.id === currentSnapshot?.id);
     if (completedIndex >= 0) {
       displayIndex = completedIndex;
@@ -799,16 +802,20 @@ export function ToolCallSidePanel({
 
     setInternalIndex(newIndex);
 
-    if (isNavigatingToLatest) {
-      setNavigationMode('live');
-    } else {
+    if (isControlledByParent) {
       setNavigationMode('manual');
+    } else {
+      if (isNavigatingToLatest) {
+        setNavigationMode('live');
+      } else {
+        setNavigationMode('manual');
+      }
     }
 
     if (source === 'user_explicit') {
       onNavigate(newIndex);
     }
-  }, [internalIndex, totalCalls, onNavigate]);
+  }, [internalIndex, totalCalls, onNavigate, isControlledByParent]);
 
   // Helper function to format elapsed time
   const formatElapsedTime = (milliseconds: number): string => {
@@ -999,9 +1006,10 @@ export function ToolCallSidePanel({
 
   React.useEffect(() => {
     if (externalNavigateToIndex !== undefined && externalNavigateToIndex >= 0 && externalNavigateToIndex < totalCalls) {
-      internalNavigate(externalNavigateToIndex, 'external_click');
+      setNavigationMode('manual');
+      setInternalIndex(externalNavigateToIndex);
     }
-  }, [externalNavigateToIndex, totalCalls, internalNavigate]);
+  }, [externalNavigateToIndex, totalCalls]);
 
   // Reset accumulated time when starting a new thread
   React.useEffect(() => {
@@ -1141,7 +1149,7 @@ export function ToolCallSidePanel({
         style={{
           ...panelStyle,
           ...(panelWidth ? { '--panel-width': `${panelWidth}px` } : {}),
-          zIndex: 20, // Lower than the sidebar and its overlay
+          zIndex: 60,
         }}
       >
         <div className="p-4 h-full flex items-stretch justify-end pointer-events-auto">
@@ -1436,7 +1444,7 @@ export function ToolCallSidePanel({
             }
           }}
           className={cn(
-            'fixed top-1 bottom-1 md:top-3 right-2 md:bottom-6 shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border rounded-[22px] flex flex-col z-[51] md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
+            'fixed top-1 bottom-1 md:top-3 right-2 md:bottom-6 shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border rounded-[22px] flex flex-col z-[60] transition-[width] duration-200 ease-in-out will-change-[width]',
             widthClass,
             'bg-background',
             isResizing && 'select-none',
