@@ -171,6 +171,24 @@ export default function InvitePage() {
     setIsStartingTrial(true);
     
     try {
+      // Check if user is authenticated first
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        // User is not authenticated, redirect to sign-in
+        toast.info('Please sign in to start your trial');
+        router.push('/auth?mode=signin&redirect=/invite');
+        return;
+      }
+
+      // Ensure we have a valid user ID
+      if (!session.user?.id) {
+        toast.error('Invalid user session. Please sign in again.');
+        router.push('/auth?mode=signin&redirect=/invite');
+        return;
+      }
+
       console.log('Starting trial checkout...', {
         success_url: `${window.location.origin}/onboarding`,
         cancel_url: `${window.location.origin}/invite?trial=cancelled`,
@@ -365,7 +383,7 @@ export default function InvitePage() {
                       Starting trial...
                     </>
                   ) : (
-                    'Start trial'
+                    isAuthenticated ? 'Start trial' : 'Sign in to start trial'
                   )}
                 </Button>
               </div>
