@@ -1,13 +1,9 @@
 import React, { useState } from 'react';
 import {
   Search,
-  CheckCircle,
-  AlertTriangle,
-  ExternalLink,
   Image as ImageIcon,
   Globe,
   FileText,
-  Clock,
   BookOpen,
   CalendarDays,
 } from 'lucide-react';
@@ -17,7 +13,6 @@ import { truncateString } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { LoadingState } from '../shared/LoadingState';
 import { extractWebSearchData } from './_utils';

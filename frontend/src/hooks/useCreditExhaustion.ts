@@ -13,6 +13,7 @@ interface CreditExhaustionState {
 interface UseCreditExhaustionOptions {
   onAddCreditExhaustionMessage?: (message: UnifiedMessage) => void;
   messages?: UnifiedMessage[]; // Add messages to check for existing credit exhaustion
+  subscriptionData?: any; // Add subscription data to check credit balance
 }
 
 export function useCreditExhaustion(options?: UseCreditExhaustionOptions) {
@@ -37,6 +38,45 @@ export function useCreditExhaustion(options?: UseCreditExhaustionOptions) {
       });
     }
   }, [hasCreditExhaustionMessage, state.isExhausted]);
+
+  // Check if credits are sufficient to hide the banner or if we need to show it
+  useEffect(() => {
+    if (options?.subscriptionData) {
+      const subscriptionData = options.subscriptionData;
+      
+      // Calculate total available credits
+      const subscriptionLimit = subscriptionData?.cost_limit ? Math.round((subscriptionData.cost_limit) * 100) : 0;
+      const currentUsage = subscriptionData?.current_usage ? Math.round((subscriptionData.current_usage) * 100) : 0;
+      const addOnCredits = subscriptionData?.credit_balance_credits || Math.round((subscriptionData?.credit_balance || 0) * 100);
+      
+      // Free credits (if any) - for free tier users
+      const freeCreditsLeft = subscriptionData?.plan_name === 'free' ? Math.max(0, subscriptionLimit - currentUsage) : 0;
+      
+      // Monthly credits (subscription-based)
+      const monthlyCreditsLeft = subscriptionData?.plan_name !== 'free' ? Math.max(0, subscriptionLimit - currentUsage) : 0;
+      
+      // Total credits available
+      const totalCreditsLeft = freeCreditsLeft + monthlyCreditsLeft + addOnCredits;
+      
+      // Minimum threshold is 20 credits ($0.20)
+      const MINIMUM_CREDITS_THRESHOLD = 20;
+      
+      // Show banner if credits are below threshold (even without explicit exhaustion message)
+      if (totalCreditsLeft < MINIMUM_CREDITS_THRESHOLD) {
+        setState(prev => ({
+          isExhausted: true,
+          message: 'Your credits have been used up. Please upgrade your plan for more credits.',
+          showBanner: true,
+        }));
+      } else if (state.isExhausted) {
+        // If user has sufficient credits, hide the banner
+        setState(prev => ({
+          ...prev,
+          showBanner: false,
+        }));
+      }
+    }
+  }, [options?.subscriptionData, state.isExhausted]);
 
   const createCreditExhaustionMessage = useCallback((threadId: string, message: string): UnifiedMessage => {
     return {
@@ -132,14 +172,15 @@ export function useCreditExhaustion(options?: UseCreditExhaustionOptions) {
     }
 
     return false;
-  }, [options?.onAddCreditExhaustionMessage, createCreditExhaustionMessage]);
+  }, [options, createCreditExhaustionMessage]);
 
   const clearCreditExhaustion = useCallback(() => {
-    setState({
-      isExhausted: false,
-      message: '',
-      showBanner: false,
-    });
+    // Don't immediately clear the banner - let the credit balance check handle it
+    // This allows the banner to persist until credits are actually sufficient
+    setState(prev => ({
+      ...prev,
+      // Keep the exhausted state but let the useEffect handle banner visibility
+    }));
   }, []);
 
   const hideBanner = useCallback(() => {

@@ -48,6 +48,7 @@ import { useInviteCodeUsage } from '@/hooks/use-invite-code-usage';
 import { SettingsModal } from '@/components/settings/settings-modal';
 import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
 import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
+import { useSharedSubscription } from '@/contexts/SubscriptionContext';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -71,13 +72,14 @@ export function DashboardContent() {
   } = useAgentSelection();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
   const { billingError, handleBillingError, clearBillingError } = useBillingError();
+  const { data: subscriptionData } = useSharedSubscription();
   const {
     isExhausted,
     showBanner,
     handleCreditError,
     clearCreditExhaustion,
     hideBanner,
-  } = useCreditExhaustion();
+  } = useCreditExhaustion({ subscriptionData });
   const [showAgentLimitDialog, setShowAgentLimitDialog] = useState(false);
   const [agentLimitData, setAgentLimitData] = useState<{
     runningCount: number;
@@ -240,7 +242,7 @@ export function DashboardContent() {
     return agentsResponse;
   }, [agentsResponse, agentsLoading]);
 
-  const agents = cachedAgents?.agents || [];
+  const agents = useMemo(() => cachedAgents?.agents || [], [cachedAgents?.agents]);
   const selectedAgent = selectedAgentId
     ? agents.find(agent => agent.agent_id === selectedAgentId)
     : null;
@@ -462,7 +464,7 @@ export function DashboardContent() {
 
       return () => clearTimeout(timer);
     }
-  }, [autoSubmit, inputValue, isSubmitting]);
+  }, [autoSubmit, inputValue, isSubmitting, handleSubmit]);
 
   // Clean up session storage cache when component unmounts
   useEffect(() => {
@@ -561,6 +563,8 @@ export function DashboardContent() {
                           onUpgrade={() => {
                             // Clear credit exhaustion state when user clicks upgrade
                             clearCreditExhaustion();
+                            // Open billing modal
+                            setShowPaymentModal(true);
                           }}
                         />
                       </div>

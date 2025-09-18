@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useRef,
   ReactNode,
 } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -27,6 +28,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isLoadingRef = useRef(isLoading);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
 
   useEffect(() => {
     const getInitialSession = async () => {
@@ -49,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(newSession);
         setUser(newSession?.user ?? null);
 
-        if (isLoading) setIsLoading(false);
+        if (isLoadingRef.current) setIsLoading(false);
         switch (event) {
           case 'SIGNED_IN':
                           if (newSession?.user) {

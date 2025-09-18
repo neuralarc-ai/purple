@@ -40,14 +40,13 @@ import {
   useBilling,
   useKeyboardShortcuts,
 } from '../_hooks';
-import { ThreadError, UpgradeDialog, ThreadLayout } from '../_components';
+import { ThreadError, ThreadLayout } from '../_components';
 import { LayoutContext } from '@/components/dashboard/layout-content';
 
 import {
   useThreadAgent,
   useAgents,
 } from '@/hooks/react-query/agents/use-agents';
-import { AgentRunLimitDialog } from '@/components/thread/agent-run-limit-dialog';
 import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 import { useQueryClient } from '@tanstack/react-query';
 import { threadKeys } from '@/hooks/react-query/threads/keys';
@@ -55,6 +54,7 @@ import { useProjectRealtime } from '@/hooks/useProjectRealtime';
 import { useUsageRealtime } from '@/hooks/useUsageRealtime';
 import { useAuth } from '@/components/AuthProvider';
 import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
+import { BillingModal } from '@/components/billing/billing-modal';
 import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
 import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
 
@@ -112,6 +112,7 @@ export default function ThreadPage({
     undefined,
   );
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [showBillingModal, setShowBillingModal] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [initialPanelOpenAttempted, setInitialPanelOpenAttempted] =
     useState(false);
@@ -124,7 +125,7 @@ export default function ThreadPage({
   } = useAgentSelection();
   
   const { data: agentsResponse } = useAgents();
-  const agents = agentsResponse?.agents || [];
+  const agents = useMemo(() => agentsResponse?.agents || [], [agentsResponse?.agents]);
   const [isSidePanelAnimating, setIsSidePanelAnimating] = useState(false);
   const [userInitiatedRun, setUserInitiatedRun] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -156,12 +157,16 @@ export default function ThreadPage({
     setAgentStatus,
     isLoading,
     error,
+    agentError,
+    setAgentError,
     initialLoadCompleted,
     threadQuery,
     messagesQuery,
     projectQuery,
     agentRunsQuery,
   } = useThreadData(threadId, projectId);
+
+  const { data: subscriptionData } = useSharedSubscription();
 
   // Credit exhaustion handling (after messages are available)
   const {
@@ -175,6 +180,7 @@ export default function ThreadPage({
       setMessages((prev) => [...prev, message]);
     },
     messages, // Pass messages to check for existing credit exhaustion
+    subscriptionData, // Pass subscription data to check credit balance
   });
 
   // Handle errors from useThreadData after handleCreditError is available
@@ -242,7 +248,6 @@ export default function ThreadPage({
     }
   }, [threadAgentData, agents, initializeFromAgents]);
 
-  const { data: subscriptionData } = useSharedSubscription();
   const subscriptionStatus: SubscriptionStatus =
     subscriptionData?.status === 'active' ||
     subscriptionData?.status === 'trialing'
@@ -359,6 +364,10 @@ export default function ThreadPage({
       onMessage: handleNewMessageFromStream,
       onStatusChange: handleStreamStatusChange,
       onError: handleStreamError,
+      onAgentError: (error) => {
+        console.log('[PAGE] Agent error received:', error);
+        setAgentError(error);
+      },
       onClose: handleStreamClose,
     },
     threadId,
@@ -548,14 +557,13 @@ export default function ThreadPage({
     },
     [
       threadId,
-      project?.account_id,
       addUserMessageMutation,
       startAgentMutation,
       setMessages,
-      setBillingData,
-      setShowBillingAlert,
       setAgentRunId,
-      isExhausted, // Add isExhausted to dependencies
+      isExhausted,
+      handleCreditError,
+      selectedAgentId,
     ],
   );
 
@@ -572,6 +580,18 @@ export default function ThreadPage({
       }
     }
   }, [stopStreaming, agentRunId, stopAgentMutation, setAgentStatus]);
+
+  const handleAgentErrorContinue = useCallback(async () => {
+    // Clear the error first
+    setAgentError(null);
+    
+    // Send "please continue" message
+    await handleSubmitMessage('Please continue');
+  }, [setAgentError, handleSubmitMessage]);
+
+  const handleAgentErrorDismiss = useCallback(() => {
+    setAgentError(null);
+  }, [setAgentError]);
 
   const handleOpenFileViewer = useCallback(
     (filePath?: string, filePathList?: string[]) => {
@@ -950,7 +970,12 @@ export default function ThreadPage({
           onCreditExhaustionUpgrade={() => {
             // Clear credit exhaustion state when user clicks upgrade
             clearCreditExhaustion();
+            // Open billing modal
+            setShowBillingModal(true);
           }}
+          agentError={agentError}
+          onAgentErrorContinue={handleAgentErrorContinue}
+          onAgentErrorDismiss={handleAgentErrorDismiss}
         />
 
         {/* Disclaimer text between content and chat input */}
@@ -1036,6 +1061,20 @@ export default function ThreadPage({
                 transition: 'padding 0.2s ease-in-out',
               }}
             >
+              {/* Credit Exhaustion Banner */}
+              {showBanner && (
+                <div className="mb-4">
+                  <CreditExhaustionBanner 
+                    onUpgrade={() => {
+                      // Clear credit exhaustion state when user clicks upgrade
+                      clearCreditExhaustion();
+                      // Open billing modal
+                      setShowBillingModal(true);
+                    }}
+                  />
+                </div>
+              )}
+              
               <ChatInput
                 value={newMessage}
                 onChange={setNewMessage}
@@ -1096,6 +1135,11 @@ export default function ThreadPage({
           projectId={projectId}
         />
       )} */}
+
+      <BillingModal
+        open={showBillingModal}
+        onOpenChange={setShowBillingModal}
+      />
     </>
   );
 }

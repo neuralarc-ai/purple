@@ -311,23 +311,20 @@ export function ToolCallSidePanel({
       // Initialize small screen state
       setIsSmallScreen(window.innerWidth < 768);
     }
-  }, []);
+  }, [panelWidth]);
 
   // Debounced callback to parent to reduce excessive notifications
-  const debouncedPanelWidthChange = React.useCallback(
-    React.useMemo(() => {
-      let timeoutId: NodeJS.Timeout;
-      return (width: number | null) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          if (onPanelWidthChange) {
-            onPanelWidthChange(width);
-          }
-        }, 50); // 50ms debounce
-      };
-    }, [onPanelWidthChange]),
-    [onPanelWidthChange]
-  );
+  const debounceTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+  const debouncedPanelWidthChange = React.useCallback((width: number | null) => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+    debounceTimeoutRef.current = setTimeout(() => {
+      if (onPanelWidthChange) {
+        onPanelWidthChange(width);
+      }
+    }, 50); // 50ms debounce
+  }, [onPanelWidthChange]);
 
   // Notify parent when panel width changes (debounced for performance)
   React.useEffect(() => {
@@ -405,7 +402,7 @@ export function ToolCallSidePanel({
       const screenWidth = window.innerWidth;
 
       // Calculate new width from the right edge
-      let newWidth = screenWidth - e.clientX;
+      const newWidth = screenWidth - e.clientX;
 
       // Calculate dynamic max width based on screen size (cached for performance)
       let maxAllowedWidth: number;
@@ -454,7 +451,7 @@ export function ToolCallSidePanel({
         }
       }
     });
-  }, [isResizing, minWidth, isLeftSidebarExpanded]);
+  }, [isResizing, minWidth, isLeftSidebarExpanded, onPanelWidthChange]);
 
 
 
@@ -578,7 +575,7 @@ export function ToolCallSidePanel({
       window.removeEventListener('resize', updatePanelWidthOnResize);
       window.removeEventListener('sidebar:close', handleSidebarClose);
     };
-  }, []);
+  }, [isOpen, isResizing]);
 
   // Compute responsive width class and styles
   const { widthClass, panelStyle } = React.useMemo(() => {
@@ -815,7 +812,7 @@ export function ToolCallSidePanel({
     if (source === 'user_explicit') {
       onNavigate(newIndex);
     }
-  }, [internalIndex, totalCalls, onNavigate, isControlledByParent]);
+  }, [totalCalls, onNavigate, isControlledByParent]);
 
   // Helper function to format elapsed time
   const formatElapsedTime = (milliseconds: number): string => {
