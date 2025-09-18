@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Get backend URL with proper fallback
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://he2.ai/api';
     
     // Ensure we're using the correct API path
     // For production (https://he2.ai/api), we need to remove the /api prefix since it's already included
