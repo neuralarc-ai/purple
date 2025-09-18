@@ -7,7 +7,7 @@ from utils.auth_utils import get_current_user_id_from_jwt
 from services.supabase import DBConnection
 from utils.logger import logger
 from flags.flags import is_enabled
-from utils.s3_upload_utils import upload_base64_image
+from dagad.storage_provider import get_storage
 import os
 
 
@@ -282,12 +282,8 @@ async def upload_dagad_image(
             raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
 
     try:
-        # Upload the image to Supabase storage
-        image_url = await upload_base64_image(
-            request.base64_data, 
-            bucket_name="dagad-images"
-        )
-        
+        storage = get_storage()
+        image_url = await storage.upload_base64_image(request.base64_data, path_prefix="images/")
         return {
             "image_url": image_url,
             "alt_text": request.alt_text,
@@ -311,8 +307,7 @@ async def upload_dagad_file(
             raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
 
     try:
-        client = await db.client
-        bucket = "dagad-images"
+        storage = get_storage()
         # Read file bytes
         contents = await file.read()
 
@@ -327,13 +322,8 @@ async def upload_dagad_file(
         filename = f"files/{ts}_{unique_id}_{file.filename}"
         content_type = file.content_type or "application/octet-stream"
 
-        # Upload to storage
-        await client.storage.from_(bucket).upload(
-            filename,
-            contents,
-            {"content-type": content_type}
-        )
-        public_url = await client.storage.from_(bucket).get_public_url(filename)
+        # Upload to external storage via provider
+        public_url = await storage.upload_bytes(filename, contents, content_type)
 
         return {
             "file_url": public_url,
@@ -341,7 +331,7 @@ async def upload_dagad_file(
             "file_size": len(contents),
             "file_mime_type": content_type,
             "file_metadata": {},
-            "bucket": bucket,
+            "bucket": None,
             "path": filename
         }
     except Exception as e:
