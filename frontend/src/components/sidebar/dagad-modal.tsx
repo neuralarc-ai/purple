@@ -21,7 +21,8 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
-import { Notebook, Trash2, Loader2, Pencil, Upload, X, Image as ImageIcon, Info, Plus } from 'lucide-react';
+import { Notebook, Trash2, Loader2, Pencil, Upload, X, Info, Plus, Eye } from 'lucide-react';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -34,6 +35,12 @@ type Entry = {
   image_url?: string;
   image_alt_text?: string;
   image_metadata?: Record<string, any>;
+  // File support
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  file_mime_type?: string;
+  file_metadata?: Record<string, any>;
   category: 'instructions' | 'preferences' | 'rules' | 'notes' | 'general';
   priority: 1 | 2 | 3;
   is_active: boolean;
@@ -46,6 +53,86 @@ type Entry = {
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
+const MAX_CONTENT_CHARS = 5000;
+const MAX_TITLE_CHARS = 100;
+const MAX_ENTRIES = 12;
+
+// Utility to detect if a file is an image
+const isImageFile = (file: File | null | undefined) => !!file && file.type.startsWith('image/');
+
+// Function to get the appropriate icon for file types
+const getFileIcon = (entry: Entry) => {
+  if (entry.image_url) {
+    return (
+      <Image
+        src="/images/image_4725998.svg"
+        alt="Image file"
+        width={12}
+        height={12}
+        className="h-3 w-3"
+      />
+    );
+  }
+  
+  if (entry.file_url) {
+    const fileMime = (entry.file_mime_type || '').toLowerCase();
+    const fileNameLower = (entry.file_name || entry.file_url || '').toLowerCase();
+    
+    // Check for PDF
+    if (fileMime.includes('pdf') || fileNameLower.endsWith('.pdf')) {
+      return (
+        <Image
+          src="/images/pdf_4726010.svg"
+          alt="PDF file"
+          width={12}
+          height={12}
+          className="h-3 w-3"
+        />
+      );
+    }
+    
+    // Check for CSV
+    if (fileMime.includes('csv') || fileNameLower.endsWith('.csv')) {
+      return (
+        <Image
+          src="/images/excel_4725976.svg"
+          alt="CSV file"
+          width={12}
+          height={12}
+          className="h-3 w-3"
+        />
+      );
+    }
+    
+    // Check for DOC/DOCX
+    if (fileMime.includes('officedocument.wordprocessingml.document') || 
+        fileNameLower.endsWith('.docx') || 
+        fileNameLower.endsWith('.doc')) {
+      return (
+        <Image
+          src="/images/doc_4725970.svg"
+          alt="Document file"
+          width={12}
+          height={12}
+          className="h-3 w-3"
+        />
+      );
+    }
+    
+    // Default file icon for other types (using doc icon as fallback)
+    return (
+      <Image
+        src="/images/doc_4725970.svg"
+        alt="File"
+        width={12}
+        height={12}
+        className="h-3 w-3 opacity-50"
+      />
+    );
+  }
+  
+  return null;
+};
 
 interface DagadModalProps {
   open: boolean;
@@ -77,8 +164,57 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const [editUploadingImage, setEditUploadingImage] = useState(false);
   
+  // File handling state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadedFileInfo, setUploadedFileInfo] = useState<{
+    file_url: string;
+    file_name: string;
+    file_size: number;
+    file_mime_type: string;
+    file_metadata?: Record<string, any>;
+  } | null>(null);
+  const [editSelectedFile, setEditSelectedFile] = useState<File | null>(null);
+  const [editUploadingFile, setEditUploadingFile] = useState(false);
+  const [editUploadedFileInfo, setEditUploadedFileInfo] = useState<{
+    file_url: string;
+    file_name: string;
+    file_size: number;
+    file_mime_type: string;
+    file_metadata?: Record<string, any>;
+  } | null>(null);
+  
   // View state management
   const [showAddForm, setShowAddForm] = useState(false);
+  // View entry modal state
+  const [viewEntryState, setViewEntryState] = useState<Entry | null>(null);
+  // Toggle for showing attachments (image/file) inside the view dialog
+  const [showViewFile, setShowViewFile] = useState<boolean>(false);
+
+  // Reset attachment visibility whenever a new entry is opened or dialog closed
+  useEffect(() => {
+    setShowViewFile(false);
+  }, [viewEntryState]);
+
+  // Derived file preview info for the View dialog
+  const fileMime = (viewEntryState?.file_mime_type || '').toLowerCase();
+  const fileNameLower = (viewEntryState?.file_name || viewEntryState?.file_url || '').toLowerCase();
+  const isPdf = !!viewEntryState?.file_url && (fileMime.includes('pdf') || fileNameLower.endsWith('.pdf'));
+  const isCsv = !!viewEntryState?.file_url && (fileMime.includes('csv') || fileNameLower.endsWith('.csv'));
+  const isDocx = !!viewEntryState?.file_url && (
+    fileMime.includes('officedocument.wordprocessingml.document') ||
+    fileNameLower.endsWith('.docx') ||
+    fileNameLower.endsWith('.doc')
+  );
+  const viewerUrl = viewEntryState?.file_url
+    ? (isPdf
+        ? viewEntryState.file_url
+        : isDocx
+          ? `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(viewEntryState.file_url)}`
+          : isCsv
+            ? viewEntryState.file_url
+            : null)
+    : null;
 
   const fetchEntries = async () => {
     try {
@@ -171,8 +307,46 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     }
   };
 
+  const uploadFile = async (file: File, isEdit: boolean = false) => {
+    try {
+      if (isEdit) setEditUploadingFile(true); else setUploadingFile(true);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${API_BASE}/dagad/upload-file`, {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+        credentials: 'include',
+        body: form,
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const detail = data?.detail || res.statusText || 'Unknown error';
+        throw new Error(`Failed to upload file: ${res.status} ${detail}`);
+      }
+      const info = await res.json();
+      if (isEdit) setEditUploadedFileInfo(info); else setUploadedFileInfo(info);
+      return info as {
+        file_url: string;
+        file_name: string;
+        file_size: number;
+        file_mime_type: string;
+        file_metadata?: Record<string, any>;
+      };
+    } finally {
+      if (isEdit) setEditUploadingFile(false); else setUploadingFile(false);
+    }
+  };
+
   const createEntry = async () => {
-    if (!title.trim() || (!content.trim() && !selectedImage)) return;
+    if (entries.length >= MAX_ENTRIES) {
+      setErrorMsg(`You can only create up to ${MAX_ENTRIES} entries. Delete one to add another.`);
+      toast.error(`Limit reached: ${MAX_ENTRIES} entries`);
+      return;
+    }
+    if (!title.trim() || (!content.trim() && !selectedImage && !selectedFile)) return;
     
     try {
       const supabase = createClient();
@@ -182,6 +356,19 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
       let imageUrl: string | null = null;
       if (selectedImage) {
         imageUrl = await uploadImage(selectedImage);
+      }
+
+      let filePayload: any = null;
+      if (selectedFile) {
+        const info = await uploadFile(selectedFile);
+        filePayload = {
+          file_url: info.file_url,
+          file_name: info.file_name,
+          file_size: info.file_size,
+          file_mime_type: info.file_mime_type,
+          file_metadata: info.file_metadata || {},
+          source_type: 'file',
+        };
       }
 
       const res = await fetch(`${API_BASE}/dagad`, {
@@ -199,7 +386,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           category, 
           priority: 1, 
           is_global: false, 
-          auto_inject: true 
+          auto_inject: true,
+          ...(filePayload || {}),
         }),
       });
       
@@ -225,6 +413,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     setCategory('general');
     setSelectedImage(null);
     setImagePreview(null);
+    setSelectedFile(null);
+    setUploadedFileInfo(null);
     setErrorMsg(null);
   };
 
@@ -285,6 +475,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     setEditIsActive(entry.is_active);
     setEditImagePreview(entry.image_url || null);
     setEditSelectedImage(null);
+    setEditSelectedFile(null); // Reset file state for edit
+    setEditUploadedFileInfo(null);
   };
 
   const saveEdit = async () => {
@@ -298,6 +490,19 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
       let imageUrl: string | null = editEntry.image_url || null;
       if (editSelectedImage) {
         imageUrl = await uploadImage(editSelectedImage, true);
+      }
+
+      let filePayload: any = null;
+      if (editSelectedFile) {
+        const info = await uploadFile(editSelectedFile, true);
+        filePayload = {
+          file_url: info.file_url,
+          file_name: info.file_name,
+          file_size: info.file_size,
+          file_mime_type: info.file_mime_type,
+          file_metadata: info.file_metadata || {},
+          source_type: 'file',
+        };
       }
 
       const res = await fetch(`${API_BASE}/dagad/${editEntry.entry_id}`, {
@@ -314,6 +519,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           image_alt_text: editSelectedImage?.name || editEntry.image_alt_text,
           category: editCategory,
           is_active: editIsActive,
+          ...(filePayload || {}),
         }),
       });
       if (!res.ok) {
@@ -392,13 +598,30 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
             <>
               {/* Add Knowledge Button */}
               <div className="mb-4">
-                <Button 
-                  onClick={() => setShowAddForm(true)}
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Knowledge
-                </Button>
+                <div className="flex items-center gap-3">
+                  <Button 
+                    onClick={() => {
+                      if (entries.length >= MAX_ENTRIES) {
+                        toast.error(`You can only have up to ${MAX_ENTRIES} entries.`);
+                        return;
+                      }
+                      setShowAddForm(true);
+                    }}
+                    disabled={entries.length >= MAX_ENTRIES}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-60"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {entries.length >= MAX_ENTRIES ? 'Limit reached' : 'Add Knowledge'}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    {Math.min(entries.length, MAX_ENTRIES)}/{MAX_ENTRIES}
+                  </span>
+                </div>
+                {entries.length >= MAX_ENTRIES && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    You have reached the maximum number of entries. Delete one to add another.
+                  </div>
+                )}
               </div>
 
               {/* Table */}
@@ -407,7 +630,8 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                   {/* Table Header - Fixed */}
                   <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-sidebar/30 border-b border-border/30 text-sm font-medium text-muted-foreground sticky top-0 z-10">
                     <div className="col-span-3">Name</div>
-                    <div className="col-span-5">Content</div>
+                    <div className="col-span-4">Content</div>
+                    <div className="col-span-1 text-center">View</div>
                     <div className="col-span-2">Created at</div>
                     <div className="col-span-1 text-center">Status</div>
                     <div className="col-span-1 text-center">Actions</div>
@@ -451,13 +675,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
+                                  {getFileIcon(entry)}
                                   <span className="font-medium text-sm text-foreground/90">
                                     {entry.title}
                                   </span>
                                   <Badge variant="secondary" className="text-xs bg-muted/70 text-muted-foreground border-border/30">
                                     {entry.category}
                                   </Badge>
-                                  {entry.image_url && <ImageIcon className="h-3 w-3 text-primary" />}
                                 </div>
                                 <p className="text-sm text-muted-foreground mb-2">
                                   {entry.content ? entry.content.substring(0, 60) + (entry.content.length > 60 ? '...' : '') : 'No content'}
@@ -503,21 +727,34 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                             {/* Name */}
                             <div className="col-span-3">
                               <div className="flex items-center gap-2">
+                                {getFileIcon(entry)}
                                 <span className="font-medium text-sm text-foreground/90 truncate">
                                   {entry.title}
                                 </span>
                                 <Badge variant="secondary" className="text-xs bg-muted/70 text-muted-foreground border-border/30">
                                   {entry.category}
                                 </Badge>
-                                {entry.image_url && <ImageIcon className="h-3 w-3 text-primary" />}
                               </div>
                             </div>
 
                             {/* Content */}
-                            <div className="col-span-5">
+                            <div className="col-span-4">
                               <p className="text-sm text-muted-foreground truncate">
                                 {entry.content ? entry.content.substring(0, 100) + (entry.content.length > 100 ? '...' : '') : 'No content'}
                               </p>
+                            </div>
+
+                            {/* View */}
+                            <div className="col-span-1 flex justify-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => setViewEntryState(entry)}
+                                title="View entry"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             </div>
 
                             {/* Created at */}
@@ -586,9 +823,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                     <Input 
                       placeholder="Enter a descriptive title for your knowledge entry" 
                       value={title} 
+                      maxLength={MAX_TITLE_CHARS}
                       onChange={(e) => setTitle(e.target.value)}
                       className="bg-background/50 border-border/50"
                     />
+                    <div className="flex items-center justify-end text-xs text-muted-foreground">
+                      {title.length}/{MAX_TITLE_CHARS}
+                    </div>
                   </div>
 
                   {/* Category */}
@@ -638,35 +879,21 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                     <label className="text-sm font-medium text-foreground/80">Entry content</label>
                     <Textarea 
                       placeholder="Enter the knowledge content, guidelines, or information" 
-                      value={content} 
-                      onChange={(e) => setContent(e.target.value)}
-                      className="bg-background/50 border-border/50 resize-none min-h-[120px]"
+                      value={content}
+                      onChange={(e) => setContent(e.target.value.slice(0, MAX_CONTENT_CHARS))}
+                      maxLength={MAX_CONTENT_CHARS}
+                      className="bg-background/50 border-border/50 resize-none h-[120px] overflow-y-auto overflow-x-hidden break-all whitespace-pre-wrap"
                       rows={5}
                     />
+                    <div className="flex items-center justify-end text-xs text-muted-foreground">
+                      {content.length}/{MAX_CONTENT_CHARS}
+                    </div>
                   </div>
 
-                  {/* Image Upload */}
+                  {/* Attachment Upload (Image or Document) */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground/80">Image (optional)</label>
-                    {!imagePreview ? (
-                      <div className="border-2 border-dashed border-border/40 rounded-lg p-8 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) handleImageSelect(file);
-                          }}
-                          className="hidden"
-                          id="image-upload"
-                        />
-                        <label htmlFor="image-upload" className="cursor-pointer block">
-                          <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                          <p className="text-sm text-muted-foreground mb-1">Click to upload an image</p>
-                          <p className="text-xs text-muted-foreground/70">PNG, JPG, GIF up to 10MB</p>
-                        </label>
-                      </div>
-                    ) : (
+                    <label className="text-sm font-medium text-foreground/80">Attachment (optional)</label>
+                    {imagePreview ? (
                       <div className="relative rounded-lg overflow-hidden border border-border/30">
                         <img src={imagePreview} alt="Preview" className="w-full h-40 object-cover" />
                         <button
@@ -680,6 +907,41 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                           <X className="h-4 w-4" />
                         </button>
                       </div>
+                    ) : (
+                      <div className="border-2 border-dashed border-border/40 rounded-lg p-6 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*,.pdf,.doc,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            if (!file) return;
+                            if (!isImageFile(file) && file.size > 50 * 1024 * 1024) {
+                              toast.error('File is larger than 50MB. Please choose a smaller file.');
+                              e.currentTarget.value = '';
+                              setSelectedFile(null);
+                              return;
+                            }
+                            if (isImageFile(file)) {
+                              handleImageSelect(file);
+                              setSelectedFile(null);
+                            } else {
+                              setSelectedFile(file);
+                              setSelectedImage(null);
+                              setImagePreview(null);
+                            }
+                          }}
+                          className="hidden"
+                          id="kb-attachment-upload"
+                        />
+                        <label htmlFor="kb-attachment-upload" className="cursor-pointer block">
+                          <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+                          <p className="text-sm text-muted-foreground mb-1">Click to upload an image or file</p>
+                          <p className="text-xs text-muted-foreground/70">Images up to 10MB • Files up to 50MB</p>
+                        </label>
+                        {selectedFile && (
+                          <div className="text-xs text-muted-foreground mt-2">{selectedFile.name} ({Math.round(selectedFile.size/1024)} KB)</div>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -688,17 +950,17 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                     <Button 
                       variant="outline" 
                       onClick={handleCancelAdd}
-                      disabled={uploadingImage}
+                      disabled={uploadingImage || uploadingFile}
                       className="border-border/50"
                     >
                       Cancel
                     </Button>
                     <Button 
                       onClick={createEntry} 
-                      disabled={uploadingImage || (!title.trim() || (!content.trim() && !selectedImage))}
+                      disabled={uploadingImage || uploadingFile || (!title.trim() || (!content.trim() && !selectedImage && !selectedFile))}
                       className="bg-primary hover:bg-primary/90 text-primary-foreground"
                     >
-                      {uploadingImage ? (
+                      {uploadingImage || uploadingFile ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin mr-2" />
                           Uploading...
@@ -749,14 +1011,14 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
               Cancel
             </Button>
             <Button
-              variant="destructive"
+              variant="outline"
               onClick={async () => {
                 if (!confirmEntry) return;
                 await deleteEntry(confirmEntry.entry_id);
                 setConfirmEntry(null);
               }}
               disabled={!!deletingId}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              className="bg-black text-white hover:text-red-500 border-border/50 dark:bg-white dark:text-black dark:hover:text-red-500"
             >
               {deletingId ? (
                 <>
@@ -787,9 +1049,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
             <Input 
               placeholder="Entry title" 
               value={editTitle} 
+              maxLength={MAX_TITLE_CHARS}
               onChange={(e) => setEditTitle(e.target.value)}
               className="bg-background/50 border-border/50"
             />
+            <div className="flex items-center justify-end text-xs text-muted-foreground">
+              {editTitle.length}/{MAX_TITLE_CHARS}
+            </div>
             <Select value={editCategory} onValueChange={(value) => setEditCategory(value as any)}>
               <SelectTrigger className="bg-background/50 border-border/50">
                 <SelectValue placeholder="Select category" />
@@ -804,33 +1070,20 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
             </Select>
             <Textarea 
               placeholder="Entry content" 
-              value={editContent} 
-              onChange={(e) => setEditContent(e.target.value)}
-              className="bg-background/50 border-border/50 resize-none min-h-[120px]"
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value.slice(0, MAX_CONTENT_CHARS))}
+              maxLength={MAX_CONTENT_CHARS}
+              className="bg-background/50 border-border/50 resize-none h-[120px] overflow-y-auto overflow-x-hidden break-all whitespace-pre-wrap"
               rows={6}
             />
+            <div className="flex items-center justify-end text-xs text-muted-foreground">
+              {editContent.length}/{MAX_CONTENT_CHARS}
+            </div>
             
-            {/* Image Upload Section for Edit */}
+            {/* Attachment Upload Section for Edit */}
             <div className="space-y-3">
-              <label className="text-sm font-medium text-foreground/70">Image (optional)</label>
-              {!editImagePreview ? (
-                <div className="border-2 border-dashed border-border/40 rounded-lg p-4 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) handleEditImageSelect(file);
-                    }}
-                    className="hidden"
-                    id="edit-image-upload"
-                  />
-                  <label htmlFor="edit-image-upload" className="cursor-pointer block">
-                    <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
-                    <p className="text-xs text-muted-foreground">Click to upload an image</p>
-                  </label>
-                </div>
-              ) : (
+              <label className="text-sm font-medium text-foreground/70">Attachment (optional)</label>
+              {editImagePreview ? (
                 <div className="relative rounded-lg overflow-hidden border border-border/30">
                   <img src={editImagePreview} alt="Preview" className="w-full h-24 object-cover" />
                   <button
@@ -843,6 +1096,36 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                   >
                     <X className="h-3 w-3" />
                   </button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-border/40 rounded-lg p-4 text-center bg-muted/20 hover:bg-muted/30 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      if (!file) return;
+                      if (!isImageFile(file)) {
+                        setEditSelectedFile(file);
+                        setEditSelectedImage(null);
+                        setEditImagePreview(null);
+                      } else {
+                        handleEditImageSelect(file);
+                        setEditSelectedFile(null);
+                      }
+                    }}
+                    className="hidden"
+                    id="edit-attachment-upload"
+                  />
+                  <label htmlFor="edit-attachment-upload" className="cursor-pointer block">
+                    <Upload className="h-6 w-6 mx-auto text-muted-foreground mb-1" />
+                    <p className="text-xs text-muted-foreground">Click to upload an image or file</p>
+                  </label>
+                  {(editSelectedFile || editEntry?.file_name) && (
+                    <div className="text-xs text-muted-foreground mt-2">
+                      {editSelectedFile ? `${editSelectedFile.name} (${Math.round(editSelectedFile.size/1024)} KB)` : editEntry?.file_name}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -866,13 +1149,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
               </Button>
               <Button 
                 onClick={saveEdit} 
-                disabled={savingEdit || editUploadingImage || !editTitle.trim()}
+                disabled={savingEdit || editUploadingImage || editUploadingFile || !editTitle.trim()}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground"
               >
-                {savingEdit || editUploadingImage ? (
+                {savingEdit || editUploadingImage || editUploadingFile ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin mr-2" /> 
-                    {editUploadingImage ? 'Uploading...' : 'Saving...'}
+                    {(editUploadingImage || editUploadingFile) ? 'Uploading...' : 'Saving...'}
                   </>
                 ) : (
                   'Save Changes'
@@ -882,6 +1165,82 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* View Entry Dialog */}
+      <Dialog open={!!viewEntryState} onOpenChange={() => setViewEntryState(null)}>
+        <DialogContent className="sm:max-w-2xl bg-background/95 backdrop-blur border-border/50">
+          <DialogHeader className="border-b border-border/50 pb-4">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-4 w-4 text-primary" />
+              {viewEntryState?.title || 'View Entry'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {viewEntryState?.content && (
+              <div className="text-sm text-foreground/90 whitespace-pre-wrap border border-border/30 rounded-md p-3 bg-muted/20">
+                {viewEntryState.content}
+              </div>
+            )}
+
+            {(viewEntryState?.image_url || viewEntryState?.file_url) && (
+              <div className="flex items-center justify-start gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowViewFile((prev) => !prev)}
+                  className="border-border/50"
+                >
+                  {showViewFile ? 'Hide file' : 'View file'}
+                </Button>
+              </div>
+            )}
+
+            {showViewFile && viewEntryState?.image_url && (
+              <div className="rounded-lg overflow-hidden border border-border/30">
+                <img
+                  src={viewEntryState.image_url}
+                  alt={viewEntryState.image_alt_text || 'Image'}
+                  className="w-full max-h-80 object-contain"
+                />
+              </div>
+            )}
+
+            {showViewFile && viewEntryState?.file_url && (
+              <div className="text-sm space-y-2">
+                {/* Render inline for PDF/CSV/DOCX via native or Google Docs Viewer */}
+                {viewerUrl ? (
+                  <div className="rounded-lg overflow-hidden border border-border/30">
+                    <iframe
+                      src={viewerUrl}
+                      className="w-full h-[480px] bg-background"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <div className="mb-2 text-muted-foreground">File:</div>
+                    <a
+                      href={viewEntryState.file_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-primary underline break-all"
+                    >
+                      Open file
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!viewEntryState?.content && !viewEntryState?.image_url && !viewEntryState?.file_url && (
+              <div className="text-sm text-muted-foreground">No preview available for this entry.</div>
+            )}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => setViewEntryState(null)} className="border-border/50">Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
+

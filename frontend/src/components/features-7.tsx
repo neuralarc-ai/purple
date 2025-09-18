@@ -197,6 +197,7 @@ export default function FeaturesSection() {
     )
 }
 
+
 const CardDecorator = ({ children, variant = 'orange' }: { children: ReactNode; variant?: 'orange' | 'blue' | 'green' | 'purple' | 'cyan' | 'yellow' }) => {
     const getGridColor = () => {
         switch (variant) {

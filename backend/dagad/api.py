@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Depends, Query
+from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File
 from pydantic import BaseModel, Field
 
 from utils.auth_utils import get_current_user_id_from_jwt
@@ -22,6 +22,13 @@ class DAGADEntry(BaseModel):
     image_url: Optional[str] = None
     image_alt_text: Optional[str] = None
     image_metadata: Optional[dict] = None
+    # File support
+    file_url: Optional[str] = None
+    file_name: Optional[str] = None
+    file_size: Optional[int] = None
+    file_mime_type: Optional[str] = None
+    file_metadata: Optional[dict] = None
+    source_type: Optional[str] = None
     category: str = Field(default="general", pattern="^(instructions|preferences|rules|notes|general)$")
     priority: int = Field(default=1, ge=1, le=3)
     is_active: bool = True
@@ -40,6 +47,13 @@ class DAGADEntryResponse(BaseModel):
     image_url: Optional[str]
     image_alt_text: Optional[str]
     image_metadata: Optional[dict]
+    # File fields
+    file_url: Optional[str]
+    file_name: Optional[str]
+    file_size: Optional[int]
+    file_mime_type: Optional[str]
+    file_metadata: Optional[dict]
+    source_type: Optional[str]
     category: str
     priority: int
     is_active: bool
@@ -67,6 +81,13 @@ class CreateDAGADEntryRequest(BaseModel):
     image_url: Optional[str] = None
     image_alt_text: Optional[str] = None
     image_metadata: Optional[dict] = None
+    # File support
+    file_url: Optional[str] = None
+    file_name: Optional[str] = None
+    file_size: Optional[int] = None
+    file_mime_type: Optional[str] = None
+    file_metadata: Optional[dict] = None
+    source_type: Optional[str] = None
     category: str = Field(default="general", pattern="^(instructions|preferences|rules|notes|general)$")
     priority: int = Field(default=1, ge=1, le=3)
     is_global: bool = False
@@ -83,6 +104,13 @@ class UpdateDAGADEntryRequest(BaseModel):
     image_url: Optional[str] = None
     image_alt_text: Optional[str] = None
     image_metadata: Optional[dict] = None
+    # File support
+    file_url: Optional[str] = None
+    file_name: Optional[str] = None
+    file_size: Optional[int] = None
+    file_mime_type: Optional[str] = None
+    file_metadata: Optional[dict] = None
+    source_type: Optional[str] = None
     category: Optional[str] = Field(None, pattern="^(instructions|preferences|rules|notes|general)$")
     priority: Optional[int] = Field(None, ge=1, le=3)
     is_active: Optional[bool] = None
@@ -141,6 +169,13 @@ async def get_user_dagad_entries(
                 image_url=row.get('image_url'),
                 image_alt_text=row.get('image_alt_text'),
                 image_metadata=row.get('image_metadata'),
+                # File mapping
+                file_url=row.get('file_url'),
+                file_name=row.get('file_name'),
+                file_size=row.get('file_size'),
+                file_mime_type=row.get('file_mime_type'),
+                file_metadata=row.get('file_metadata'),
+                source_type=row.get('source_type'),
                 category=row['category'],
                 priority=row['priority'],
                 is_active=row['is_active'],
@@ -182,6 +217,13 @@ async def create_dagad_entry(
             'image_url': entry_data.image_url,
             'image_alt_text': entry_data.image_alt_text,
             'image_metadata': entry_data.image_metadata or {},
+            # File fields
+            'file_url': entry_data.file_url,
+            'file_name': entry_data.file_name,
+            'file_size': entry_data.file_size,
+            'file_mime_type': entry_data.file_mime_type,
+            'file_metadata': entry_data.file_metadata or {},
+            'source_type': entry_data.source_type,
             'category': entry_data.category,
             'priority': entry_data.priority,
             'is_global': entry_data.is_global,
@@ -202,6 +244,12 @@ async def create_dagad_entry(
             image_url=row.get('image_url'),
             image_alt_text=row.get('image_alt_text'),
             image_metadata=row.get('image_metadata'),
+            file_url=row.get('file_url'),
+            file_name=row.get('file_name'),
+            file_size=row.get('file_size'),
+            file_mime_type=row.get('file_mime_type'),
+            file_metadata=row.get('file_metadata'),
+            source_type=row.get('source_type'),
             category=row['category'],
             priority=row['priority'],
             is_active=row['is_active'],
@@ -250,6 +298,57 @@ async def upload_dagad_image(
         raise HTTPException(status_code=500, detail="Failed to upload image")
 
 
+@router.post("/upload-file")
+async def upload_dagad_file(
+    file: UploadFile = File(...),
+    user_id: str = Depends(get_current_user_id_from_jwt)
+):
+    """Upload an arbitrary file for DAGAD entries and return its public URL and metadata.
+    Uses the 'dagad-images' bucket for now to avoid extra setup."""
+    disable_check = os.getenv("DISABLE_DAGAD_CHECK", "true").lower() in ("1", "true", "yes", "on")
+    if not disable_check:
+        if not await is_enabled("dagad"):
+            raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
+
+    try:
+        client = await db.client
+        bucket = "dagad-images"
+        # Read file bytes
+        contents = await file.read()
+
+        # Enforce max file size (50 MB)
+        MAX_FILE_MB = 50
+        if len(contents) > MAX_FILE_MB * 1024 * 1024:
+            raise HTTPException(status_code=400, detail=f"File size exceeds {MAX_FILE_MB}MB limit")
+        # Generate a unique path
+        import uuid, datetime
+        unique_id = str(uuid.uuid4())
+        ts = datetime.datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        filename = f"files/{ts}_{unique_id}_{file.filename}"
+        content_type = file.content_type or "application/octet-stream"
+
+        # Upload to storage
+        await client.storage.from_(bucket).upload(
+            filename,
+            contents,
+            {"content-type": content_type}
+        )
+        public_url = await client.storage.from_(bucket).get_public_url(filename)
+
+        return {
+            "file_url": public_url,
+            "file_name": file.filename,
+            "file_size": len(contents),
+            "file_mime_type": content_type,
+            "file_metadata": {},
+            "bucket": bucket,
+            "path": filename
+        }
+    except Exception as e:
+        logger.error(f"Error uploading DAGAD file for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload file")
+
+
 @router.put("/{entry_id}", response_model=DAGADEntryResponse)
 async def update_dagad_entry(
     entry_id: str,
@@ -280,6 +379,19 @@ async def update_dagad_entry(
             update_data['image_alt_text'] = entry_data.image_alt_text
         if entry_data.image_metadata is not None:
             update_data['image_metadata'] = entry_data.image_metadata
+        # File fields
+        if entry_data.file_url is not None:
+            update_data['file_url'] = entry_data.file_url
+        if entry_data.file_name is not None:
+            update_data['file_name'] = entry_data.file_name
+        if entry_data.file_size is not None:
+            update_data['file_size'] = entry_data.file_size
+        if entry_data.file_mime_type is not None:
+            update_data['file_mime_type'] = entry_data.file_mime_type
+        if entry_data.file_metadata is not None:
+            update_data['file_metadata'] = entry_data.file_metadata
+        if entry_data.source_type is not None:
+            update_data['source_type'] = entry_data.source_type
         if entry_data.category is not None:
             update_data['category'] = entry_data.category
         if entry_data.priority is not None:
@@ -312,6 +424,12 @@ async def update_dagad_entry(
             image_url=row.get('image_url'),
             image_alt_text=row.get('image_alt_text'),
             image_metadata=row.get('image_metadata'),
+            file_url=row.get('file_url'),
+            file_name=row.get('file_name'),
+            file_size=row.get('file_size'),
+            file_mime_type=row.get('file_mime_type'),
+            file_metadata=row.get('file_metadata'),
+            source_type=row.get('source_type'),
             category=row['category'],
             priority=row['priority'],
             is_active=row['is_active'],
@@ -379,6 +497,12 @@ async def get_dagad_entry(
             image_url=row.get('image_url'),
             image_alt_text=row.get('image_alt_text'),
             image_metadata=row.get('image_metadata'),
+            file_url=row.get('file_url'),
+            file_name=row.get('file_name'),
+            file_size=row.get('file_size'),
+            file_mime_type=row.get('file_mime_type'),
+            file_metadata=row.get('file_metadata'),
+            source_type=row.get('source_type'),
             category=row['category'],
             priority=row['priority'],
             is_active=row['is_active'],
