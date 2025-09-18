@@ -6,6 +6,11 @@ export async function middleware(request: NextRequest) {
     request,
   })
 
+  // Skip middleware for API routes to avoid interference
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return supabaseResponse
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
