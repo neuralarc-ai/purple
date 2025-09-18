@@ -4,19 +4,44 @@ import { createClient } from '@/lib/supabase/server';
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
+    
+    // Use getUser() instead of getSession() to be consistent with middleware
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
-    console.log('Session check:', { 
+    console.log('API Route User check:', { 
+      hasUser: !!user,
+      userId: user?.id,
+      userEmail: user?.email,
+      userError: userError?.message
+    });
+    
+    console.log('API Route Session check:', { 
       hasSession: !!session, 
       hasAccessToken: !!session?.access_token,
       hasUser: !!session?.user,
       userId: session?.user?.id,
       userEmail: session?.user?.email,
-      sessionError: sessionError?.message
+      sessionError: sessionError?.message,
+      accessTokenLength: session?.access_token?.length,
+      accessTokenStart: session?.access_token?.substring(0, 20)
     });
     
+    // Also check cookies directly
+    const cookieStore = await import('next/headers').then(m => m.cookies());
+    const allCookies = cookieStore.getAll();
+    console.log('All cookies:', allCookies.map(c => ({ name: c.name, value: c.value.substring(0, 20) + '...' })));
+    
+    if (!user) {
+      console.log('No user found in API route');
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
     if (!session?.access_token) {
-      console.log('No session or access token found');
+      console.log('No session or access token found in API route');
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
