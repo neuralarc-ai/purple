@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000'
     // Remove /api suffix if it exists to avoid double /api
     const baseUrl = backendUrl.endsWith('/api') ? backendUrl.slice(0, -4) : backendUrl
-    const backendCallbackUrl = `${baseUrl}/api/azure/oauth/callback?${searchParams.toString()}`
+    const backendCallbackUrl = `${baseUrl}/api/auth/azure/oauth/callback?${searchParams.toString()}`
     
     console.log('Forwarding Azure AD OAuth callback to backend:', backendCallbackUrl)
     
