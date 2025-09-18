@@ -210,6 +210,7 @@ export default function InvitePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           success_url: `${window.location.origin}/onboarding`,
