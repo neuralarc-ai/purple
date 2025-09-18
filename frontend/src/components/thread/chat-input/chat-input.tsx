@@ -15,7 +15,7 @@ import { handleFiles } from './file-upload-handler';
 import { MessageInput } from './message-input';
 import { AttachmentGroup } from '../attachment-group';
 import { useModelSelection } from './_use-model-selection';
-import { useModeSelection } from './_use-mode-selection';
+import { useModeSelection, STORAGE_KEY_MODE } from './_use-mode-selection';
 import { useFileDelete } from '@/hooks/react-query/files';
 import { useQueryClient } from '@tanstack/react-query';
 import { ToolCallInput } from './floating-tool-preview';
@@ -407,8 +407,16 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           thinkingEnabled = true;
         }
 
-        // Determine mode-based configuration
-        const modeConfig = getModeConfiguration(selectedMode, thinkingEnabled);
+        // Determine the most up-to-date mode at submit time to avoid race conditions
+        let effectiveMode = selectedMode;
+        if (typeof window !== 'undefined') {
+          const latest = localStorage.getItem(STORAGE_KEY_MODE);
+          if (latest === 'default' || latest === 'agent') {
+            effectiveMode = latest as typeof effectiveMode;
+          }
+        }
+
+        const modeConfig = getModeConfiguration(effectiveMode, thinkingEnabled);
 
         // Track analytics asynchronously to avoid blocking
         setTimeout(() => {
@@ -419,7 +427,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
         onSubmit(message, {
           agent_id: selectedAgentId,
           model_name: baseModelName,
-          mode: selectedMode,  // Add the actual mode parameter
+          mode: effectiveMode,  // Use the effective mode determined at submit time
           ...modeConfig,
         });
 
