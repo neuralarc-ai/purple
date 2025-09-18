@@ -9,6 +9,7 @@ import { HeroHeader } from '@/components/header'
 import { ThemeProvider } from 'next-themes'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '@/components/AuthProvider'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 const contentData = [
     {
@@ -109,7 +110,24 @@ const badgeVariants = {
 
 export default function HeroSection() {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [currentContentIndex, setCurrentContentIndex] = useState(0);
+    
+    // Create contentData using translations
+    const contentData = [
+        {
+            title: t.hero.title_1,
+            description: t.hero.description_1
+        },
+        {
+            title: t.hero.title_2,
+            description: t.hero.description_2
+        },
+        {
+            title: t.hero.title_3,
+            description: t.hero.description_3
+        }
+    ];
     
     useEffect(() => {
         const interval = setInterval(() => {
@@ -119,7 +137,7 @@ export default function HeroSection() {
         }, 30000); // 30 seconds
 
         return () => clearInterval(interval);
-    }, []);
+    }, [contentData.length]);
     
     return (
         <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" enableSystem={false}>
@@ -144,7 +162,7 @@ export default function HeroSection() {
                         </motion.div>
                         {/* <div className="absolute inset-0 -z-10 size-full [background:radial-gradient(90%_90%_at_50%_70%,transparent_0%,var(--color-background)_90%)]"></div> */}
                         <div className="mx-auto max-w-7xl px-4 sm:px-6 z-20 pt-16 sm:pt-24">
-                            <div className="flex flex-col items-center justify-center text-center text-black z-20 translate-y-8 sm:translate-y-1/2 min-h-[60vh] sm:min-h-auto">
+                            <div className="flex flex-col items-center justify-center text-center text-black z-20 translate-y-8 sm:translate-y-1/2 min-h-[60vh] sm:min-h-auto py-8 sm:py-12">
                                 
 
                                 <AnimatePresence mode="wait">
@@ -160,7 +178,7 @@ export default function HeroSection() {
                                             preset="fade-in-blur"
                                             speedSegment={0.3}
                                             as="h1"
-                                            className="text-balance text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl leading-tight sm:leading-20 libre-baskerville-regular text-center">
+                                            className="text-balance text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl leading-tight sm:leading-tight libre-baskerville-regular text-center px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16">
                                             {contentData[currentContentIndex].title}
                                         </TextEffect>
                                         <TextEffect
@@ -169,7 +187,7 @@ export default function HeroSection() {
                                             speedSegment={0.3}
                                             delay={0.5}
                                             as="p"
-                                            className="mx-auto mt-4 sm:mt-12 max-w-xs sm:max-w-lg md:max-w-2xl text-balance text-sm sm:text-base md:text-lg px-4 sm:px-0 text-center">
+                                            className="mx-auto mt-4 sm:mt-8 md:mt-12 max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl text-balance text-xs sm:text-sm md:text-base lg:text-lg px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 text-center leading-relaxed">
                                             {contentData[currentContentIndex].description}
                                         </TextEffect>
                                     </motion.div>
@@ -194,7 +212,7 @@ export default function HeroSection() {
                                         rel={user ? undefined : "noopener noreferrer"}
                                         className="hover:bg-black/80 bg-black text-white group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-sm transition-colors duration-300">
                                         <span className="text-white group-hover:text-white transition-colors duration-300 ease-in-out text-sm">
-                                            {user ? "Lift off" : "Ready to lift off?"}
+                                            {user ? t.hero.cta_logged_in : t.hero.cta_logged_out}
                                         </span>                                        
 
                                         <div className="bg-white group-hover:bg-helium-orange size-6 overflow-hidden rounded-full duration-500">

@@ -7,18 +7,19 @@ import IntegrationsSection from '@/components/integrations-7';
 import PromptMessage from '@/components/prompt-message';
 import CompareTable from '@/components/compare-table';
 import Footer from '@/components/footer';
-import Comparison from '@/components/comparison';
+import { LanguageProvider } from '@/contexts/LanguageContext';
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-black">
-      <HeroSection />
-      <Comparison />
-      <FeaturesSection />
-      <FeatureTable />
-      <IntegrationsSection />
-      <CompareTable />
-      <Footer />
-    </main>
+    <LanguageProvider>
+      <main className="min-h-screen bg-black">
+        <HeroSection />
+        <FeaturesSection />
+        <FeatureTable />
+        <IntegrationsSection />
+        <CompareTable />
+        <Footer />
+      </main>
+    </LanguageProvider>
   );
 }

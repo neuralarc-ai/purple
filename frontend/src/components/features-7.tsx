@@ -2,6 +2,7 @@ import Image from 'next/image'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { ReactNode } from 'react'
 import { motion } from 'framer-motion'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 const fadeBlurVariants = {
     hidden: {
@@ -40,6 +41,8 @@ const cardVariants = {
 
 
 export default function FeaturesSection() {
+    const { t } = useLanguage();
+    
     return (
         <section className="py-8 md:py-12 md:mt-4">
             <div className="mx-auto max-w-5xl space-y-8 px-6">
@@ -50,8 +53,8 @@ export default function FeaturesSection() {
                     viewport={{ once: true, margin: "-100px" }}
                     variants={fadeBlurVariants}
                 >
-                    <h2 className="text-4xl xl:text-6xl font-semibold leading-none text-white">Stop switching between AI tools. <br />Start succeeding with one.</h2>
-                    <p className="max-w-lg mx-auto text-white/80">Helium seamlessly integrates with your existing workflows to automate tasks, generate insights, and manage your business operations all from your intelligent digital companion.</p>
+                    <h2 className="text-4xl xl:text-6xl font-semibold leading-none text-white">{t.features.title}</h2>
+                    <p className="max-w-lg mx-auto text-white/80">{t.features.description}</p>
                 </motion.div>
                 <motion.div
                     initial="hidden"
@@ -76,11 +79,11 @@ export default function FeaturesSection() {
                                     </svg>
                                 </CardDecorator>
 
-                                <h3 className="mt-6 font-medium text-white">Automates workflows</h3>
+                                <h3 className="mt-6 font-medium text-white">{t.features.card_1.title}</h3>
                             </CardHeader>
 
                             <CardContent>
-                                <p className="text-base text-balance text-white/80">Streamline complex processes and accelerate research with intelligent automation. Build seamless, multi-step workflows that handle data analysis, reporting, and seamless workflow orchestration for <br /> complex tasks.</p>
+                                <p className="text-base text-balance text-white/80">{t.features.card_1.description}</p>
                             </CardContent>
                         </div>
 
@@ -97,11 +100,11 @@ export default function FeaturesSection() {
                                     </svg>
                                 </CardDecorator>
 
-                                <h3 className="mt-6 font-medium text-white">Deeper, reliable intelligence</h3>
+                                <h3 className="mt-6 font-medium text-white">{t.features.card_2.title}</h3>
                             </CardHeader>
 
                             <CardContent>
-                                <p className="text-base text-balance text-white/80">Our advanced AI agents go beyond simple answers to provide accurate, trustworthy insights. They understand context and reason through complex problems to deliver reliable information you can act on.</p>
+                                <p className="text-base text-balance text-white/80">{t.features.card_2.description}</p>
                             </CardContent>
                         </div>
 
@@ -117,11 +120,11 @@ export default function FeaturesSection() {
                                     </svg>
                                 </CardDecorator>
 
-                                <h3 className="mt-6 font-medium text-white">No-code, simple to use</h3>
+                                <h3 className="mt-6 font-medium text-white">{t.features.card_3.title}</h3>
                             </CardHeader>
 
                             <CardContent>
-                                <p className="text-base text-balance text-white/80">Create powerful AI workflows without writing any code. Our intuitive, drag-and-drop interface makes advanced AI accessible to everyone.</p>
+                                <p className="text-base text-balance text-white/80">{t.features.card_3.description}</p>
                             </CardContent>
                         </div>
                     </Card>
@@ -149,11 +152,11 @@ export default function FeaturesSection() {
                                     </svg>
                                 </CardDecorator>
 
-                                <h3 className="mt-6 font-medium text-white">Knowledge-Driven Responses</h3>
+                                <h3 className="mt-6 font-medium text-white">{t.features.card_4.title}</h3>
                             </CardHeader>
 
                             <CardContent>
-                                <p className="text-base text-balance text-white/80">Add your own knowledge sources to agents to receive contextually accurate answers. This ensures your agents are grounded in your specific data and provide contextual insights.</p>
+                                <p className="text-base text-balance text-white/80">{t.features.card_4.description}</p>
                             </CardContent>
                         </div>
 
@@ -167,11 +170,11 @@ export default function FeaturesSection() {
                                     </svg>
                                 </CardDecorator>
 
-                                <h3 className="mt-6 font-medium text-white">Personalized Interactions</h3>
+                                <h3 className="mt-6 font-medium text-white">{t.features.card_5.title}</h3>
                             </CardHeader>
 
                             <CardContent>
-                                <p className="text-base text-balance text-white/80">Customize chats and responses to align with your unique persona. You can define the tone, style, and behavior to make every interaction feel on-brand.</p>
+                                <p className="text-base text-balance text-white/80">{t.features.card_5.description}</p>
                             </CardContent>
                         </div>
 
@@ -183,11 +186,11 @@ export default function FeaturesSection() {
                                     </svg>
                                 </CardDecorator>
 
-                                <h3 className="mt-6 font-medium text-white">Task-Specific Agents</h3>
+                                <h3 className="mt-6 font-medium text-white">{t.features.card_6.title}</h3>
                             </CardHeader>
 
                             <CardContent>
-                                <p className="text-base text-balance text-white/80">Create specialized agents that are precisely tailored to your specific goals and tasks. These dedicated agents are highly efficient and effective at solving unique challenges.</p>
+                                <p className="text-base text-balance text-white/80">{t.features.card_6.description}</p>
                             </CardContent>
                         </div>
                     </Card>
