@@ -527,7 +527,8 @@ When using the tools:
                         stream=stream,
                         enable_thinking=enable_thinking,
                         reasoning_effort=reasoning_effort,
-                        num_retries=(1 if simple_chat_mode else None)
+                        num_retries=(1 if simple_chat_mode else None),
+                        request_timeout=(15 if simple_chat_mode else None)
                     )
                     logger.debug("Successfully received raw LLM API response stream/object")
 
