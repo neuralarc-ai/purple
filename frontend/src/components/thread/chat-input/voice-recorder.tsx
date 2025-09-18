@@ -40,11 +40,13 @@ const StopIcon = ({ className }: { className?: string }) => (
 
 interface VoiceRecorderProps {
     onTranscription: (text: string) => void;
+    onStopListening?: () => void;
     disabled?: boolean;
 }
 
 export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     onTranscription,
+    onStopListening,
     disabled = false,
 }) => {
     const { theme } = useTheme();
@@ -188,6 +190,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         // Reset transcript for next use
         resetTranscript();
         lastTranscriptRef.current = '';
+        
+        // Notify parent component that listening has stopped
+        onStopListening?.();
     };
 
     const handleClick = () => {
