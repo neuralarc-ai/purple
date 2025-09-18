@@ -101,8 +101,8 @@ const SectionView: React.FC<{ section: Section }> = ({ section }) => {
           </div>
         )}
       </div>
-      <div className="mx-4 border-b border-zinc-100 dark:border-zinc-800 last:border-b-0">
-        <div className="h-px bg-gradient-to-r from-transparent via-zinc-200 dark:via-zinc-700 to-transparent"></div>
+      <div className="mx-4 border-b border-zinc-200 dark:border-zinc-800 last:border-b-0">
+        <div className="h-px bg-gradient-to-r from-transparent via-zinc-300 dark:via-zinc-700 to-transparent"></div>
       </div>
     </div>
   );
@@ -132,7 +132,7 @@ export const TaskListToolView: React.FC<ToolViewProps> = ({
 
   return (
     <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
-      <CardHeader className="h-9 bg-gradient-to-t from-zinc-50/80 to-zinc-200/70 dark:from-zinc-900/90 dark:to-zinc-800/90 text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
+      <CardHeader className="h-9 bg-background text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
         <div className="flex w-full justify-center items-center gap-1">
           <ListTodo className="w-4 h-4 text-muted-foreground" />
           <div>
@@ -179,7 +179,7 @@ export const TaskListToolView: React.FC<ToolViewProps> = ({
         )}
         
       </CardContent>
-      <div className="px-4 py-2 h-fit bg-white dark:bg-zinc-900 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
+      <div className="px-4 py-2 h-fit bg-background backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
         <div className="h-full flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
           {!isStreaming && hasData && (
             <div className="flex items-center gap-2">
@@ -190,7 +190,7 @@ export const TaskListToolView: React.FC<ToolViewProps> = ({
               {completedTasks === totalTasks && totalTasks > 0 && (
                 <Badge
                   variant="outline"
-                  className="h-6 py-0.5 bg-green-50 dark:bg-green-900/20 text-helium-green border-helium-green/80"
+                  className="h-6 py-0.5 bg-green-50 dark:bg-green-900/20 text-green-900 border-green-900/40"
                 >
                   <Check className="h-3 w-3" />
                   All complete

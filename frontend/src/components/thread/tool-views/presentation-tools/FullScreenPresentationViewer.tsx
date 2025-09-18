@@ -236,7 +236,7 @@ export function FullScreenPresentationViewer({
         <div className="w-full h-full flex items-center justify-center bg-transparent">
           <div 
             ref={setContainerRef}
-            className="relative bg-white dark:bg-zinc-900 rounded-lg overflow-hidden border border-zinc-200/40 dark:border-zinc-800/40"
+            className="relative bg-background rounded-lg overflow-hidden border border-zinc-200/40 dark:border-zinc-800/40"
             style={{
               width: '100%',
               maxWidth: '100%',
@@ -381,7 +381,7 @@ export function FullScreenPresentationViewer({
         ) : currentSlideData ? (
           <div className="w-full h-full max-w-7xl mx-auto flex flex-col">
             {/* Presentation Container */}
-            <div className="flex-1 bg-white dark:bg-zinc-900 rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800" style={{ aspectRatio: '16 / 9' }}>
+            <div className="flex-1 bg-background rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-800" style={{ aspectRatio: '16 / 9' }}>
               {renderSlide}
             </div>
             

@@ -1063,7 +1063,7 @@ export function GenericToolView({
         )}
       </CardContent>
 
-      <div className="px-4 py-2 h-fit bg-card backdrop-blur-sm border-t border-border flex justify-between items-center gap-4 rounded-b-lg">
+      <div className="px-4 py-2 h-fit bg-background backdrop-blur-sm border-t border-border flex justify-between items-center gap-4 rounded-b-lg">
         <div className="h-full flex items-center gap-2 text-sm text-muted-foreground">
           {!isStreaming && (formattedAssistantContent || formattedToolContent) && (
             <Badge variant="outline" className="h-6 py-0.5 bg-muted">

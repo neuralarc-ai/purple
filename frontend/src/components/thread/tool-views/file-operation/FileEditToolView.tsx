@@ -186,7 +186,7 @@ export function FileEditToolView({
 
   return (
     <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
-      <CardHeader className="h-9 w-full flex items-center bg-gradient-to-t from-zinc-50/80 to-zinc-200/70 dark:from-zinc-900/90 dark:to-zinc-800/90 text-center backdrop-blur-lg border-b p-2 px-4 rounded-t-lg">
+      <CardHeader className="h-9 w-full flex items-center bg-background text-center backdrop-blur-lg border-b p-2 px-4 rounded-t-lg">
         <div className="flex mt-4 h-full items-center w-full justify-center gap-1">
           <FileDiff className="w-4 h-4 text-muted-foreground" />
           <CardTitle className="text-sm font-semibold text-muted-foreground">

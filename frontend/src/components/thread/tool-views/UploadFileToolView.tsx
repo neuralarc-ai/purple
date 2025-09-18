@@ -260,7 +260,7 @@ export function UploadFileToolView({
             <div className="p-4">
               {actualIsSuccess && uploadResult ? (
                 <div className="space-y-4">
-                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
+                  <div className="bg-background border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
                     <div className="p-3">
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ export function UploadFileToolView({
                     </div>
                   </div>
                   {uploadResult.secure_url && (
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
+                    <div className="bg-background border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
                       <div className="p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">

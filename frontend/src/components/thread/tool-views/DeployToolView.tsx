@@ -187,7 +187,7 @@ export function DeployToolView({
 
   return (
     <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
-      <CardHeader className="h-9 bg-gradient-to-t from-zinc-50/80 to-zinc-200/70 dark:from-zinc-900/90 dark:to-zinc-800/90 text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
+      <CardHeader className="h-9 bg-background text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
         <div className="flex flex-row items-center justify-between">
           <div className="flex w-full justify-center items-center gap-1">
             <Rocket className="w-4 h-4 text-muted-foreground" />
@@ -236,7 +236,7 @@ export function DeployToolView({
                 <div className="space-y-4">
                   {/* Deployment URL Card */}
                   {deployResult.url && (
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
+                    <div className="bg-background border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
                       <div className="p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
@@ -338,7 +338,7 @@ export function DeployToolView({
       </CardContent>
 
       {/* Footer */}
-      <div className="px-4 py-2 h-fit bg-white dark:bg-zinc-900 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
+      <div className="px-4 py-2 h-fit bg-background backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
         <div className="h-full flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
           <Badge className="h-6 py-0.5" variant="outline">
             <Rocket className="h-3 w-3 mr-1" />

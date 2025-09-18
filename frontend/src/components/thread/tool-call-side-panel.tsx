@@ -1441,7 +1441,7 @@ export function ToolCallSidePanel({
             }
           }}
           className={cn(
-            'fixed top-1 bottom-1 md:top-3 right-2 md:bottom-6 shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border rounded-[22px] flex flex-col z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
+            'fixed top-1 bottom-1 md:top-3 right-2 md:bottom-6 shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border border-black/10 dark:border-muted rounded-3xl flex flex-col z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
             widthClass,
             'bg-background',
             isResizing && 'select-none',
@@ -1466,16 +1466,16 @@ export function ToolCallSidePanel({
           {shouldShowResizable && (
 
             <div
-              className="absolute left-0 top-0 bottom-0 w-0.5 cursor-ew-resize z-50 hover:bg-green-500/20 active:bg-green-500/40 transition-colors"
+              className="absolute left-0 top-0 bottom-0 w-0.5 cursor-ew-resize z-50 hover:bg-helium-orange/20 active:bg-helium-orange/40 transition-colors"
               onMouseDown={handleMouseDown}
             >
               
-              <div className="absolute left-0.5 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-green-500/50 rounded-full" />
+              <div className="absolute left-0.3 top-1/2 -translate-y-1/2 w-0.5 h-8 bg-helium-orange/70 rounded-full" />
             </div>
           )}
 
           <div
-            className="flex-1 flex flex-col overflow-hidden bg-card"
+            className="flex-1 flex flex-col overflow-hidden bg-sidebar"
             style={{ pointerEvents: isResizing ? 'none' : 'auto' }}
           >
             {renderContent()}
@@ -1483,7 +1483,7 @@ export function ToolCallSidePanel({
           {(displayTotalCalls > 1 || (isCurrentToolStreaming && totalCompletedCalls > 0)) && (
             <div
               className={cn(
-                'border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900',
+                'bg-sidebar border-t border-black/15 dark:border-muted',
                 isMobile ? 'p-2' : 'px-4 py-2.5',
               )}
             >
@@ -1528,8 +1528,7 @@ export function ToolCallSidePanel({
                       disabled={displayIndex <= 0}
                       className="h-7 w-7 text-zinc-500 cursor-pointer hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                     >
-                      <Image src="/icons/skip-back.svg" alt="expand" width={18} height={18} className="block dark:hidden mb-0" />
-                      <Image src="/icons/skip-back-dark.svg" alt="expand" width={18} height={18} className="hidden dark:block mb-0" />
+                      <i className="ri-skip-back-line text-lg"></i>
                     </Button>
                     <span className="text-xs text-zinc-600 dark:text-zinc-400 font-medium tabular-nums px-1 min-w-[44px] text-center">
                       {displayIndex + 1}/{displayTotalCalls}
@@ -1541,8 +1540,7 @@ export function ToolCallSidePanel({
                       disabled={displayIndex >= displayTotalCalls - 1}
                       className="h-7 w-7 text-zinc-500 cursor-pointer hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
                     >
-                      <Image src="/icons/skip-forward.svg" alt="expand" width={18} height={18} className="block dark:hidden mb-0" />
-                      <Image src="/icons/skip-forward-dark.svg" alt="expand" width={18} height={18} className="hidden dark:block mb-0" />
+                      <i className="ri-skip-forward-line text-lg"></i>
                     </Button>
                   </div>
 

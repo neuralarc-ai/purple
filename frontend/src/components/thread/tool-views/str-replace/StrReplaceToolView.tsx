@@ -220,7 +220,7 @@ export function StrReplaceToolView({
 
   return (
     <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
-      <CardHeader className="h-9 bg-gradient-to-t from-zinc-50/80 to-zinc-200/70 dark:from-zinc-900/90 dark:to-zinc-800/90 text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
+      <CardHeader className="h-9 bg-background text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
         <div className="flex flex-row items-center justify-center">
           <div className="flex items-center w-full justify-center gap-1">
             <FileDiff className="w-4 h-4 text-muted-foreground" />
@@ -272,7 +272,7 @@ export function StrReplaceToolView({
         ) : (
           <ScrollArea className="h-full w-full">
             <div className="p-4">
-              <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden mb-4">
+              <div className="bg-background border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden mb-4">
                 <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 bg-accent flex items-center justify-between">
                   <div className="flex items-center">
                     <File className="h-4 w-4 mr-2 text-zinc-500 dark:text-zinc-400" />
