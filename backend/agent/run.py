@@ -738,7 +738,8 @@ class AgentRunner:
                     enable_thinking=self.config.enable_thinking,
                     reasoning_effort=self.config.reasoning_effort,
                     enable_context_manager=self.config.enable_context_manager,
-                    generation=generation
+                    generation=generation,
+                    simple_chat_mode=simple_chat_mode
                 )
                 logger.info(f"DEBUG: Mode={self.config.mode}, execute_tools={self.config.mode == 'agent'}")
                 logger.debug(f"AgentRunner: Mode={self.config.mode}, execute_tools={self.config.mode == 'agent'}")
