@@ -12,8 +12,9 @@ export async function GET(request: NextRequest) {
       return new Response('Missing shareId parameter', { status: 400 });
     }
 
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
     const templateResponse = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api'}/templates/share/${shareId}`
+      `${backendUrl}/templates/share/${shareId}`
     );
 
     if (!templateResponse.ok) {

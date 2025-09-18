@@ -3,11 +3,25 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // Get the Authorization header from the request
+    const authHeader = request.headers.get('Authorization');
+    console.log('Authorization header:', authHeader ? `${authHeader.substring(0, 20)}...` : 'None');
     
-    // Use getUser() instead of getSession() to be consistent with middleware
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No valid Authorization header found');
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    
+    const token = authHeader.split(' ')[1];
+    console.log('Token extracted:', token ? `${token.substring(0, 20)}...` : 'None');
+    
+    // Also try to get session from Supabase client for debugging
+    const supabase = await createClient();
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     console.log('API Route User check:', { 
       hasUser: !!user,
@@ -32,41 +46,29 @@ export async function POST(request: NextRequest) {
     const allCookies = cookieStore.getAll();
     console.log('All cookies:', allCookies.map(c => ({ name: c.name, value: c.value.substring(0, 20) + '...' })));
     
-    if (!user) {
-      console.log('No user found in API route');
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-    
-    if (!session?.access_token) {
-      console.log('No session or access token found in API route');
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     
     // Get backend URL with proper fallback
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
     
-    // Ensure we're using the correct API path
-    // For production (https://he2.ai/api), we need to remove the /api prefix since it's already included
-    // For local (http://localhost:8000/api), we also need to remove the /api prefix
+    // The backend URL already includes /api, so we just append the billing path
     const apiPath = '/billing/create-trial-checkout';
     const fullUrl = `${backendUrl}${apiPath}`;
     
+    console.log('URL construction:', {
+      backendUrl,
+      apiPath,
+      fullUrl
+    });
+    
     console.log('Making request to:', fullUrl);
-    console.log('Authorization header:', `Bearer ${session.access_token.substring(0, 20)}...`);
+    console.log('Using token from Authorization header:', `${token.substring(0, 20)}...`);
     
     const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify(body),
     });
