@@ -84,7 +84,7 @@ export default function CompareTable({ className }: { className?: string }) {
     },
   ];
   return (
-    <section className={cn('w-full mt-12 md:mt-28 bg-black text-white', className)}>
+    <section className={cn('w-full py-12 md:py-18 bg-black text-white', className)}>
       <div className="mx-auto max-w-6xl space-y-8 md:space-y-10">
         <div className="text-center">
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">

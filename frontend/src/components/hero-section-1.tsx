@@ -162,7 +162,7 @@ export default function HeroSection() {
                         </motion.div>
                         {/* <div className="absolute inset-0 -z-10 size-full [background:radial-gradient(90%_90%_at_50%_70%,transparent_0%,var(--color-background)_90%)]"></div> */}
                         <div className="mx-auto max-w-7xl px-4 sm:px-6 z-20 pt-16 sm:pt-24">
-                            <div className="flex flex-col items-center justify-center text-center text-black z-20 translate-y-8 sm:translate-y-1/2 min-h-[60vh] sm:min-h-auto py-8 sm:py-12">
+                            <div className="flex flex-col items-center justify-center text-center text-black z-20 translate-y-8 sm:translate-y-1/2 min-h-[60vh] sm:min-h-auto">
                                 
 
                                 <AnimatePresence mode="wait">

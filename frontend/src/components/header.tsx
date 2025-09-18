@@ -64,9 +64,9 @@ export const HeroHeader = () => {
                                 <Image
                                     src="/logo-light.svg"
                                     alt="Helium"
-                                    width={20}
-                                    height={20}
-                                    className="sm:w-6 sm:h-6"
+                                    width={24}
+                                    height={24}
+                                    className="sm:w-10 sm:h-10"
                                 />                                
                             </Link>
 

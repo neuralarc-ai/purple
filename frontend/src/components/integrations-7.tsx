@@ -65,7 +65,7 @@ export default function IntegrationsSection() {
     const { t } = useLanguage()
     
     return (
-        <section className="mt-12 md:mt-20">
+        <section className="py-12 md:py-18">
             <div className="bg-black">
                 <div className="mx-auto max-w-5xl px-6">
                     <motion.div 

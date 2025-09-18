@@ -71,14 +71,14 @@ export default function FeatureTable({ className }: { className?: string }) {
     return Megaphone;
   };
   return (
-    <section className={cn('w-full px-4 md:px-8 lg:px-12 bg-black text-white mt-12 md:mt-20', className)}>
+    <section className={cn('w-full px-4 md:px-8 lg:px-12 bg-black text-white py-12 md:py-18', className)}>
       <div className="mx-auto max-w-6xl">
+        <h2 className="text-xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-white text-center mb-6">
+          {t.featureTable.title}
+        </h2>
         <p className="text-center text-muted-foreground mb-3 md:mb-6 text-base md:text-xl">
           {t.featureTable.description}
         </p>
-        <h2 className="text-xl md:mt-12 md:text-3xl lg:text-4xl font-extrabold tracking-tight text-white text-center mb-6">
-          {t.featureTable.title}
-        </h2>
         {/* Mobile Card Layout */}
         <div className="block md:hidden space-y-4">
           {rows.map((row, idx) => {
