@@ -440,7 +440,7 @@ async def make_llm_api_call(
     top_p: Optional[float] = None,
     model_id: Optional[str] = None,
     enable_thinking: Optional[bool] = False,
-    reasoning_effort: Optional[str] = 'medium'
+    reasoning_effort: Optional[str] = 'medium',
     num_retries: Optional[int] = None,
     request_timeout: Optional[float] = None,
 ) -> Union[Dict[str, Any], AsyncGenerator, ModelResponse]:
