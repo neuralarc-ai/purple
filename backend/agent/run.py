@@ -282,8 +282,8 @@ class PromptManager:
             system_content = default_system_content
             logger.debug(f"PromptManager: No agent config, using mode-specific prompt (mode={mode})")
         
-        # Add agent knowledge base context if available
-        if client and agent_config and agent_config.get('agent_id'):
+        # Add agent knowledge base context if available (agent mode only)
+        if mode == 'agent' and client and agent_config and agent_config.get('agent_id'):
             try:
                 logger.debug(f"Retrieving agent knowledge base context for agent {agent_config['agent_id']}")
                 
@@ -316,8 +316,8 @@ IMPORTANT: Always reference and utilize the knowledge base information above whe
                 logger.error(f"Error retrieving knowledge base context for agent {agent_config.get('agent_id', 'unknown')}: {e}")
                 # Continue without knowledge base context rather than failing
         
-        # Add smart user DAGAD context and user personalization if available (context-aware, not always)
-        if client and thread_id:
+        # Add smart user DAGAD context and user personalization if available (agent mode only)
+        if mode == 'agent' and client and thread_id:
             try:
                 # --- Fetch recent thread context for DAGAD ---
                 account_id = await get_account_id_from_thread(client, thread_id)
@@ -332,8 +332,8 @@ IMPORTANT: Always reference and utilize the knowledge base information above whe
                         context_parts.append(str(content)[:200])
                 thread_context_str = ' '.join(context_parts)
 
-                # --- Add smart user DAGAD context (only in agent mode) ---
-                if account_id and user_input and mode == 'agent':
+                # --- Add smart user DAGAD context ---
+                if account_id and user_input:
                     dagad_result = await client.rpc('get_smart_user_dagad_context', {
                         'p_user_id': account_id,
                         'p_user_input': user_input,
@@ -351,8 +351,8 @@ IMPORTANT: Always reference and utilize the knowledge base information above whe
                         system_content += dagad_section
                     else:
                         logger.debug("No relevant DAGAD context for this turn")
-                elif mode == 'default':
-                    logger.debug("DAGAD context skipped in chat mode (default)")
+                else:
+                    logger.debug("DAGAD context skipped (no account_id or user_input)")
 
                 # --- Add user personalization ---
                 if account_id:
@@ -718,7 +718,7 @@ class AgentRunner:
                 response = await self.thread_manager.run_thread(
                     thread_id=self.config.thread_id,
                     system_prompt=system_message,
-                    stream=self.config.stream,
+                    stream=(True if simple_chat_mode else self.config.stream),
                     llm_model=self.config.model_name,
                     llm_temperature=0,
                     llm_max_tokens=max_tokens,
@@ -733,12 +733,13 @@ class AgentRunner:
                         tool_execution_strategy="parallel",
                         xml_adding_strategy="user_message"
                     ),
-                    native_max_auto_continues=self.config.native_max_auto_continues,
+                    native_max_auto_continues=(0 if simple_chat_mode else self.config.native_max_auto_continues),
                     include_xml_examples=not simple_chat_mode,
-                    enable_thinking=self.config.enable_thinking,
+                    enable_thinking=(False if simple_chat_mode else self.config.enable_thinking),
                     reasoning_effort=self.config.reasoning_effort,
                     enable_context_manager=self.config.enable_context_manager,
-                    generation=generation
+                    generation=generation,
+                    simple_chat_mode=simple_chat_mode
                 )
                 logger.info(f"DEBUG: Mode={self.config.mode}, execute_tools={self.config.mode == 'agent'}")
                 logger.debug(f"AgentRunner: Mode={self.config.mode}, execute_tools={self.config.mode == 'agent'}")
