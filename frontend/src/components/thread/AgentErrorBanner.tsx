@@ -28,6 +28,10 @@ export function AgentErrorBanner({
       return 'Connection error occurred. The service is temporarily unavailable.';
     }
     
+    if (lower.includes('too many connections')) {
+      return 'Service is experiencing high load. Please try again in a moment.';
+    }
+    
     if (lower.includes('litellm') && lower.includes('error')) {
       return 'AI service error occurred. Please try again.';
     }

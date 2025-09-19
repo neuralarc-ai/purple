@@ -180,7 +180,9 @@ export const getLanguageFromFileName = (fileName: string): string => {
     bat: 'batch',
     cmd: 'batch',
 
-    // Markup languages (excluding markdown which has its own renderer)
+    // Markup languages
+    md: 'markdown',
+    markdown: 'markdown',
     svg: 'svg',
     tex: 'latex',
 

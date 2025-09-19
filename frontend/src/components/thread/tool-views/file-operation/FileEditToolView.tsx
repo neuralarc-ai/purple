@@ -69,7 +69,7 @@ const FinalContentView: React.FC<{ content: string }> = ({ content }) => {
         return (
           <div key={index} className="mb-4 mt-4">
             <span className="text-[#E36209]">*</span>
-            <span className="text-[#24292E] font-bold">{headerText}</span>
+            <span className="text-foreground font-bold">{headerText}</span>
             <span className="text-[#E36209]">*</span>
           </div>
         );
@@ -81,7 +81,7 @@ const FinalContentView: React.FC<{ content: string }> = ({ content }) => {
         return (
           <div key={index} className="mb-4">
             <span className="text-[#E36209]">*</span>
-            <span className="text-[#24292E] font-bold">{headerText}</span>
+            <span className="text-foreground font-bold">{headerText}</span>
             <span className="text-[#E36209]">*</span>
           </div>
         );
@@ -129,7 +129,7 @@ const FinalContentView: React.FC<{ content: string }> = ({ content }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-950 font-mono text-sm overflow-x-auto p-4">
+    <div className="bg-background font-mono text-sm overflow-x-auto p-4">
       <div className="whitespace-pre-wrap break-words text-zinc-700 dark:text-zinc-300">
         {processContent(content)}
       </div>
@@ -185,7 +185,7 @@ export function FileEditToolView({
   const shouldShowError = !isStreaming && (!actualIsSuccess || (actualIsSuccess && (originalContent === null || updatedContent === null)));
 
   return (
-    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
+    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-background dark:border-black">
       <CardHeader className="h-9 w-full flex items-center bg-background text-center backdrop-blur-lg border-b p-2 px-4 rounded-t-lg">
         <div className="flex mt-4 h-full items-center w-full justify-center gap-1">
           <FileDiff className="w-4 h-4 text-muted-foreground" />
@@ -228,7 +228,7 @@ export function FileEditToolView({
           <ErrorState message={errorMessage} />
         ) : (
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="shrink-0 p-2 py-1 border-b border-zinc-200 dark:border-zinc-800 bg-accent flex items-center justify-between">
+            <div className="shrink-0 p-2 py-1 border-b border-zinc-200 dark:border-zinc-800 bg-background flex items-center justify-between">
               <div className="flex items-center">
                 <File className="h-4 w-4 mr-2 text-zinc-500 dark:text-zinc-400" />
                 <code className="text-sm font-mono text-zinc-700 dark:text-zinc-300">

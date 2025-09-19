@@ -219,7 +219,7 @@ export function StrReplaceToolView({
   const shouldShowError = !isStreaming && (!oldStr || !newStr) && (assistantContent || toolContent);
 
   return (
-    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
+    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-background dark:border-black">
       <CardHeader className="h-9 bg-background text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
         <div className="flex flex-row items-center justify-center">
           <div className="flex items-center w-full justify-center gap-1">

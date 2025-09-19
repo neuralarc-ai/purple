@@ -20,10 +20,59 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileAttachment } from '../../file-attachment';
+import { Skeleton } from '@/components/ui/skeleton';
+import { AnimatedLoader } from '../../content/AnimatedLoader';
 
 interface ImageEditGenerateToolViewProps extends ToolViewProps {
   onFileClick?: (filePath: string) => void;
 }
+
+// Sleek loading animation component for image generation
+const ImageGenerationLoader = ({ mode }: { mode: 'generate' | 'edit' | null }) => {
+  return (
+    <div className="flex flex-col items-center justify-center h-full p-12 bg-gradient-to-b from-white to-zinc-50 dark:from-zinc-950 dark:to-zinc-900">
+      <div className="text-center w-full max-w-sm">
+        {/* Animated icon */}
+        <div className="relative mb-8">
+          <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/20 flex items-center justify-center">
+            {mode === 'generate' ? (
+              <Sparkles className="h-10 w-10 text-purple-500 dark:text-purple-400 animate-pulse" />
+            ) : (
+              <Edit3 className="h-10 w-10 text-purple-500 dark:text-purple-400 animate-pulse" />
+            )}
+          </div>
+          {/* Rotating ring */}
+          <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full border-2 border-transparent border-t-purple-500/30 animate-spin"></div>
+        </div>
+
+        {/* Progress text */}
+        <div className="space-y-3 mb-6">
+          <h3 className="text-lg font-semibold text-foreground">
+            {mode === 'generate' ? 'Generating Image' : 'Editing Image'}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {mode === 'generate' 
+              ? 'Creating your image with AI...' 
+              : 'Applying your edits...'
+            }
+          </p>
+        </div>
+
+        {/* Use AnimatedLoader instead of progress bar */}
+        <div className="flex justify-center mb-4">
+          <AnimatedLoader className="text-purple-500 dark:text-purple-400" />
+        </div>
+
+        {/* Animated dots */}
+        <div className="flex justify-center space-x-1 mt-4">
+          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export function ImageEditGenerateToolView({
   name = 'image_edit_or_generate',
@@ -83,6 +132,22 @@ export function ImageEditGenerateToolView({
     return prompt.length > 100 ? `${prompt.substring(0, 100)}...` : prompt;
   };
 
+  const shouldShowStatus = (status: string | null) => {
+    if (!status || status === prompt) return false;
+    const lowerStatus = status.toLowerCase();
+    return !(
+      lowerStatus.includes('api') ||
+      lowerStatus.includes('gemini') ||
+      lowerStatus.includes('generated using') ||
+      lowerStatus.includes('using gemini') ||
+      lowerStatus.includes('via gemini') ||
+      lowerStatus.includes('openai') ||
+      lowerStatus.includes('dall-e') ||
+      lowerStatus.includes('midjourney') ||
+      lowerStatus.includes('stable diffusion')
+    );
+  };
+
   // Collect all images to display
   const imagesToDisplay: string[] = [];
   if (imagePath) imagesToDisplay.push(imagePath);
@@ -136,117 +201,122 @@ export function ImageEditGenerateToolView({
       </CardHeader>
 
       <CardContent className="p-0 flex-1 overflow-hidden relative">
-        <ScrollArea className="h-full w-full">
-          <div className="p-4 space-y-6">
-            {/* Error Message */}
-            {error && (
-              <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span className="font-medium">Error</span>
+        {isStreaming ? (
+          <ImageGenerationLoader mode={mode} />
+        ) : (
+          <ScrollArea className="h-full w-full">
+            <div className="p-4 space-y-6">
+              {/* Error Message */}
+              {error && (
+                <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                  <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="font-medium">Error</span>
+                  </div>
+                  <p className="text-sm text-red-600 dark:text-red-300 mt-1">{error}</p>
                 </div>
-                <p className="text-sm text-red-600 dark:text-red-300 mt-1">{error}</p>
-              </div>
-            )}
+              )}
 
-            {/* Generated Images */}
-            {imagesToDisplay.length > 0 ? (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <ImageIcon className="h-4 w-4" />
-                  {mode === 'generate' ? 'Generated Image' : 'Images'} ({imagesToDisplay.length})
-                </div>
+              {/* Generated Images */}
+              {imagesToDisplay.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <ImageIcon className="h-4 w-4" />
+                    {mode === 'generate' ? 'Generated Image' : 'Images'} ({imagesToDisplay.length})
+                  </div>
 
-                <div className={cn(
-                  "grid gap-3",
-                  imagesToDisplay.length === 1 ? "grid-cols-1" :
-                    imagesToDisplay.length > 4 ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3" :
-                      "grid-cols-1 sm:grid-cols-2"
-                )}>
-                  {imagesToDisplay.map((imagePath, index) => {
-                    const isInputImage = imagePath === imagePath && mode === 'edit' && index === 0;
-                    const isGeneratedImage = imagePath === generatedImagePath;
-                    
-                    return (
-                      <div
-                        key={index}
-                        className="relative group"
-                      >
-                        {/* Image Label */}
-                        {imagesToDisplay.length > 1 && (
-                          <div className="absolute top-2 left-2 z-10">
-                            <Badge 
-                              variant="secondary" 
-                              className="text-xs bg-black/70 text-white border-0"
-                            >
-                              {isInputImage ? 'Input' : isGeneratedImage ? 'Generated' : `Image ${index + 1}`}
-                            </Badge>
-                          </div>
-                        )}
-                        
-                        <FileAttachment
-                          filepath={imagePath}
-                          onClick={handleFileClick}
-                          sandboxId={project?.sandbox?.id}
-                          showPreview={true}
-                          className="aspect-square w-full"
-                          customStyle={{
-                            width: '100%',
-                            height: '100%',
-                            '--attachment-height': '100%'
-                          } as React.CSSProperties}
-                          collapsed={false}
-                          project={project}
-                        />
-                      </div>
-                    );
-                  })}
+                  <div className={cn(
+                    "grid gap-3",
+                    imagesToDisplay.length === 1 ? "grid-cols-1" :
+                      imagesToDisplay.length > 4 ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3" :
+                        "grid-cols-1 sm:grid-cols-2"
+                  )}>
+                    {imagesToDisplay.map((imagePath, index) => {
+                      const isInputImage = imagePath === imagePath && mode === 'edit' && index === 0;
+                      const isGeneratedImage = imagePath === generatedImagePath;
+                      
+                      return (
+                        <div
+                          key={index}
+                          className="relative group"
+                        >
+                          {/* Image Label */}
+                          {imagesToDisplay.length > 1 && (
+                            <div className="absolute top-2 left-2 z-10">
+                              <Badge 
+                                variant="secondary" 
+                                className="text-xs bg-black/70 text-white border-0"
+                              >
+                                {isInputImage ? 'Input' : isGeneratedImage ? 'Generated' : `Image ${index + 1}`}
+                              </Badge>
+                            </div>
+                          )}
+                          
+                          <FileAttachment
+                            filepath={imagePath}
+                            onClick={handleFileClick}
+                            sandboxId={project?.sandbox?.id}
+                            showPreview={true}
+                            className="aspect-square w-full"
+                            customStyle={{
+                              width: '100%',
+                              height: '100%',
+                              '--attachment-height': '100%'
+                            } as React.CSSProperties}
+                            collapsed={false}
+                            project={project}
+                            displayMode="grid"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                  {mode === 'generate' ? (
-                    <Sparkles className="h-8 w-8 text-muted-foreground" />
-                  ) : (
-                    <Edit3 className="h-8 w-8 text-muted-foreground" />
-                  )}
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                    {mode === 'generate' ? (
+                      <Sparkles className="h-8 w-8 text-muted-foreground" />
+                    ) : (
+                      <Edit3 className="h-8 w-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <h3 className="text-lg font-medium text-foreground mb-2">
+                    {mode === 'generate' ? 'Image Generation' : 'Image Editing'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {actualIsSuccess ? 'Processing completed' : 'No image generated'}
+                  </p>
                 </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  {mode === 'generate' ? 'Image Generation' : 'Image Editing'}
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  {actualIsSuccess ? 'Processing completed' : 'No image generated'}
-                </p>
-              </div>
-            )}
+              )}
 
-            {/* Prompt Details */}
-            {prompt && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <Wand2 className="h-4 w-4" />
-                  Prompt
+              {/* Prompt Details */}
+              {prompt && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Wand2 className="h-4 w-4" />
+                    Prompt
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border">
+                    <p className="text-sm text-foreground break-words">{prompt}</p>
+                  </div>
                 </div>
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-sm text-foreground break-words">{prompt}</p>
-                </div>
-              </div>
-            )}
+              )}
 
-            {/* Status Message */}
-            {status && status !== prompt && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  Status
+              {/* Status Message - Hide API details */}
+              {shouldShowStatus(status) && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    Status
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border">
+                    <p className="text-sm text-foreground break-words">{status}</p>
+                  </div>
                 </div>
-                <div className="p-3 rounded-lg bg-muted/50 border">
-                  <p className="text-sm text-foreground break-words">{status}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+              )}
+            </div>
+          </ScrollArea>
+        )}
       </CardContent>
 
       <div className="px-4 py-2 h-10 bg-background backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4">

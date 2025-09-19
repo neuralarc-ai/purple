@@ -52,6 +52,14 @@ const extractFromNewFormat = (content: any): ImageEditGenerateData => {
       if (imagePathMatch) {
         generatedImagePath = imagePathMatch[1];
       }
+      
+      // Also check for patterns like "generated_image_a7a40795.png" directly in the text
+      if (!generatedImagePath) {
+        const directImageMatch = result.output.match(/(generated_image_[a-f0-9]+\.(png|jpg|jpeg|webp|gif))/i);
+        if (directImageMatch) {
+          generatedImagePath = directImageMatch[1];
+        }
+      }
     }
 
     const extractedData: ImageEditGenerateData = {
@@ -65,7 +73,54 @@ const extractFromNewFormat = (content: any): ImageEditGenerateData => {
       error: result.error || null
     };
     
+    // Filter out API-related status messages
+    if (extractedData.status && (
+      extractedData.status.toLowerCase().includes('api') ||
+      extractedData.status.toLowerCase().includes('gemini') ||
+      extractedData.status.toLowerCase().includes('generated using') ||
+      extractedData.status.toLowerCase().includes('using gemini') ||
+      extractedData.status.toLowerCase().includes('via gemini') ||
+      extractedData.status.toLowerCase().includes('openai') ||
+      extractedData.status.toLowerCase().includes('dall-e') ||
+      extractedData.status.toLowerCase().includes('midjourney') ||
+      extractedData.status.toLowerCase().includes('stable diffusion')
+    )) {
+      extractedData.status = null;
+    }
+    
     return extractedData;
+  }
+
+  // Check if this is a simple string content with image generation message
+  if (typeof parsedContent === 'string') {
+    const contentStr = parsedContent;
+    let generatedImagePath: string | null = null;
+    
+    // Look for generated image patterns
+    const imagePathMatch = contentStr.match(/Image saved as:\s*([^\s.]+\.(png|jpg|jpeg|webp|gif))/i);
+    if (imagePathMatch) {
+      generatedImagePath = imagePathMatch[1];
+    }
+    
+    if (!generatedImagePath) {
+      const directImageMatch = contentStr.match(/(generated_image_[a-f0-9]+\.(png|jpg|jpeg|webp|gif))/i);
+      if (directImageMatch) {
+        generatedImagePath = directImageMatch[1];
+      }
+    }
+    
+    if (generatedImagePath) {
+      return {
+        mode: contentStr.toLowerCase().includes('mode') ? 'generate' : null,
+        prompt: null,
+        imagePath: null,
+        generatedImagePath,
+        status: null, // Don't show the API message
+        success: true,
+        timestamp: undefined,
+        error: null
+      };
+    }
   }
 
   if ('role' in parsedContent && 'content' in parsedContent) {
@@ -95,9 +150,17 @@ const extractFromLegacyFormat = (content: any): ImageEditGenerateData => {
       if (imagePathMatch) {
         generatedImagePath = imagePathMatch[1];
       }
+      
+      // Also check for patterns like "generated_image_a7a40795.png" directly in the text
+      if (!generatedImagePath) {
+        const directImageMatch = (toolData.toolResult as string).match(/(generated_image_[a-f0-9]+\.(png|jpg|jpeg|webp|gif))/i);
+        if (directImageMatch) {
+          generatedImagePath = directImageMatch[1];
+        }
+      }
     }
     
-    return {
+    const extractedData = {
       mode: toolData.arguments.mode || null,
       prompt: toolData.arguments.prompt || null,
       imagePath: toolData.arguments.image_path || null,
@@ -107,6 +170,23 @@ const extractFromLegacyFormat = (content: any): ImageEditGenerateData => {
       timestamp: undefined,
       error: null
     };
+    
+    // Filter out API-related status messages
+    if (extractedData.status && (
+      extractedData.status.toLowerCase().includes('api') ||
+      extractedData.status.toLowerCase().includes('gemini') ||
+      extractedData.status.toLowerCase().includes('generated using') ||
+      extractedData.status.toLowerCase().includes('using gemini') ||
+      extractedData.status.toLowerCase().includes('via gemini') ||
+      extractedData.status.toLowerCase().includes('openai') ||
+      extractedData.status.toLowerCase().includes('dall-e') ||
+      extractedData.status.toLowerCase().includes('midjourney') ||
+      extractedData.status.toLowerCase().includes('stable diffusion')
+    )) {
+      extractedData.status = null;
+    }
+    
+    return extractedData;
   }
 
   const contentStr = normalizeContentToString(content);
@@ -118,6 +198,33 @@ const extractFromLegacyFormat = (content: any): ImageEditGenerateData => {
       generatedImagePath: null, 
       status: null,
       success: undefined,
+      timestamp: undefined,
+      error: null
+    };
+  }
+
+  // First check if this is a simple image generation message
+  let generatedImagePath: string | null = null;
+  const legacyImagePathMatch = contentStr.match(/Image saved as:\s*([^\s.]+\.(png|jpg|jpeg|webp|gif))/i);
+  if (legacyImagePathMatch) {
+    generatedImagePath = legacyImagePathMatch[1];
+  }
+  
+  if (!generatedImagePath) {
+    const legacyDirectImageMatch = contentStr.match(/(generated_image_[a-f0-9]+\.(png|jpg|jpeg|webp|gif))/i);
+    if (legacyDirectImageMatch) {
+      generatedImagePath = legacyDirectImageMatch[1];
+    }
+  }
+  
+  if (generatedImagePath) {
+    return {
+      mode: contentStr.toLowerCase().includes('mode') ? 'generate' : null,
+      prompt: null,
+      imagePath: null,
+      generatedImagePath,
+      status: null, // Don't show the API message
+      success: true,
       timestamp: undefined,
       error: null
     };
@@ -137,16 +244,25 @@ const extractFromLegacyFormat = (content: any): ImageEditGenerateData => {
   }
 
   let imagePath: string | null = null;
-  const imagePathMatch = contentStr.match(/<parameter name="image_path">([^<]*)<\/parameter>/i);
-  if (imagePathMatch) {
-    imagePath = imagePathMatch[1].trim();
+  const xmlImagePathMatch = contentStr.match(/<parameter name="image_path">([^<]*)<\/parameter>/i);
+  if (xmlImagePathMatch) {
+    imagePath = xmlImagePathMatch[1].trim();
   }
 
-  // Try to extract generated image path from output
-  let generatedImagePath: string | null = null;
-  const generatedImageMatch = contentStr.match(/Image saved as:\s*([^\s.]+\.(png|jpg|jpeg|webp|gif))/i);
-  if (generatedImageMatch) {
-    generatedImagePath = generatedImageMatch[1];
+  // Try to extract generated image path from output (reuse variables from above)
+  if (!generatedImagePath) {
+    const xmlGeneratedImageMatch = contentStr.match(/Image saved as:\s*([^\s.]+\.(png|jpg|jpeg|webp|gif))/i);
+    if (xmlGeneratedImageMatch) {
+      generatedImagePath = xmlGeneratedImageMatch[1];
+    }
+  }
+  
+  // Also check for patterns like "generated_image_a7a40795.png" directly in the text
+  if (!generatedImagePath) {
+    const xmlDirectImageMatch = contentStr.match(/(generated_image_[a-f0-9]+\.(png|jpg|jpeg|webp|gif))/i);
+    if (xmlDirectImageMatch) {
+      generatedImagePath = xmlDirectImageMatch[1];
+    }
   }
   
   return {

@@ -365,7 +365,7 @@ export function SeeImageToolView({
       </CardContent>
 
       {/* Footer */}
-      <div className="px-4 py-2 h-fit bg-background backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
+      <div className="px-4 py-2 h-fit bg-sidebar backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
         <div className="h-full flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
           <Badge className="h-6 py-0.5" variant="outline">
             <ImageIcon className="h-3 w-3 mr-1" />

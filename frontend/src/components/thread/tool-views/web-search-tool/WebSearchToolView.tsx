@@ -71,7 +71,7 @@ export function WebSearchToolView({
   };
 
   return (
-    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
+    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-background dark:border-black">
       <CardHeader className="h-9 bg-background text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
         <div className="flex flex-row items-center justify-between">
           <div className="flex items-center w-full justify-center gap-1">
@@ -185,7 +185,7 @@ export function WebSearchToolView({
         )}
       </CardContent>
 
-      <div className="px-4 py-2 h-fit bg-background backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
+      <div className="px-4 py-2 h-fit bg-sidebar backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
         <div className="h-full flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
           {!isStreaming && searchResults.length > 0 && (
             <Badge variant="outline" className="h-6 py-0.5">
