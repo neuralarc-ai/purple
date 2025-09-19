@@ -89,14 +89,34 @@ const ACTIVE_APPS = [
   'linkedin',
   'asana',
   'freshbooks','shopify',
-  'whatsapp','calendly'
+  'whatsapp','calendly', 'slack'
 ];
 
 // Apps that should be coming soon (explicit exclusions)
 const COMING_SOON_APPS = [
   'big','googleads', 'google admin', 'googlebigquery', 'google classroom', 'google ads', 'castingwords', 
-  'lexoffice', 'digital ocean', 'freshdesk', 'bigin', 'cal booking', 'ayr'
+  'lexoffice', 'digital ocean', 'freshdesk', 'bigin', 'cal booking', 'ayr', 'tenant', 'clarity', 'bot'
 ];
+
+// Apps to highlight as NEW in the registry (maintain as many as needed)
+const NEW_APPS: string[] = [
+  'slack'
+];
+
+const isNewApp = (toolkit: ComposioToolkit): boolean => {
+  if (!NEW_APPS.length) return false;
+  const toolkitName = toolkit.name.toLowerCase();
+  const toolkitSlug = toolkit.slug.toLowerCase();
+  return NEW_APPS.some((newApp) => {
+    const needle = newApp.toLowerCase();
+    return (
+      toolkitName.includes(needle) ||
+      toolkitSlug.includes(needle) ||
+      needle.includes(toolkitName) ||
+      needle.includes(toolkitSlug)
+    );
+  });
+};
 
 const isComingSoon = (toolkit: ComposioToolkit): boolean => {
   const toolkitName = toolkit.name.toLowerCase();
@@ -459,14 +479,21 @@ const AppCard = ({
       : onConnect
     : undefined;
 
+  const showNew = isNewApp(app);
+
   return (
     <div
       onClick={clickHandler}
       className={cn(
-        'border border-border rounded-xl p-4 transition-all cursor-pointer hover:border-primary/50 h-full flex flex-col',
+        'relative border border-border rounded-xl p-4 transition-all cursor-pointer hover:border-primary/50 h-full flex flex-col',
         !clickHandler && 'opacity-60 cursor-not-allowed'
       )}
     >
+      {showNew && (
+        <span className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500 text-white shadow">
+          NEW
+        </span>
+      )}
       <div className="flex flex-col items-center text-center">
         <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 relative">
           {app.logo ? (

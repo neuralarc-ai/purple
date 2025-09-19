@@ -55,7 +55,6 @@ interface QuickPreset {
 }
 
 const QUICK_PRESETS: QuickPreset[] = [
-  { name: 'Every minute', cron: '* * * * *', description: 'Every minute', icon: <Zap className="h-4 w-4" />, category: 'frequent' },
   { name: 'Every 5 minutes', cron: '*/5 * * * *', description: 'Every 5 minutes', icon: <Timer className="h-4 w-4" />, category: 'frequent' },
   { name: 'Every 15 minutes', cron: '*/15 * * * *', description: 'Every 15 minutes', icon: <Timer className="h-4 w-4" />, category: 'frequent' },
   { name: 'Every 30 minutes', cron: '*/30 * * * *', description: 'Every 30 minutes', icon: <Timer className="h-4 w-4" />, category: 'frequent' },

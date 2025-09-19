@@ -218,11 +218,11 @@ class ThreadManager:
             logger.error(f"Failed to add message to thread {thread_id}: {str(e)}", exc_info=True)
             raise
 
-    async def get_llm_messages(self, thread_id: str) -> List[Dict[str, Any]]:
-        """Get all messages for a thread.
+    async def get_llm_messages(self, thread_id: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Get messages for a thread.
 
-        This method uses the SQL function which handles context truncation
-        by considering summary messages.
+        When limit is provided, fetch only the most recent messages for
+        faster simple-chat performance.
 
         Args:
             thread_id: The ID of the thread to get messages for.
@@ -236,27 +236,32 @@ class ThreadManager:
         try:
             # result = await client.rpc('get_llm_formatted_messages', {'p_thread_id': thread_id}).execute()
             
-            # Fetch messages in batches of 1000 to avoid overloading the database
-            all_messages = []
-            batch_size = 1000
-            offset = 0
-            
-            while True:
-                result = await client.table('messages').select('message_id, content').eq('thread_id', thread_id).eq('is_llm_message', True).order('created_at').range(offset, offset + batch_size - 1).execute()
+            if limit is not None and limit > 0:
+                # Fast path: only fetch latest N LLM messages
+                result = await client.table('messages').select('message_id, content').eq('thread_id', thread_id).eq('is_llm_message', True).order('created_at', desc=True).limit(limit).execute()
+                result_data = list(reversed(result.data or []))
+            else:
+                # Fetch messages in batches of 1000 to avoid overloading the database
+                all_messages = []
+                batch_size = 1000
+                offset = 0
                 
-                if not result.data or len(result.data) == 0:
-                    break
+                while True:
+                    result = await client.table('messages').select('message_id, content').eq('thread_id', thread_id).eq('is_llm_message', True).order('created_at').range(offset, offset + batch_size - 1).execute()
                     
-                all_messages.extend(result.data)
+                    if not result.data or len(result.data) == 0:
+                        break
+                        
+                    all_messages.extend(result.data)
+                    
+                    # If we got fewer than batch_size records, we've reached the end
+                    if len(result.data) < batch_size:
+                        break
+                        
+                    offset += batch_size
                 
-                # If we got fewer than batch_size records, we've reached the end
-                if len(result.data) < batch_size:
-                    break
-                    
-                offset += batch_size
-            
-            # Use all_messages instead of result.data in the rest of the method
-            result_data = all_messages
+                # Use all_messages instead of result.data in the rest of the method
+                result_data = all_messages
 
             # Parse the returned data which might be stringified JSON
             if not result_data:
@@ -302,6 +307,7 @@ class ThreadManager:
         reasoning_effort: Optional[str] = 'low',
         enable_context_manager: bool = True,
         generation: Optional[StatefulGenerationClient] = None,
+        simple_chat_mode: bool = False,
     ) -> Union[Dict[str, Any], AsyncGenerator]:
         """Run a conversation thread with LLM integration and tool execution.
 
@@ -432,18 +438,19 @@ When using the tools:
                 # Note: config is now guaranteed to exist due to check above
 
                 # 1. Get messages from thread for LLM call
-                messages = await self.get_llm_messages(thread_id)
+                messages = await self.get_llm_messages(thread_id, limit=(20 if simple_chat_mode else None))
 
-                # 2. Check token count before proceeding
+                # 2. Check token count before proceeding (skip in simple chat)
                 token_count = 0
-                try:
-                    # Use the potentially modified working_system_prompt for token counting
-                    token_count = token_counter(model=llm_model, messages=[working_system_prompt] + messages)
-                    token_threshold = self.context_manager.token_threshold
-                    logger.debug(f"Thread {thread_id} token count: {token_count}/{token_threshold} ({(token_count/token_threshold)*100:.1f}%)")
+                if not simple_chat_mode:
+                    try:
+                        # Use the potentially modified working_system_prompt for token counting
+                        token_count = token_counter(model=llm_model, messages=[working_system_prompt] + messages)
+                        token_threshold = self.context_manager.token_threshold
+                        logger.debug(f"Thread {thread_id} token count: {token_count}/{token_threshold} ({(token_count/token_threshold)*100:.1f}%)")
 
-                except Exception as e:
-                    logger.error(f"Error counting tokens or summarizing: {str(e)}")
+                    except Exception as e:
+                        logger.error(f"Error counting tokens or summarizing: {str(e)}")
 
                 # 3. Prepare messages for LLM call + add temporary message if it exists
                 # Use the working_system_prompt which may contain the XML examples
@@ -482,13 +489,15 @@ When using the tools:
 
                 # 4. Prepare tools for LLM call
                 openapi_tool_schemas = None
-                if config.native_tool_calling:
+                if not simple_chat_mode and config.native_tool_calling:
                     openapi_tool_schemas = self.tool_registry.get_openapi_schemas()
                     logger.debug(f"Retrieved {len(openapi_tool_schemas) if openapi_tool_schemas else 0} OpenAPI tool schemas")
 
                 # print(f"\n\n\n\n prepared_messages: {prepared_messages}\n\n\n\n")
 
-                prepared_messages = self.context_manager.compress_messages(prepared_messages, llm_model)
+                # Compress messages unless in simple chat (favor latency)
+                if not simple_chat_mode and enable_context_manager:
+                    prepared_messages = self.context_manager.compress_messages(prepared_messages, llm_model)
 
                 # 5. Make LLM API call
                 logger.debug("Making LLM API call")
@@ -517,7 +526,9 @@ When using the tools:
                         tool_choice=tool_choice if config.native_tool_calling else "none",
                         stream=stream,
                         enable_thinking=enable_thinking,
-                        reasoning_effort=reasoning_effort
+                        reasoning_effort=reasoning_effort,
+                        num_retries=(1 if simple_chat_mode else None),
+                        request_timeout=(15 if simple_chat_mode else None)
                     )
                     logger.debug("Successfully received raw LLM API response stream/object")
 
