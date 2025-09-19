@@ -57,6 +57,7 @@ interface MessageInputProps {
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
   onTranscription: (text: string) => void;
+  onStopListening?: () => void;
   placeholder: string;
   loading: boolean;
   disabled: boolean;
@@ -103,6 +104,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       onChange,
       onSubmit,
       onTranscription,
+      onStopListening,
       placeholder,
       loading,
       disabled,
@@ -426,6 +428,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             {isLoggedIn && (
               <VoiceRecorder
                 onTranscription={onTranscription}
+                onStopListening={onStopListening}
                 disabled={loading || (disabled && !isAgentRunning)}
               />
             )}
