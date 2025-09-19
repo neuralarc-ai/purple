@@ -29,13 +29,10 @@ def initialize():
     redis_password = os.getenv("REDIS_PASSWORD", "")
     
     # Connection pool configuration - optimized for production
-    max_connections = int(os.getenv("REDIS_MAX_CONNECTIONS", "256"))  # Increased default
+    max_connections = 128            # Reasonable limit for production
     socket_timeout = 15.0            # 15 seconds socket timeout
     connect_timeout = 10.0           # 10 seconds connection timeout
     retry_on_timeout = not (os.getenv("REDIS_RETRY_ON_TIMEOUT", "True").lower() != "true")
-    
-    # Additional connection pool settings for better management
-    # Note: socket_keepalive_options removed as they can cause "Invalid argument" errors on some systems
 
     logger.debug(f"Initializing Redis connection pool to {redis_host}:{redis_port} with max {max_connections} connections")
 
@@ -66,13 +63,7 @@ async def initialize_async():
     async with _init_lock:
         if not _initialized:
             logger.debug("Initializing Redis connection")
-            try:
-                initialize()
-            except Exception as e:
-                logger.error(f"Failed to create Redis connection pool: {e}")
-                client = None
-                _initialized = False
-                raise ConnectionError(f"Redis pool creation failed: {str(e)}")
+            initialize()
 
         try:
             # Test connection with timeout
@@ -88,7 +79,7 @@ async def initialize_async():
             logger.error(f"Failed to connect to Redis: {e}")
             client = None
             _initialized = False
-            raise ConnectionError(f"Redis connection failed: {str(e)}")
+            raise
 
     return client
 
@@ -126,11 +117,7 @@ async def get_client():
     """Get the Redis client, initializing if necessary."""
     global client, _initialized
     if client is None or not _initialized:
-        try:
-            await retry(lambda: initialize_async())
-        except Exception as e:
-            logger.error(f"Failed to initialize Redis client: {e}")
-            raise ConnectionError(f"Redis initialization failed: {str(e)}")
+        await retry(lambda: initialize_async())
     return client
 
 
@@ -155,16 +142,9 @@ async def delete(key: str):
 
 
 async def publish(channel: str, message: str):
-    """Publish a message to a Redis channel with error handling."""
-    try:
-        redis_client = await get_client()
-        return await redis_client.publish(channel, message)
-    except redis.exceptions.ConnectionError as e:
-        logger.error(f"Redis connection error during publish to {channel}: {e}")
-        raise ConnectionError(f"Redis connection failed: {str(e)}")
-    except Exception as e:
-        logger.error(f"Redis publish error to {channel}: {e}")
-        raise
+    """Publish a message to a Redis channel."""
+    redis_client = await get_client()
+    return await redis_client.publish(channel, message)
 
 
 async def create_pubsub():
@@ -175,16 +155,9 @@ async def create_pubsub():
 
 # List operations
 async def rpush(key: str, *values: Any):
-    """Append one or more values to a list with error handling."""
-    try:
-        redis_client = await get_client()
-        return await redis_client.rpush(key, *values)
-    except redis.exceptions.ConnectionError as e:
-        logger.error(f"Redis connection error during rpush to {key}: {e}")
-        raise ConnectionError(f"Redis connection failed: {str(e)}")
-    except Exception as e:
-        logger.error(f"Redis rpush error to {key}: {e}")
-        raise
+    """Append one or more values to a list."""
+    redis_client = await get_client()
+    return await redis_client.rpush(key, *values)
 
 
 async def lrange(key: str, start: int, end: int) -> List[str]:
