@@ -57,6 +57,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
 import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
 import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
+import { useCreateTrigger } from '@/hooks/react-query/triggers/use-agent-triggers';
 
 export default function ThreadPage({
   params,
@@ -442,12 +443,56 @@ export default function ThreadPage({
       
       setIsSending(true);
 
+      // Lightweight parser: detect simple trigger commands and create trigger first
+      const tryParseTrigger = (text: string): null | {
+        cron: string;
+        prompt: string;
+        name: string;
+        timezone?: string;
+      } => {
+        try {
+          const trimmed = text.trim();
+          // Pattern A: "schedule every 5 minutes: <prompt>"
+          const scheduleMatch = trimmed.match(/^\s*(schedule|trigger)\s+(every\s+(5|15|30)\s+minutes|every\s+hour)\s*:\s*(.+)$/i);
+          if (scheduleMatch) {
+            const cadence = (scheduleMatch[2] || '').toLowerCase();
+            let cron = '';
+            if (cadence.includes('5')) cron = '*/5 * * * *';
+            else if (cadence.includes('15')) cron = '*/15 * * * *';
+            else if (cadence.includes('30')) cron = '*/30 * * * *';
+            else cron = '0 * * * *';
+            const prompt = scheduleMatch[4].trim();
+            const name = `Scheduled: ${cadence}`;
+            return { cron, prompt, name };
+          }
+
+          // Pattern B: "trigger cron=*/5 * * * *: <prompt>"
+          const cronMatch = trimmed.match(/^\s*(schedule|trigger)\s+cron\s*=\s*([^:]+):\s*(.+)$/i);
+          if (cronMatch) {
+            const cron = cronMatch[2].trim();
+            const prompt = cronMatch[3].trim();
+            const name = `Scheduled: ${cron}`;
+            return { cron, prompt, name };
+          }
+        } catch {}
+        return null;
+      };
+
+      const createTriggerMutation = useCreateTrigger();
+      let parsedTrigger: ReturnType<typeof tryParseTrigger> = null;
+      if (selectedAgentId) {
+        parsedTrigger = tryParseTrigger(message);
+      }
+
+      // If trigger syntax was used, only send the prompt content as the user message
+      const finalUserMessage = parsedTrigger ? parsedTrigger.prompt : message;
+
       const optimisticUserMessage: UnifiedMessage = {
         message_id: `temp-${Date.now()}`,
         thread_id: threadId,
         type: 'user',
         is_llm_message: false,
-        content: message,
+        content: finalUserMessage,
         metadata: '{}',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -457,9 +502,31 @@ export default function ThreadPage({
       setNewMessage('');
 
       try {
+        // If needed, create the trigger first (best-effort; proceed with prompt regardless)
+        if (parsedTrigger && selectedAgentId) {
+          try {
+            await createTriggerMutation.mutateAsync({
+              agentId: selectedAgentId,
+              provider_id: 'schedule',
+              name: parsedTrigger.name,
+              description: 'Created from chat command',
+              config: {
+                cron_expression: parsedTrigger.cron,
+                execution_type: 'agent',
+                agent_prompt: parsedTrigger.prompt,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                thread_id: threadId,
+              },
+            });
+            toast.success('Scheduled trigger created');
+          } catch (e: any) {
+            toast.error(e?.message || 'Failed to create trigger');
+          }
+        }
+
         const messagePromise = addUserMessageMutation.mutateAsync({
           threadId,
-          message,
+          message: finalUserMessage,
         });
 
         const agentPromise = startAgentMutation.mutateAsync({
