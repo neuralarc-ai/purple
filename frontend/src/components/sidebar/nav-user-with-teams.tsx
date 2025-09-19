@@ -8,6 +8,11 @@ import {
   Command,  
   AudioWaveform,
   ChevronsUpDown,
+  HelpCircle,
+  ExternalLink,
+  MessageSquare,
+  FileText,
+  BookOpen,
 } from 'lucide-react';
 import { useAccounts } from '@/hooks/use-accounts';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
@@ -23,6 +28,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
   SidebarMenu,
@@ -484,6 +492,40 @@ export function NavUserWithTeams({
                   <SubscriptionIcon className="h-4 w-4 mr-2" />
                   Manage Subscription
                 </DropdownMenuItem>
+                
+                {/* Help Submenu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="rounded-full cursor-pointer">
+                    <HelpCircle className="h-4 w-4 mr-2" />
+                    Help
+                    <ChevronsUpDown className="ml-auto h-4 w-4" />
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent 
+                    className="w-48 bg-background rounded-3xl p-2"
+                  >
+                    <DropdownMenuItem asChild className="rounded-full cursor-pointer">
+                      <Link href="/feedback">
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Feedback
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="rounded-full cursor-pointer">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Terms & Policies
+                      <ExternalLink className="ml-auto h-3 w-3" />
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="rounded-full cursor-pointer">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Release Notes
+                      <ExternalLink className="ml-auto h-3 w-3" />
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="rounded-full cursor-pointer">
+                      <HelpCircle className="h-4 w-4 mr-2" />
+                      Help Center
+                      <ExternalLink className="ml-auto h-3 w-3" />
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
                 {!flagLoading && customAgentsEnabled && (
                   <DropdownMenuItem asChild className="rounded-full cursor-pointer">
                     {/* <Link href="/settings/credentials">
