@@ -132,7 +132,15 @@ export async function POST(request: NextRequest) {
     try {
       await sendFeedbackNotification(feedbackData);
     } catch (emailError) {
-      console.error('Error sending email notification:', emailError);
+      console.error('Error sending team email notification:', emailError);
+      // Don't fail the request if email fails, just log it
+    }
+
+    // Send confirmation email to user
+    try {
+      await sendUserConfirmationEmail(feedbackData.email, feedbackData.id);
+    } catch (emailError) {
+      console.error('Error sending user confirmation email:', emailError);
       // Don't fail the request if email fails, just log it
     }
 
@@ -222,10 +230,14 @@ async function sendFeedbackNotification(feedbackData: any) {
             background-color: #f8f9fa;
             line-height: 1.6;
           }
+          .email-wrapper {
+            padding: 20px;
+            min-height: 100vh;
+          }
           .email-container {
             max-width: 600px;
             margin: 0 auto;
-            background-color: #ffffff;
+            background-color: #D4D5D0;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -242,6 +254,10 @@ async function sendFeedbackNotification(feedbackData: any) {
             font-size: 24px;
           }
           .content {
+            color: #333;
+          }
+          .content p {
+            margin-bottom: 10px;
             color: #333;
           }
           .field {
@@ -295,66 +311,32 @@ async function sendFeedbackNotification(feedbackData: any) {
         </style>
       </head>
       <body>
-        <div class="email-container">
-          <div class="header">
-            <h1>🚨 New Feedback Ticket</h1>
-          </div>
-          
-          <div class="content">
-            <div class="field priority-${feedbackData.priority || 'medium'}">
-              <div class="field-label">Ticket ID:</div>
-              <div class="field-value">${feedbackData.id || 'Unknown'}</div>
+        <div class="email-wrapper">
+          <div class="email-container">
+            <div class="header">
+              <h1>🚨 New Feedback Ticket</h1>
             </div>
             
-            <div class="field">
-              <div class="field-label">Status:</div>
-              <div class="field-value">
-                <span class="status-open">${(feedbackData.status || 'open').toUpperCase()}</span>
-              </div>
-            </div>
-            
-            <div class="field">
-              <div class="field-label">Issue Type:</div>
-              <div class="field-value">${feedbackData.issue_type || 'Not specified'}</div>
-            </div>
-            
-            <div class="field">
-              <div class="field-label">Priority:</div>
-              <div class="field-value">${(feedbackData.priority || 'medium').toUpperCase()}</div>
-            </div>
-            
-            <div class="field">
-              <div class="field-label">User Email:</div>
-              <div class="field-value">${feedbackData.email || 'Not provided'}</div>
-            </div>
-            
-            <div class="field">
-              <div class="field-label">User ID:</div>
-              <div class="field-value">${feedbackData.user_id || 'Unknown'}</div>
-            </div>
-            
-            <div class="field">
-              <div class="field-label">Account ID:</div>
-              <div class="field-value">${feedbackData.account_id || 'Unknown'}</div>
-            </div>
-            
-            <div class="field">
-              <div class="field-label">Created At:</div>
-              <div class="field-value">${feedbackData.created_at || 'Unknown'}</div>
-            </div>
-            
-            <div class="field">
-              <div class="field-label">Description:</div>
+            <div class="content">
+              <p><strong>Ticket ID:</strong> ${feedbackData.id || 'Unknown'}</p>
+              <p><strong>Status:</strong> <span class="status-open">${(feedbackData.status || 'open').toUpperCase()}</span></p>
+              <p><strong>Issue Type:</strong> ${feedbackData.issue_type || 'Not specified'}</p>
+              <p><strong>Priority:</strong> ${(feedbackData.priority || 'medium').toUpperCase()}</p>
+              <p><strong>User Email:</strong> ${feedbackData.email || 'Not provided'}</p>
+              <p><strong>User ID:</strong> ${feedbackData.user_id || 'Unknown'}</p>
+              <p><strong>Account ID:</strong> ${feedbackData.account_id || 'Unknown'}</p>
+              <p><strong>Created At:</strong> ${feedbackData.created_at || 'Unknown'}</p>
+              <p><strong>Description:</strong></p>
               <div class="description">${feedbackData.description || 'No description provided'}</div>
+              
+              ${sharedLinkHtml}
+              ${screenshotHtml}
             </div>
             
-            ${sharedLinkHtml}
-            ${screenshotHtml}
-          </div>
-          
-          <div class="footer">
-            <p>This is an automated notification from Helium AI Feedback System</p>
-            <p>Helium AI by Neural Arc Inc. | <a href="https://he2.ai" style="color: #007bff;">he2.ai</a></p>
+            <div class="footer">
+              <p>This is an automated notification from Helium AI Feedback System</p>
+              <p>Helium AI by Neural Arc Inc. | <a href="https://he2.ai" style="color: #007bff;">he2.ai</a></p>
+            </div>
           </div>
         </div>
       </body>
@@ -398,6 +380,98 @@ Helium AI by Neural Arc Inc. | https://he2.ai
     
   } catch (error) {
     console.error('Error sending feedback notification email:', error);
+    throw error;
+  }
+}
+
+async function sendUserConfirmationEmail(userEmail: string, feedbackId: string) {
+  try {
+    // Create transporter using SMTP configuration
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER || process.env.SMTP_USERNAME,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+
+    // Determine sender email based on environment
+    const envMode = process.env.NEXT_PUBLIC_ENV_MODE || 'PRODUCTION';
+    const fromEmail = envMode === 'PRODUCTION' 
+      ? 'dev@neuralarc.ai' 
+      : process.env.FROM_EMAIL || process.env.SENDER_EMAIL || 'dev@neuralarc.ai';
+    
+    const fromName = process.env.FROM_NAME || 'Team Helium';
+
+    // Create HTML email content using the provided template
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Feedback Received</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 0;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; padding: 30px;">
+          <tr>
+            <td style="text-align: center;">
+              <h2 style="color: #111827; margin-bottom: 10px;">Thank You for Your Feedback</h2>
+              <p style="color: #374151; font-size: 16px; line-height: 24px;">
+                Hi ${userEmail},  
+                <br><br>
+                We've received your feedback and our team will review it soon.  
+                You can expect a response from us within the next <strong>12 hours</strong>.
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin-top: 20px;">
+                If you have any urgent concerns, please contact us directly at  
+                <a href="mailto:dev@neuralarc.ai" style="color: #3b82f6;">dev@neuralarc.ai</a>.
+              </p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;" />
+              <p style="color: #9ca3af; font-size: 12px;">
+                &copy; 2025 NeuralArc. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `;
+
+    // Create text version
+    const textContent = `
+Thank You for Your Feedback
+
+Hi ${userEmail},
+
+We've received your feedback and our team will review it soon. You can expect a response from us within the next 12 hours.
+
+If you have any urgent concerns, please contact us directly at dev@neuralarc.ai.
+
+© 2025 NeuralArc. All rights reserved.
+    `;
+
+    // Send email
+    const mailOptions = {
+      from: `"${fromName}" <${fromEmail}>`,
+      to: userEmail,
+      subject: 'Thank You for Your Feedback - Helium AI',
+      text: textContent,
+      html: htmlContent,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('User confirmation email sent:', info.messageId);
+    
+  } catch (error) {
+    console.error('Error sending user confirmation email:', error);
     throw error;
   }
 }

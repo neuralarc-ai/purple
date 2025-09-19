@@ -147,8 +147,8 @@ export default function FeedbackPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
+    <div className="min-h-screen bg-background  flex items-center justify-center p-4">
+      <div className="w-full  max-w-xl">
         {/* Back to App Link */}
         <div className="mb-6">
           <Link 
@@ -161,7 +161,7 @@ export default function FeedbackPage() {
         </div>
 
         {/* Feedback Form Card */}
-        <Card className="shadow-lg border-0 bg-card">
+        <Card className="shadow-lg border-0 bg-card justify-center ">
           <CardHeader className="relative pb-4">
             <CardTitle className="text-2xl font-semibold text-center">
               Feedback
@@ -179,8 +179,8 @@ export default function FeedbackPage() {
           <CardContent className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Issue Type */}
-              <div className="space-y-2">
-                <label htmlFor="issueType" className="text-sm font-medium">
+              <div className="space-y-2 ">
+                <label htmlFor="issueType" className="text-md font-medium">
                   Issue Type
                 </label>
                 <Select
@@ -202,7 +202,7 @@ export default function FeedbackPage() {
 
               {/* Issue Description */}
               <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">
+                <label htmlFor="description" className="text-md font-medium">
                   Issue Description
                 </label>
                 <Textarea
@@ -261,7 +261,7 @@ export default function FeedbackPage() {
 
               {/* Shared Link */}
               <div className="space-y-2">
-                <label htmlFor="sharedLink" className="text-sm font-medium">
+                <label htmlFor="sharedLink" className="text-md font-medium">
                   Shared Link (optional)
                 </label>
                 <Input
@@ -275,7 +275,7 @@ export default function FeedbackPage() {
 
               {/* Email */}
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">
+                <label htmlFor="email" className="text-md font-medium">
                   Your Email
                 </label>
                 <Input
@@ -291,7 +291,7 @@ export default function FeedbackPage() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full bg-black text-white hover:bg-gray-800 transition-colors"
+                className="w-full bg-foreground text-background hover:bg-foreground/80 transition-colors"
                 disabled={isSubmitting || !formData.issueType || !formData.description || !formData.email}
               >
                 {isSubmitting ? 'Submitting...' : 'Submit Feedback'}

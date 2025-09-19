@@ -165,6 +165,11 @@ class FeedbackEmailService:
                     background-color: #f8f9fa;
                     line-height: 1.6;
                 }}
+                .email-wrapper {{
+                    background-color: #D4D5D0;
+                    padding: 20px;
+                    min-height: 100vh;
+                }}
                 .email-container {{
                     max-width: 600px;
                     margin: 0 auto;
@@ -238,66 +243,68 @@ class FeedbackEmailService:
             </style>
         </head>
         <body>
-            <div class="email-container">
-                <div class="header">
-                    <h1>🚨 New Feedback Ticket</h1>
-                </div>
-                
-                <div class="content">
-                    <div class="field priority-{feedback_data.get('priority', 'medium')}">
-                        <div class="field-label">Ticket ID:</div>
-                        <div class="field-value">{feedback_data.get('id', 'Unknown')}</div>
+            <div class="email-wrapper">
+                <div class="email-container">
+                    <div class="header">
+                        <h1>🚨 New Feedback Ticket</h1>
                     </div>
                     
-                    <div class="field">
-                        <div class="field-label">Status:</div>
-                        <div class="field-value">
-                            <span class="status-open">{feedback_data.get('status', 'open').upper()}</span>
+                    <div class="content">
+                        <div class="field priority-{feedback_data.get('priority', 'medium')}">
+                            <div class="field-label">Ticket ID:</div>
+                            <div class="field-value">{feedback_data.get('id', 'Unknown')}</div>
                         </div>
+                        
+                        <div class="field">
+                            <div class="field-label">Status:</div>
+                            <div class="field-value">
+                                <span class="status-open">{feedback_data.get('status', 'open').upper()}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="field-label">Issue Type:</div>
+                            <div class="field-value">{feedback_data.get('issue_type', 'Not specified')}</div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="field-label">Priority:</div>
+                            <div class="field-value">{feedback_data.get('priority', 'medium').upper()}</div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="field-label">User Email:</div>
+                            <div class="field-value">{feedback_data.get('email', 'Not provided')}</div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="field-label">User ID:</div>
+                            <div class="field-value">{feedback_data.get('user_id', 'Unknown')}</div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="field-label">Account ID:</div>
+                            <div class="field-value">{feedback_data.get('account_id', 'Unknown')}</div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="field-label">Created At:</div>
+                            <div class="field-value">{feedback_data.get('created_at', 'Unknown')}</div>
+                        </div>
+                        
+                        <div class="field">
+                            <div class="field-label">Description:</div>
+                            <div class="description">{feedback_data.get('description', 'No description provided')}</div>
+                        </div>
+                        
+                        {shared_link_html}
+                        {screenshot_html}
                     </div>
                     
-                    <div class="field">
-                        <div class="field-label">Issue Type:</div>
-                        <div class="field-value">{feedback_data.get('issue_type', 'Not specified')}</div>
+                    <div class="footer">
+                        <p>This is an automated notification from Helium AI Feedback System</p>
+                        <p>Helium AI by Neural Arc Inc. | <a href="https://he2.ai" style="color: #007bff;">he2.ai</a></p>
                     </div>
-                    
-                    <div class="field">
-                        <div class="field-label">Priority:</div>
-                        <div class="field-value">{feedback_data.get('priority', 'medium').upper()}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">User Email:</div>
-                        <div class="field-value">{feedback_data.get('email', 'Not provided')}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">User ID:</div>
-                        <div class="field-value">{feedback_data.get('user_id', 'Unknown')}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">Account ID:</div>
-                        <div class="field-value">{feedback_data.get('account_id', 'Unknown')}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">Created At:</div>
-                        <div class="field-value">{feedback_data.get('created_at', 'Unknown')}</div>
-                    </div>
-                    
-                    <div class="field">
-                        <div class="field-label">Description:</div>
-                        <div class="description">{feedback_data.get('description', 'No description provided')}</div>
-                    </div>
-                    
-                    {shared_link_html}
-                    {screenshot_html}
-                </div>
-                
-                <div class="footer">
-                    <p>This is an automated notification from Helium AI Feedback System</p>
-                    <p>Helium AI by Neural Arc Inc. | <a href="https://he2.ai" style="color: #007bff;">he2.ai</a></p>
                 </div>
             </div>
         </body>
