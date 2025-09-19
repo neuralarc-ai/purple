@@ -230,6 +230,7 @@ export default function ThreadPage({
   const { data: threadAgentData } = useThreadAgent(threadId);
   const agent = threadAgentData?.agent;
   const workflowId = threadQuery.data?.metadata?.workflow_id;
+  const createTriggerMutation = useCreateTrigger();
 
   useEffect(() => {
     queryClient.invalidateQueries({ queryKey: threadKeys.agentRuns(threadId) });
@@ -478,7 +479,6 @@ export default function ThreadPage({
         return null;
       };
 
-      const createTriggerMutation = useCreateTrigger();
       let parsedTrigger: ReturnType<typeof tryParseTrigger> = null;
       if (selectedAgentId) {
         parsedTrigger = tryParseTrigger(message);
@@ -622,7 +622,8 @@ export default function ThreadPage({
       setBillingData,
       setShowBillingAlert,
       setAgentRunId,
-      isExhausted, // Add isExhausted to dependencies
+      isExhausted,
+      createTriggerMutation,
     ],
   );
 
