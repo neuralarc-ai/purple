@@ -171,6 +171,35 @@ export default function InvitePage() {
     setIsStartingTrial(true);
     
     try {
+      // Check if user is authenticated first
+      const supabase = createClient();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      console.log('Authentication check:', {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        hasUser: !!session?.user,
+        userId: session?.user?.id,
+        userEmail: session?.user?.email,
+        sessionError: sessionError?.message
+      });
+      
+      if (!session?.access_token) {
+        // User is not authenticated, redirect to sign-in
+        console.log('User not authenticated, redirecting to sign-in');
+        toast.info('Please sign in to start your trial');
+        router.push('/auth?mode=signin&redirect=/invite');
+        return;
+      }
+
+      // Ensure we have a valid user ID
+      if (!session.user?.id) {
+        console.log('Invalid user session, redirecting to sign-in');
+        toast.error('Invalid user session. Please sign in again.');
+        router.push('/auth?mode=signin&redirect=/invite');
+        return;
+      }
+
       console.log('Starting trial checkout...', {
         success_url: `${window.location.origin}/onboarding`,
         cancel_url: `${window.location.origin}/invite?trial=cancelled`,
@@ -181,6 +210,7 @@ export default function InvitePage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           success_url: `${window.location.origin}/onboarding`,
@@ -354,6 +384,13 @@ export default function InvitePage() {
             {/* Trial Button - Only shows after text animation completes */}
             {showTrialButton && (
               <div className="mt-6 sm:mt-8">
+                {!isAuthenticated && (
+                  <div className="mb-4 text-center">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Sign in to unlock your 7-day trial
+                    </p>
+                  </div>
+                )}
                 <Button
                   className="w-full sm:w-2/3 h-10 sm:h-9 bg-white text-black hover:bg-gray-100 font-semibold text-sm sm:text-base border border-gray-300"
                   onClick={handleStartTrial}
@@ -365,7 +402,7 @@ export default function InvitePage() {
                       Starting trial...
                     </>
                   ) : (
-                    'Start trial'
+                    isAuthenticated ? 'Start trial' : 'Sign in to start trial'
                   )}
                 </Button>
               </div>

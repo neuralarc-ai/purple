@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { InfiniteSlider } from '@/components/ui/infinite-slider'
 import { useAuth } from '@/components/AuthProvider'
 import { motion } from 'framer-motion'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 const fadeBlurVariants = {
     hidden: {
@@ -61,9 +62,10 @@ const sliderVariants = {
 
 export default function IntegrationsSection() {
     const { user } = useAuth()
+    const { t } = useLanguage()
     
     return (
-        <section className="mt-12 md:mt-20">
+        <section className="py-12 md:py-18">
             <div className="bg-black">
                 <div className="mx-auto max-w-5xl px-6">
                     <motion.div 
@@ -161,16 +163,16 @@ export default function IntegrationsSection() {
                         viewport={{ once: true, margin: "-100px" }}
                         variants={fadeBlurVariants}
                     >
-                        <h2 className="text-balance text-3xl font-semibold md:text-4xl text-white">100+ Integrations. Zero Friction. Total Control.</h2>
+                        <h2 className="text-balance text-3xl font-semibold md:text-4xl text-white">{t.integrations.title}</h2>
                         <p className="text-white/80 max-w-2xl text-balance mx-auto">
-                        Stop jumping between apps to get work done. Helium AI connects with your existing tools in just a few clicks, then lets you orchestrate everything through simple prompts.
+                        {t.integrations.description}
                         </p>
 
                         <Button                                
                             size="sm"
                             className="rounded-full bg-helium-orange hover:bg-helium-orange/90 text-white"
                             asChild>
-                            <Link href={user ? "/dashboard" : "https://waitlist.he2.ai"}>Get Started</Link>
+                            <Link href={user ? "/dashboard" : "https://waitlist.he2.ai"}>{t.integrations.cta_button}</Link>
                         </Button>
                     </motion.div>
                 </div>

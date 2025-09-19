@@ -2,6 +2,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type ComparisonPopupProps = {
   className?: string;
@@ -24,6 +25,8 @@ export default function ComparisonPopup({
   imageSrc,
   onClose,
 }: ComparisonPopupProps) {
+  const { t } = useLanguage();
+
   return (
     <section className={cn("w-full h-full", className)}>
       <div className="flex flex-col h-full rounded-2xl border border-black bg-neutral-900 text-white p-4">
@@ -72,7 +75,7 @@ export default function ComparisonPopup({
             {/* Prompt Section - Left */}
             <div className="w-full md:w-1/2 bg-white/5 rounded-lg relative">
               <div className="p-3 overflow-y-auto h-full">
-                <h3 className="text-sm font-semibold text-white mb-2">Prompt:</h3>
+                <h3 className="text-sm font-semibold text-white mb-2">{t.benchmarking.labels.prompt}</h3>
                 <p className="text-sm text-white/90 leading-relaxed">
                   {prompt}
                 </p>
@@ -84,7 +87,7 @@ export default function ComparisonPopup({
             <div className="w-full md:w-1/2 rounded-lg border border-white/10 bg-[#26FF0008] relative">
               <div className="p-3 overflow-y-auto h-full">
                 <h3 className="text-sm font-semibold text-white mb-2">
-                  Final Result Files:
+                  {t.benchmarking.labels.final_result_files}
                 </h3>
                 <div className="space-y-2">
                   {facts?.map((fact, idx) => (
@@ -105,16 +108,16 @@ export default function ComparisonPopup({
                           className="text-xs text-blue-300 hover:text-blue-200 underline"
                         >
                           {title?.includes("Lovable")
-                            ? `View app created by ${
+                            ? `${t.benchmarking.labels.view_app_created_by} ${
                                 docs[idx].label.includes("Helium")
                                   ? "Helium"
                                   : docs[idx].label.split(" ")[0]
                               }`
-                            : `View ${
+                            : `${t.benchmarking.labels.view_file_created_by} ${
                                 title?.includes("Claude") &&
                                 docs[idx].label.includes("Helium")
-                                  ? "All Files in zip created by"
-                                  : "File created by"
+                                  ? t.benchmarking.labels.view_all_files_in_zip_created_by
+                                  : ""
                               } ${
                                 docs[idx].label.includes("Helium")
                                   ? "Helium"
@@ -134,7 +137,7 @@ export default function ComparisonPopup({
                               rel="noopener noreferrer"
                               className="text-xs text-blue-300 hover:text-blue-200 underline"
                             >
-                              View webpage created by Helium
+                              {t.benchmarking.labels.view_webpage_created_by} Helium
                             </a>
                           </div>
                         )}
