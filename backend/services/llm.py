@@ -380,7 +380,9 @@ def prepare_params(
     top_p: Optional[float] = None,
     model_id: Optional[str] = None,
     enable_thinking: Optional[bool] = False,
-    reasoning_effort: Optional[str] = 'low'
+    reasoning_effort: Optional[str] = 'low',
+    num_retries: Optional[int] = None,
+    request_timeout: Optional[float] = None,
 ) -> Dict[str, Any]:
     """Prepare parameters for the API call."""
     params = {
@@ -390,8 +392,11 @@ def prepare_params(
         "response_format": response_format,
         "top_p": top_p,
         "stream": stream,
-        "num_retries": MAX_RETRIES,
+        "num_retries": (num_retries if isinstance(num_retries, int) and num_retries >= 0 else MAX_RETRIES),
     }
+
+    if request_timeout is not None:
+        params["timeout"] = request_timeout
 
     if api_key:
         params["api_key"] = api_key
@@ -435,7 +440,9 @@ async def make_llm_api_call(
     top_p: Optional[float] = None,
     model_id: Optional[str] = None,
     enable_thinking: Optional[bool] = False,
-    reasoning_effort: Optional[str] = 'medium'
+    reasoning_effort: Optional[str] = 'low',
+    num_retries: Optional[int] = None,
+    request_timeout: Optional[float] = None,
 ) -> Union[Dict[str, Any], AsyncGenerator, ModelResponse]:
     """
     Make an API call to a language model using LiteLLM.
@@ -483,7 +490,9 @@ async def make_llm_api_call(
         top_p=top_p,
         model_id=model_id,
         enable_thinking=enable_thinking,
-        reasoning_effort=reasoning_effort
+        reasoning_effort=reasoning_effort,
+        num_retries=num_retries,
+        request_timeout=request_timeout,
     )
     try:
         # Use LiteLLM for models
