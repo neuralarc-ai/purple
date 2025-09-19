@@ -103,6 +103,8 @@ class ResponseProcessor:
         self.is_agent_builder = False  # Deprecated - keeping for compatibility
         self.target_agent_id = None  # Deprecated - keeping for compatibility
         self.agent_config = agent_config
+        # One-run flags
+        self._twitter_preflight_done = False
 
     async def _yield_message(self, message_obj: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """Helper to yield a message with proper formatting.
@@ -1222,6 +1224,7 @@ class ResponseProcessor:
         try:
             function_name = tool_call["function_name"]
             arguments = tool_call["arguments"]
+            already_retried = bool(tool_call.get('_retried_after_lookup'))
 
             logger.debug(f"Executing tool: {function_name} with arguments: {arguments}")
             self.trace.event(name="executing_tool", level="DEFAULT", status_message=(f"Executing tool: {function_name} with arguments: {arguments}"))
@@ -1246,10 +1249,46 @@ class ResponseProcessor:
             result = await tool_fn(**arguments)
             logger.debug(f"Tool execution complete: {function_name} -> {result}")
             span.end(status_message="tool_executed", output=result)
+
+            # Fallback: if twitter/tweet action failed and we haven't retried, run lookup then retry once
+            if (not result.success) and self._is_tool_twitter_related(function_name) and not already_retried:
+                logger.debug(f"Twitter tool '{function_name}' failed. Attempting lookup-then-retry fallback.")
+                lookup_name = self._find_twitter_lookup_name()
+                if lookup_name:
+                    try:
+                        await self._execute_tool({'function_name': lookup_name, 'arguments': {}})
+                    except Exception:
+                        pass
+                    # Retry original once
+                    try:
+                        retry_result = await self._execute_tool({'function_name': function_name, 'arguments': arguments, '_retried_after_lookup': True})
+                        return retry_result
+                    except Exception:
+                        pass
+
             return result
         except Exception as e:
             logger.error(f"Error executing tool {tool_call['function_name']}: {str(e)}", exc_info=True)
             span.end(status_message="tool_execution_error", output=f"Error executing tool: {str(e)}", level="ERROR")
+            # On exception, attempt twitter lookup then retry once
+            try:
+                function_name = tool_call.get('function_name', '')
+                arguments = tool_call.get('arguments', {})
+                already_retried = bool(tool_call.get('_retried_after_lookup'))
+                if self._is_tool_twitter_related(function_name) and not already_retried:
+                    lookup_name = self._find_twitter_lookup_name()
+                    if lookup_name:
+                        try:
+                            await self._execute_tool({'function_name': lookup_name, 'arguments': {}})
+                        except Exception:
+                            pass
+                        try:
+                            retry_result = await self._execute_tool({'function_name': function_name, 'arguments': arguments, '_retried_after_lookup': True})
+                            return retry_result
+                        except Exception:
+                            pass
+            except Exception:
+                pass
             return ToolResult(success=False, output=f"Error executing tool: {str(e)}")
 
     async def _execute_tools(
@@ -1271,6 +1310,26 @@ class ResponseProcessor:
         Returns:
             List of tuples containing the original tool call and its result
         """
+        # Apply safe pre-execution policies regardless of strategy
+        try:
+            tool_calls = self._prepend_twitter_lookup_if_needed(tool_calls)
+        except Exception:
+            pass
+
+        # Proactively execute Twitter lookup once, before dispatching.
+        try:
+            if not self._twitter_preflight_done:
+                lookup_name = self._find_twitter_lookup_name()
+                if lookup_name:
+                    try:
+                        await self._execute_tool({'function_name': lookup_name, 'arguments': {}, '_retried_after_lookup': True})
+                        self._twitter_preflight_done = True
+                    except Exception:
+                        # Do not block execution on lookup pre-step
+                        pass
+        except Exception:
+            pass
+
         logger.debug(f"Executing {len(tool_calls)} tools with strategy: {execution_strategy}")
         self.trace.event(name="executing_tools_with_strategy", level="DEFAULT", status_message=(f"Executing {len(tool_calls)} tools with strategy: {execution_strategy}"))
             
@@ -1298,16 +1357,57 @@ class ResponseProcessor:
             return []
             
         try:
+            # Safe pre-execution policy: insert Twitter lookup if needed
+            try:
+                tool_calls = self._prepend_twitter_lookup_if_needed(tool_calls)
+            except Exception:
+                pass
+
             tool_names = [t.get('function_name', 'unknown') for t in tool_calls]
             logger.debug(f"Executing {len(tool_calls)} tools sequentially: {tool_names}")
             self.trace.event(name="executing_tools_sequentially", level="DEFAULT", status_message=(f"Executing {len(tool_calls)} tools sequentially: {tool_names}"))
             
             results = []
+            # Track if we executed a twitter lookup
+            lookup_done = False
             for index, tool_call in enumerate(tool_calls):
                 tool_name = tool_call.get('function_name', 'unknown')
                 logger.debug(f"Executing tool {index+1}/{len(tool_calls)}: {tool_name}")
                 
                 try:
+                    # Inline guard: if this is a twitter/tweet action and lookup hasn't run, run lookup first
+                    lname = tool_name.lower() if isinstance(tool_name, str) else ''
+                    if (('twitter' in lname) or ('tweet' in lname)) and not lookup_done:
+                        try:
+                            # Discover lookup name dynamically
+                            available_functions = self.tool_registry.get_available_functions()
+                            candidates = [
+                                'TWITTER_USER_LOOKUP_ME',
+                                'twitter_users_lookup_me','twitter_user_lookup_me','twitter_lookup_me',
+                                'users_lookup_me','lookup_me','twitter_get_me','get_twitter_me','get_me'
+                            ]
+                            lookup_name = next((n for n in candidates if n in available_functions), None)
+                            if not lookup_name:
+                                lower_map = {n.lower(): n for n in available_functions.keys()}
+                                for cand in candidates:
+                                    if cand.lower() in lower_map:
+                                        lookup_name = lower_map[cand.lower()]
+                                        break
+                            if not lookup_name:
+                                lowered = {n: n.lower() for n in available_functions.keys()}
+                                for n, low in lowered.items():
+                                    if ('twitter' in low) and (('lookup' in low or 'verify' in low or 'me' in low)) and (('me' in low) or ('self' in low) or ('account' in low)):
+                                        lookup_name = n
+                                        break
+                            if lookup_name and lookup_name != tool_name:
+                                logger.debug(f"Inline lookup injection before '{tool_name}': executing '{lookup_name}'")
+                                lookup_result = await self._execute_tool({'function_name': lookup_name, 'arguments': {}})
+                                results.append(({'function_name': lookup_name, 'arguments': {}}, lookup_result))
+                                lookup_done = True
+                        except Exception:
+                            # Never block the main tool due to lookup issues
+                            pass
+
                     result = await self._execute_tool(tool_call)
                     results.append((tool_call, result))
                     logger.debug(f"Completed tool {tool_name} with success={result.success}")
@@ -1357,12 +1457,46 @@ class ResponseProcessor:
             return []
             
         try:
+            # Safe pre-execution policy: insert Twitter lookup if needed
+            try:
+                tool_calls = self._prepend_twitter_lookup_if_needed(tool_calls)
+            except Exception:
+                pass
+
             tool_names = [t.get('function_name', 'unknown') for t in tool_calls]
             logger.debug(f"Executing {len(tool_calls)} tools in parallel: {tool_names}")
             self.trace.event(name="executing_tools_in_parallel", level="DEFAULT", status_message=(f"Executing {len(tool_calls)} tools in parallel: {tool_names}"))
             
+            # Ensure lookup runs first by executing it synchronously before parallel batch
+            prefixed_calls = list(tool_calls)
+            try:
+                # if the first call is a twitter/tweet action and a lookup exists ahead, pull it out and run now
+                first_call = next((tc for tc in prefixed_calls if isinstance(tc, dict)), None)
+                if first_call:
+                    fname = first_call.get('function_name', '')
+                    lname = fname.lower() if isinstance(fname, str) else ''
+                    if ('twitter' in lname) or ('tweet' in lname):
+                        available_functions = self.tool_registry.get_available_functions()
+                        candidates = [
+                            'TWITTER_USER_LOOKUP_ME',
+                            'twitter_users_lookup_me','twitter_user_lookup_me','twitter_lookup_me',
+                            'users_lookup_me','lookup_me','twitter_get_me','get_twitter_me','get_me'
+                        ]
+                        lookup_name = next((n for n in candidates if n in available_functions), None)
+                        if not lookup_name:
+                            lower_map = {n.lower(): n for n in available_functions.keys()}
+                            for cand in candidates:
+                                if cand.lower() in lower_map:
+                                    lookup_name = lower_map[cand.lower()]
+                                    break
+                        if lookup_name:
+                            logger.debug(f"Executing twitter lookup '{lookup_name}' before parallel batch")
+                            await self._execute_tool({'function_name': lookup_name, 'arguments': {}})
+            except Exception:
+                pass
+
             # Create tasks for all tool calls
-            tasks = [self._execute_tool(tool_call) for tool_call in tool_calls]
+            tasks = [self._execute_tool(tool_call) for tool_call in prefixed_calls]
             
             # Execute all tasks concurrently with error handling
             results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -1389,6 +1523,121 @@ class ResponseProcessor:
             # Return error results for all tools if the gather itself fails
             return [(tool_call, ToolResult(success=False, output=f"Execution error: {str(e)}")) 
                     for tool_call in tool_calls]
+
+    def _prepend_twitter_lookup_if_needed(self, tool_calls: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Insert a Twitter lookup tool call before other Twitter actions when available.
+
+        No-op unless:
+        - A requested tool appears to be Twitter/tweet related, and
+        - A suitable "lookup me" function exists in the registry, and
+        - The lookup is not already present in the list.
+        """
+        if not tool_calls:
+            return tool_calls
+
+        def _is_twitter_related(name: str) -> bool:
+            n = name.lower()
+            return ('twitter' in n) or ('tweet' in n)
+
+        has_twitter_action = any(
+            isinstance(tc, dict) and isinstance(tc.get('function_name'), str) and _is_twitter_related(tc['function_name'])
+            for tc in tool_calls
+        )
+        if not has_twitter_action:
+            return tool_calls
+
+        existing_names = {tc.get('function_name') for tc in tool_calls if isinstance(tc, dict)}
+
+        candidate_lookup_names = [
+            'TWITTER_USER_LOOKUP_ME',
+            'twitter_users_lookup_me',
+            'twitter_user_lookup_me',
+            'twitter_lookup_me',
+            'users_lookup_me',
+            'lookup_me',
+            'twitter_get_me',
+            'get_twitter_me',
+            'get_me',
+        ]
+
+        try:
+            available_functions = self.tool_registry.get_available_functions()
+            available_names = set(available_functions.keys())
+        except Exception:
+            available_names = set()
+
+        # Try exact and case-insensitive matches
+        lookup_name = next((n for n in candidate_lookup_names if n in available_names), None)
+        if not lookup_name and available_names:
+            lower_map = {n.lower(): n for n in available_names}
+            for cand in candidate_lookup_names:
+                if cand.lower() in lower_map:
+                    lookup_name = lower_map[cand.lower()]
+                    break
+
+        if not lookup_name and available_names:
+            lowered = {name: name.lower() for name in available_names}
+            for name, low in lowered.items():
+                if ('twitter' in low) and (('lookup' in low or 'verify' in low or 'me' in low)) and (('me' in low) or ('self' in low) or ('account' in low)):
+                    lookup_name = name
+                    break
+            if not lookup_name:
+                for name, low in lowered.items():
+                    if 'users_lookup_me' in low or low.endswith('lookup_me'):
+                        lookup_name = name
+                        break
+
+        if not lookup_name or lookup_name in existing_names:
+            return tool_calls
+
+        lookup_call = {
+            'function_name': lookup_name,
+            'arguments': {}
+        }
+
+        return [lookup_call] + tool_calls
+
+    def _is_tool_twitter_related(self, function_name: str) -> bool:
+        try:
+            def normalize(n: str) -> str:
+                # Lowercase and remove non-alphanumerics
+                return ''.join(ch for ch in (n or '').lower() if ch.isalnum())
+
+            norm = normalize(function_name) if isinstance(function_name, str) else ''
+            return ('twitter' in norm) or ('tweet' in norm)
+        except Exception:
+            return False
+
+    def _find_twitter_lookup_name(self) -> Optional[str]:
+        try:
+            available_functions = self.tool_registry.get_available_functions()
+            names = set(available_functions.keys())
+            candidates = [
+                'TWITTER_USER_LOOKUP_ME',
+                'TWITTER_USER__LOOKUP__ME',
+                'twitter_users_lookup_me','twitter_user_lookup_me','twitter_lookup_me',
+                'users_lookup_me','lookup_me','twitter_get_me','get_twitter_me','get_me'
+            ]
+            name = next((n for n in candidates if n in names), None)
+            if name:
+                return name
+            # Case-insensitive
+            lower_map = {n.lower(): n for n in names}
+            for cand in candidates:
+                if cand.lower() in lower_map:
+                    return lower_map[cand.lower()]
+            # Normalized (remove non-alphanumerics)
+            def normalize(n: str) -> str:
+                return ''.join(ch for ch in n.lower() if ch.isalnum())
+            norm_map = {normalize(n): n for n in names}
+            for cand in candidates:
+                key = normalize(cand)
+                if key in norm_map:
+                    return norm_map[key]
+        except Exception:
+            return None
+        return None
 
     async def _add_tool_result(
         self, 

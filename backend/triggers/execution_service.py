@@ -65,7 +65,21 @@ class SessionManager:
     ) -> Tuple[str, str]:
         client = await self._db.client
         
-        # Reuse existing thread for this trigger if present
+        # 1) If webhook payload specified a thread_id, use it directly
+        try:
+            raw = getattr(trigger_event, 'raw_data', {}) or {}
+            explicit_thread_id = None
+            if isinstance(raw, dict):
+                explicit_thread_id = raw.get('thread_id')
+            if explicit_thread_id:
+                thread_res = await client.table('threads').select('thread_id, project_id').eq('thread_id', explicit_thread_id).single().execute()
+                if thread_res.data:
+                    logger.debug(f"Using explicit thread from trigger payload: {explicit_thread_id}")
+                    return thread_res.data['thread_id'], thread_res.data.get('project_id')
+        except Exception:
+            pass
+
+        # 2) Otherwise, reuse existing thread for this trigger if present (by metadata)
         try:
             existing = await client.table('threads') \
                 .select('thread_id, project_id, metadata') \
