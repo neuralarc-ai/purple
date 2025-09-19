@@ -65,6 +65,23 @@ class SessionManager:
     ) -> Tuple[str, str]:
         client = await self._db.client
         
+        # Reuse existing thread for this trigger if present
+        try:
+            existing = await client.table('threads') \
+                .select('thread_id, project_id, metadata') \
+                .eq('account_id', agent_config.get('account_id')) \
+                .contains('metadata', {"trigger_id": trigger_event.trigger_id}) \
+                .order('created_at', desc=True) \
+                .limit(1) \
+                .execute()
+            if existing.data:
+                existing_thread = existing.data[0]
+                logger.debug(f"Reusing existing thread for trigger {trigger_event.trigger_id}: {existing_thread['thread_id']}")
+                return existing_thread['thread_id'], existing_thread.get('project_id')
+        except Exception:
+            # If metadata search fails for any reason, fall back to creating a new thread
+            pass
+        
         project_id = str(uuid.uuid4())
         thread_id = str(uuid.uuid4())
         account_id = agent_config.get('account_id')
@@ -84,6 +101,7 @@ class SessionManager:
             "thread_id": thread_id,
             "project_id": project_id,
             "account_id": account_id,
+            "metadata": {"trigger_id": trigger_event.trigger_id},
             "created_at": datetime.now(timezone.utc).isoformat()
         }).execute()
         
@@ -94,9 +112,27 @@ class SessionManager:
         self,
         account_id: str,
         workflow_id: str,
-        workflow_name: str
+        workflow_name: str,
+        trigger_id: Optional[str] = None
     ) -> Tuple[str, str]:
         client = await self._db.client
+        
+        # Reuse existing thread for this trigger if provided and present
+        if trigger_id:
+            try:
+                existing = await client.table('threads') \
+                    .select('thread_id, project_id, metadata') \
+                    .eq('account_id', account_id) \
+                    .contains('metadata', {"trigger_id": trigger_id}) \
+                    .order('created_at', desc=True) \
+                    .limit(1) \
+                    .execute()
+                if existing.data:
+                    existing_thread = existing.data[0]
+                    logger.debug(f"Reusing existing workflow thread for trigger {trigger_id}: {existing_thread['thread_id']}")
+                    return existing_thread['thread_id'], existing_thread.get('project_id')
+            except Exception:
+                pass
         
         project_id = str(uuid.uuid4())
         thread_id = str(uuid.uuid4())
@@ -110,16 +146,20 @@ class SessionManager:
         
         await self._create_sandbox_for_project(project_id)
         
+        thread_metadata = {
+            "workflow_execution": True,
+            "workflow_id": workflow_id,
+            "workflow_name": workflow_name
+        }
+        if trigger_id:
+            thread_metadata["trigger_id"] = trigger_id
+        
         await client.table('threads').insert({
             "thread_id": thread_id,
             "project_id": project_id,
             "account_id": account_id,
             "created_at": datetime.now(timezone.utc).isoformat(),
-            "metadata": {
-                "workflow_execution": True,
-                "workflow_id": workflow_id,
-                "workflow_name": workflow_name
-            }
+            "metadata": thread_metadata
         }).execute()
         
         logger.debug(f"Created workflow session: project={project_id}, thread={thread_id}")
@@ -408,6 +448,7 @@ class AgentExecutor:
             enable_context_manager=True,
             agent_config=agent_config,
             request_id=structlog.contextvars.get_contextvars().get('request_id'),
+            mode='agent',
         )
         
         logger.debug(f"Started agent execution: {agent_run_id}")
@@ -687,6 +728,7 @@ class WorkflowExecutor:
             enable_context_manager=True,
             agent_config=agent_config,
             request_id=None,
+            mode='agent',
         )
         
         logger.debug(f"Started workflow agent execution: {agent_run_id}")
