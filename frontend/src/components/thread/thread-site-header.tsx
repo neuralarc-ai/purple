@@ -158,7 +158,7 @@ export function SiteHeader({
   return (
     <>
     <header className={cn(
-    "bg-background flex h-14 shrink-0 items-center gap-2 w-full",
+    "bg-background flex h-12 shrink-0 items-center gap-2 w-full",
     isMobile 
       ? "fixed top-0 left-0 right-0 px-2 z-50 border-b border-border/40 backdrop-blur-sm" 
       : "sticky top-0 md:pr-4 xl:pr-8 z-20"
@@ -182,7 +182,7 @@ export function SiteHeader({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div 
-                    className="text-base font-medium text-muted-foreground hover:text-foreground cursor-pointer flex items-center font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] project-ellipsis"
+                    className="text-base font-medium text-foreground hover:text-foreground cursor-pointer flex items-center font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif] project-ellipsis"
                     onClick={startEditing}
                      title="Click to rename project"
                   >

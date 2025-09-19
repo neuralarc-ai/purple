@@ -57,6 +57,7 @@ export interface AgentStreamCallbacks {
   onMessage: (message: UnifiedMessage) => void; // Callback for complete messages
   onStatusChange?: (status: string) => void; // Optional: Notify on internal status changes
   onError?: (error: string) => void; // Optional: Notify on errors
+  onAgentError?: (error: string) => void; // Optional: Notify on agent-specific errors that should show banner
   onClose?: (finalStatus: string) => void; // Optional: Notify when streaming definitively ends
   onAssistantStart?: () => void; // Optional: Notify when assistant starts streaming
   onAssistantChunk?: (chunk: { content: string }) => void; // Optional: Notify on each assistant message chunk
@@ -467,15 +468,52 @@ export function useAgentStream(
       }
     },
     [
-      threadId,
-      setMessages,
       status,
       toolCall,
       callbacks,
       finalizeStream,
       updateStatus,
+      addContentThrottled,
     ],
   );
+
+  // Helper function to categorize errors
+  const categorizeError = useCallback((errorMessage: string) => {
+    const lower = errorMessage.toLowerCase();
+    
+    // Expected errors that don't need user action
+    const isExpected = 
+      lower.includes('not found') || 
+      lower.includes('not running') ||
+      lower.includes('404') ||
+      lower.includes('does not exist');
+    
+    // Credit-related errors
+    const isCreditError =
+      lower.includes('credit') && 
+      (lower.includes('insufficient') || 
+       lower.includes('exhausted') || 
+       lower.includes('used up') ||
+       lower.includes('limit reached') ||
+       lower.includes('not enough') ||
+       lower.includes('balance') ||
+       lower.includes('required') ||
+       lower.includes('need'));
+    
+    // Agent-specific errors that should show banner
+    const isAgentError = 
+      lower.includes('too many requests') ||
+      lower.includes('rate limit') ||
+      lower.includes('redis') && lower.includes('connection') ||
+      lower.includes('litellm') && lower.includes('error') ||
+      lower.includes('timeout') ||
+      lower.includes('internal server error') ||
+      lower.includes('connection error') ||
+      lower.includes('service unavailable') ||
+      lower.includes('temporarily unavailable');
+    
+    return { isExpected, isCreditError, isAgentError };
+  }, []);
 
   const handleStreamError = useCallback(
     async (err: Error | string | Event) => {
@@ -508,30 +546,23 @@ export function useAgentStream(
         }
       }
 
-      const lower = errorMessage.toLowerCase();
-      const isExpected =
-        lower.includes('not found') || lower.includes('not running');
-        
-      const isCreditError =
-        lower.includes('credit') && 
-        (lower.includes('insufficient') || 
-         lower.includes('exhausted') || 
-         lower.includes('used up') ||
-         lower.includes('limit reached') ||
-         lower.includes('not enough') ||
-         lower.includes('balance') ||
-         lower.includes('required') ||
-         lower.includes('need'));
+      const { isExpected, isCreditError, isAgentError } = categorizeError(errorMessage);
 
       if (isExpected) {
         console.info('[useAgentStream] Streaming skipped/ended:', errorMessage);
       } else if (isCreditError && onCreditError) {
         // Handle credit errors with the credit error handler
         onCreditError(err);
+      } else if (isAgentError) {
+        // Handle agent-specific errors that should show banner
+        console.error('[useAgentStream] Agent error occurred:', errorMessage, err);
+        setError(errorMessage);
+        callbacks.onAgentError?.(errorMessage);
+        // Don't show toast for agent errors as they'll be shown in banner
       } else {
         console.error('[useAgentStream] Streaming error:', errorMessage, err);
         setError(errorMessage);
-        // Show error toast with longer duration
+        // Show error toast with longer duration for other errors
         toast.error(errorMessage, { duration: 15000 });
       }
 
@@ -544,7 +575,7 @@ export function useAgentStream(
         return;
       }
     },
-    [finalizeStream, getAgentStatus],
+    [finalizeStream, onCreditError, categorizeError, callbacks],
   );
 
   const handleStreamClose = useCallback(() => {
@@ -587,10 +618,6 @@ export function useAgentStream(
           // );
           return;
         }
-
-        // console.log(
-        //   `[useAgentStream] Final status for run ID ${runId}: ${agentStatus.status}`,
-        // );
 
         if (agentStatus.status === 'running') {
           setError('Stream closed unexpectedly while agent was running.');
@@ -777,18 +804,23 @@ export function useAgentStream(
         }
 
         const errorMessage = err instanceof Error ? err.message : String(err);
-        const lower = errorMessage.toLowerCase();
-        const isExpected =
-          lower.includes('not found') ||
-          lower.includes('404') ||
-          lower.includes('does not exist') ||
-          lower.includes('not running');
+        const { isExpected, isCreditError, isAgentError } = categorizeError(errorMessage);
 
         if (isExpected) {
           console.info(
             `[useAgentStream] Stream not started for ${runId}: ${errorMessage}`,
           );
           finalizeStream('agent_not_running', runId);
+        } else if (isCreditError && onCreditError) {
+          onCreditError(err);
+          finalizeStream('error', runId);
+        } else if (isAgentError) {
+          console.error(
+            `[useAgentStream] Agent error initiating stream for ${runId}: ${errorMessage}`,
+          );
+          setError(errorMessage);
+          callbacks.onAgentError?.(errorMessage);
+          finalizeStream('error', runId);
         } else {
           console.error(
             `[useAgentStream] Error initiating stream for ${runId}: ${errorMessage}`,
@@ -805,6 +837,9 @@ export function useAgentStream(
       handleStreamMessage,
       handleStreamError,
       handleStreamClose,
+      categorizeError,
+      callbacks,
+      onCreditError,
     ],
   ); // Add dependencies
 

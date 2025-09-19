@@ -374,7 +374,7 @@ export function PresentationViewer({
         <div className="w-full h-full flex items-center justify-center bg-transparent p-4">
           <div 
             ref={setContainerRef}
-            className="relative bg-white dark:bg-zinc-900 rounded-lg overflow-hidden border border-zinc-200/40 dark:border-zinc-800/40"
+            className="relative bg-background rounded-lg overflow-hidden border border-zinc-200/40 dark:border-zinc-800/40"
             style={{
               width: '100%',
               maxWidth: '90vw',
@@ -581,7 +581,7 @@ export function PresentationViewer({
                     currentSlideNumber === slide.number 
                       ? 'ring-2 ring-blue-500/20 shadow-md' 
                       : 'hover:shadow-lg hover:scale-[1.01]'
-                  } bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm`}
+                  } bg-background border border-zinc-200 dark:border-zinc-800 shadow-sm`}
                   onClick={() => {
                     setFullScreenInitialSlide(slide.number);
                     setIsFullScreenOpen(true);

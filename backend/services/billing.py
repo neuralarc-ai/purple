@@ -338,13 +338,11 @@ async def calculate_monthly_usage(client, user_id: str) -> float:
 async def get_usage_logs(client, user_id: str, page: int = 0, items_per_page: int = 1000) -> Dict:
     """Get detailed usage logs for a user with pagination, grouped by thread using usage_logs."""
     now = datetime.now(timezone.utc)
-    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    # First, get all usage logs for the month to properly aggregate by thread
+    # First, get all usage logs to properly aggregate by thread
     all_res = await client.table('usage_logs') \
         .select('thread_id, total_prompt_tokens, total_completion_tokens, total_tokens, estimated_cost, created_at') \
         .eq('user_id', user_id) \
-        .gte('created_at', start_of_month.isoformat()) \
         .order('created_at', desc=True) \
         .execute()
 

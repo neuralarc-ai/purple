@@ -26,7 +26,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
   return (
     <TooltipProvider>
       <div className={cn("flex items-center", className)}>
-        <div className="relative bg-none h-8 border dark:border-muted-foreground/20 rounded-full p-0.5 flex items-center dakr:bg-background/30">
+        <div className="relative bg-none h-8 border border-muted-foreground/30 rounded-full p-0.5 flex items-center dakr:bg-background/30">
           {/* Animated sliding background */}
           <motion.div
             className={cn(
@@ -59,7 +59,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
                 }}
                 disabled={disabled}
               >
-                <i className="ri-chat-1-line text-base" />
+                <i className="ri-chat-1-line text-lg" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="rounded-xl">
@@ -90,7 +90,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
                 }}
                 disabled={disabled}
               >
-                <i className="ri-meteor-fill text-base" />          
+                <i className="ri-meteor-fill text-lg" />          
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="rounded-xl">

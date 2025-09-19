@@ -234,8 +234,23 @@ async def run_agent_background(
                 # Emit a status message once when entering paused state
                 if not paused_announced:
                     pause_message = {"type": "status", "status": "paused", "message": "Agent run paused"}
-                    pending_redis_operations.append(asyncio.create_task(redis.rpush(response_list_key, json.dumps(pause_message))))
-                    pending_redis_operations.append(asyncio.create_task(redis.publish(response_channel, "new")))
+                    
+                    async def safe_pause_rpush():
+                        try:
+                            return await redis.rpush(response_list_key, json.dumps(pause_message))
+                        except Exception as e:
+                            logger.error(f"Redis pause rpush failed for {agent_run_id}: {e}")
+                            return None
+                    
+                    async def safe_pause_publish():
+                        try:
+                            return await redis.publish(response_channel, "new")
+                        except Exception as e:
+                            logger.error(f"Redis pause publish failed for {agent_run_id}: {e}")
+                            return None
+                    
+                    pending_redis_operations.append(asyncio.create_task(safe_pause_rpush()))
+                    pending_redis_operations.append(asyncio.create_task(safe_pause_publish()))
                     paused_announced = True
                 await asyncio.sleep(0.2)
                 # Loop continues until paused becomes False by control signal
@@ -243,10 +258,26 @@ async def run_agent_background(
                 # Clear the announcement flag on resume so future pauses can announce again
                 paused_announced = False
 
-            # Store response in Redis list and publish notification
+            # Store response in Redis list and publish notification with error handling
             response_json = json.dumps(response)
-            pending_redis_operations.append(asyncio.create_task(redis.rpush(response_list_key, response_json)))
-            pending_redis_operations.append(asyncio.create_task(redis.publish(response_channel, "new")))
+            
+            # Create Redis operations with error handling
+            async def safe_rpush():
+                try:
+                    return await redis.rpush(response_list_key, response_json)
+                except Exception as e:
+                    logger.error(f"Redis rpush failed for {agent_run_id}: {e}")
+                    return None
+            
+            async def safe_publish():
+                try:
+                    return await redis.publish(response_channel, "new")
+                except Exception as e:
+                    logger.error(f"Redis publish failed for {agent_run_id}: {e}")
+                    return None
+            
+            pending_redis_operations.append(asyncio.create_task(safe_rpush()))
+            pending_redis_operations.append(asyncio.create_task(safe_publish()))
             total_responses += 1
 
             # Check for agent-signaled completion or error
@@ -293,13 +324,25 @@ async def run_agent_background(
         final_status = "failed"
         trace.span(name="agent_run_failed").end(status_message=error_message, level="ERROR")
 
-        # Push error message to Redis list
-        error_response = {"type": "status", "status": "error", "message": error_message}
+        # Check if this is a Redis connection error
+        is_redis_error = "Too many connections" in error_message or "ConnectionError" in error_message
+        
+        # Push error message to Redis list with enhanced error info
+        error_response = {
+            "type": "status", 
+            "status": "error", 
+            "message": error_message,
+            "error_type": "redis_connection" if is_redis_error else "general",
+            "duration": duration
+        }
+        
         try:
             await redis.rpush(response_list_key, json.dumps(error_response))
             await redis.publish(response_channel, "new")
         except Exception as redis_err:
              logger.error(f"Failed to push error response to Redis for {agent_run_id}: {redis_err}")
+             # If we can't even push to Redis, create a local error response
+             error_response["redis_push_failed"] = str(redis_err)
 
         # Fetch final responses (including the error)
         all_responses = []
@@ -346,11 +389,15 @@ async def run_agent_background(
         # Clean up the run lock
         await _cleanup_redis_run_lock(agent_run_id)
 
-        # Wait for all pending redis operations to complete, with timeout
-        try:
-            await asyncio.wait_for(asyncio.gather(*pending_redis_operations), timeout=30.0)
-        except asyncio.TimeoutError:
-            logger.warning(f"Timeout waiting for pending Redis operations for {agent_run_id}")
+        # Wait for all pending redis operations to complete, with timeout and error handling
+        if pending_redis_operations:
+            try:
+                await asyncio.wait_for(asyncio.gather(*pending_redis_operations, return_exceptions=True), timeout=30.0)
+            except asyncio.TimeoutError:
+                logger.warning(f"Timeout waiting for pending Redis operations for {agent_run_id}")
+            except Exception as e:
+                logger.error(f"Error in pending Redis operations for {agent_run_id}: {e}")
+                # Don't fail the entire run due to Redis issues
 
         logger.debug(f"Agent run background task fully completed for: {agent_run_id} (Instance: {instance_id}) with final status: {final_status}")
 

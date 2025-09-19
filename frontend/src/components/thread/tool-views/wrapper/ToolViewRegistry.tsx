@@ -12,6 +12,7 @@ import { WebCrawlToolView } from '../WebCrawlToolView';
 import { WebScrapeToolView } from '../web-scrape-tool/WebScrapeToolView';
 import { WebSearchToolView } from '../web-search-tool/WebSearchToolView';
 import { SeeImageToolView } from '../see-image-tool/SeeImageToolView';
+import { ImageEditGenerateToolView } from '../image-edit-generate-tool/ImageEditGenerateToolView';
 import { TerminateCommandToolView } from '../command-tool/TerminateCommandToolView';
 import { AskToolView } from '../ask-tool/AskToolView';
 import { CompleteToolView } from '../CompleteToolView';
@@ -78,6 +79,7 @@ const defaultRegistry: ToolViewRegistryType = {
   'expose-port': ExposePortToolView,
 
   'see-image': SeeImageToolView,
+  'image_edit_or_generate': ImageEditGenerateToolView,
 
   'ask': AskToolView,
   'complete': CompleteToolView,

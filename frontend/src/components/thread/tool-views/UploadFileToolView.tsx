@@ -211,7 +211,7 @@ export function UploadFileToolView({
 
   return (
     <Card className="gap-0 flex border shadow-none border-t border-b-0 border-x-0 p-0 rounded-none flex-col h-full overflow-hidden bg-card">
-      <CardHeader className="h-14 bg-zinc-50/80 dark:bg-zinc-900/80 backdrop-blur-sm border-b p-2 px-4 space-y-2">
+      <CardHeader className="h-14 bg-background backdrop-blur-sm border-b p-2 px-4 space-y-2">
         <div className="flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="relative p-2 rounded-lg bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/20">
@@ -260,7 +260,7 @@ export function UploadFileToolView({
             <div className="p-4">
               {actualIsSuccess && uploadResult ? (
                 <div className="space-y-4">
-                  <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
+                  <div className="bg-background border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
                     <div className="p-3">
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div className="flex items-center gap-2">
@@ -279,7 +279,7 @@ export function UploadFileToolView({
                     </div>
                   </div>
                   {uploadResult.secure_url && (
-                    <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
+                    <div className="bg-background border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-sm">
                       <div className="p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-6 h-6 rounded bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">

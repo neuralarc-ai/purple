@@ -1295,6 +1295,12 @@ export function getToolComponent(toolName: string): string {
     case 'expose-port':
       return 'ExposePortToolView';
 
+    // Image operations
+    case 'see-image':
+      return 'SeeImageToolView';
+    case 'image_edit_or_generate':
+      return 'ImageEditGenerateToolView';
+
     // Default
     default:
       return 'GenericToolView';

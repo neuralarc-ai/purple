@@ -1,7 +1,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
+import { BillingModal } from '@/components/billing/billing-modal';
 import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
+import { useSharedSubscription } from '@/contexts/SubscriptionContext';
 import {
   ChatInput,
   ChatInputHandles
@@ -46,17 +48,19 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [localLoading, setLocalLoading] = useState(false); // Local loading state for immediate feedback
   const [hasStartedConversation, setHasStartedConversation] = useState(false);
+  const [showBillingModal, setShowBillingModal] = useState(false);
 
   const isHeliumAgent = agentMetadata?.is_helium_default || false;
   
   // Credit exhaustion handling
+  const { data: subscriptionData } = useSharedSubscription();
   const {
     isExhausted,
     showBanner,
     handleCreditError,
     clearCreditExhaustion,
     hideBanner,
-  } = useCreditExhaustion();
+  } = useCreditExhaustion({ subscriptionData });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputHandles>(null);
@@ -519,6 +523,8 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
                   onUpgrade={() => {
                     // Clear credit exhaustion state when user clicks upgrade
                     clearCreditExhaustion();
+                    // Open billing modal
+                    setShowBillingModal(true);
                   }}
                 />
               </div>
@@ -545,6 +551,11 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
           </div>
         </div>
       </div>
+      
+      <BillingModal
+        open={showBillingModal}
+        onOpenChange={setShowBillingModal}
+      />
     </div>
   );
 };
