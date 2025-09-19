@@ -37,6 +37,8 @@ class DAGADEntry(BaseModel):
     trigger_keywords: Optional[List[str]] = None
     trigger_patterns: Optional[List[str]] = None
     context_conditions: Optional[dict] = None
+    # Folder association
+    folder_id: Optional[str] = None
 
 
 class DAGADEntryResponse(BaseModel):
@@ -66,6 +68,8 @@ class DAGADEntryResponse(BaseModel):
     created_at: str
     updated_at: str
     last_used_at: Optional[str]
+    # Folder association
+    folder_id: Optional[str]
 
 
 class DAGADListResponse(BaseModel):
@@ -95,6 +99,7 @@ class CreateDAGADEntryRequest(BaseModel):
     trigger_keywords: Optional[List[str]] = None
     trigger_patterns: Optional[List[str]] = None
     context_conditions: Optional[dict] = None
+    folder_id: Optional[str] = None
 
 
 class UpdateDAGADEntryRequest(BaseModel):
@@ -119,6 +124,19 @@ class UpdateDAGADEntryRequest(BaseModel):
     trigger_keywords: Optional[List[str]] = None
     trigger_patterns: Optional[List[str]] = None
     context_conditions: Optional[dict] = None
+    folder_id: Optional[str] = None
+
+
+# Folder models
+class DAGADFolder(BaseModel):
+    folder_id: Optional[str] = None
+    name: str = Field(..., min_length=1, max_length=100)
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
+class DAGADFolderListResponse(BaseModel):
+    folders: List[DAGADFolder]
 
 
 class SmartContextRequest(BaseModel):
@@ -187,7 +205,8 @@ async def get_user_dagad_entries(
                 content_tokens=row.get('content_tokens'),
                 created_at=row['created_at'],
                 updated_at=row['updated_at'],
-                last_used_at=row.get('last_used_at')
+                last_used_at=row.get('last_used_at'),
+                folder_id=row.get('folder_id')
             ))
             total_tokens += row.get('content_tokens', 0) or 0
 
@@ -232,6 +251,8 @@ async def create_dagad_entry(
             'trigger_patterns': entry_data.trigger_patterns or [],
             'context_conditions': entry_data.context_conditions or {}
         }
+        if entry_data.folder_id is not None:
+            insert_data['folder_id'] = entry_data.folder_id
         result = await client.table('user_dagad_entries').insert(insert_data).execute()
         if not result.data:
             raise HTTPException(status_code=500, detail="Failed to create DAGAD entry")
@@ -261,7 +282,8 @@ async def create_dagad_entry(
             content_tokens=row.get('content_tokens'),
             created_at=row['created_at'],
             updated_at=row['updated_at'],
-            last_used_at=row.get('last_used_at')
+            last_used_at=row.get('last_used_at'),
+            folder_id=row.get('folder_id')
         )
     except HTTPException:
         raise
@@ -398,6 +420,8 @@ async def update_dagad_entry(
             update_data['trigger_patterns'] = entry_data.trigger_patterns
         if entry_data.context_conditions is not None:
             update_data['context_conditions'] = entry_data.context_conditions
+        if entry_data.folder_id is not None:
+            update_data['folder_id'] = entry_data.folder_id
 
         if not update_data:
             raise HTTPException(status_code=400, detail="No fields to update")
@@ -431,7 +455,8 @@ async def update_dagad_entry(
             content_tokens=row.get('content_tokens'),
             created_at=row['created_at'],
             updated_at=row['updated_at'],
-            last_used_at=row.get('last_used_at')
+            last_used_at=row.get('last_used_at'),
+            folder_id=row.get('folder_id')
         )
     except HTTPException:
         raise
@@ -504,7 +529,8 @@ async def get_dagad_entry(
             content_tokens=row.get('content_tokens'),
             created_at=row['created_at'],
             updated_at=row['updated_at'],
-            last_used_at=row.get('last_used_at')
+            last_used_at=row.get('last_used_at'),
+            folder_id=row.get('folder_id')
         )
     except HTTPException:
         raise
@@ -542,3 +568,74 @@ async def get_smart_dagad_context(
     except Exception as e:
         logger.error(f"Error getting smart DAGAD context for user {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve smart DAGAD context")
+
+
+# Folder endpoints (minimal CRUD)
+@router.get("/folders", response_model=DAGADFolderListResponse)
+async def list_folders(user_id: str = Depends(get_current_user_id_from_jwt)):
+    try:
+        client = await db.client
+        result = await client.table('user_dagad_folders').select('*').eq('user_id', user_id).order('created_at', desc=False).execute()
+        folders = [DAGADFolder(folder_id=row['folder_id'], name=row['name'], created_at=row.get('created_at'), updated_at=row.get('updated_at')) for row in (result.data or [])]
+        return DAGADFolderListResponse(folders=folders)
+    except Exception as e:
+        logger.error(f"Error listing DAGAD folders for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve folders")
+
+
+class CreateFolderRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+@router.post("/folders", response_model=DAGADFolder)
+async def create_folder(req: CreateFolderRequest, user_id: str = Depends(get_current_user_id_from_jwt)):
+    try:
+        client = await db.client
+        insert = { 'user_id': user_id, 'name': req.name }
+        result = await client.table('user_dagad_folders').insert(insert).execute()
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to create folder")
+        row = result.data[0]
+        return DAGADFolder(folder_id=row['folder_id'], name=row['name'], created_at=row.get('created_at'), updated_at=row.get('updated_at'))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error creating DAGAD folder for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to create folder")
+
+
+class UpdateFolderRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+
+
+@router.put("/folders/{folder_id}", response_model=DAGADFolder)
+async def rename_folder(folder_id: str, req: UpdateFolderRequest, user_id: str = Depends(get_current_user_id_from_jwt)):
+    try:
+        client = await db.client
+        result = await client.table('user_dagad_folders').update({ 'name': req.name }).eq('folder_id', folder_id).eq('user_id', user_id).execute()
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Folder not found")
+        row = result.data[0]
+        return DAGADFolder(folder_id=row['folder_id'], name=row['name'], created_at=row.get('created_at'), updated_at=row.get('updated_at'))
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error renaming DAGAD folder {folder_id} for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to rename folder")
+
+
+@router.delete("/folders/{folder_id}")
+async def delete_folder(folder_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
+    try:
+        client = await db.client
+        # Optionally set folder_id=null on entries within the folder
+        await client.table('user_dagad_entries').update({ 'folder_id': None }).eq('folder_id', folder_id).eq('user_id', user_id).execute()
+        result = await client.table('user_dagad_folders').delete().eq('folder_id', folder_id).eq('user_id', user_id).execute()
+        if not result.data:
+            raise HTTPException(status_code=404, detail="Folder not found")
+        return { 'message': 'Folder deleted' }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting DAGAD folder {folder_id} for user {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to delete folder")

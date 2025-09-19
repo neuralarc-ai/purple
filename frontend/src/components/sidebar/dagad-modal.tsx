@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
-import { Notebook, Trash2, Loader2, Pencil, Upload, X, Info, Plus, Eye } from 'lucide-react';
+import { Notebook, Trash2, Loader2, Pencil, Upload, X, Info, Plus, Eye, Folder, FolderOpen, ChevronRight, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
@@ -50,6 +50,7 @@ type Entry = {
   trigger_patterns?: string[];
   created_at: string;
   updated_at: string;
+  folder_id?: string | null;
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
@@ -190,6 +191,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const [viewEntryState, setViewEntryState] = useState<Entry | null>(null);
   // Toggle for showing attachments (image/file) inside the view dialog
   const [showViewFile, setShowViewFile] = useState<boolean>(false);
+  // Folders state
+  const [folders, setFolders] = useState<{ folder_id: string; name: string }[]>([]);
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
+  const [newFolderName, setNewFolderName] = useState('');
+  const [creatingFolder, setCreatingFolder] = useState(false);
+  const [selectedFolderId, setSelectedFolderId] = useState<string>('unfiled');
+  const [editSelectedFolderId, setEditSelectedFolderId] = useState<string>('unfiled');
 
   // Reset attachment visibility whenever a new entry is opened or dialog closed
   useEffect(() => {
@@ -241,6 +249,49 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
       setErrorMsg('Failed to load entries. Check API URL and auth.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFolders = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${API_BASE}/dagad/folders`, {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+        credentials: 'include',
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setFolders((data.folders || []).map((f: any) => ({ folder_id: f.folder_id, name: f.name })));
+    } catch (e) {
+      // non-fatal
+    }
+  };
+
+  const createFolder = async () => {
+    if (!newFolderName.trim()) return;
+    try {
+      setCreatingFolder(true);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch(`${API_BASE}/dagad/folders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+        credentials: 'include',
+        body: JSON.stringify({ name: newFolderName.trim() })
+      });
+      if (res.ok) {
+        const folder = await res.json();
+        setFolders((prev) => [...prev, { folder_id: folder.folder_id, name: folder.name }]);
+        setNewFolderName('');
+        toast.success('Folder created');
+      } else {
+        toast.error('Failed to create folder');
+      }
+    } finally {
+      setCreatingFolder(false);
     }
   };
 
@@ -387,6 +438,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           priority: 1, 
           is_global: false, 
           auto_inject: true,
+          folder_id: selectedFolderId === 'unfiled' ? null : selectedFolderId,
           ...(filePayload || {}),
         }),
       });
@@ -477,6 +529,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     setEditSelectedImage(null);
     setEditSelectedFile(null); // Reset file state for edit
     setEditUploadedFileInfo(null);
+    setEditSelectedFolderId((entry.folder_id ?? 'unfiled') as string);
   };
 
   const saveEdit = async () => {
@@ -519,6 +572,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           image_alt_text: editSelectedImage?.name || editEntry.image_alt_text,
           category: editCategory,
           is_active: editIsActive,
+          folder_id: editSelectedFolderId === 'unfiled' ? null : editSelectedFolderId,
           ...(filePayload || {}),
         }),
       });
@@ -570,6 +624,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   useEffect(() => {
     if (open) {
       fetchEntries();
+      fetchFolders();
       // Reset form state when dialog opens
       setShowAddForm(false);
       resetAddForm();
@@ -624,6 +679,19 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                 )}
               </div>
 
+              {/* Folder Toolbar */}
+              <div className="mb-3 flex items-center gap-2">
+                <Input
+                  placeholder="New folder name"
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  className="max-w-xs bg-background/50 border-border/50"
+                />
+                <Button onClick={createFolder} disabled={!newFolderName.trim()}>
+                  Create folder
+                </Button>
+              </div>
+
               {/* Table */}
               <div className="flex-1 min-h-0">
                 <div className="bg-card/30 backdrop-blur border border-muted rounded-lg overflow-hidden">
@@ -665,142 +733,101 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                         </Button>
                       </div>
                     ) : (
-                      entries.map((entry) => (
-                        <div 
-                          key={entry.entry_id} 
-                          className="md:grid md:grid-cols-12 gap-4 p-4 border-b border-border/20 hover:bg-muted/20 transition-colors group"
-                        >
-                          {/* Mobile Layout */}
-                          <div className="md:hidden space-y-3">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  {getFileIcon(entry)}
-                                  <span className="font-medium text-sm text-foreground/90">
-                                    {entry.title}
-                                  </span>
-                                  <Badge variant="secondary" className="text-xs bg-muted/70 text-muted-foreground border-border/30">
-                                    {entry.category}
-                                  </Badge>
+                      <div>
+                        {[{ folder_id: 'unfiled', name: 'Unfiled' }, ...folders].map((folder) => {
+                          const folderEntries = entries.filter((e) => (e.folder_id ?? 'unfiled') === folder.folder_id);
+                          const isOpen = !!expandedFolders[folder.folder_id];
+                          const toggle = () => setExpandedFolders((prev) => ({ ...prev, [folder.folder_id]: !prev[folder.folder_id] }));
+                          return (
+                            <div key={folder.folder_id}>
+                              <div className="md:grid md:grid-cols-12 gap-4 p-4 border-b border-border/20 bg-muted/10">
+                                <div className="md:hidden flex items-center justify-between">
+                                  <button className="flex items-center gap-2" onClick={toggle}>
+                                    {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                    {isOpen ? <FolderOpen className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
+                                    <span className="font-medium text-sm text-foreground/90">{folder.name}</span>
+                                    <Badge variant="secondary" className="text-xs bg-muted/70 text-muted-foreground border-border/30">{folderEntries.length} items</Badge>
+                                  </button>
                                 </div>
-                                <p className="text-sm text-muted-foreground mb-2">
-                                  {entry.content ? entry.content.substring(0, 60) + (entry.content.length > 60 ? '...' : '') : 'No content'}
-                                </p>
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(entry.created_at).toLocaleDateString()}
-                                </span>
+                                <div className="hidden md:contents">
+                                  <div className="col-span-3">
+                                    <button className="flex items-center gap-2" onClick={toggle}>
+                                      {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                      {isOpen ? <FolderOpen className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
+                                      <span className="font-medium text-sm text-foreground/90">{folder.name}</span>
+                                      <Badge variant="secondary" className="ml-2 text-xs bg-muted/70 text-muted-foreground border-border/30">{folderEntries.length} items</Badge>
+                                    </button>
+                                  </div>
+                                  <div className="col-span-4 text-sm text-muted-foreground">Entries in this folder.</div>
+                                  <div className="col-span-1 flex justify-center"></div>
+                                  <div className="col-span-2"></div>
+                                  <div className="col-span-1 flex justify-center"></div>
+                                  <div className="col-span-1 flex justify-center"></div>
+                                </div>
                               </div>
-                              <Switch 
-                                checked={entry.is_active} 
-                                onCheckedChange={(checked) => toggleActive(entry, !!checked)}
-                              />
-                            </div>
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => openEdit(entry)}
-                                title="Edit entry"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                                onClick={() => setConfirmEntry(entry)}
-                                disabled={deletingId === entry.entry_id}
-                                title="Delete entry"
-                              >
-                                {deletingId === entry.entry_id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
 
-                          {/* Desktop Layout */}
-                          <div className="hidden md:contents">
-                            {/* Name */}
-                            <div className="col-span-3">
-                              <div className="flex items-center gap-2">
-                                {getFileIcon(entry)}
-                                <span className="font-medium text-sm text-foreground/90 truncate">
-                                  {entry.title}
-                                </span>
-                                <Badge variant="secondary" className="text-xs bg-muted/70 text-muted-foreground border-border/30">
-                                  {entry.category}
-                                </Badge>
+                              {isOpen && folderEntries.map((entry) => (
+                                <div key={entry.entry_id} className="md:grid md:grid-cols-12 gap-4 p-4 pl-6 md:pl-4 border-b border-border/20 hover:bg-muted/20 transition-colors group">
+                                <div className="md:hidden space-y-3">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        {getFileIcon(entry)}
+                                        <span className="font-medium text-sm text-foreground/90">{entry.title}</span>
+                                        <Badge variant="secondary" className="text-xs bg-muted/70 text-muted-foreground border-border/30">{entry.category}</Badge>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground mb-2">{entry.content ? entry.content.substring(0, 60) + (entry.content.length > 60 ? '...' : '') : 'No content'}</p>
+                                      <span className="text-xs text-muted-foreground">{new Date(entry.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                    <Switch checked={entry.is_active} onCheckedChange={(checked) => toggleActive(entry, !!checked)} />
+                                  </div>
+                                  <div className="flex justify-end gap-1">
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(entry)} title="Edit entry">
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10" onClick={() => setConfirmEntry(entry)} disabled={deletingId === entry.entry_id} title="Delete entry">
+                                      {deletingId === entry.entry_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                <div className="hidden md:contents">
+                                  <div className="col-span-3 pl-6 flex items-center">
+                                    <div className="flex items-center gap-2">
+                                      {getFileIcon(entry)}
+                                      <span className="font-medium text-sm text-foreground/90 truncate">{entry.title}</span>
+                                      <Badge variant="secondary" className="text-xs bg-muted/70 text-muted-foreground border-border/30">{entry.category}</Badge>
+                                    </div>
+                                  </div>
+                                  <div className="col-span-4">
+                                    <p className="text-sm text-muted-foreground truncate">{entry.content ? entry.content.substring(0, 100) + (entry.content.length > 100 ? '...' : '') : 'No content'}</p>
+                                  </div>
+                                  <div className="col-span-1 flex justify-center">
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setViewEntryState(entry)} title="View entry">
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                  <div className="col-span-2">
+                                    <span className="text-sm text-muted-foreground">{new Date(entry.created_at).toLocaleDateString()}</span>
+                                  </div>
+                                  <div className="col-span-1 flex justify-center">
+                                    <Switch checked={entry.is_active} onCheckedChange={(checked) => toggleActive(entry, !!checked)} />
+                                  </div>
+                                  <div className="col-span-1 flex justify-center gap-1">
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => openEdit(entry)} title="Edit entry">
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10" onClick={() => setConfirmEntry(entry)} disabled={deletingId === entry.entry_id} title="Delete entry">
+                                      {deletingId === entry.entry_id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
+                            ))}
                             </div>
-
-                            {/* Content */}
-                            <div className="col-span-4">
-                              <p className="text-sm text-muted-foreground truncate">
-                                {entry.content ? entry.content.substring(0, 100) + (entry.content.length > 100 ? '...' : '') : 'No content'}
-                              </p>
-                            </div>
-
-                            {/* View */}
-                            <div className="col-span-1 flex justify-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={() => setViewEntryState(entry)}
-                                title="View entry"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </div>
-
-                            {/* Created at */}
-                            <div className="col-span-2">
-                              <span className="text-sm text-muted-foreground">
-                                {new Date(entry.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
-
-                            {/* Status */}
-                            <div className="col-span-1 flex justify-center">
-                              <Switch 
-                                checked={entry.is_active} 
-                                onCheckedChange={(checked) => toggleActive(entry, !!checked)}
-                              />
-                            </div>
-
-                            {/* Actions */}
-                            <div className="col-span-1 flex justify-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => openEdit(entry)}
-                                title="Edit entry"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10"
-                                onClick={() => setConfirmEntry(entry)}
-                                disabled={deletingId === entry.entry_id}
-                                title="Delete entry"
-                              >
-                                {deletingId === entry.entry_id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -888,6 +915,22 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                     <div className="flex items-center justify-end text-xs text-muted-foreground">
                       {content.length}/{MAX_CONTENT_CHARS}
                     </div>
+                  </div>
+
+                  {/* Folder selection */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground/80">Folder</label>
+                    <Select value={selectedFolderId} onValueChange={(value) => setSelectedFolderId(value)}>
+                      <SelectTrigger className="bg-background/50 border-border/50">
+                        <SelectValue placeholder="Select folder" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unfiled">Unfiled</SelectItem>
+                        {folders.map((f) => (
+                          <SelectItem key={f.folder_id} value={f.folder_id}>{f.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Attachment Upload (Image or Document) */}
@@ -1068,6 +1111,21 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                 <SelectItem value="general">General</SelectItem>
               </SelectContent>
             </Select>
+            {/* Folder selection (edit) */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground/80">Folder</label>
+              <Select value={editSelectedFolderId} onValueChange={(value) => setEditSelectedFolderId(value)}>
+                <SelectTrigger className="bg-background/50 border-border/50">
+                  <SelectValue placeholder="Select folder" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unfiled">Unfiled</SelectItem>
+                  {folders.map((f) => (
+                    <SelectItem key={f.folder_id} value={f.folder_id}>{f.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Textarea 
               placeholder="Entry content" 
               value={editContent}
