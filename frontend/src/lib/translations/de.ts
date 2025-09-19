@@ -161,6 +161,63 @@ export const de = {
     },
     description: "Die meisten führenden KI-Tools, die Unternehmen weltweit nutzen, arbeiten mit monatlichen Abonnementplänen mit begrenzten Tokens oder Credits, was oft zu Unterauslastung oder Überschreitungen führt. Helium führt ein innovatives Preismodell ein, das für Flexibilität und Kosteneffizienz entwickelt wurde. Unternehmen können ein Vorauszahlungs-Credit-Modell wählen, das es ihnen ermöglicht, Credits im Voraus zu kaufen und sie in ihrem eigenen Tempo zu nutzen, mit der Option, jederzeit aufzufüllen. Alternativ können sie das PAYG (Pay-As-You-Go) Modell wählen, das sicherstellt, dass sie nur für das bezahlen, was sie tatsächlich nutzen. Dieser Ansatz kann die gesamten KI-Ausgaben für Unternehmen um bis zu 45-55 Prozent reduzieren und macht Helium zu einer hochwirtschaftlichen und skalierbaren Lösung für moderne Unternehmen."
   },
+  benchmarking: {
+    title: "Benchmarking Brilliance:",
+    subtitle: "Helium vs. ChatGPT, Claude, GenSpark und Lovable",
+    description_1: "Wir haben Helium gegen vier der beliebtesten KI-Tools getestet, die Unternehmen weltweit nutzen: ChatGPT-5, Claude Sonnet-4, GenSpark AI und Loveable. Jeder Plattform wurde exakt derselbe Prompt gegeben, und ihre Ausgaben wurden auf Tiefe, Genauigkeit und reale Geschäftsrelevanz bewertet.",
+    description_2: "Unten finden Sie einen Seitenvergleich-Video-Vergleich zusammen mit den resultierenden Dokumenten, der es Ihnen ermöglicht zu entscheiden, welche Lösung die kraftvollsten und umsetzbaren Erkenntnisse für Unternehmen liefert.",
+    comparisons: {
+      helium_claude_1: {
+        title: "Helium / Claude",
+        facts: [
+          "Claude erstellte 11 Seiten; Helium produzierte 27 Seiten mit strukturierter Tiefe.",
+          "Helium kartiert automatisch Features zu Geschäftsergebnissen und Umsatzauswirkungen.",
+        ],
+        prompt: "Entwerfen Sie eine 12-Monate-Produktroadmap für ein KI-gestütztes CRM, das von Freemium zu Enterprise übergeht. Einschließen: Feature-Priorisierungs-Framework, technische Schuldenverwaltung, API-Entwicklungsstrategie, Enterprise-Sicherheitsanforderungen, Preistier-Restrukturierung, Wettbewerbsdifferenzierungstaktiken und Benutzeradoptions-Metriken. Kartieren Sie Features zu Geschäftsergebnissen und Umsatzauswirkungen."
+      },
+      helium_gpt: {
+        title: "Helium / GPT",
+        facts: [
+          "GPT ist schneller, liefert aber oft oberflächliche Ausgaben im Vergleich zu Heliums reichen Lieferungen.",
+          "Helium bietet entscheidungsbereite Strukturen (KPIs, phasierte Roadmaps), die GPT typischerweise auslässt.",
+        ],
+        prompt: "Führen Sie umfassende Forschung zum Eintritt in den europäischen KI-Regulierungs-Compliance-Software-Markt durch und erstellen Sie ein detailliertes Markteintrittsstrategie-Dokument. Einschließen: Marktgrößen-Visualisierungen, regulatorische Landschaftskartierung, Wettbewerbsanalyse-Matrizen, Go-to-Market-Zeitpläne, Ressourcenallokations-Diagramme, Umsatzprognose-Modelle, Partnerschafts-Ökosystem-Karten und Risikominderungs-Frameworks."
+      },
+      helium_claude_2: {
+        title: "Helium / Claude",
+        facts: [
+          "Claude lieferte ein umfassendes Dokument mit Marktanalyse und Strategie.",
+          "Helium lieferte tiefe Analyse mit 7 detaillierten Dateien, die Wettbewerbsanalyse, Budgetempfehlungen, Lieferungen-Zusammenfassung, GTM-Strategie, Social-Media-Kalender und strategische Empfehlungen abdecken. Und erstellte auch eine Webseite, unten ist der Link",
+        ],
+        prompt: "Ich lanciere mein Fitness-Ring-Produkt \"MotionR\" (derzeit für $499 + $20/Monat Abonnement gepreist) für Weihnachten 2024 auf US/UK-Märkten. Erforschen Sie aktuelle Feiertags-Fitness/Gesundheitsstimmung und analysieren Sie Konkurrenten (Oura Ring, Samsung Galaxy Ring, RingConn, Ultrahuman Ring Air, etc.) einschließlich ihrer Preise, Features und Weihnachtsmarketingstrategien."
+      },
+      helium_genspark: {
+        title: "Helium / Genspark",
+        facts: [
+          "Genspark erstellte ein umfassendes Handbuch mit guter regulatorischer Abdeckung und Analyse.",
+          "Helium lieferte tiefe Analyse mit spezialisierter Dokumentation einschließlich Compliance-Handbüchern und Führungskräfte-Zusammenfassungen - liefert umsetzbare Tools über nur grundlegende Dokumentation hinaus.",
+          "Um alle Dateien im Detail mit CSV und Dokumentation zu sehen, laden Sie die vollständige ZIP-Datei herunter.",
+        ],
+        prompt: "Erforschen Sie KI-Governance-Regulierungen in wichtigen Märkten (US, EU, APAC) und erstellen Sie ein umfassendes Compliance-Handbuch-Dokument. Einschließen: regulatorische Landschaftskartierung, Compliance-Anforderungs-Matrizen, Implementierungs-Zeitpläne, Kostenauswirkungs-Bewertungen, Anbieter-Bewertungs-Frameworks, Audit-Vorbereitungs-Checklisten, Risikominderungs-Strategien und Richtlinien-Template-Bibliotheken."
+      },
+      helium_lovable: {
+        title: "Helium / Lovable",
+        facts: [
+          "Helium erstellte eine voll funktionsfähige Task Monk App mit dunklem Theme und responsivem Design.",
+          "Gebaut mit MonoScript-Schriftart und einfachen Umriss-Icons wie angefragt.",
+        ],
+        prompt: "Erstellen Sie mir eine Klon-App von taskade.com. Diese App wird \"Task Monk\" genannt. Muss voll funktionsfähig und mit allen notwendigen Features sein. Erstellen Sie Dummy-Login \"admin\" und Passwort \"123456\" Verwenden Sie dunkles Theme, das schwarz und weiß ist mit einfachen Umriss-Icons Schriftart MonoScript oder ähnlich Muss responsiv und interaktiv sein Erstellen Sie diese App zusammen mit einer Landing Page, die klebrig ist und Menschen zum Login ermutigt"
+      }
+    },
+    labels: {
+      prompt: "Prompt:",
+      final_result_files: "Endgültige Ergebnisdateien:",
+      view_file_created_by: "Datei erstellt von anzeigen",
+      view_app_created_by: "App erstellt von anzeigen",
+      view_all_files_in_zip_created_by: "Alle Dateien in ZIP erstellt von anzeigen",
+      view_webpage_created_by: "Webseite erstellt von anzeigen"
+    }
+  },
   footer: {
     copyright: "© 2024 Helium AI. Alle Rechte vorbehalten."
   }

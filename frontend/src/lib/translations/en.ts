@@ -161,6 +161,63 @@ export const en = {
     },
     description: "Most leading AI tools that businesses use across the globe operate on monthly subscription plans with limited tokens or credits, which often leads to underutilization or overages. Helium introduces an innovative pricing model designed for flexibility and cost efficiency. Businesses can choose a prepaid credit model, allowing them to purchase credits in advance and use them at their own pace, with the option to top up anytime. Alternatively, they can select the PAYG (Pay-As-You-Go) model, which ensures they pay only for what they actually use. This approach can reduce overall AI spend for enterprises by as much as 45–55 percent, making Helium a highly economical and scalable solution for modern businesses."
   },
+  benchmarking: {
+    title: "Benchmarking Brilliance:",
+    subtitle: "Helium vs. ChatGPT, Claude, GenSpark and Lovable",
+    description_1: "We put Helium to the test against four of the most popular AI tools businesses use across the globe: ChatGPT-5, Claude Sonnet-4, GenSpark AI and Loveable. Each platform was given the exact same prompt, and their outputs were evaluated for depth, accuracy, and real-world business relevance.",
+    description_2: "Below, you will find a side-by-side video comparison along with the resulting documents, enabling you to decide which solution delivers the most powerful and actionable insights for enterprises.",
+    comparisons: {
+      helium_claude_1: {
+        title: "Helium / Claude",
+        facts: [
+          "Claude created 11 pages; Helium produced 27 pages with structured depth.",
+          "Helium maps features to business outcomes and revenue impact automatically.",
+        ],
+        prompt: "Design a 12-month product roadmap for an AI-powered CRM that's transitioning from freemium to enterprise. Include: feature prioritization framework, technical debt management, API development strategy, enterprise security requirements, pricing tier restructuring, competitive differentiation tactics, and user adoption metrics. Map features to business outcomes and revenue impact."
+      },
+      helium_gpt: {
+        title: "Helium / GPT",
+        facts: [
+          "GPT is faster but often delivers surface-level outputs versus Helium's rich deliverables.",
+          "Helium provides decision-ready structures (KPIs, phased roadmaps) that GPT typically omits.",
+        ],
+        prompt: "Conduct comprehensive research on entering the European AI regulation compliance software market and produce a detailed market entry strategy document. Include: market sizing visualizations, regulatory landscape mapping, competitive analysis matrices, go-to-market timeline charts, resource allocation diagrams, revenue projection models, partnership ecosystem maps, and risk mitigation frameworks."
+      },
+      helium_claude_2: {
+        title: "Helium / Claude",
+        facts: [
+          "Claude provided one comprehensive document with market analysis and strategy.",
+          "Helium delivered deep analysis with 7 detailed files covering competitive analysis, budget recommendations, deliverables summary, GTM strategy, social media calendar, and strategic recommendations. And created a webpage too below is link",
+        ],
+        prompt: "I am launching \"MotionR\"my fitness ring product (currently priced at $499 + $20/month subscription) for Christmas 2024 in US/UK markets. Research current holiday fitness/health sentiment and analyze competitors (Oura Ring, Samsung Galaxy Ring, RingConn, Ultrahuman Ring Air, etc.) including their pricing, features, and Christmas marketing strategies."
+      },
+      helium_genspark: {
+        title: "Helium / Genspark",
+        facts: [
+          "Genspark created a comprehensive handbook with good regulatory coverage and analysis.",
+          "Helium delivered deep analysis with specialized documentation including compliance handbooks and executive summaries - providing actionable tools beyond just basic documentation.",
+          "To view all files in detail with CSV and documentation, download the complete ZIP file.",
+        ],
+        prompt: "Research AI governance regulations across major markets (US, EU, APAC) and create a comprehensive compliance handbook document. Include: regulatory landscape mapping, compliance requirement matrices, implementation timeline charts, cost impact assessments, vendor evaluation frameworks, audit preparation checklists, risk mitigation strategies, and policy template libraries."
+      },
+      helium_lovable: {
+        title: "Helium / Lovable",
+        facts: [
+          "Helium created a fully functional Task Monk app with dark theme and responsive design.",
+          "Built with MonoScript font and simple outline icons as requested.",
+        ],
+        prompt: "Create me a clone app of taskade.com. This app will be called \"Task Monk\" Needs to be fully functional and with all the necessary features. Create dummy login \"admin\" and password \"123456\" Use Dark theme that is black and white with simple outline icons Font MonoScript or Similar Has to be responsive and interactive Build this app along with a landing page that will be sticky and encourage people to login"
+      }
+    },
+    labels: {
+      prompt: "Prompt:",
+      final_result_files: "Final Result Files:",
+      view_file_created_by: "View File created by",
+      view_app_created_by: "View app created by",
+      view_all_files_in_zip_created_by: "View All Files in zip created by",
+      view_webpage_created_by: "View webpage created by"
+    }
+  },
   footer: {
     copyright: "© 2024 Helium AI. All rights reserved."
   }
