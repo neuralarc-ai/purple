@@ -574,8 +574,10 @@ async def get_smart_dagad_context(
 @router.get("/folders", response_model=DAGADFolderListResponse)
 async def list_folders(user_id: str = Depends(get_current_user_id_from_jwt)):
     try:
+        logger.info(f"📁 Listing folders for user_id: {user_id}")
         client = await db.client
         result = await client.table('user_dagad_folders').select('*').eq('user_id', user_id).order('created_at', desc=False).execute()
+        logger.info(f"📊 Found {len(result.data or [])} folders for user {user_id}")
         folders = [DAGADFolder(folder_id=row['folder_id'], name=row['name'], created_at=row.get('created_at'), updated_at=row.get('updated_at')) for row in (result.data or [])]
         return DAGADFolderListResponse(folders=folders)
     except Exception as e:

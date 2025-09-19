@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/components/AuthProvider';
 import { Notebook, Trash2, Loader2, Pencil, Upload, X, Info, Plus, Eye, Folder, FolderOpen, ChevronRight, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
@@ -143,7 +144,9 @@ interface DagadModalProps {
 export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const { selectedMode } = useModeSelection(); // Get current mode
+  const { session, isLoading: authLoading } = useAuth(); // Use the auth context
   const [loading, setLoading] = useState(true);
+  
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<'instructions' | 'preferences' | 'rules' | 'notes' | 'general'>('general');
@@ -198,6 +201,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [selectedFolderId, setSelectedFolderId] = useState<string>('unfiled');
   const [editSelectedFolderId, setEditSelectedFolderId] = useState<string>('unfiled');
+  const [confirmDeleteFolder, setConfirmDeleteFolder] = useState<{ folder_id: string; name: string } | null>(null);
 
   // Reset attachment visibility whenever a new entry is opened or dialog closed
   useEffect(() => {
@@ -226,14 +230,13 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
   const fetchEntries = async () => {
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
       const res = await fetch(`${API_BASE}/dagad?include_inactive=true`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
         credentials: 'include',
       });
+      
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         const detail = data?.detail || res.statusText || 'Unknown error';
@@ -254,18 +257,41 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
   const fetchFolders = async () => {
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      const res = await fetch(`${API_BASE}/dagad/folders`, {
+      console.log('🔄 fetchFolders called, session token available:', !!session?.access_token);
+      
+      if (!session?.access_token) {
+        console.log('⚠️ No session token, skipping folder fetch');
+        return;
+      }
+      
+      const token = session.access_token;
+      const apiUrl = `${API_BASE}/dagad/folders`;
+      console.log('🌐 Making folders API call to:', apiUrl);
+      
+      const res = await fetch(apiUrl, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
         credentials: 'include',
       });
-      if (!res.ok) return;
+      
+      console.log('📡 Folders response status:', res.status);
+      console.log('📡 Folders response ok:', res.ok);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('❌ Failed to fetch folders:', res.status, res.statusText, errorText);
+        return;
+      }
+      
       const data = await res.json();
-      setFolders((data.folders || []).map((f: any) => ({ folder_id: f.folder_id, name: f.name })));
+      console.log('📦 Folders API Response:', data);
+      console.log('📦 Folders count:', data.folders?.length || 0);
+      
+      const folders = (data.folders || []).map((f: any) => ({ folder_id: f.folder_id, name: f.name }));
+      console.log('📁 Processed folders:', folders);
+      setFolders(folders);
+      console.log('✅ Folders set in state');
     } catch (e) {
-      // non-fatal
+      console.error('💥 Error fetching folders:', e);
     }
   };
 
@@ -273,8 +299,6 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     if (!newFolderName.trim()) return;
     try {
       setCreatingFolder(true);
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const res = await fetch(`${API_BASE}/dagad/folders`, {
         method: 'POST',
@@ -288,10 +312,39 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
         setNewFolderName('');
         toast.success('Folder created');
       } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Failed to create folder:', res.status, errorData);
         toast.error('Failed to create folder');
       }
+    } catch (e) {
+      console.error('Error creating folder:', e);
+      toast.error('Failed to create folder');
     } finally {
       setCreatingFolder(false);
+    }
+  };
+
+  const deleteFolder = async (folderId: string) => {
+    try {
+      const token = session?.access_token;
+      const res = await fetch(`${API_BASE}/dagad/folders/${folderId}`, {
+        method: 'DELETE',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setFolders((prev) => prev.filter((f) => f.folder_id !== folderId));
+        // Move entries from deleted folder to unfiled
+        setEntries((prev) => prev.map((entry) => 
+          entry.folder_id === folderId ? { ...entry, folder_id: null } : entry
+        ));
+        toast.success('Folder deleted');
+      } else {
+        toast.error('Failed to delete folder');
+      }
+    } catch (e) {
+      console.error('Error deleting folder:', e);
+      toast.error('Failed to delete folder');
     }
   };
 
@@ -303,8 +356,6 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
         setUploadingImage(true);
       }
       
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
       // Convert file to base64
@@ -361,8 +412,6 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const uploadFile = async (file: File, isEdit: boolean = false) => {
     try {
       if (isEdit) setEditUploadingFile(true); else setUploadingFile(true);
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const form = new FormData();
       form.append('file', file);
@@ -400,8 +449,6 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     if (!title.trim() || (!content.trim() && !selectedImage && !selectedFile)) return;
     
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
       let imageUrl: string | null = null;
@@ -478,8 +525,6 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const deleteEntry = async (entryId: string) => {
     try {
       setDeletingId(entryId);
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const res = await fetch(`${API_BASE}/dagad/${entryId}`, {
         method: 'DELETE',
@@ -536,8 +581,6 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
     if (!editEntry) return;
     try {
       setSavingEdit(true);
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
       let imageUrl: string | null = editEntry.image_url || null;
@@ -595,8 +638,6 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
   const toggleActive = async (entry: Entry, next: boolean) => {
     try {
-      const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const res = await fetch(`${API_BASE}/dagad/${entry.entry_id}`, {
         method: 'PUT',
@@ -623,28 +664,69 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
   useEffect(() => {
     if (open) {
-      fetchEntries();
-      fetchFolders();
+      console.log('🚀 Modal opened, auth state:', { 
+        authLoading,
+        hasSession: !!session, 
+        hasToken: !!session?.access_token,
+        userId: session?.user?.id 
+      });
+      
+      // Wait for auth to finish loading before fetching data
+      if (!authLoading && session?.access_token) {
+        console.log('✅ Auth loaded and session available, fetching data...');
+        fetchEntries();
+        fetchFolders();
+      } else if (authLoading) {
+        console.log('⏳ Auth still loading, waiting...');
+      } else {
+        console.log('⚠️ No session available, skipping data fetch');
+      }
+      
       // Reset form state when dialog opens
       setShowAddForm(false);
       resetAddForm();
     }
-  }, [open]);
+  }, [open, session, authLoading]);
+
+  // Additional useEffect to handle session loading after modal is open
+  useEffect(() => {
+    if (open && !authLoading && session?.access_token) {
+      console.log('🔄 Session became available while modal is open, fetching data...');
+      fetchEntries();
+      fetchFolders();
+    }
+  }, [session?.access_token, open, authLoading]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl min-h-[600px] max-h-[85vh] bg-background/95 backdrop-blur border-border/50">
+      <DialogContent className="max-w-7xl min-h-[700px] max-h-[90vh] bg-gradient-to-br from-background via-background to-muted/20 backdrop-blur-xl border-border/30 shadow-2xl">
         {/* Header */}
-        <DialogHeader className="pb-4">
-          <DialogTitle className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-sidebar-accent">
-              <i className="ri-book-open-line"></i>
+        <DialogHeader className="pb-6 border-b border-border/20">
+          <div className="flex items-start justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20 shadow-lg">
+                  <i className="ri-brain-line text-2xl text-primary"></i>
+                </div>
+                <div>
+                  <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    Knowledge Base
+                  </DialogTitle>
+                  <p className="text-muted-foreground mt-1 text-base leading-relaxed max-w-2xl">
+                    Teach Helium your preferences and best practices. It will recall the right knowledge when needed.
+                  </p>
+                </div>
+              </div>
             </div>
-            <span className="text-foreground font-semibold text-lg">Knowledge Base</span>
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-2">
-            Teach Helium your preferences and best practices. It will recall the right knowledge when needed, with support for up to 12 entries.
-          </p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-muted/50 px-4 py-2.5 rounded-full border border-border/30 shadow-sm">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="text-sm font-medium text-foreground">
+                  {Math.min(entries.length, MAX_ENTRIES)}/{MAX_ENTRIES} entries
+                </span>
+              </div>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="flex flex-col h-full py-4">
@@ -652,62 +734,111 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
             // Table View
             <>
               {/* Add Knowledge Button */}
-              <div className="mb-4">
-                <div className="flex items-center gap-3">
-                  <Button 
-                    onClick={() => {
-                      if (entries.length >= MAX_ENTRIES) {
-                        toast.error(`You can only have up to ${MAX_ENTRIES} entries.`);
-                        return;
-                      }
-                      setShowAddForm(true);
-                    }}
-                    disabled={entries.length >= MAX_ENTRIES}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-60"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {entries.length >= MAX_ENTRIES ? 'Limit reached' : 'Add Knowledge'}
-                  </Button>
-                  <span className="text-xs text-muted-foreground">
-                    {Math.min(entries.length, MAX_ENTRIES)}/{MAX_ENTRIES}
-                  </span>
-                </div>
-                {entries.length >= MAX_ENTRIES && (
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    You have reached the maximum number of entries. Delete one to add another.
+              <div className="mb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Button 
+                      onClick={() => {
+                        if (entries.length >= MAX_ENTRIES) {
+                          toast.error(`You can only have up to ${MAX_ENTRIES} entries.`);
+                          return;
+                        }
+                        setShowAddForm(true);
+                      }}
+                      disabled={entries.length >= MAX_ENTRIES}
+                      className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground disabled:opacity-60 shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-base font-medium"
+                    >
+                      <Plus className="h-5 w-5 mr-2" />
+                      {entries.length >= MAX_ENTRIES ? 'Limit Reached' : 'Add Knowledge'}
+                    </Button>
+                    {entries.length >= MAX_ENTRIES && (
+                      <div className="flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                        <i className="ri-error-warning-line text-sm"></i>
+                        <span className="text-sm font-medium">Maximum entries reached</span>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Folder Toolbar */}
-              <div className="mb-3 flex items-center gap-2">
-                <Input
-                  placeholder="New folder name"
-                  value={newFolderName}
-                  onChange={(e) => setNewFolderName(e.target.value)}
-                  className="max-w-xs bg-background/50 border-border/50"
-                />
-                <Button onClick={createFolder} disabled={!newFolderName.trim()}>
-                  Create folder
-                </Button>
+              <div className="mb-6 p-4 bg-gradient-to-r from-muted/20 to-muted/10 rounded-xl border border-border/30 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-foreground mb-2 block">
+                      Create New Folder
+                    </label>
+                    <Input
+                      placeholder="Enter folder name..."
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && createFolder()}
+                      className="bg-background/50 border-border/50 focus:border-primary/50 focus:ring-primary/20"
+                    />
+                  </div>
+                  <div className="pt-6">
+                    <Button 
+                      onClick={createFolder} 
+                      disabled={!newFolderName.trim() || creatingFolder}
+                      className="bg-gradient-to-r from-primary/90 to-primary hover:from-primary hover:to-primary/90 text-primary-foreground shadow-md hover:shadow-lg transition-all duration-200"
+                    >
+                      {creatingFolder ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <i className="ri-folder-add-line mr-2"></i>
+                          Create Folder
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               {/* Table */}
               <div className="flex-1 min-h-0">
                 <div className="bg-card/30 backdrop-blur border border-muted rounded-lg overflow-hidden">
                   {/* Table Header - Fixed */}
-                  <div className="hidden md:grid grid-cols-12 gap-4 p-4 bg-sidebar/30 border-b border-border/30 text-sm font-medium text-muted-foreground sticky top-0 z-10">
-                    <div className="col-span-3">Name</div>
-                    <div className="col-span-4">Content</div>
-                    <div className="col-span-1 text-center">View</div>
-                    <div className="col-span-2">Created at</div>
-                    <div className="col-span-1 text-center">Status</div>
-                    <div className="col-span-1 text-center">Actions</div>
+                  <div className="hidden md:grid grid-cols-12 gap-4 p-6 bg-gradient-to-r from-muted/60 to-muted/40 border-b border-border/30 text-sm font-semibold text-foreground/80 sticky top-0 z-10">
+                    <div className="col-span-3 flex items-center gap-2">
+                      <i className="ri-folder-line text-base"></i>
+                      Folder Name
+                    </div>
+                    <div className="col-span-4 flex items-center gap-2">
+                      <i className="ri-file-text-line text-base"></i>
+                      Content
+                    </div>
+                    <div className="col-span-1 text-center flex items-center justify-center gap-2">
+                      <i className="ri-eye-line text-base"></i>
+                      View
+                    </div>
+                    <div className="col-span-2 flex items-center gap-2">
+                      <i className="ri-calendar-line text-base"></i>
+                      Created
+                    </div>
+                    <div className="col-span-1 text-center flex items-center justify-center gap-2">
+                      <i className="ri-checkbox-circle-line text-base"></i>
+                      Status
+                    </div>
+                    <div className="col-span-1 text-center flex items-center justify-center gap-2">
+                      <i className="ri-more-2-line text-base"></i>
+                      Actions
+                    </div>
                   </div>
 
                   {/* Table Body - Scrollable */}
                   <div className="min-h-[400px] max-h-[400px] overflow-y-auto">
-                    {loading ? (
+                    {authLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Loading authentication...
+                        </div>
+                      </div>
+                    ) : loading ? (
                       <div className="flex items-center justify-center py-12">
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -715,21 +846,25 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                         </div>
                       </div>
                     ) : entries.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                        <div className="p-2 aspect-square rounded-full bg-accent border border-border/30 mb-4">
-                          <i className="ri-book-open-line text-lg"></i>
+                      <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+                        <div className="relative mb-8">
+                          <div className="p-6 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 shadow-lg">
+                            <i className="ri-brain-line text-4xl text-primary"></i>
+                          </div>
+                          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                            <i className="ri-add-line text-white text-sm"></i>
+                          </div>
                         </div>
-                        <h4 className="text-base font-medium text-foreground/90 mb-2">No knowledge entries yet</h4>
-                        <p className="text-sm text-muted-foreground max-w-sm mb-4">
-                          Create your first knowledge entry to provide context and information for conversations
+                        <h4 className="text-2xl font-bold text-foreground mb-3">No knowledge entries yet</h4>
+                        <p className="text-muted-foreground max-w-md mb-8 text-base leading-relaxed">
+                          Start building your knowledge base by creating your first entry. Teach Helium your preferences and best practices.
                         </p>
                         <Button 
                           onClick={() => setShowAddForm(true)}
-                          variant="outline"
-                          className="border-border/50"
+                          className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 px-8 py-3 text-base font-medium"
                         >
-                          <i className="ri-add-line"></i>
-                          Add Your First Entry
+                          <i className="ri-add-line mr-2 text-lg"></i>
+                          Create Your First Entry
                         </Button>
                       </div>
                     ) : (
@@ -739,30 +874,84 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                           const isOpen = !!expandedFolders[folder.folder_id];
                           const toggle = () => setExpandedFolders((prev) => ({ ...prev, [folder.folder_id]: !prev[folder.folder_id] }));
                           return (
-                            <div key={folder.folder_id}>
-                              <div className="md:grid md:grid-cols-12 gap-4 p-4 border-b border-border/20 bg-muted/10">
+                            <div key={folder.folder_id} className="group">
+                              <div className="md:grid md:grid-cols-12 gap-4 p-6 border-b border-border/20 bg-gradient-to-r from-card/50 to-card/30 hover:from-card/70 hover:to-card/50 transition-all duration-200 group-hover:shadow-sm">
                                 <div className="md:hidden flex items-center justify-between">
-                                  <button className="flex items-center gap-2" onClick={toggle}>
-                                    {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                    {isOpen ? <FolderOpen className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
-                                    <span className="font-medium text-sm text-foreground/90">{folder.name}</span>
-                                    <Badge variant="secondary" className="text-xs bg-muted/70 text-muted-foreground border-border/30">{folderEntries.length} items</Badge>
+                                  <button className="flex items-center gap-3 group/folder" onClick={toggle}>
+                                    <div className="p-1.5 rounded-lg bg-primary/10 group-hover/folder:bg-primary/20 transition-colors">
+                                      {isOpen ? <FolderOpen className="h-5 w-5 text-primary" /> : <Folder className="h-5 w-5 text-primary" />}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-base text-foreground">{folder.name}</span>
+                                      <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20 font-medium">
+                                        {folderEntries.length} {folderEntries.length === 1 ? 'item' : 'items'}
+                                      </Badge>
+                                    </div>
+                                    <div className="p-1 rounded-full bg-muted/50 group-hover/folder:bg-muted/70 transition-colors">
+                                      {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                                    </div>
                                   </button>
+                                  {folder.folder_id !== 'unfiled' && (
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg transition-all duration-200" 
+                                      onClick={() => setConfirmDeleteFolder({ folder_id: folder.folder_id, name: folder.name })}
+                                      title="Delete folder"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                 </div>
                                 <div className="hidden md:contents">
                                   <div className="col-span-3">
-                                    <button className="flex items-center gap-2" onClick={toggle}>
-                                      {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                      {isOpen ? <FolderOpen className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
-                                      <span className="font-medium text-sm text-foreground/90">{folder.name}</span>
-                                      <Badge variant="secondary" className="ml-2 text-xs bg-muted/70 text-muted-foreground border-border/30">{folderEntries.length} items</Badge>
+                                    <button className="flex items-center gap-3 group/folder" onClick={toggle}>
+                                      <div className="p-1.5 rounded-lg bg-primary/10 group-hover/folder:bg-primary/20 transition-colors">
+                                        {isOpen ? <FolderOpen className="h-5 w-5 text-primary" /> : <Folder className="h-5 w-5 text-primary" />}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-semibold text-base text-foreground">{folder.name}</span>
+                                        <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20 font-medium">
+                                          {folderEntries.length} {folderEntries.length === 1 ? 'item' : 'items'}
+                                        </Badge>
+                                      </div>
+                                      <div className="p-1 rounded-full bg-muted/50 group-hover/folder:bg-muted/70 transition-colors ml-auto">
+                                        {isOpen ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                                      </div>
                                     </button>
                                   </div>
-                                  <div className="col-span-4 text-sm text-muted-foreground">Entries in this folder.</div>
-                                  <div className="col-span-1 flex justify-center"></div>
-                                  <div className="col-span-2"></div>
-                                  <div className="col-span-1 flex justify-center"></div>
-                                  <div className="col-span-1 flex justify-center"></div>
+                                  <div className="col-span-4 flex items-center text-sm text-muted-foreground">
+                                    <i className="ri-file-text-line mr-2"></i>
+                                    {folderEntries.length === 0 ? 'No entries yet' : `${folderEntries.length} knowledge ${folderEntries.length === 1 ? 'entry' : 'entries'}`}
+                                  </div>
+                                  <div className="col-span-1 flex justify-center">
+                                    <div className="w-8 h-8 rounded-full bg-muted/50 flex items-center justify-center">
+                                      <i className="ri-eye-line text-muted-foreground"></i>
+                                    </div>
+                                  </div>
+                                  <div className="col-span-2 flex items-center text-sm text-muted-foreground">
+                                    <i className="ri-calendar-line mr-2"></i>
+                                    Recently created
+                                  </div>
+                                  <div className="col-span-1 flex justify-center">
+                                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-medium">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                                      Active
+                                    </div>
+                                  </div>
+                                  <div className="col-span-1 flex justify-center">
+                                    {folder.folder_id !== 'unfiled' && (
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-9 w-9 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg transition-all duration-200" 
+                                        onClick={() => setConfirmDeleteFolder({ folder_id: folder.folder_id, name: folder.name })}
+                                        title="Delete folder"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
 
@@ -1295,6 +1484,54 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           </div>
           <div className="flex justify-end">
             <Button variant="outline" onClick={() => setViewEntryState(null)} className="border-border/50">Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Folder Confirmation */}
+      <Dialog open={!!confirmDeleteFolder} onOpenChange={() => setConfirmDeleteFolder(null)}>
+        <DialogContent className="sm:max-w-md bg-background/95 backdrop-blur border-border/50">
+          <DialogHeader className="border-b border-border/50 pb-4">
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-4 w-4" />
+              Delete Folder
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-2">
+              This action cannot be undone. The folder will be permanently deleted and all entries in this folder will be moved to "Unfiled".
+            </p>
+            {confirmDeleteFolder && (
+              <div className="p-3 bg-muted/30 rounded-lg border border-border/30 mt-3">
+                <p className="text-sm font-medium text-foreground/90">
+                  "{confirmDeleteFolder.name}"
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  All entries in this folder will be moved to "Unfiled"
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end gap-3 pt-2 border-t border-border/50">
+            <Button 
+              variant="outline" 
+              onClick={() => setConfirmDeleteFolder(null)} 
+              className="border-border/50"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={async () => {
+                if (!confirmDeleteFolder) return;
+                await deleteFolder(confirmDeleteFolder.folder_id);
+                setConfirmDeleteFolder(null);
+              }}
+              className="bg-black text-white hover:text-red-500 border-border/50 dark:bg-white dark:text-black dark:hover:text-red-500"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Folder
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
