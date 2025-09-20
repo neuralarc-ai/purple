@@ -209,6 +209,7 @@ api_router.include_router(composio_api.router)
 
 # DAGAD API
 from dagad import api as dagad_api
+dagad_api.initialize(db)
 api_router.include_router(dagad_api.router)
 
 # Add prompt generation API

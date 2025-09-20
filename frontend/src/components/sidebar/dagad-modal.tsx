@@ -28,6 +28,10 @@ import { toast } from 'sonner';
 import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
+// API configuration
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+const API_BASE = API_BASE_URL.endsWith('/api') ? API_BASE_URL : `${API_BASE_URL}/api`;
+
 type Entry = {
   entry_id: string;
   title: string;
@@ -54,7 +58,6 @@ type Entry = {
   folder_id?: string | null;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000/api';
 const MAX_CONTENT_CHARS = 5000;
 const MAX_TITLE_CHARS = 100;
 const MAX_ENTRIES = 12;
@@ -231,24 +234,32 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const fetchEntries = async () => {
     try {
       const token = session?.access_token;
+      console.log('🔍 Fetching entries with token:', !!token);
+      console.log('🔍 API_BASE:', API_BASE);
 
       const res = await fetch(`${API_BASE}/dagad?include_inactive=true`, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
         credentials: 'include',
       });
       
+      console.log('📡 Entries response status:', res.status);
+      console.log('📡 Entries response ok:', res.ok);
+      
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         const detail = data?.detail || res.statusText || 'Unknown error';
+        console.error('❌ Failed to fetch entries:', res.status, detail);
         setErrorMsg(`Failed to load entries: ${res.status} ${detail}`);
         setEntries([]);
         return;
       }
       const data = await res.json();
+      console.log('📦 Entries API Response:', data);
+      console.log('📦 Entries count:', data.entries?.length || 0);
       setEntries(data.entries || []);
       setErrorMsg(null);
     } catch (e) {
-      console.error('Failed to load DAGAD entries', e);
+      console.error('💥 Error fetching entries:', e);
       setErrorMsg('Failed to load entries. Check API URL and auth.');
     } finally {
       setLoading(false);
@@ -257,16 +268,16 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
   const fetchFolders = async () => {
     try {
-      console.log('🔄 fetchFolders called, session token available:', !!session?.access_token);
-      
       if (!session?.access_token) {
         console.log('⚠️ No session token, skipping folder fetch');
+        setFolders([]);
         return;
       }
       
       const token = session.access_token;
       const apiUrl = `${API_BASE}/dagad/folders`;
       console.log('🌐 Making folders API call to:', apiUrl);
+      console.log('🔑 Using token:', token.substring(0, 20) + '...');
       
       const res = await fetch(apiUrl, {
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
@@ -279,6 +290,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
       if (!res.ok) {
         const errorText = await res.text();
         console.error('❌ Failed to fetch folders:', res.status, res.statusText, errorText);
+        setFolders([]);
         return;
       }
       
@@ -288,10 +300,12 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
       
       const folders = (data.folders || []).map((f: any) => ({ folder_id: f.folder_id, name: f.name }));
       console.log('📁 Processed folders:', folders);
+      console.log('📁 Processed folders length:', folders.length);
       setFolders(folders);
       console.log('✅ Folders set in state');
     } catch (e) {
       console.error('💥 Error fetching folders:', e);
+      setFolders([]);
     }
   };
 
@@ -668,34 +682,47 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
         authLoading,
         hasSession: !!session, 
         hasToken: !!session?.access_token,
-        userId: session?.user?.id 
+        userId: session?.user?.id,
+        sessionObject: session
       });
-      
-      // Wait for auth to finish loading before fetching data
-      if (!authLoading && session?.access_token) {
-        console.log('✅ Auth loaded and session available, fetching data...');
-        fetchEntries();
-        fetchFolders();
-      } else if (authLoading) {
-        console.log('⏳ Auth still loading, waiting...');
-      } else {
-        console.log('⚠️ No session available, skipping data fetch');
-      }
       
       // Reset form state when dialog opens
       setShowAddForm(false);
       resetAddForm();
+    } else {
+      console.log('🚫 Modal closed');
     }
-  }, [open, session, authLoading]);
+  }, [open]);
 
-  // Additional useEffect to handle session loading after modal is open
+  // Separate useEffect for data fetching when auth is ready
   useEffect(() => {
+    console.log('🔄 Auth useEffect triggered:', {
+      open,
+      authLoading,
+      hasSession: !!session,
+      hasToken: !!session?.access_token,
+      userId: session?.user?.id
+    });
+    
     if (open && !authLoading && session?.access_token) {
-      console.log('🔄 Session became available while modal is open, fetching data...');
+      console.log('✅ Auth ready, fetching data...', {
+        hasSession: !!session,
+        hasToken: !!session?.access_token,
+        userId: session?.user?.id,
+        userEmail: session?.user?.email,
+        tokenPreview: session?.access_token?.substring(0, 20) + '...'
+      });
       fetchEntries();
       fetchFolders();
+    } else if (open && !authLoading && !session?.access_token) {
+      console.log('⚠️ Auth loaded but no session available');
+    } else if (open && authLoading) {
+      console.log('⏳ Auth still loading...');
+    } else if (!open) {
+      console.log('🚫 Modal not open, skipping data fetch');
     }
-  }, [session?.access_token, open, authLoading]);
+  }, [open, authLoading, session?.access_token]);
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -831,6 +858,10 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
                   {/* Table Body - Scrollable */}
                   <div className="min-h-[400px] max-h-[400px] overflow-y-auto">
+                    {(() => {
+                      console.log('🔄 Rendering table body - authLoading:', authLoading, 'loading:', loading, 'entries:', entries.length, 'folders:', folders.length);
+                      return null;
+                    })()}
                     {authLoading ? (
                       <div className="flex items-center justify-center py-12">
                         <div className="flex items-center gap-2 text-muted-foreground">
@@ -869,7 +900,14 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                       </div>
                     ) : (
                       <div>
-                        {[{ folder_id: 'unfiled', name: 'Unfiled' }, ...folders].map((folder) => {
+                        {(() => {
+                          const allFolders = [{ folder_id: 'unfiled', name: 'Unfiled' }, ...folders];
+                          console.log('🎨 Rendering folders:', allFolders);
+                          console.log('📊 Folders state:', folders);
+                          console.log('📊 Folders state length:', folders.length);
+                          console.log('📊 All folders length:', allFolders.length);
+                          return allFolders;
+                        })().map((folder) => {
                           const folderEntries = entries.filter((e) => (e.folder_id ?? 'unfiled') === folder.folder_id);
                           const isOpen = !!expandedFolders[folder.folder_id];
                           const toggle = () => setExpandedFolders((prev) => ({ ...prev, [folder.folder_id]: !prev[folder.folder_id] }));

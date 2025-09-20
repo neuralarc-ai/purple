@@ -151,8 +151,14 @@ class ImageUploadRequest(BaseModel):
     metadata: Optional[dict] = None
 
 
-db = DBConnection()
+# Global database connection - will be initialized by main app
+db = None
 
+def initialize(database: DBConnection):
+    """Initialize the DAGAD API with database connection"""
+    global db
+    db = database
+    logger.debug("DAGAD API initialized with database connection")
 
 @router.get("/", response_model=DAGADListResponse)
 async def get_user_dagad_entries(
@@ -168,6 +174,9 @@ async def get_user_dagad_entries(
             raise HTTPException(status_code=403, detail="This feature is not available at the moment.")
 
     try:
+        if db is None:
+            raise HTTPException(status_code=500, detail="DAGAD API not initialized")
+            
         client = await db.client
         query = client.table('user_dagad_entries').select('*').eq('user_id', user_id)
         if not include_inactive:
@@ -488,6 +497,39 @@ async def delete_dagad_entry(
         raise HTTPException(status_code=500, detail="Failed to delete DAGAD entry")
 
 
+# Folder endpoints (minimal CRUD) - MUST come before parameterized routes
+@router.get("/folders", response_model=DAGADFolderListResponse)
+async def list_folders(user_id: str = Depends(get_current_user_id_from_jwt)):
+    try:
+        if db is None:
+            raise HTTPException(status_code=500, detail="DAGAD API not initialized")
+        
+        logger.info(f"📁 Listing folders for user_id: {user_id}")
+        client = await db.client
+        
+        # First, let's check what folders exist in the database
+        all_folders_result = await client.table('user_dagad_folders').select('*').execute()
+        logger.info(f"📊 All folders in database: {all_folders_result.data}")
+        
+        # Now query for the specific user
+        result = await client.table('user_dagad_folders').select('*').eq('user_id', user_id).order('created_at', desc=False).execute()
+        logger.info(f"📊 Found {len(result.data or [])} folders for user {user_id}")
+        logger.info(f"📊 User's folders: {result.data}")
+        
+        if result.data is None:
+            logger.warning(f"⚠️ No data returned from query")
+            return DAGADFolderListResponse(folders=[])
+            
+        folders = [DAGADFolder(folder_id=row['folder_id'], name=row['name'], created_at=row.get('created_at'), updated_at=row.get('updated_at')) for row in (result.data or [])]
+        logger.info(f"📁 Processed folders: {folders}")
+        return DAGADFolderListResponse(folders=folders)
+    except Exception as e:
+        logger.error(f"❌ Error listing DAGAD folders for user {user_id}: {e}")
+        logger.error(f"❌ Error type: {type(e)}")
+        logger.error(f"❌ Error details: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve folders: {str(e)}")
+
+
 @router.get("/{entry_id}", response_model=DAGADEntryResponse)
 async def get_dagad_entry(
     entry_id: str,
@@ -568,21 +610,6 @@ async def get_smart_dagad_context(
     except Exception as e:
         logger.error(f"Error getting smart DAGAD context for user {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve smart DAGAD context")
-
-
-# Folder endpoints (minimal CRUD)
-@router.get("/folders", response_model=DAGADFolderListResponse)
-async def list_folders(user_id: str = Depends(get_current_user_id_from_jwt)):
-    try:
-        logger.info(f"📁 Listing folders for user_id: {user_id}")
-        client = await db.client
-        result = await client.table('user_dagad_folders').select('*').eq('user_id', user_id).order('created_at', desc=False).execute()
-        logger.info(f"📊 Found {len(result.data or [])} folders for user {user_id}")
-        folders = [DAGADFolder(folder_id=row['folder_id'], name=row['name'], created_at=row.get('created_at'), updated_at=row.get('updated_at')) for row in (result.data or [])]
-        return DAGADFolderListResponse(folders=folders)
-    except Exception as e:
-        logger.error(f"Error listing DAGAD folders for user {user_id}: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve folders")
 
 
 class CreateFolderRequest(BaseModel):

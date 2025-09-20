@@ -3,7 +3,7 @@ BEGIN;
 -- Create user_dagad_folders table
 CREATE TABLE IF NOT EXISTS user_dagad_folders (
     folder_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES basejump.accounts(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),

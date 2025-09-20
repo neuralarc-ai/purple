@@ -3,7 +3,7 @@ BEGIN;
 -- Create user_dagad_entries table
 CREATE TABLE IF NOT EXISTS user_dagad_entries (
     entry_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES basejump.accounts(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     content TEXT,
