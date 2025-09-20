@@ -35,7 +35,6 @@ import { useFeatureFlags } from '@/lib/feature-flags';
 import posthog from 'posthog-js';
 import Image from 'next/image';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
-import { DagadModal } from './dagad-modal';
 
 // Custom Plus Icon component using the plus.svg
 const PlusIcon = ({ className }: { className?: string }) => (
@@ -198,7 +197,6 @@ export function SidebarLeft({
   const { flags, loading: flagsLoading } = useFeatureFlags(['custom_agents']);
   const customAgentsEnabled = flags.custom_agents;
   const { preferredName, profile } = useUserProfileWithFallback();
-  const [showDagadModal, setShowDagadModal] = useState(false);
 
   // Close mobile menu on page navigation
   useEffect(() => {
@@ -307,19 +305,23 @@ export function SidebarLeft({
               </span>
             </SidebarMenuButton>
           </Link>
-          <SidebarMenuButton
-            className="touch-manipulation transition-all duration-300 ease-in-out"
-            onClick={() => {
-              setShowDagadModal(true);
-              if (isMobile) setOpenMobile(false);
-            }}
-            tooltip="Knowledge Base"
-          >
-            <i className="ri-book-open-line text-base mr-1 transition-all duration-300 ease-in-out" />
-            <span className="flex items-center justify-between w-full transition-all duration-300 ease-in-out">
-              Knowledge Base
-            </span>
-          </SidebarMenuButton>
+          <Link href="/knowledge-base">
+            <SidebarMenuButton
+              className={cn('touch-manipulation transition-all duration-300 ease-in-out', {
+                'bg-accent px-4 text-accent-foreground font-medium':
+                  pathname === '/knowledge-base',
+              })}
+              onClick={() => {
+                if (isMobile) setOpenMobile(false);
+              }}
+              tooltip="Knowledge Base"
+            >
+              <i className="ri-book-open-line text-base mr-1 transition-all duration-300 ease-in-out" />
+              <span className="flex items-center justify-between w-full transition-all duration-300 ease-in-out">
+                Knowledge Base
+              </span>
+            </SidebarMenuButton>
+          </Link>
           {!flagsLoading && customAgentsEnabled && (
             <Link href="/agents?tab=my-agents">
               <SidebarMenuButton
@@ -372,11 +374,6 @@ export function SidebarLeft({
       </SidebarFooter>
       <SidebarRail />
       
-      {/* DAGAD Modal */}
-      <DagadModal 
-        open={showDagadModal} 
-        onOpenChange={setShowDagadModal} 
-      />
     </Sidebar>
   );
 }
