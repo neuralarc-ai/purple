@@ -60,10 +60,42 @@ type Entry = {
 
 const MAX_CONTENT_CHARS = 5000;
 const MAX_TITLE_CHARS = 100;
-const MAX_ENTRIES = 12;
+const MAX_STORAGE_MB = 100; // 100MB total storage limit
+const MAX_STORAGE_BYTES = MAX_STORAGE_MB * 1024 * 1024;
 
 // Utility to detect if a file is an image
 const isImageFile = (file: File | null | undefined) => !!file && file.type.startsWith('image/');
+
+// Calculate total storage used by all entries
+const calculateTotalStorage = (entries: Entry[]) => {
+  return entries.reduce((total, entry) => {
+    let entrySize = 0;
+    
+    // Add content size (text)
+    if (entry.content) {
+      entrySize += new Blob([entry.content]).size;
+    }
+    
+    // Add title size
+    if (entry.title) {
+      entrySize += new Blob([entry.title]).size;
+    }
+    
+    // Add file size if present
+    if (entry.file_size) {
+      entrySize += entry.file_size;
+    }
+    
+    // Add image size (estimate based on URL length for now)
+    // In a real implementation, you'd want to track actual image sizes
+    if (entry.image_url) {
+      entrySize += 50000; // Rough estimate for image size
+    }
+    
+    return total + entrySize;
+  }, 0);
+};
+
 
 // Function to get the appropriate icon for file types
 const getFileIcon = (entry: Entry) => {
@@ -205,6 +237,33 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   const [selectedFolderId, setSelectedFolderId] = useState<string>('unfiled');
   const [editSelectedFolderId, setEditSelectedFolderId] = useState<string>('unfiled');
   const [confirmDeleteFolder, setConfirmDeleteFolder] = useState<{ folder_id: string; name: string } | null>(null);
+
+  // Calculate size of new entry being created
+  const calculateNewEntrySize = () => {
+    let size = 0;
+    
+    // Add title size
+    if (title) {
+      size += new Blob([title]).size;
+    }
+    
+    // Add content size
+    if (content) {
+      size += new Blob([content]).size;
+    }
+    
+    // Add file size if selected
+    if (selectedFile) {
+      size += selectedFile.size;
+    }
+    
+    // Add image size if selected
+    if (selectedImage) {
+      size += selectedImage.size;
+    }
+    
+    return size;
+  };
 
   // Reset attachment visibility whenever a new entry is opened or dialog closed
   useEffect(() => {
@@ -436,12 +495,19 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
   };
 
   const createEntry = async () => {
-    if (entries.length >= MAX_ENTRIES) {
-      setErrorMsg(`You can only create up to ${MAX_ENTRIES} entries. Delete one to add another.`);
-      toast.error(`Limit reached: ${MAX_ENTRIES} entries`);
+    if (!title.trim() || (!content.trim() && !selectedImage && !selectedFile)) return;
+    
+    // Calculate current storage usage
+    const currentStorage = calculateTotalStorage(entries);
+    const newEntrySize = calculateNewEntrySize();
+    
+    if (currentStorage + newEntrySize > MAX_STORAGE_BYTES) {
+      const currentMB = (currentStorage / (1024 * 1024)).toFixed(1);
+      const newMB = (newEntrySize / (1024 * 1024)).toFixed(1);
+      setErrorMsg(`Storage limit exceeded. Current usage: ${currentMB}MB, New entry: ${newMB}MB. Maximum allowed: ${MAX_STORAGE_MB}MB.`);
+      toast.error(`Storage limit reached: ${MAX_STORAGE_MB}MB`);
       return;
     }
-    if (!title.trim() || (!content.trim() && !selectedImage && !selectedFile)) return;
     
     try {
       const token = session?.access_token;
@@ -699,7 +765,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
               <div className="flex items-center gap-2 bg-muted/50 px-4 py-2.5 rounded-full border border-border/30 shadow-sm">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                 <span className="text-sm font-medium text-foreground">
-                  {Math.min(entries.length, MAX_ENTRIES)}/{MAX_ENTRIES} entries
+                  {(calculateTotalStorage(entries) / (1024 * 1024)).toFixed(1)}MB / {MAX_STORAGE_MB}MB
                 </span>
               </div>
             </div>
@@ -716,22 +782,24 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                   <div className="flex items-center gap-4">
                     <Button 
                       onClick={() => {
-                        if (entries.length >= MAX_ENTRIES) {
-                          toast.error(`You can only have up to ${MAX_ENTRIES} entries.`);
+                        const currentStorage = calculateTotalStorage(entries);
+                        if (currentStorage >= MAX_STORAGE_BYTES) {
+                          const currentMB = (currentStorage / (1024 * 1024)).toFixed(1);
+                          toast.error(`Storage limit reached: ${currentMB}MB / ${MAX_STORAGE_MB}MB`);
                           return;
                         }
                         setShowAddForm(true);
                       }}
-                      disabled={entries.length >= MAX_ENTRIES}
+                      disabled={calculateTotalStorage(entries) >= MAX_STORAGE_BYTES}
                       className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground disabled:opacity-60 shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-2.5 text-base font-medium"
                     >
                       <Plus className="h-5 w-5 mr-2" />
-                      {entries.length >= MAX_ENTRIES ? 'Limit Reached' : 'Add Knowledge'}
+                      {calculateTotalStorage(entries) >= MAX_STORAGE_BYTES ? 'Storage Full' : 'Add Knowledge'}
                     </Button>
-                    {entries.length >= MAX_ENTRIES && (
+                    {calculateTotalStorage(entries) >= MAX_STORAGE_BYTES && (
                       <div className="flex items-center gap-2 text-amber-600 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 rounded-lg border border-amber-200 dark:border-amber-800">
                         <i className="ri-error-warning-line text-sm"></i>
-                        <span className="text-sm font-medium">Maximum entries reached</span>
+                        <span className="text-sm font-medium">Storage limit reached ({MAX_STORAGE_MB}MB)</span>
                       </div>
                     )}
                   </div>
@@ -834,7 +902,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
                         </div>
                         <h4 className="text-2xl font-bold text-foreground mb-3">No knowledge entries yet</h4>
                         <p className="text-muted-foreground max-w-md mb-8 text-base leading-relaxed">
-                          Start building your knowledge base by creating your first entry. Teach Helium your preferences and best practices.
+                          Start building your knowledge base by creating your first entry. Teach Helium your preferences and best practices. You have {MAX_STORAGE_MB}MB of storage available.
                         </p>
                         <Button 
                           onClick={() => setShowAddForm(true)}
