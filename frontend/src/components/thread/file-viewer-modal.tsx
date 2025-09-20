@@ -1457,6 +1457,19 @@ export function FileViewerModal({
       <Dialog open={open && !isDesktop} onOpenChange={handleOpenChange}>
         <DialogContent showCloseButton={false} className="sm:max-w-[90vw] md:max-w-[1200px] w-[95vw] h-[90vh] max-h-[900px] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
+          {/* Back button - only show when a file is selected and not opened directly from response */}
+          {selectedFilePath && !safeInitialFilePath && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelectedFile}
+              className="h-8 w-8 p-0 flex-shrink-0"
+              title="Back to files"
+            >
+              <ChevronLeft  className="h-4 w-4" />
+            </Button>
+          )}
+          
           <DialogTitle className="text-base md:text-lg font-medium truncate max-w-[45vw] flex items-center gap-2">
             {(() => {
               const name = selectedFilePath ? selectedFilePath.split('/').pop() || '' : '';
@@ -1913,6 +1926,19 @@ export function FileViewerModal({
         >
           {/* Header */}
           <div className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
+          {/* Back button - only show when a file is selected and not opened directly from response */}
+          {selectedFilePath && !safeInitialFilePath && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelectedFile}
+              className="h-8 w-8 p-0 flex-shrink-0"
+              title="Back to files"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          )}
+            
             <div className="text-base md:text-lg font-medium truncate max-w-[45vw] flex items-center gap-2">
               {(() => {
                 const name = selectedFilePath ? selectedFilePath.split('/').pop() || '' : '';
