@@ -345,20 +345,34 @@ function SidebarRail({ className, ...props }: React.ComponentProps<'button'>) {
   );
 }
 
-// Create a context to track tool-call-side-panel state
+// Create a context to track right panel overlay state with proper component coordination
 export const ToolCallSidePanelContext = React.createContext<{
   isExpanded: boolean;
-  setIsExpanded: (expanded: boolean) => void;
+  setComponentExpanded: (componentId: string, expanded: boolean) => void;
 }>({
   isExpanded: false,
-  setIsExpanded: () => {},
+  setComponentExpanded: () => {},
 });
 
 export function ToolCallSidePanelProvider({ children }: { children: React.ReactNode }) {
-  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [expandedComponents, setExpandedComponents] = React.useState<Set<string>>(new Set());
+  
+  const setComponentExpanded = React.useCallback((componentId: string, expanded: boolean) => {
+    setExpandedComponents(prev => {
+      const newSet = new Set(prev);
+      if (expanded) {
+        newSet.add(componentId);
+      } else {
+        newSet.delete(componentId);
+      }
+      return newSet;
+    });
+  }, []);
+  
+  const isExpanded = expandedComponents.size > 0;
   
   return (
-    <ToolCallSidePanelContext.Provider value={{ isExpanded, setIsExpanded }}>
+    <ToolCallSidePanelContext.Provider value={{ isExpanded, setComponentExpanded }}>
       {children}
     </ToolCallSidePanelContext.Provider>
   );

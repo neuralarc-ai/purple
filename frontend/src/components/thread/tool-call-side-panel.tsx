@@ -265,7 +265,7 @@ export function ToolCallSidePanel({
   onPanelWidthChange,
 }: ToolCallSidePanelProps) {
   const isControlledByParent = externalNavigateToIndex !== undefined;
-  const { setIsExpanded } = React.useContext(ToolCallSidePanelContext);
+  const { setComponentExpanded } = React.useContext(ToolCallSidePanelContext);
   const [hasOpened, setHasOpened] = React.useState(false);
   const [dots, setDots] = React.useState('');
   const [internalIndex, setInternalIndex] = React.useState(0);
@@ -1019,21 +1019,23 @@ export function ToolCallSidePanel({
     }
   }, [resetAccumulatedTime]);
 
-  // Handle panel open/close
+  // Handle panel open/close with component-specific tracking
   React.useEffect(() => {
+    const componentId = 'tool-call-side-panel';
+    
     if (isOpen) {
       // Panel is opening
       setHasOpened(true);
-      setIsExpanded(true);
+      setComponentExpanded(componentId, true);
     } else {
-      setIsExpanded(false);
+      setComponentExpanded(componentId, false);
     }
 
     // Cleanup on unmount
     return () => {
-      setIsExpanded(false);
+      setComponentExpanded(componentId, false);
     };
-  }, [isOpen, setIsExpanded]);
+  }, [isOpen, setComponentExpanded]);
 
   // Fetch runtime from database when threadId changes or component mounts
   React.useEffect(() => {
@@ -1441,7 +1443,7 @@ export function ToolCallSidePanel({
             }
           }}
           className={cn(
-            'fixed top-1 bottom-1 md:top-3 right-2 md:bottom-6 shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border border-black/10 dark:border-muted rounded-3xl flex flex-col z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
+            'fixed top-1 bottom-1 lg:bottom-6  md:top-3 right-2 m shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border border-black/10 dark:border-muted rounded-3xl flex flex-col z-60 md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
             widthClass,
             'bg-background',
             isResizing && 'select-none',

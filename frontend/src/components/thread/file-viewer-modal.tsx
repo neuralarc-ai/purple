@@ -15,15 +15,17 @@ import {
   Upload,
   Download,
   ChevronRight,
-  Home,
   ChevronLeft,
   Loader,
   AlertTriangle,
   FileText,
   ChevronDown,
-  Archive,
   Copy,
   Check,
+  Grid3X3,
+  List,
+  Archive,
+  Home,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FileRenderer } from '@/components/file-renderers';
@@ -44,6 +46,8 @@ import {
 } from '@/hooks/react-query/files';
 import JSZip from 'jszip';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
+import React from 'react';
+import { ToolCallSidePanelContext,useSidebar } from '@/components/ui/sidebar';
 
 // Define API_URL
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
@@ -57,6 +61,8 @@ interface FileViewerModalProps {
   filePathList?: string[];
   // Enable inline editing when in takeover
   editable?: boolean;
+  // Notify parent about desktop panel width changes (for layout adjustments)
+  onPanelWidthChange?: (width: number | null) => void;
   onFileEdited?: (info: { path: string; bytes: number }) => void;
 }
 
@@ -68,6 +74,7 @@ export function FileViewerModal({
   project,
   filePathList,
   editable = false,
+  onPanelWidthChange,
   onFileEdited,
 }: FileViewerModalProps) {
   // Safely handle initialFilePath to ensure it's a string or null
@@ -76,14 +83,133 @@ export function FileViewerModal({
 
   // Auth for session token
   const { session } = useAuth();
-
+  const { setComponentExpanded } = React.useContext(ToolCallSidePanelContext);
+  const { state: sidebarState } = useSidebar();
+  const isSidebarExpanded = sidebarState === 'expanded';
   // File navigation state
   const [currentPath, setCurrentPath] = useState('/workspace');
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [panelWidth, setPanelWidth] = useState<number | null>(null);
+  
+  // Initialize panel width based on screen size (similar to tool-call-side-panel)
+  const getInitialPanelWidth = () => {
+    if (typeof window === 'undefined') return 600; // Default server-side
+    const screenWidth = window.innerWidth;
+    return Math.floor(screenWidth * 0.45); // 50-50 split
+  };
+  const isResizing = useRef(false);
+  
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  };
+  
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizing.current) return;
+    const screenWidth = window.innerWidth;
+    const minWidth = 400;
+    // Dynamic caps aligned with tool-call-side-panel behavior
+    let maxAllowedWidth: number;
+    if (screenWidth >= 1920) {
+      maxAllowedWidth = screenWidth * 0.7;
+    } else if (screenWidth >= 1500) {
+      maxAllowedWidth = screenWidth * 0.65;
+    } else if (screenWidth >= 1366) {
+      maxAllowedWidth = screenWidth * 0.6;
+    } else if (screenWidth >= 1280) {
+      maxAllowedWidth = screenWidth * 0.58;
+    } else if (screenWidth >= 1109) {
+      maxAllowedWidth = screenWidth * 0.52;
+    } else {
+      maxAllowedWidth = screenWidth * 0.47;
+    }
+
+    const minContentWidth = 400;
+    const leftSidebarWidth = isSidebarExpanded ? 256 : 72;
+    const spacing = 32;
+    const calculatedMaxWidth = Math.min(
+      maxAllowedWidth,
+      screenWidth - minContentWidth - leftSidebarWidth - spacing
+    );
+
+    const desired = screenWidth - e.clientX; // width from right edge
+    const newWidth = Math.max(minWidth, Math.min(desired, calculatedMaxWidth));
+    setPanelWidth(newWidth);
+    // Realtime notify parent while dragging
+    onPanelWidthChange?.(newWidth);
+  };
+  
+  const handleMouseUp = () => {
+    isResizing.current = false;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  };
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined' && panelWidth === null) {
+      setPanelWidth(getInitialPanelWidth());
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const updatePanelWidthOnResize = () => {
+      if (!isResizing.current) {
+        const newWidth = getInitialPanelWidth();
+        setPanelWidth(prevWidth => {
+          // Only update if the change is significant (more than 50px difference)
+          return Math.abs((prevWidth || 0) - newWidth) > 50 ? newWidth : prevWidth;
+        });
+      }
+    };
+
+    window.addEventListener('resize', updatePanelWidthOnResize);
+    
+    return () => {
+      window.removeEventListener('resize', updatePanelWidthOnResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [open, panelWidth, onPanelWidthChange]);
+
+  // While File Viewer is open, mark right-panel as expanded so sidebar uses overlay mode
+  useEffect(() => {
+    const componentId = 'file-viewer-modal';
+    
+    if (open) {
+      setComponentExpanded(componentId, true);
+    } else {
+      setComponentExpanded(componentId, false);
+    }
+    return () => setComponentExpanded(componentId, false);
+  }, [open, setComponentExpanded]);
+
+  // Notify parent when width changes (debounced by React batching; also on open)
+  useEffect(() => {
+    if (open) {
+      onPanelWidthChange?.(panelWidth);
+    }
+  }, [open, panelWidth, onPanelWidthChange]);
 
   // Add navigation state for file list mode
   const [currentFileIndex, setCurrentFileIndex] = useState<number>(-1);
   const isFileListMode = Boolean(filePathList && filePathList.length > 0);
+  
+  // Add state for file category filtering
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'documents' | 'images' | 'code' | 'links'>('all');
+  
+  // Add state for view mode (grid vs list)
+  // const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   function getFileIcon(fileName: string) {
     const extension = fileName.toLowerCase().split('.').pop();
     
@@ -107,6 +233,52 @@ export function FileViewerModal({
         return null; // Will use default File icon
     }
   }
+  
+  // Function to categorize files
+  const categorizeFile = useCallback((file: FileInfo) => {
+    if (file.is_dir) return 'folder';
+    
+    const extension = file.name.toLowerCase().split('.').pop() || '';
+    
+    // Documents
+    if (['pdf', 'doc', 'docx', 'txt', 'md', 'markdown', 'rtf', 'odt'].includes(extension)) {
+      return 'documents';
+    }
+    
+    // Images
+    if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp', 'ico', 'tiff', 'tif'].includes(extension)) {
+      return 'images';
+    }
+    
+    // Code files
+    if (['js', 'jsx', 'ts', 'tsx', 'py', 'java', 'cpp', 'c', 'h', 'css', 'scss', 'sass', 'html', 'htm', 'xml', 'json', 'yaml', 'yml', 'sql', 'sh', 'bash', 'php', 'rb', 'go', 'rs', 'swift', 'kt', 'scala', 'r', 'pl', 'lua', 'dart', 'vue', 'svelte'].includes(extension)) {
+      return 'code';
+    }
+    
+    // Links (we'll handle this differently as it's not based on extension)
+    // For now, we'll categorize everything else as documents
+    return 'documents';
+  }, []);
+  
+  // Function to format file date
+  const formatFileDate = useCallback((dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - date.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) {
+        return 'Yesterday';
+      } else if (diffDays < 7) {
+        return `${diffDays} days ago`;
+      } else {
+        return date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+      }
+    } catch {
+      return 'Unknown';
+    }
+  }, []);
   // Use React Query for directory listing
   const {
     data: files = [],
@@ -117,6 +289,18 @@ export function FileViewerModal({
     enabled: open && !!sandboxId,
     staleTime: 30 * 1000, // 30 seconds
   });
+  
+  // Function to filter files based on selected category
+  const getFilteredFiles = useCallback(() => {
+    if (selectedCategory === 'all') {
+      return files;
+    }
+    
+    return files.filter(file => {
+      const category = categorizeFile(file);
+      return category === selectedCategory || (selectedCategory === 'code' && category === 'code');
+    });
+  }, [files, selectedCategory, categorizeFile]);
 
   // Add a navigation lock to prevent race conditions
   const currentNavigationRef = useRef<string | null>(null);
@@ -176,6 +360,23 @@ export function FileViewerModal({
   // Add state for copy functionality
   const [isCopyingPath, setIsCopyingPath] = useState(false);
   const [isCopyingContent, setIsCopyingContent] = useState(false);
+
+  // Track screen size for responsive behavior
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Effect to handle screen size changes
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsDesktop(window.innerWidth > 1024);
+    };
+
+    // Check initial size
+    checkScreenSize();
+
+    // Add resize listener
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Setup project with sandbox URL if not provided directly
   useEffect(() => {
@@ -780,6 +981,8 @@ export function FileViewerModal({
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
+        // Reset width for parent layout
+        onPanelWidthChange?.(null);
         // Only revoke if not downloading and not an active download URL
         if (
           blobUrlForRenderer &&
@@ -810,6 +1013,57 @@ export function FileViewerModal({
       isDownloading,
     ],
   );
+
+  // When the modal is already open and a new initialFilePath is provided,
+  // switch to that file seamlessly (close previous selection and open new)
+  useEffect(() => {
+    if (!open) return;
+    if (!safeInitialFilePath) return;
+
+    const targetFullPath = normalizePath(safeInitialFilePath);
+    if (selectedFilePath === targetFullPath) return;
+
+    // Derive directory path and file name
+    const lastSlashIndex = targetFullPath.lastIndexOf('/');
+    const directoryPath =
+      lastSlashIndex > 0 ? targetFullPath.substring(0, lastSlashIndex) : '/workspace';
+    const fileName = lastSlashIndex >= 0 ? targetFullPath.substring(lastSlashIndex + 1) : '';
+
+    // Ensure the file list mode index is aligned if applicable
+    if (isFileListMode && filePathList) {
+      const normalizedInitialPath = normalizePath(safeInitialFilePath);
+      const index = filePathList.findIndex(
+        (path) => normalizePath(path) === normalizedInitialPath,
+      );
+      if (index !== -1) {
+        setCurrentFileIndex(index);
+      }
+    }
+
+    // Update current path to the file's directory for correct breadcrumb
+    if (currentPath !== directoryPath) {
+      setCurrentPath(directoryPath);
+    }
+
+    // Open the requested file
+    const targetFile: FileInfo = {
+      name: fileName,
+      path: targetFullPath,
+      is_dir: false,
+      size: 0,
+      mod_time: new Date().toISOString(),
+    };
+    openFile(targetFile);
+  }, [
+    open,
+    safeInitialFilePath,
+    selectedFilePath,
+    normalizePath,
+    currentPath,
+    isFileListMode,
+    filePathList,
+    openFile,
+  ]);
 
   // Helper to check if file is markdown
   const isMarkdownFile = useCallback((filePath: string | null) => {
@@ -1190,14 +1444,34 @@ export function FileViewerModal({
       setCurrentFileIndex(-1);
     }
   }, [open, filePathList]);
+  
+  // Reset category filter when path changes
+  useEffect(() => {
+    setSelectedCategory('all');
+  }, [currentPath]);
 
   // --- Render --- //
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[90vw] md:max-w-[1200px] w-[95vw] h-[90vh] max-h-[900px] flex flex-col p-0 gap-0 overflow-hidden">
+    <>
+      {/* Mobile/Tablet Dialog (< 1024px) - Only render on mobile */}
+      <Dialog open={open && !isDesktop} onOpenChange={handleOpenChange}>
+        <DialogContent showCloseButton={false} className="sm:max-w-[90vw] md:max-w-[1200px] w-[95vw] h-[90vh] max-h-[900px] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
-          <DialogTitle className="text-lg font-semibold">
-            Workspace Files
+          <DialogTitle className="text-base md:text-lg font-medium truncate max-w-[45vw] flex items-center gap-2">
+            {(() => {
+              const name = selectedFilePath ? selectedFilePath.split('/').pop() || '' : '';
+              const icon = getFileIcon(name);
+              return (
+                <>
+                  {icon ? (
+                      <img src={icon} alt="file icon" className="h-5 w-5 md:h-6 md:w-6" />
+                    ) : (
+                      <File className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+                    )}
+                    <span className="text-sm md:text-base">{name || 'Files'}</span>
+                </>
+              );
+            })()}
           </DialogTitle>
 
           {/* Download progress display */}
@@ -1217,7 +1491,7 @@ export function FileViewerModal({
             </div>
           )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ml-auto">
             {/* Navigation arrows for file list mode */}
             {(() => {
               return (
@@ -1254,126 +1528,42 @@ export function FileViewerModal({
                 </Button>
               </>
             )}
-          </div>
-        </DialogHeader>
 
-        {/* Navigation Bar */}
-        <div className="px-4 py-2 border-b flex items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={navigateHome}
-            className="h-8 w-8"
-            title="Go to home directory"
-          >
-            <Image
-              src="/icons/home.svg"
-              alt="home Light Logo"
-              width={20}
-              height={20}
-              className="block dark:hidden mb-0"
-            />
-            <Image
-              src="/icons/home-dark.svg"
-              alt="home Dark Logo"
-              width={20}
-              height={20}
-              className="hidden dark:block mb-0"
-            />
-          </Button>
-
-          <div className="flex items-center overflow-x-auto flex-1 min-w-0 scrollbar-hide whitespace-nowrap">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 px-1 py-[2px] text-sm font-medium min-w-fit flex-shrink-0"
-              onClick={navigateHome}
-            >
-              home
-            </Button>
-
-            {currentPath !== '/workspace' && (
-              <>
-                {getBreadcrumbSegments(currentPath).map((segment) => (
-                  <Fragment key={segment.path}>
-                    <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground opacity-50 flex-shrink-0" />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 px-2 text-sm font-medium truncate max-w-[200px]"
-                      onClick={() => navigateToBreadcrumb(segment.path)}
-                    >
-                      {segment.name}
-                    </Button>
-                  </Fragment>
-                ))}
-              </>
-            )}
-
+            {/* File actions in header */}
             {selectedFilePath && (
               <>
-                <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground opacity-50 flex-shrink-0" />
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium truncate">
-                    {selectedFilePath.split('/').pop()}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {selectedFilePath && (
-              <>
-                {/* Copy content button - only show for text files */}
                 {textContentForRenderer && (
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant="ghost"
+                    size="icon"
                     onClick={handleCopyContent}
                     disabled={isCopyingContent || isCachedFileLoading}
-                    className="h-8 gap-1"
+                    className="h-7 w-7 md:h-8 md:w-8 p-0 px-0 !p-0 !px-0"
+                    title="Copy"
                   >
                     {isCopyingContent ? (
                       <Check className="h-4 w-4" />
                     ) : (
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-3 w-3" />
                     )}
-                    <span className="hidden sm:inline">Copy</span>
                   </Button>
                 )}
 
                 <Button
-                  variant="outline"
-                  size="sm"
+                  variant="ghost"
+                  size="icon"
                   onClick={handleDownload}
                   disabled={isDownloading || isCachedFileLoading}
-                  className="h-8 gap-1"
+                  className="h-7 w-7 md:h-8 md:w-8 p-0 px-0 !p-0 !px-0"
+                  title="Download"
                 >
                   {isDownloading ? (
                     <Loader className="h-4 w-4 animate-spin" />
                   ) : (
-                   <>
-                   <Image
-                   src="/icons/download.svg"
-                   alt="download Light Logo"
-                   width={20}
-                   height={20}
-                   className="block dark:hidden mb-0"
-                 />
-                 <Image
-                   src="/icons/download-dark.svg"
-                   alt="download Dark Logo"
-                   width={20}
-                   height={20}
-                   className="hidden dark:block mb-0"
-                 />
-                   </>
+                    <Download className="h-3 w-3" />
                   )}
-                  <span className="hidden sm:inline">Download</span>
                 </Button>
 
-                {/* Replace the Export as PDF button with a dropdown */}
                 {isMarkdownFile(selectedFilePath) && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -1415,52 +1605,24 @@ export function FileViewerModal({
               </>
             )}
 
-            {!selectedFilePath && (
-              <>
-                {/* Download All button - only show when in home directory */}
-                {currentPath === '/workspace' && (
+            {/* Close button for mobile header */}
                   <Button
-                    variant="outline"
+              variant="ghost"
                     size="sm"
-                    onClick={handleDownloadAll}
-                    disabled={isDownloadingAll || isLoadingFiles}
-                    className="h-8 gap-1"
-                  >
-                    {isDownloadingAll ? (
-                      <Loader className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Archive className="h-4 w-4" />
-                    )}
-                    <span className="hidden sm:inline">Download All</span>
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleOpenChange(false);
+              }}
+              className="h-8 w-8 p-0"
+              title="Close"
+            >
+              ✕
                   </Button>
-                )}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUpload}
-                  disabled={isUploading}
-                  className="h-8 gap-1"
-                >
-                  {isUploading ? (
-                    <Loader className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
-                  <span className="hidden sm:inline">Upload</span>
-                </Button>
-              </>
-            )}
-
-            <input
-              type="file"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={processUpload}
-              disabled={isUploading}
-            />
           </div>
-        </div>
+        </DialogHeader>
+
+        {/* Navigation Bar removed per request */}
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
@@ -1625,69 +1787,668 @@ export function FileViewerModal({
               )}
             </div>
           ) : (
-            /* File Explorer */
-            <div className="h-full w-full">
-              {isLoadingFiles ? (
-                <div className="h-full w-full flex items-center justify-center">
-                  <Loader className="h-6 w-6 animate-spin text-primary" />
+            /* File Explorer with Category Filtering */
+            <div className="h-full w-full flex flex-col">
+              {/* Category Filter Tabs */}
+              <div className="flex-shrink-0 px-4 py-3 border-b">
+                <div className="flex gap-1">
+                  {[
+                    { key: 'all', label: 'All' },
+                    { key: 'documents', label: 'Documents' },
+                    { key: 'images', label: 'Images' },
+                    { key: 'code', label: 'Code' },
+                    { key: 'links', label: 'Links' }
+                  ].map((category) => (
+                    <button
+                      key={category.key}
+                      onClick={() => setSelectedCategory(category.key as any)}
+                      className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
+                        selectedCategory === category.key
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {category.label}
+                    </button>
+                  ))}
                 </div>
-              ) : files.length === 0 ? (
-                <div className="h-full w-full flex flex-col items-center justify-center">
-                  <Folder className="h-12 w-12 mb-2 text-muted-foreground opacity-30" />
-                  <p className="text-sm text-muted-foreground">
-                    Directory is empty
-                  </p>
-                </div>
-              ) : (
-                <ScrollArea className="h-full w-full p-2">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 p-4">
-                    {files.map((file) => (
-                      <button
-                        key={file.path}
-                        className={`flex flex-col items-center p-3 rounded-2xl border hover:bg-muted/50 transition-colors ${
-                          selectedFilePath === file.path
-                            ? 'bg-muted border-primary/20'
-                            : ''
-                        }`}
-                        onClick={() => {
-                          if (file.is_dir) {
-                            navigateToFolder(file);
-                          } else {
-                            openFile(file);
-                          }
-                        }}
-                      >
-                        <div className="w-12 h-12 flex items-center justify-center mb-1">
-                          {file.is_dir ? (
-                            <Folder className="h-9 w-9 text-blue-500" />
-                          ) : (
-                           
-                            (() => {
-                              const iconPath = getFileIcon(file.name);
-                              return iconPath ? (
-                                <img 
-                                  src={iconPath} 
-                                  alt={`${file.name} icon`}
-                                  className="h-10 w-10 object-contain"
-                                />
-                              ) : (
-                                <File className="h-8 w-8 text-muted-foreground" />
-                              );
-                            })()
-                          )}
-                        </div>
-                        <span className="text-xs text-center font-medium truncate max-w-full">
-                          {file.name}
-                        </span>
-                      </button>
-                    ))}
+              </div>
+
+              {/* File List */}
+              <div className="flex-1 overflow-hidden">
+                {isLoadingFiles ? (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <Loader className="h-6 w-6 animate-spin text-primary" />
                   </div>
-                </ScrollArea>
-              )}
+                ) : (() => {
+                  const filteredFiles = getFilteredFiles();
+                  return filteredFiles.length === 0 ? (
+                    <div className="h-full w-full flex flex-col items-center justify-center">
+                      <Folder className="h-12 w-12 mb-2 text-muted-foreground opacity-30" />
+                      <p className="text-sm text-muted-foreground">
+                        {selectedCategory === 'all' ? 'Directory is empty' : `No ${selectedCategory} found`}
+                      </p>
+                    </div>
+                  ) : (
+                    <ScrollArea className="h-full w-full">
+                      {/* List View */}
+                      <div className="p-4">
+                        <div className="space-y-1">
+                          {filteredFiles.map((file) => (
+                            <button
+                              key={file.path}
+                              className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left ${
+                                selectedFilePath === file.path
+                                  ? 'bg-muted border-primary/20'
+                                  : ''
+                              }`}
+                              onClick={() => {
+                                if (file.is_dir) {
+                                  navigateToFolder(file);
+                                } else {
+                                  openFile(file);
+                                }
+                              }}
+                            >
+                              {/* File Icon */}
+                              <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                                {file.is_dir ? (
+                                  <Folder className="h-6 w-6 text-blue-500" />
+                                ) : (() => {
+                                  const iconPath = getFileIcon(file.name);
+                                  return iconPath ? (
+                                    <img 
+                                      src={iconPath} 
+                                      alt={`${file.name} icon`}
+                                      className="h-6 w-6 object-contain"
+                                    />
+                                  ) : (
+                                    <File className="h-5 w-5 text-muted-foreground" />
+                                  );
+                                })()
+                                }
+                              </div>
+                              
+                              {/* File Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-sm truncate">
+                                  {file.name}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {formatFileDate(file.mod_time)} • {file.size ? `${Math.round(file.size / 1024)}KB` : '—'}
+                                </div>
+                              </div>
+                              
+                              {/* File Type Badge */}
+                              <div className="flex-shrink-0">
+                                {!file.is_dir && (
+                                  <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                                    {file.name.split('.').pop()?.toUpperCase() || 'FILE'}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </ScrollArea>
+                  );
+                })()
+                }
+              </div>
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Desktop Right Panel (≥ 1024px) */}
+      {open && isDesktop && (
+        <div className={
+        `fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-md shadow-foreground/5 z-29 flex flex-col overflow-hidden transition-all duration-200 ${
+            isSidebarExpanded ? 'opacity-0.0 pointer-events-none' : ''
+          }`
+        }
+        style={{ width: panelWidth || getInitialPanelWidth() }}
+        >
+          {/* Header */}
+          <div className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
+            <div className="text-base md:text-lg font-medium truncate max-w-[45vw] flex items-center gap-2">
+              {(() => {
+                const name = selectedFilePath ? selectedFilePath.split('/').pop() || '' : '';
+                const icon = getFileIcon(name);
+                return (
+                  <>
+                    {icon ? (
+                      <img src={icon} alt="file icon" className="h-5 w-5 md:h-6 md:w-6" />
+                    ) : (
+                      <File className="h-5 w-5 md:h-6 md:w-6 text-muted-foreground" />
+                    )}
+                    <span className="text-sm md:text-base">{name || 'Files'}</span>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Download progress display */}
+            {downloadProgress && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Loader className="h-3 w-3 animate-spin" />
+                  <span>
+                    {downloadProgress.total > 0
+                      ? `${downloadProgress.current}/${downloadProgress.total}`
+                      : 'Preparing...'}
+                  </span>
+                </div>
+                <span className="max-w-[200px] truncate">
+                  {downloadProgress.currentFile}
+                </span>
+              </div>
+            )}
+
+            <div className="flex items-center gap-2 ml-auto">
+              {/* Navigation arrows for file list mode */}
+              {(() => {
+                return (
+                  isFileListMode &&
+                  selectedFilePath &&
+                  filePathList &&
+                  filePathList.length > 1 &&
+                  currentFileIndex >= 0
+                );
+              })() && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={navigatePrevious}
+                    disabled={currentFileIndex <= 0}
+                    className="h-8 w-8 p-0"
+                    title="Previous file (←)"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="text-xs text-muted-foreground px-1">
+                    {currentFileIndex + 1} / {filePathList?.length || 0}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={navigateNext}
+                    disabled={currentFileIndex >= (filePathList?.length || 0) - 1}
+                    className="h-8 w-8 p-0"
+                    title="Next file (→)"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
+              
+              {/* File actions in header */}
+              {selectedFilePath && (
+                <>
+                  {textContentForRenderer && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyContent}
+                      disabled={isCopyingContent || isCachedFileLoading}
+                      className="h-8 gap-1"
+                    >
+                      {isCopyingContent ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                      <span className="hidden sm:inline">Copy</span>
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownload}
+                    disabled={isDownloading || isCachedFileLoading}
+                    className="h-8 gap-1"
+                  >
+                    {isDownloading ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                     <>
+                     <Image
+                     src="/icons/download.svg"
+                     alt="download Light Logo"
+                     width={20}
+                     height={20}
+                     className="block dark:hidden mb-0"
+                   />
+                   <Image
+                     src="/icons/download-dark.svg"
+                     alt="download Dark Logo"
+                     width={20}
+                     height={20}
+                     className="hidden dark:block mb-0"
+                   />
+                     </>
+                    )}
+                    <span className="hidden sm:inline">Download</span>
+                  </Button>
+
+                  {isMarkdownFile(selectedFilePath) && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={
+                            isExportingPdf ||
+                            isCachedFileLoading ||
+                            contentError !== null
+                          }
+                          className="h-8 gap-1"
+                        >
+                          {isExportingPdf ? (
+                            <Loader className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <FileText className="h-4 w-4" />
+                          )}
+                          <span className="hidden sm:inline">Export as PDF</span>
+                          <ChevronDown className="h-3 w-3 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => handleExportPdf('portrait')}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <span className="rotate-90">⬌</span> Portrait
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleExportPdf('landscape')}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <span>⬌</span> Landscape
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </>
+              )}
+
+              {/* Close button */}
+                    <Button
+                variant="ghost"
+                      size="sm"
+                onClick={() => handleOpenChange(false)}
+                className="h-8 w-8 p-0"
+                title="Close"
+              >
+                ✕
+                    </Button>
+            </div>
+          </div>
+
+          {/* Navigation Bar removed per request */}
+
+          {/* Content Area */}
+          <div className="flex-1 overflow-hidden">
+            {selectedFilePath ? (
+              /* File Viewer */
+              <div className="h-full w-full overflow-auto">
+                {isCachedFileLoading ? (
+                  <div className="h-full w-full flex flex-col items-center justify-center">
+                    <Loader className="h-8 w-8 animate-spin text-primary mb-3" />
+                    <p className="text-sm text-muted-foreground">
+                      Loading file
+                      {selectedFilePath
+                        ? `: ${selectedFilePath.split('/').pop()}`
+                        : '...'}
+                    </p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      {(() => {
+                        // Normalize the path for consistent cache checks
+                        if (!selectedFilePath) return 'Preparing...';
+
+                        let normalizedPath = selectedFilePath;
+                        if (!normalizedPath.startsWith('/workspace')) {
+                          normalizedPath = `/workspace/${normalizedPath.startsWith('/') ? normalizedPath.substring(1) : normalizedPath}`;
+                        }
+
+                        // Detect the appropriate content type based on file extension
+                        const detectedContentType =
+                          FileCache.getContentTypeFromPath(normalizedPath);
+
+                        // Check for cache with the correct content type
+                        const isCached = FileCache.has(
+                          `${sandboxId}:${normalizedPath}:${detectedContentType}`,
+                        );
+
+                        return isCached
+                          ? 'Using cached version'
+                          : 'Fetching from server';
+                      })()}
+                    </p>
+                  </div>
+                ) : contentError ? (
+                  <div className="h-full w-full flex items-center justify-center p-4">
+                    <div className="max-w-md p-6 text-center border rounded-lg bg-muted/10">
+                      <AlertTriangle className="h-10 w-10 text-orange-500 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">
+                        Error Loading File
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {contentError}
+                      </p>
+                      <div className="flex justify-center gap-3">
+                        <Button
+                          onClick={() => {
+                            setContentError(null);
+                            openFile({
+                              path: selectedFilePath,
+                              name: selectedFilePath.split('/').pop() || '',
+                              is_dir: false,
+                              size: 0,
+                              mod_time: new Date().toISOString(),
+                            } as FileInfo);
+                          }}
+                        >
+                          Retry
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            clearSelectedFile();
+                          }}
+                        >
+                          Back to Files
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-full w-full relative">
+                    {(() => {
+                      // Safety check: don't render text content for binary files
+                      const isImageFile = FileCache.isImageFile(selectedFilePath);
+                      const isPdfFile = FileCache.isPdfFile(selectedFilePath);
+                      const extension = selectedFilePath
+                        ?.split('.')
+                        .pop()
+                        ?.toLowerCase();
+                      const isOfficeFile = [
+                        'xlsx',
+                        'xls',
+                        'docx',
+                        'doc',
+                        'pptx',
+                        'ppt',
+                      ].includes(extension || '');
+                      const isBinaryFile =
+                        isImageFile || isPdfFile || isOfficeFile;
+
+                      // For binary files, only render if we have a blob URL
+                      if (isBinaryFile && !blobUrlForRenderer) {
+                        return (
+                          <div className="h-full w-full flex items-center justify-center">
+                            <div className="text-sm text-muted-foreground">
+                              Loading{' '}
+                              {isPdfFile ? 'PDF' : isImageFile ? 'image' : 'file'}
+                              ...
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <FileRenderer
+                          key={selectedFilePath}
+                          content={isBinaryFile ? null : textContentForRenderer}
+                          binaryUrl={blobUrlForRenderer}
+                          fileName={
+                            selectedFilePath?.split('/').pop() || selectedFilePath
+                          }
+                          filePath={selectedFilePath}
+                          className="h-full w-full"
+                          project={projectWithSandbox}
+                          markdownRef={
+                            isMarkdownFile(selectedFilePath)
+                              ? markdownRef
+                              : undefined
+                          }
+                          onDownload={handleDownload}
+                          isDownloading={isDownloading}
+                          editable={editable && !isBinaryFile}
+                          onEdit={(val) => {
+                            if (!selectedFilePath) return;
+                            setTextContentForRenderer(val);
+                            if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+                            saveTimerRef.current = setTimeout(async () => {
+                              try {
+                                setIsSaving(true);
+                                // Save via JSON endpoint for reliability
+                                await fetch(`${API_URL}/sandboxes/${sandboxId}/files/json`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                                  },
+                                  body: JSON.stringify({
+                                    path: selectedFilePath,
+                                    content: val,
+                                  }),
+                                });
+                                onFileEdited?.({ path: selectedFilePath, bytes: val.length });
+                              } catch (e) {
+                                // Surface a lightweight indicator; toast would be noisy on debounce
+                                console.error('Autosave failed', e);
+                              } finally {
+                                setIsSaving(false);
+                              }
+                            }, 500);
+                          }}
+                        />
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* File Explorer with Filtering and View Toggle */
+              <div className="h-full w-full flex flex-col">
+                {/* Category Filter Tabs and View Toggle */}
+                <div className="flex-shrink-0 px-4 py-3 border-b">
+                  <div className="flex items-center justify-between gap-4">
+                    {/* Category Filter Tabs */}
+                    <div className="flex gap-1 flex-1">
+                      {[
+                        { key: 'all', label: 'All' },
+                        { key: 'documents', label: 'Documents' },
+                        { key: 'images', label: 'Images' },
+                        { key: 'code', label: 'Code' },
+                        { key: 'links', label: 'Links' }
+                      ].map((category) => (
+                        <button
+                          key={category.key}
+                          onClick={() => setSelectedCategory(category.key as any)}
+                          className={`px-3 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                            selectedCategory === category.key
+                              ? 'bg-foreground text-background'
+                              : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                          }`}
+                        >
+                          {category.label}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    {/* View Toggle */}
+                    {/* <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+                      <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-1.5 rounded transition-colors ${
+                          viewMode === 'grid'
+                            ? 'bg-background shadow-sm'
+                            : 'hover:bg-muted'
+                        }`}
+                        title="Grid view"
+                      >
+                        <Grid3X3 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-1.5 rounded transition-colors ${
+                          viewMode === 'list'
+                            ? 'bg-background shadow-sm'
+                            : 'hover:bg-muted'
+                        }`}
+                        title="List view"
+                      >
+                        <List className="h-4 w-4" />
+                      </button>
+                    </div> */}
+                  </div>
+                </div>
+
+                {/* File List/Grid */}
+                <div className="flex-1 overflow-hidden">
+                  {isLoadingFiles ? (
+                    <div className="h-full w-full flex items-center justify-center">
+                      <Loader className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : (() => {
+                    const filteredFiles = getFilteredFiles();
+                    return filteredFiles.length === 0 ? (
+                      <div className="h-full w-full flex flex-col items-center justify-center">
+                        <Folder className="h-12 w-12 mb-2 text-muted-foreground opacity-30" />
+                        <p className="text-sm text-muted-foreground">
+                          {selectedCategory === 'all' ? 'Directory is empty' : `No ${selectedCategory} found`}
+                        </p>
+                      </div>
+                    ) : (
+                      <ScrollArea className="h-full w-full">
+                        {/* {viewMode === 'grid' ? (
+                          // Grid View
+                          <div className="p-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                              {filteredFiles.map((file) => (
+                                <button
+                                  key={file.path}
+                                  className={`flex flex-col items-center p-3 rounded-2xl border hover:bg-muted/50 transition-colors ${
+                                    selectedFilePath === file.path
+                                      ? 'bg-muted border-primary/20'
+                                      : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (file.is_dir) {
+                                      navigateToFolder(file);
+                                    } else {
+                                      openFile(file);
+                                    }
+                                  }}
+                                >
+                                  <div className="w-12 h-12 flex items-center justify-center mb-1">
+                                    {file.is_dir ? (
+                                      <Folder className="h-9 w-9 text-blue-500" />
+                                    ) : (
+                                      (() => {
+                                        const iconPath = getFileIcon(file.name);
+                                        return iconPath ? (
+                                          <img 
+                                            src={iconPath} 
+                                            alt={`${file.name} icon`}
+                                            className="h-10 w-10 object-contain"
+                                          />
+                                        ) : (
+                                          <File className="h-8 w-8 text-muted-foreground" />
+                                        );
+                                      })()
+                                    )}
+                                  </div>
+                                  <span className="text-xs text-center font-medium truncate max-w-full">
+                                    {file.name}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : ( */}
+                          {/* List View */}
+                          <div className="p-4">
+                            <div className="space-y-1">
+                              {filteredFiles.map((file) => (
+                                <button
+                                  key={file.path}
+                                  className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left ${
+                                    selectedFilePath === file.path
+                                      ? 'bg-muted border-primary/20'
+                                      : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (file.is_dir) {
+                                      navigateToFolder(file);
+                                    } else {
+                                      openFile(file);
+                                    }
+                                  }}
+                                >
+                                  {/* File Icon */}
+                                  <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center">
+                                    {file.is_dir ? (
+                                      <Folder className="h-6 w-6 text-blue-500" />
+                                    ) : (() => {
+                                      const iconPath = getFileIcon(file.name);
+                                      return iconPath ? (
+                                        <img 
+                                          src={iconPath} 
+                                          alt={`${file.name} icon`}
+                                          className="h-6 w-6 object-contain"
+                                        />
+                                      ) : (
+                                        <File className="h-5 w-5 text-muted-foreground" />
+                                      );
+                                    })()
+                                    }
+                                  </div>
+                                  
+                                  {/* File Info */}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-sm truncate">
+                                      {file.name}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {formatFileDate(file.mod_time)} • {file.size ? `${Math.round(file.size / 1024)}KB` : '—'}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* File Type Badge */}
+                                  <div className="flex-shrink-0">
+                                    {!file.is_dir && (
+                                      <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                                        {file.name.split('.').pop()?.toUpperCase() || 'FILE'}
+                                      </span>
+                                    )}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        {/* )} */}
+                      </ScrollArea>
+                    );
+                  })()
+                  }
+                </div>
+              </div>
+            )}
+          </div>
+           {/* 👇 Resize Handle */}
+          <div
+      className="absolute left-0 top-0 w-0.5 h-full  cursor-col-resize hover:bg-helium-orange/20 active:bg-helium-orange/40 transition-colors"
+      onMouseDown={handleMouseDown}
+    />
+        </div>
+      )}
+    </>
   );
 }
