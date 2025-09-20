@@ -83,7 +83,7 @@ export function FileViewerModal({
 
   // Auth for session token
   const { session } = useAuth();
-  const { setIsExpanded } = React.useContext(ToolCallSidePanelContext);
+  const { setComponentExpanded } = React.useContext(ToolCallSidePanelContext);
   const { state: sidebarState } = useSidebar();
   const isSidebarExpanded = sidebarState === 'expanded';
   // File navigation state
@@ -184,13 +184,15 @@ export function FileViewerModal({
 
   // While File Viewer is open, mark right-panel as expanded so sidebar uses overlay mode
   useEffect(() => {
+    const componentId = 'file-viewer-modal';
+    
     if (open) {
-      setIsExpanded(true);
+      setComponentExpanded(componentId, true);
     } else {
-      setIsExpanded(false);
+      setComponentExpanded(componentId, false);
     }
-    return () => setIsExpanded(false);
-  }, [open, setIsExpanded]);
+    return () => setComponentExpanded(componentId, false);
+  }, [open, setComponentExpanded]);
 
   // Notify parent when width changes (debounced by React batching; also on open)
   useEffect(() => {

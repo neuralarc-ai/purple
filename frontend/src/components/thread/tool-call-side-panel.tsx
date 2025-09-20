@@ -264,7 +264,7 @@ export function ToolCallSidePanel({
   agentRunId,
   onPanelWidthChange,
 }: ToolCallSidePanelProps) {
-  const { setIsExpanded } = React.useContext(ToolCallSidePanelContext);
+  const { setComponentExpanded } = React.useContext(ToolCallSidePanelContext);
   const [hasOpened, setHasOpened] = React.useState(false);
   const [dots, setDots] = React.useState('');
   const [internalIndex, setInternalIndex] = React.useState(0);
@@ -1019,21 +1019,23 @@ export function ToolCallSidePanel({
     }
   }, [resetAccumulatedTime]);
 
-  // Handle panel open/close
+  // Handle panel open/close with component-specific tracking
   React.useEffect(() => {
+    const componentId = 'tool-call-side-panel';
+    
     if (isOpen) {
       // Panel is opening
       setHasOpened(true);
-      setIsExpanded(true);
+      setComponentExpanded(componentId, true);
     } else {
-      setIsExpanded(false);
+      setComponentExpanded(componentId, false);
     }
 
     // Cleanup on unmount
     return () => {
-      setIsExpanded(false);
+      setComponentExpanded(componentId, false);
     };
-  }, [isOpen, setIsExpanded]);
+  }, [isOpen, setComponentExpanded]);
 
   // Fetch runtime from database when threadId changes or component mounts
   React.useEffect(() => {
