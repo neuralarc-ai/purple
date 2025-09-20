@@ -42,6 +42,8 @@ interface FileRendererProps {
   // Takeover editing support
   editable?: boolean;
   onEdit?: (newContent: string) => void;
+  // For disabling iframe pointer events during resize
+  isResizing?: boolean;
 }
 
 // Helper function to determine file type from extension
@@ -167,6 +169,7 @@ export function FileRenderer({
   isDownloading,
   editable = false,
   onEdit,
+  isResizing = false,
 }: FileRendererProps) {
   const fileType = getFileTypeFromExtension(fileName);
   const language = getLanguageFromExtension(fileName);
@@ -222,6 +225,7 @@ export function FileRenderer({
           content={content || ''}
           previewUrl={htmlPreviewUrl || ''}
           className="w-full h-full"
+          isResizing={isResizing}
         />
       ) : fileType === 'code' || fileType === 'text' ? (
         <CodeRenderer

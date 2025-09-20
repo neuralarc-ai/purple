@@ -10,12 +10,14 @@ interface HtmlRendererProps {
   content: string;
   previewUrl: string;
   className?: string;
+  isResizing?: boolean;
 }
 
 export function HtmlRenderer({
   content,
   previewUrl,
   className,
+  isResizing = false,
 }: HtmlRendererProps) {
   // Always default to 'preview' mode
   const [viewMode, setViewMode] = useState<'preview' | 'code'>('preview');
@@ -68,6 +70,7 @@ export function HtmlRenderer({
               title="HTML Preview"
               className="w-full h-full border-0"
               sandbox="allow-same-origin allow-scripts"
+              style={{ pointerEvents: isResizing ? 'none' : 'auto' }}
             />
           </div>
         ) : (

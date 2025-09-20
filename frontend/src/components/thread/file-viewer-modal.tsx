@@ -2219,6 +2219,7 @@ export function FileViewerModal({
                           onDownload={handleDownload}
                           isDownloading={isDownloading}
                           editable={editable && !isBinaryFile}
+                          isResizing={isResizing.current}
                           onEdit={(val) => {
                             if (!selectedFilePath) return;
                             setTextContentForRenderer(val);
@@ -2442,11 +2443,12 @@ export function FileViewerModal({
               </div>
             )}
           </div>
-           {/* 👇 Resize Handle */}
+           {/* Resize Handle - Improved stability */}
           <div
-      className="absolute left-0 top-0 w-0.5 h-full  cursor-col-resize hover:bg-helium-orange/20 active:bg-helium-orange/40 transition-colors"
-      onMouseDown={handleMouseDown}
-    />
+            className="absolute left-0 top-0 w-0.5 h-full cursor-ew-resize hover:bg-helium-orange/20 active:bg-helium-orange/40 transition-colors z-10"
+            onMouseDown={handleMouseDown}
+            title="Drag to resize"
+          />
         </div>
       )}
     </>
