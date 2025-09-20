@@ -633,7 +633,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl min-h-[600px] max-h-[85vh] bg-background/95 backdrop-blur border-border/50">
+      <DialogContent className="max-w-6xl min-h-[600px] max-h-[85vh] bg-background/95 backdrop-blur border-border/50 overflwo-y-scroll">
         {/* Header */}
         <DialogHeader className="pb-4">
           <DialogTitle className="flex items-center gap-3">
@@ -647,7 +647,7 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           </p>
         </DialogHeader>
 
-        <div className="flex flex-col h-full py-4">
+        <div className="flex flex-col h-full py-4 overflow-y-scroll">
           {!showAddForm ? (
             // Table View
             <>
@@ -836,14 +836,14 @@ export function DagadModal({ open, onOpenChange }: DagadModalProps) {
           ) : (
             // Add Knowledge Form
             <>
-              <div>
+              <div className="overflow-y-scroll">
                 {errorMsg && (
                   <div className="text-sm text-destructive border border-destructive/30 rounded-lg p-3 mb-6 bg-destructive/5">
                     {errorMsg}
                   </div>
                 )}
 
-                <div className="space-y-6">
+                <div className="space-y-4 overflow-y-scroll">
                   {/* Entry Title */}
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground/80">Entry title</label>
