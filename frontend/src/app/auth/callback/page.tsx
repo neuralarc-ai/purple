@@ -32,12 +32,9 @@ export default function AuthCallback() {
             provider: data.session.user.app_metadata.provider
           })
 
-          // Check if user profile exists, create if not
-          await ensureUserProfile(supabase, data.session.user)
-
-          // Get return URL and redirect immediately
-          const returnUrl = searchParams.get('returnUrl') || '/dashboard'
-          router.push(returnUrl)
+          // Check if user is new or existing
+          const redirectUrl = await checkUserOnboardingStatus(supabase, data.session.user.id)
+          router.push(redirectUrl)
           
         } else {
           console.log('⏳ No session yet, waiting for auth state change...')
@@ -50,10 +47,9 @@ export default function AuthCallback() {
               if (event === 'SIGNED_IN' && session) {
                 console.log('✅ User signed in via state change')
                 
-                await ensureUserProfile(supabase, session.user)
-                
-                const returnUrl = searchParams.get('returnUrl') || '/dashboard'
-                router.push(returnUrl)
+                // Check if user is new or existing
+                const redirectUrl = await checkUserOnboardingStatus(supabase, session.user.id)
+                router.push(redirectUrl)
                 
                 subscription.unsubscribe()
               } else if (event === 'SIGNED_OUT') {
@@ -91,43 +87,34 @@ export default function AuthCallback() {
   )
 }
 
-// Helper function to ensure user profile exists
-async function ensureUserProfile(supabase: any, user: any) {
+// Helper function to check user onboarding status
+async function checkUserOnboardingStatus(supabase: any, userId: string) {
   try {
-    console.log('🔍 Checking user profile for:', user.email)
+    console.log('🔍 Checking user onboarding status for:', userId)
     
-    // Check if user profile exists
-    const { data: profile, error: profileError } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('user_profiles')
-      .select('*')
-      .eq('user_id', user.id)
+      .select('id')
+      .eq('user_id', userId)
       .single()
 
     if (profileError && profileError.code === 'PGRST116') {
-      // Profile doesn't exist, create it
-      console.log('📝 Creating user profile...')
-      
-      const { error: insertError } = await supabase
-        .from('user_profiles')
-        .insert({
-          user_id: user.id,
-          full_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-          preferred_name: user.user_metadata?.given_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-          work_description: 'Professional',
-          personal_references: null
-        })
-
-      if (insertError) {
-        console.error('❌ Error creating user profile:', insertError)
-      } else {
-        console.log('✅ User profile created successfully')
-      }
+      // No profile found - user needs invite code validation
+      console.log('🆕 New user detected, redirecting to invite')
+      return '/invite'
     } else if (profileError) {
       console.error('❌ Error checking user profile:', profileError)
-    } else {
-      console.log('✅ User profile already exists')
+      // On error, redirect to dashboard as fallback
+      return '/dashboard'
+    } else if (profileData) {
+      // User has profile - redirect to dashboard
+      console.log('✅ Existing user detected, redirecting to dashboard')
+      return '/dashboard'
     }
   } catch (error) {
-    console.error('❌ Error in ensureUserProfile:', error)
+    console.error('❌ Error checking user onboarding status:', error)
   }
+  
+  // Fallback to dashboard
+  return '/dashboard'
 }
