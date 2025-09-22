@@ -314,11 +314,11 @@ export function SidebarLeft({
               onClick={() => {
                 if (isMobile) setOpenMobile(false);
               }}
-              tooltip="Knowledge Base"
+              tooltip="AI Drive"
             >
               <i className="ri-book-open-line text-base mr-1 transition-all duration-300 ease-in-out" />
               <span className="flex items-center justify-between w-full transition-all duration-300 ease-in-out">
-                Knowledge Base
+                AI Drive
               </span>
             </SidebarMenuButton>
           </Link>
