@@ -138,6 +138,7 @@ export default function KnowledgeBasePage() {
   const [sidebarSection, setSidebarSection] = useState<'home' | 'folders' | 'recent' | 'starred' | 'storage'>('home');
   const [starredEntries, setStarredEntries] = useState<string[]>([]);
   const [showQuickTemplates, setShowQuickTemplates] = useState(false);
+  const [showAddFolderForm, setShowAddFolderForm] = useState(false);
 
   // Utility functions
   const isImageFile = (file: File | null | undefined) => !!file && file.type.startsWith('image/');
@@ -1005,15 +1006,44 @@ export default function KnowledgeBasePage() {
             </SelectContent>
           </Select>
 
-          {/* Add Button */}
+          {/* New Dropdown */}
+          <Popover>
+            <PopoverTrigger asChild>
           <Button
-            onClick={() => setShowAddForm(true)}
             disabled={calculateTotalStorage(entries) >= MAX_STORAGE_BYTES}
             className="h-9 px-4"
           >
             <Plus className="h-4 w-4 mr-2" />
             New
           </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-44 p-2">
+              <div className="flex flex-col">
+                <button
+                  className="flex items-center gap-2 px-2 py-2 rounded hover:bg-muted/50 text-sm text-left"
+                  onClick={() => {
+                    setShowAddForm(true);
+                  }}
+                >
+                  <Notebook className="h-4 w-4" />
+                  <span>New Entry</span>
+                </button>
+                <button
+                  className="flex items-center gap-2 px-2 py-2 rounded hover:bg-muted/50 text-sm text-left"
+                  onClick={() => {
+                    setSidebarSection('folders');
+                    setCurrentFolder('home');
+                    setShowAddForm(false);
+                    setNewFolderName('');
+                    // focus can be added if there's an input
+                  }}
+                >
+                  <Folder className="h-4 w-4" />
+                  <span>New Folder</span>
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* Main Content */}
@@ -1025,54 +1055,49 @@ export default function KnowledgeBasePage() {
                     {/* Folder Creation */}
                     {sidebarSection === 'folders' && currentFolder === 'home' && (
                       <div className="space-y-4">
-                        {/* Create New Folder Card */}
-                        <div className="group relative p-6 rounded-xl border-2 border-dashed border-border/50 hover:border-primary/50 bg-gradient-to-br from-muted/20 via-muted/10 to-transparent hover:from-primary/5 hover:via-primary/3 transition-all duration-300 cursor-pointer">
-                          <div className="text-center">
-                            <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 group-hover:bg-primary/15 group-hover:border-primary/30 transition-all duration-300 mb-4 inline-block">
-                              <Plus className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-foreground mb-2">Create New Folder</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Organize your knowledge entries into folders</p>
-                            
-                            {/* Inline Creation Form */}
-                            <div className="space-y-3">
+                        {/* Compact Add Folder */}
+                        <div className="flex items-center justify-between p-3 rounded-lg border border-border/30 bg-muted/10">
+                          <div className="text-sm text-muted-foreground">Add a new folder to organize entries</div>
+                          {!showAddFolderForm ? (
+                            <Button size="sm" onClick={() => setShowAddFolderForm(true)}>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Folder
+                            </Button>
+                          ) : (
+                            <div className="flex items-center gap-2 w-full md:w-auto md:min-w-[420px] justify-end">
                               <Input
-                                placeholder="Enter folder name..."
+                                placeholder="Folder name"
                                 value={newFolderName}
                                 onChange={(e) => setNewFolderName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && createFolder()}
-                                className="text-center bg-background/60 border-border/60 focus:border-primary/60 focus:ring-primary/30 rounded-xl h-12 text-base shadow-sm"
+                                className="h-9"
                               />
-                              <div className="flex gap-2 justify-center">
-                                <Button 
-                                  onClick={createFolder}
-                                  disabled={!newFolderName.trim() || creatingFolder}
-                                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 px-6 py-2 rounded-xl font-semibold"
-                                >
-                                  {creatingFolder ? (
-                                    <>
-                                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                                      Creating...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Plus className="h-4 w-4 mr-2" />
-                                      Create Folder
-                                    </>
-                                  )}
-                                </Button>
-                                {newFolderName.trim() && (
-                                  <Button 
-                                    variant="outline"
-                                    onClick={() => setNewFolderName('')}
-                                    className="border-border/60 hover:bg-muted/50 px-4 py-2 rounded-xl font-semibold transition-all duration-200"
-                                  >
-                                    Cancel
-                                  </Button>
+                              <Button 
+                                size="sm"
+                                onClick={async () => { await createFolder(); setShowAddFolderForm(false); }}
+                                disabled={!newFolderName.trim() || creatingFolder}
+                              >
+                                {creatingFolder ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                    Creating
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Create
+                                  </>
                                 )}
-                              </div>
+                              </Button>
+                              <Button 
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => { setShowAddFolderForm(false); setNewFolderName(''); }}
+                              >
+                                Cancel
+                              </Button>
                             </div>
-                          </div>
+                          )}
                         </div>
 
                         {/* Quick Actions */}
