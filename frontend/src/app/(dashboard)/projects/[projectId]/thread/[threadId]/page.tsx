@@ -1068,6 +1068,8 @@ export default function ThreadPage({
           agentData={agent}
           onSubmit={handleSubmitMessage}
           showToolPreview={!isSidePanelOpen && toolCalls.length > 0}
+          showBanner={showBanner}
+          fileViewerOpen={fileViewerOpen}
           onCreditExhaustionUpgrade={() => {
             // Clear credit exhaustion state when user clicks upgrade
             clearCreditExhaustion();
