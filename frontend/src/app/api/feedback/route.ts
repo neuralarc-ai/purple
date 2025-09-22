@@ -243,8 +243,8 @@ async function sendFeedbackNotification(feedbackData: any) {
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
           }
           .header {
-            background-color: #007bff;
-            color: white;
+            background-color: #D4D5D0;
+            color: black;
             padding: 20px;
             border-radius: 8px 8px 0 0;
             margin: -20px -20px 20px -20px;
@@ -265,7 +265,7 @@ async function sendFeedbackNotification(feedbackData: any) {
             padding: 10px;
             background-color: #f8f9fa;
             border-radius: 4px;
-            border-left: 4px solid #007bff;
+            border-left: 4px solid #D4D5D0;
           }
           .field-label {
             font-weight: bold;
@@ -314,7 +314,7 @@ async function sendFeedbackNotification(feedbackData: any) {
         <div class="email-wrapper">
           <div class="email-container">
             <div class="header">
-              <h1>🚨 New Feedback Ticket</h1>
+              <h1>New Feedback Ticket</h1>
             </div>
             
             <div class="content">

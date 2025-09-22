@@ -109,7 +109,7 @@ const createCustomWelcomeEmailTemplate = (displayName: string, userEmail: string
               </div>
               
               <div class="content-text">
-                As with any exciting first launch, there might be a few bumps along the way. If you spot something odd or have a brilliant idea for how we can make Helium even better, we would love to hear from you. Your feedback is not just welcome—<span class="mission-critical">it is mission critical</span>.
+                As with any exciting first launch, there might be a few bumps along the way. If you spot something odd or have a brilliant idea for how we can make Helium even better, we would love to hear from you. Your feedback is not just welcome <span class="mission-critical">it is mission critical</span>.
               </div>
               
               <div class="content-text">
@@ -143,7 +143,7 @@ Welcome aboard!
 
 You are officially part of the first wave of pioneers exploring Helium's Public Beta, and we could not be more excited to have you with us.
 
-To kickstart your journey, we have added 800 free Helium credits to your account. Consider this your launch fuel to experiment, explore, and push the boundaries of what Helium can do.
+To kickstart your journey, we have added 1500 free Helium credits to your account. Consider this your launch fuel to experiment, explore, and push the boundaries of what Helium can do.
 
 As with any exciting first launch, there might be a few bumps along the way. If you spot something odd or have a brilliant idea for how we can make Helium even better, we would love to hear from you. Your feedback is not just welcome—it is mission critical.
 

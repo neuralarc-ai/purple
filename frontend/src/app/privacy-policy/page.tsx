@@ -7,14 +7,14 @@ export default function PrivacyPolicyPage() {
             <div className="max-w-4xl mx-auto px-4 py-12">
                 <div className="mb-8">
                     <Link 
-                        href="/dashboard" 
+                        href="/about" 
                         className="inline-flex items-center px-4 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-all duration-300 font-medium hover:-translate-y-1 hover:shadow-lg"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                             <path d="M6 8L2 12L6 16"/>
                             <path d="M2 12H22"/>
                         </svg>
-                        Back to Home
+                        Back to About
                     </Link>
                 </div>
                 
