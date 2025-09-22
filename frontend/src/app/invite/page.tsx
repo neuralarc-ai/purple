@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,7 @@ interface InviteData {
   companyName: string;
 }
 
-export default function InvitePage() {
+function InvitePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme } = useTheme();
@@ -56,6 +56,9 @@ export default function InvitePage() {
 
   // Handle Azure OAuth success
   useEffect(() => {
+    // Only run in browser
+    if (typeof window === 'undefined') return;
+    
     const azureSuccess = searchParams?.get('azure_success');
     const email = searchParams?.get('email');
 
@@ -74,6 +77,9 @@ export default function InvitePage() {
   }, [searchParams]);
 
   useEffect(() => {
+    // Only run in browser
+    if (typeof window === 'undefined') return;
+    
     const checkAuth = async () => {
       try {
         const supabase = createClient();
@@ -220,6 +226,12 @@ export default function InvitePage() {
         return;
       }
 
+      // Only proceed if we're in browser
+      if (typeof window === 'undefined') {
+        toast.error('Please try again');
+        return;
+      }
+
       console.log('Starting trial checkout...', {
         success_url: `${window.location.origin}/onboarding`,
         cancel_url: `${window.location.origin}/invite?trial=cancelled`,
@@ -250,7 +262,9 @@ export default function InvitePage() {
       if (result.url) {
         // Redirect to Stripe checkout
         console.log('Redirecting to Stripe checkout:', result.url);
-        window.location.href = result.url;
+        if (typeof window !== 'undefined') {
+          window.location.href = result.url;
+        }
       } else if (result.status === 'existing_subscription') {
         // User already has subscription, redirect to onboarding
         toast.info('You already have an active subscription');
@@ -605,4 +619,19 @@ export default function InvitePage() {
       </Dialog>
     </div>
   );
+}
+
+export default function InvitePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <InvitePageContent />
+    </Suspense>
+  )
 }
