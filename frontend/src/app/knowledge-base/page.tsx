@@ -219,6 +219,15 @@ export default function KnowledgeBasePage() {
     } else if (sidebarSection === 'recent') {
       // Sort by most recent and take top 20
       filtered = filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 20);
+    } else if (sidebarSection === 'folders') {
+      // When in folders view, filter by current folder
+      if (currentFolder === 'home') {
+        // Show all entries when in home
+      } else if (currentFolder === 'unfiled') {
+        filtered = filtered.filter(entry => !entry.folder_id);
+      } else {
+        filtered = filtered.filter(entry => entry.folder_id === currentFolder);
+      }
     } else if (currentFolder === 'home') {
       // Show all entries
     } else if (currentFolder === 'unfiled') {
@@ -255,6 +264,7 @@ export default function KnowledgeBasePage() {
 
   const navigateToFolder = (folderId: string, folderName: string) => {
     setCurrentFolder(folderId);
+    setSidebarSection('folders');
     setBreadcrumbs(prev => [...prev, { id: folderId, name: folderName }]);
   };
 
@@ -283,13 +293,22 @@ export default function KnowledgeBasePage() {
   };
 
   // File upload handlers
-  const handleImageSelect = (file: File) => {
-    setSelectedImage(file);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+  const handleImageSelect = (file: File, isEdit: boolean = false) => {
+    if (isEdit) {
+      setEditSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setEditImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleEditImageSelect = (file: File) => {
@@ -555,6 +574,17 @@ export default function KnowledgeBasePage() {
     setEditSelectedFile(null);
     setEditUploadedFileInfo(null);
     setEditSelectedFolderId((entry.folder_id ?? 'unfiled') as string);
+    
+    // Initialize file upload states based on existing entry data
+    if (entry.file_url) {
+      setEditUploadedFileInfo({
+        file_url: entry.file_url,
+        file_name: entry.file_name || 'Unknown file',
+        file_size: entry.file_size || 0,
+        file_mime_type: entry.file_mime_type || 'application/octet-stream',
+        file_metadata: entry.file_metadata
+      });
+    }
   };
 
   const saveEdit = async () => {
@@ -757,6 +787,20 @@ export default function KnowledgeBasePage() {
     }
   }, []);
 
+  // Keyboard navigation support
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Escape key to go back to folder list when viewing a specific folder
+      if (event.key === 'Escape' && sidebarSection === 'folders' && currentFolder !== 'home') {
+        setCurrentFolder('home');
+        setBreadcrumbs([{ id: 'home', name: 'Home' }]);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarSection, currentFolder]);
+
   return (
     <div className="flex h-screen bg-background">
       {/* Left Sidebar */}
@@ -870,9 +914,22 @@ export default function KnowledgeBasePage() {
         <div className="h-16 border-b border-border/30 px-6 flex items-center gap-4">
           {/* Breadcrumbs */}
           <div className="flex items-center gap-2 text-sm">
+            {sidebarSection === 'folders' && currentFolder !== 'home' && (
+              <button
+                onClick={() => {
+                  setCurrentFolder('home');
+                  setBreadcrumbs([{ id: 'home', name: 'Home' }]);
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                title="Go back to folder list"
+              >
+                <Home className="h-4 w-4" />
+                <span>Folders</span>
+              </button>
+            )}
             {breadcrumbs.map((crumb, index) => (
               <div key={crumb.id} className="flex items-center gap-2">
-                {index > 0 && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+                {(index > 0 || (sidebarSection === 'folders' && currentFolder !== 'home')) && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                 <button
                   onClick={() => {
                     if (index < breadcrumbs.length - 1) {
@@ -882,8 +939,8 @@ export default function KnowledgeBasePage() {
                     }
                   }}
                   className={cn(
-                    "hover:text-foreground transition-colors",
-                    index === breadcrumbs.length - 1 ? "text-foreground font-medium" : "text-muted-foreground"
+                    "px-3 py-1.5 rounded-lg hover:bg-muted/50 transition-colors",
+                    index === breadcrumbs.length - 1 ? "text-foreground font-medium bg-muted/30" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {crumb.name}
@@ -966,7 +1023,7 @@ export default function KnowledgeBasePage() {
             {!showAddForm ? (
               <div className="space-y-6">
                     {/* Folder Creation */}
-                    {sidebarSection === 'folders' && (
+                    {sidebarSection === 'folders' && currentFolder === 'home' && (
                       <div className="space-y-4">
                         {/* Create New Folder Card */}
                         <div className="group relative p-6 rounded-xl border-2 border-dashed border-border/50 hover:border-primary/50 bg-gradient-to-br from-muted/20 via-muted/10 to-transparent hover:from-primary/5 hover:via-primary/3 transition-all duration-300 cursor-pointer">
@@ -1019,7 +1076,7 @@ export default function KnowledgeBasePage() {
                         </div>
 
                         {/* Quick Actions */}
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3">
                           <div 
                             className="p-3 rounded-lg bg-muted/20 border border-border/30 hover:bg-muted/30 transition-colors cursor-pointer"
                             onClick={() => setShowQuickTemplates(!showQuickTemplates)}
@@ -1031,15 +1088,6 @@ export default function KnowledgeBasePage() {
                               <span className="text-sm font-medium text-foreground">Quick Templates</span>
                             </div>
                             <p className="text-xs text-muted-foreground">Use predefined folder names</p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-muted/20 border border-border/30 hover:bg-muted/30 transition-colors cursor-pointer">
-                            <div className="flex items-center gap-2 mb-2">
-                              <div className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
-                                <i className="ri-upload-line text-green-500 text-sm"></i>
-                              </div>
-                              <span className="text-sm font-medium text-foreground">Import Folders</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground">Bulk create from CSV</p>
                           </div>
                         </div>
 
@@ -1116,7 +1164,7 @@ export default function KnowledgeBasePage() {
                 ) : (
                   <>
                     {/* Folders */}
-                    {sidebarSection === 'folders' && (
+                    {sidebarSection === 'folders' && currentFolder === 'home' && (
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <h3 className="text-lg font-semibold text-foreground">Your Folders</h3>
@@ -1194,6 +1242,194 @@ export default function KnowledgeBasePage() {
                             );
                           })}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Files in Selected Folder */}
+                    {sidebarSection === 'folders' && currentFolder !== 'home' && (
+                      <div className="space-y-4 relative">
+                        {/* Floating Back Button */}
+                        <div className="fixed bottom-6 right-6 z-40">
+                          <Button
+                            onClick={() => {
+                              setCurrentFolder('home');
+                              setBreadcrumbs([{ id: 'home', name: 'Home' }]);
+                            }}
+                            className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90"
+                            size="sm"
+                            title="Back to Folders (Press Esc)"
+                          >
+                            <ChevronRight className="h-5 w-5 rotate-180" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setCurrentFolder('home');
+                                setBreadcrumbs([{ id: 'home', name: 'Home' }]);
+                              }}
+                              className="h-10 px-4 bg-background/60 border-border/60 hover:bg-muted/50"
+                            >
+                              <ChevronRight className="h-4 w-4 mr-2 rotate-180" />
+                              Back to Folders
+                            </Button>
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                                <Folder className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-semibold text-foreground">
+                                  {currentFolder === 'unfiled' ? 'Unfiled Files' : 
+                                   folders.find(f => f.folder_id === currentFolder)?.name || 'Folder'}
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {getFilteredAndSortedEntries().length} {getFilteredAndSortedEntries().length === 1 ? 'file' : 'files'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowAddForm(true)}
+                              className="h-10 px-4"
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add File
+                            </Button>
+                          </div>
+                        </div>
+                        {getFilteredAndSortedEntries().length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <div className="p-6 rounded-3xl bg-muted/30 border border-border/30 mb-4">
+                              <Folder className="h-12 w-12 text-muted-foreground" />
+                            </div>
+                            <h4 className="text-lg font-semibold text-foreground mb-2">
+                              {currentFolder === 'unfiled' ? 'No unfiled files' : 'This folder is empty'}
+                            </h4>
+                            <p className="text-muted-foreground mb-4 max-w-md">
+                              {currentFolder === 'unfiled' 
+                                ? 'All your files are organized in folders. Files without a folder will appear here.'
+                                : `The "${folders.find(f => f.folder_id === currentFolder)?.name || 'folder'}" folder doesn't contain any files yet. Add some files to get started.`
+                              }
+                            </p>
+                            <Button onClick={() => setShowAddForm(true)}>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add File
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="bg-background border border-border/30 rounded-lg overflow-hidden">
+                            {/* Table Header */}
+                            <div className="grid grid-cols-6 gap-4 px-4 py-3 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground">
+                              <div>Name</div>
+                              <div>Content</div>
+                              <div>View</div>
+                              <div>Created at</div>
+                              <div>Status</div>
+                              <div>Actions</div>
+                            </div>
+                            
+                            {/* Table Body */}
+                            <div className="divide-y divide-border/30">
+                              {getFilteredAndSortedEntries().map((entry) => (
+                                <div
+                                  key={entry.entry_id}
+                                  className="grid grid-cols-6 gap-4 px-4 py-3 hover:bg-muted/20 transition-colors"
+                                >
+                                  {/* Name */}
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className="p-1 rounded bg-muted/50 border border-border/30">
+                                      {getFileTypeIcon(entry)}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-medium text-foreground truncate">{entry.title}</div>
+                                      <div className="text-xs text-muted-foreground">{entry.category}</div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Content */}
+                                  <div className="flex items-center text-sm text-muted-foreground min-w-0">
+                                    <span
+                                      className="truncate block max-w-[420px]"
+                                      title={entry.content || entry.title}
+                                    >
+                                      {entry.content || entry.title}
+                                    </span>
+                                  </div>
+                                  
+                                  {/* View */}
+                                  <div className="flex items-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 hover:bg-muted/50"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        console.log('View button clicked for entry:', entry.title);
+                                        setSelectedEntry(entry);
+                                        setShowRightSidebar(true);
+                                      }}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                  
+                                  {/* Created at */}
+                                  <div className="flex items-center text-sm text-muted-foreground">
+                                    {new Date(entry.created_at).toLocaleDateString()}
+                                  </div>
+                                  
+                                  {/* Status */}
+                                  <div className="flex items-center">
+                                    <Switch
+                                      checked={entry.is_active}
+                                      onCheckedChange={(checked) => {
+                                        toggleActive(entry, checked);
+                                      }}
+                                      className="h-4 w-7"
+                                    />
+                                  </div>
+                                  
+                                  {/* Actions */}
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className={cn(
+                                        "h-8 w-8 p-0",
+                                        isStarred(entry.entry_id) ? "text-yellow-500 hover:text-yellow-600" : "hover:text-yellow-500"
+                                      )}
+                                      onClick={() => toggleStarred(entry.entry_id)}
+                                    >
+                                      <Star className={cn("h-4 w-4", isStarred(entry.entry_id) ? "fill-current" : "")} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() => openEdit(entry)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                      onClick={() => setConfirmEntry(entry)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1352,97 +1588,367 @@ export default function KnowledgeBasePage() {
                       </div>
                     )}
 
-                    {/* Files */}
-                    {sidebarSection !== 'storage' && (
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-muted-foreground mb-4">
-                          {sidebarSection === 'home' ? 'All Files' : 
-                           sidebarSection === 'recent' ? 'Recent Files' :
-                           sidebarSection === 'starred' ? 'Starred Files' : 'Files'}
-                        </h3>
-                      <div className={cn(
-                        "grid gap-2",
-                        viewMode === 'grid' ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1"
-                      )}>
-                        {getFilteredAndSortedEntries().map((entry) => (
-                          <div
-                            key={entry.entry_id}
-                            className={cn(
-                              "group relative p-4 rounded-lg border border-border/30 hover:border-border/60 transition-all cursor-pointer",
-                              viewMode === 'grid' ? "text-center" : "flex items-center gap-3"
-                            )}
-                            onClick={() => {
-                              setSelectedEntry(entry);
-                              setShowRightSidebar(true);
-                            }}
-                          >
-                            <div className={cn(
-                              "flex items-center gap-3",
-                              viewMode === 'grid' ? "flex-col" : "flex-row"
-                            )}>
-                              <div className="p-2 rounded-lg bg-muted/50 border border-border/30">
-                                {getFileTypeIcon(entry)}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-foreground truncate">{entry.title}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {entry.category} • {formatFileSize(calculateEntrySize(entry))}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {new Date(entry.created_at).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {/* Action buttons */}
-                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className={cn(
-                                  "h-8 w-8 p-0",
-                                  isStarred(entry.entry_id) ? "text-yellow-500 hover:text-yellow-600" : "hover:text-yellow-500"
-                                )}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleStarred(entry.entry_id);
-                                }}
-                              >
-                                <Star className={cn("h-4 w-4", isStarred(entry.entry_id) ? "fill-current" : "")} />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openEdit(entry);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setConfirmEntry(entry);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-
-                            {/* Active indicator */}
-                            <div className="absolute top-2 left-2">
-                              <div className={cn(
-                                "w-2 h-2 rounded-full",
-                                entry.is_active ? "bg-green-500" : "bg-muted-foreground"
-                              )} />
+                    {/* Home: show folders + unfiled entries */}
+                    {sidebarSection === 'home' && (
+                      <div className="space-y-6">
+                        {/* Folders row */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-foreground">Your Folders</h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span>{folders.length + 1} folders</span>
+                              <span>•</span>
+                              <span>{entries.length} total items</span>
                             </div>
                           </div>
-                        ))}
+                          <div className={cn(
+                            "grid gap-3",
+                            viewMode === 'grid' ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1"
+                          )}>
+                            {[{ folder_id: 'unfiled', name: 'Unfiled' }, ...folders].map((folder) => {
+                              const folderEntries = entries.filter((e) => (e.folder_id ?? 'unfiled') === folder.folder_id);
+                              const isUnfiled = folder.folder_id === 'unfiled';
+                              return (
+                                <div
+                                  key={folder.folder_id}
+                                  className={cn(
+                                    "group relative p-4 rounded-xl border border-border/30 hover:border-border/60 transition-all cursor-pointer bg-gradient-to-br from-background to-muted/10 hover:from-muted/5 hover:to-muted/20",
+                                    viewMode === 'grid' ? "text-center" : "flex items-center gap-3"
+                                  )}
+                                  onClick={() => navigateToFolder(folder.folder_id, folder.name)}
+                                >
+                                  <div className={cn(
+                                    "flex items-center gap-3",
+                                    viewMode === 'grid' ? "flex-col" : "flex-row"
+                                  )}>
+                                    <div className={cn(
+                                      "p-3 rounded-xl border transition-all duration-300",
+                                      isUnfiled 
+                                        ? "bg-muted/20 border-muted-foreground/20" 
+                                        : "bg-primary/10 border-primary/20 group-hover:bg-primary/15 group-hover:border-primary/30"
+                                    )}>
+                                      <Folder className={cn(
+                                        "h-6 w-6 transition-colors",
+                                        isUnfiled ? "text-muted-foreground" : "text-primary"
+                                      )} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-semibold text-foreground truncate">{folder.name}</h4>
+                                      <p className="text-sm text-muted-foreground">
+                                        {folderEntries.length} {folderEntries.length === 1 ? 'item' : 'items'}
+                                      </p>
+                                      {folderEntries.length > 0 && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          Last updated: {new Date(Math.max(...folderEntries.map(e => new Date(e.updated_at).getTime()))).toLocaleDateString()}
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {isUnfiled && (
+                                    <div className="absolute top-2 left-2">
+                                      <div className="px-2 py-1 rounded-full bg-muted/50 border border-border/30 text-xs text-muted-foreground">
+                                        Default
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Unfiled entries */}
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-medium text-muted-foreground mb-4">Unfiled Files</h3>
+                          {viewMode === 'grid' ? (
+                            <div className={cn(
+                              "grid gap-2",
+                              "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                            )}>
+                              {getFilteredAndSortedEntries()
+                                .filter((entry) => !entry.folder_id)
+                                .map((entry) => (
+                                  <div
+                                    key={entry.entry_id}
+                                    className={cn(
+                                      "group relative p-4 rounded-lg border border-border/30 hover:border-border/60 transition-all cursor-pointer",
+                                      "text-center"
+                                    )}
+                                    onClick={() => {
+                                      setSelectedEntry(entry);
+                                      setShowRightSidebar(true);
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-3 flex-col">
+                                      <div className="p-2 rounded-lg bg-muted/50 border border-border/30">
+                                        {getFileTypeIcon(entry)}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <h4 className="font-medium text-foreground truncate">{entry.title}</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                          {entry.category}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {new Date(entry.created_at).toLocaleDateString()}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    {/* Action buttons */}
+                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className={cn(
+                                          "h-8 w-8 p-0",
+                                          isStarred(entry.entry_id) ? "text-yellow-500 hover:text-yellow-600" : "hover:text-yellow-500"
+                                        )}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleStarred(entry.entry_id);
+                                        }}
+                                      >
+                                        <Star className={cn("h-4 w-4", isStarred(entry.entry_id) ? "fill-current" : "")} />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openEdit(entry);
+                                        }}
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setConfirmEntry(entry);
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                    {/* Status */}
+                                    <div className="absolute bottom-2 left-2">
+                                      <Switch
+                                        checked={entry.is_active}
+                                        onCheckedChange={(checked) => toggleActive(entry, checked)}
+                                        className="h-4 w-7"
+                                      />
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          ) : (
+                            <div className="bg-background border border-border/30 rounded-lg overflow-hidden">
+                              <div className="grid grid-cols-6 gap-4 px-4 py-3 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground">
+                                <div>Name</div>
+                                <div>Content</div>
+                                <div>View</div>
+                                <div>Created at</div>
+                                <div>Status</div>
+                                <div>Actions</div>
+                              </div>
+                              <div className="divide-y divide-border/30">
+                                {getFilteredAndSortedEntries()
+                                  .filter((entry) => !entry.folder_id)
+                                  .map((entry) => (
+                                    <div
+                                      key={entry.entry_id}
+                                      className="grid grid-cols-6 gap-4 px-4 py-3 hover:bg-muted/20 transition-colors"
+                                    >
+                                      {/* Name */}
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <div className="p-1 rounded bg-muted/50 border border-border/30">
+                                          {getFileTypeIcon(entry)}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="font-medium text-foreground truncate">{entry.title}</div>
+                                          <div className="text-xs text-muted-foreground">{entry.category}</div>
+                                        </div>
+                                      </div>
+                                      {/* Content */}
+                                      <div className="flex items-center text-sm text-muted-foreground min-w-0">
+                                        <span className="truncate block max-w-[420px]" title={entry.content || entry.title}>
+                                          {entry.content || entry.title}
+                                        </span>
+                                      </div>
+                                      {/* View */}
+                                      <div className="flex items-center">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0 hover:bg-muted/50"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedEntry(entry);
+                                            setShowRightSidebar(true);
+                                          }}
+                                        >
+                                          <Eye className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                      {/* Created at */}
+                                      <div className="flex items-center text-sm text-muted-foreground">
+                                        {new Date(entry.created_at).toLocaleDateString()}
+                                      </div>
+                                      {/* Status */}
+                                      <div className="flex items-center">
+                                        <Switch
+                                          checked={entry.is_active}
+                                          onCheckedChange={(checked) => toggleActive(entry, checked)}
+                                          className="h-4 w-7"
+                                        />
+                                      </div>
+                                      {/* Actions */}
+                                      <div className="flex items-center gap-1">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className={cn(
+                                            "h-8 w-8 p-0",
+                                            isStarred(entry.entry_id) ? "text-yellow-500 hover:text-yellow-600" : "hover:text-yellow-500"
+                                          )}
+                                          onClick={() => toggleStarred(entry.entry_id)}
+                                        >
+                                          <Star className={cn("h-4 w-4", isStarred(entry.entry_id) ? "fill-current" : "")} />
+                                        </Button>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(entry)}>
+                                          <Pencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                          onClick={() => setConfirmEntry(entry)}
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Files (non-home) */}
+                    {(sidebarSection === 'recent' || sidebarSection === 'starred') && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                          {sidebarSection === 'recent' ? 'Recent Files' : 'Starred Files'}
+                        </h3>
+                      <div className="bg-background border border-border/30 rounded-lg overflow-hidden">
+                        {/* Table Header */}
+                        <div className="grid grid-cols-6 gap-4 px-4 py-3 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground">
+                          <div>Name</div>
+                          <div>Content</div>
+                          <div>View</div>
+                          <div>Created at</div>
+                          <div>Status</div>
+                          <div>Actions</div>
+                        </div>
+                        
+                        {/* Table Body */}
+                        <div className="divide-y divide-border/30">
+                          {getFilteredAndSortedEntries().map((entry) => (
+                            <div
+                              key={entry.entry_id}
+                              className="grid grid-cols-6 gap-4 px-4 py-3 hover:bg-muted/20 transition-colors"
+                            >
+                              {/* Name */}
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="p-1 rounded bg-muted/50 border border-border/30">
+                                  {getFileTypeIcon(entry)}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-medium text-foreground truncate">{entry.title}</div>
+                                  <div className="text-xs text-muted-foreground">{entry.category}</div>
+                                </div>
+                              </div>
+                              
+                              {/* Content */}
+                              <div className="flex items-center text-sm text-muted-foreground min-w-0">
+                                <span
+                                  className="truncate block max-w-[420px]"
+                                  title={entry.content || entry.title}
+                                >
+                                  {entry.content || entry.title}
+                                </span>
+                              </div>
+                              
+                              {/* View */}
+                              <div className="flex items-center">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 hover:bg-muted/50"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    console.log('View button clicked for entry:', entry.title);
+                                    setSelectedEntry(entry);
+                                    setShowRightSidebar(true);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              
+                              {/* Created at */}
+                              <div className="flex items-center text-sm text-muted-foreground">
+                                {new Date(entry.created_at).toLocaleDateString()}
+                              </div>
+                              
+                              {/* Status */}
+                              <div className="flex items-center">
+                                <Switch
+                                  checked={entry.is_active}
+                                  onCheckedChange={(checked) => {
+                                    toggleActive(entry, checked);
+                                  }}
+                                  className="h-4 w-7"
+                                />
+                              </div>
+                              
+                              {/* Actions */}
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className={cn(
+                                    "h-8 w-8 p-0",
+                                    isStarred(entry.entry_id) ? "text-yellow-500 hover:text-yellow-600" : "hover:text-yellow-500"
+                                  )}
+                                  onClick={() => toggleStarred(entry.entry_id)}
+                                >
+                                  <Star className={cn("h-4 w-4", isStarred(entry.entry_id) ? "fill-current" : "")} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                  onClick={() => openEdit(entry)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                  onClick={() => setConfirmEntry(entry)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                     )}
@@ -1482,26 +1988,50 @@ export default function KnowledgeBasePage() {
                     </div>
                   </div>
 
-                  {/* Category */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                        <i className="ri-folder-line text-blue-500 text-sm"></i>
+                  {/* Category and Folder - Side by Side */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Category */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                          <i className="ri-folder-line text-blue-500 text-sm"></i>
+                        </div>
+                        <label className="text-base font-semibold text-foreground">Category</label>
                       </div>
-                      <label className="text-base font-semibold text-foreground">Category</label>
+                      <Select value={category} onValueChange={(value) => setCategory(value as any)}>
+                        <SelectTrigger className="bg-background/60 border-border/60 focus:border-primary/60 focus:ring-primary/30 rounded-xl h-12 text-base shadow-sm">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="instructions">Instructions</SelectItem>
+                          <SelectItem value="preferences">Preferences</SelectItem>
+                          <SelectItem value="rules">Rules</SelectItem>
+                          <SelectItem value="notes">Notes</SelectItem>
+                          <SelectItem value="general">General</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <Select value={category} onValueChange={(value) => setCategory(value as any)}>
-                      <SelectTrigger className="bg-background/60 border-border/60 focus:border-primary/60 focus:ring-primary/30 rounded-xl h-12 text-base shadow-sm">
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="instructions">Instructions</SelectItem>
-                        <SelectItem value="preferences">Preferences</SelectItem>
-                        <SelectItem value="rules">Rules</SelectItem>
-                        <SelectItem value="notes">Notes</SelectItem>
-                        <SelectItem value="general">General</SelectItem>
-                      </SelectContent>
-                    </Select>
+
+                    {/* Folder selection */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                          <i className="ri-folder-2-line text-purple-500 text-sm"></i>
+                        </div>
+                        <label className="text-base font-semibold text-foreground">Folder</label>
+                      </div>
+                      <Select value={selectedFolderId} onValueChange={(value) => setSelectedFolderId(value)}>
+                        <SelectTrigger className="bg-background/60 border-border/60 focus:border-primary/60 focus:ring-primary/30 rounded-xl h-12 text-base shadow-sm">
+                          <SelectValue placeholder="Select folder" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unfiled">Unfiled</SelectItem>
+                          {folders.map((f) => (
+                            <SelectItem key={f.folder_id} value={f.folder_id}>{f.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   {/* Entry Content */}
@@ -1523,27 +2053,6 @@ export default function KnowledgeBasePage() {
                     <div className="flex items-center justify-end text-xs text-muted-foreground font-medium">
                       {content.length}/{MAX_CONTENT_CHARS} characters
                     </div>
-                  </div>
-
-                  {/* Folder selection */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                        <i className="ri-folder-2-line text-purple-500 text-sm"></i>
-                      </div>
-                      <label className="text-base font-semibold text-foreground">Folder</label>
-                    </div>
-                    <Select value={selectedFolderId} onValueChange={(value) => setSelectedFolderId(value)}>
-                      <SelectTrigger className="bg-background/60 border-border/60 focus:border-primary/60 focus:ring-primary/30 rounded-xl h-12 text-base shadow-sm">
-                        <SelectValue placeholder="Select folder" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unfiled">Unfiled</SelectItem>
-                        {folders.map((f) => (
-                          <SelectItem key={f.folder_id} value={f.folder_id}>{f.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   {/* Attachment Upload (Image or Document) */}
@@ -1874,6 +2383,89 @@ export default function KnowledgeBasePage() {
               />
               <div className="flex items-center justify-end text-xs text-muted-foreground">
                 {editContent.length}/{MAX_CONTENT_CHARS}
+              </div>
+
+              {/* Attachment Upload (Image or Document) */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                    <i className="ri-attachment-line text-orange-500 text-sm"></i>
+                  </div>
+                  <label className="text-sm font-medium text-foreground/80">Attachment (Optional)</label>
+                </div>
+                {editImagePreview ? (
+                  <div className="relative rounded-lg overflow-hidden border border-border/30">
+                    <img src={editImagePreview} alt="Preview" className="w-full h-32 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditSelectedImage(null);
+                        setEditImagePreview(null);
+                      }}
+                      className="absolute top-2 right-2 bg-destructive/90 hover:bg-destructive text-destructive-foreground rounded-full p-1.5 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : editUploadedFileInfo ? (
+                  <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border/30">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                        <File className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{editUploadedFileInfo.file_name}</p>
+                        <p className="text-xs text-muted-foreground">{formatFileSize(editUploadedFileInfo.file_size)}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                      onClick={() => setEditUploadedFileInfo(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-border/50 rounded-lg p-4 text-center bg-gradient-to-br from-muted/30 via-muted/20 to-muted/10 hover:from-muted/40 hover:via-muted/30 hover:to-muted/20 transition-all duration-300 group cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*,.pdf,.doc,.docx,.csv,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/csv,text/plain"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        if (!file) return;
+                        if (!isImageFile(file) && file.size > 50 * 1024 * 1024) {
+                          toast.error('File is larger than 50MB. Please choose a smaller file.');
+                          e.currentTarget.value = '';
+                          setEditSelectedFile(null);
+                          return;
+                        }
+                        if (isImageFile(file)) {
+                          handleImageSelect(file, true);
+                          setEditSelectedFile(null);
+                        } else {
+                          setEditSelectedFile(file);
+                          setEditSelectedImage(null);
+                          setEditImagePreview(null);
+                        }
+                      }}
+                      className="hidden"
+                      id="edit-attachment-upload"
+                    />
+                    <label htmlFor="edit-attachment-upload" className="cursor-pointer block">
+                      <div className="p-3 rounded-lg bg-primary/10 border border-primary/20 group-hover:bg-primary/15 group-hover:border-primary/30 transition-all duration-300 mb-3 inline-block">
+                        <Upload className="h-6 w-6 text-primary group-hover:scale-110 transition-transform duration-300" />
+                      </div>
+                      <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
+                        Click to upload or drag and drop
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Images, PDFs, Word docs, CSV files (max 50MB)
+                      </p>
+                    </label>
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-lg border border-border/30">
