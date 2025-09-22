@@ -95,7 +95,16 @@ export function FileViewerModal({
   const getInitialPanelWidth = () => {
     if (typeof window === 'undefined') return 600; // Default server-side
     const screenWidth = window.innerWidth;
-    return Math.floor(screenWidth * 0.45); // 50-50 split
+    const isPdfFile = selectedFilePath ? selectedFilePath.toLowerCase().endsWith('.pdf') : false;
+    
+    // Use larger initial width for PDF files
+    const basePercentage =  0.45; // 50% for PDFs, 45% for others
+    const calculatedWidth = Math.floor(screenWidth * basePercentage);
+    
+    // Ensure minimum width is respected
+    const minWidth = isPdfFile ? 530 : 400;
+
+    return Math.max(calculatedWidth, minWidth);
   };
   const isResizing = useRef(false);
   
@@ -109,24 +118,30 @@ export function FileViewerModal({
   const handleMouseMove = (e: MouseEvent) => {
     if (!isResizing.current) return;
     const screenWidth = window.innerWidth;
-    const minWidth = 400;
+    
+    // Check if current file is a PDF to adjust minimum width
+    const isPdfFile = selectedFilePath ? selectedFilePath.toLowerCase().endsWith('.pdf') : false;
+    const minWidth = isPdfFile ? 530 : 400; // Higher minimum for PDFs
+    
     // Dynamic caps aligned with tool-call-side-panel behavior
+    // Adjust percentages slightly for PDF files to accommodate larger minimum width
     let maxAllowedWidth: number;
     if (screenWidth >= 1920) {
-      maxAllowedWidth = screenWidth * 0.7;
+      maxAllowedWidth = screenWidth * (isPdfFile ? 0.72 : 0.7);
     } else if (screenWidth >= 1500) {
-      maxAllowedWidth = screenWidth * 0.65;
+      maxAllowedWidth = screenWidth * (isPdfFile ? 0.67 : 0.65);
     } else if (screenWidth >= 1366) {
-      maxAllowedWidth = screenWidth * 0.6;
+      maxAllowedWidth = screenWidth * (isPdfFile ? 0.62 : 0.6);
     } else if (screenWidth >= 1280) {
-      maxAllowedWidth = screenWidth * 0.58;
+      maxAllowedWidth = screenWidth * (isPdfFile ? 0.6 : 0.58);
     } else if (screenWidth >= 1109) {
-      maxAllowedWidth = screenWidth * 0.52;
+      maxAllowedWidth = screenWidth * (isPdfFile ? 0.54 : 0.52);
     } else {
-      maxAllowedWidth = screenWidth * 0.47;
+      maxAllowedWidth = screenWidth * (isPdfFile ? 0.49 : 0.47);
     }
 
-    const minContentWidth = 400;
+    // Adjust minimum content width for PDF files
+    const minContentWidth = isPdfFile ? 350 : 400; // Allow more space for PDF panel
     const leftSidebarWidth = isSidebarExpanded ? 256 : 72;
     const spacing = 32;
     const calculatedMaxWidth = Math.min(
@@ -1450,11 +1465,25 @@ export function FileViewerModal({
     setSelectedCategory('all');
   }, [currentPath]);
 
+  // Always start on All Files when opened from header (no initial file)
+  useEffect(() => {
+    if (open && !safeInitialFilePath) {
+      // Clear any previously selected file and reset to workspace root
+      clearSelectedFile();
+      setCurrentPath('/workspace');
+    }
+  }, [open, safeInitialFilePath, clearSelectedFile]);
+
   // --- Render --- //
+  // Decide presentation mode:
+  // - Dialog on mobile/tablet
+  // - Dialog on desktop only while showing the "All Files" list (no file selected)
+  // - Switch to right-side panel on desktop as soon as a file is selected
+  const shouldUseDialog = !isDesktop || (!selectedFilePath && !safeInitialFilePath);
   return (
     <>
-      {/* Mobile/Tablet Dialog (< 1024px) - Only render on mobile */}
-      <Dialog open={open && !isDesktop} onOpenChange={handleOpenChange}>
+      {/* Dialog mode (mobile or All Files on desktop) */}
+      <Dialog open={open && shouldUseDialog} onOpenChange={handleOpenChange}>
         <DialogContent showCloseButton={false} className="sm:max-w-[90vw] md:max-w-[1200px] w-[95vw] h-[90vh] max-h-[900px] flex flex-col p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-4 py-2 border-b flex-shrink-0 flex flex-row gap-4 items-center">
           {/* Back button - only show when a file is selected and not opened directly from response */}
@@ -1915,8 +1944,8 @@ export function FileViewerModal({
         </DialogContent>
       </Dialog>
 
-      {/* Desktop Right Panel (≥ 1024px) */}
-      {open && isDesktop && (
+      {/* Desktop Right Panel (≥ 1024px) - only for individual file views */}
+      {open && !shouldUseDialog && (
         <div className={
         `fixed top-0 right-0 h-full w-[600px] bg-background border-l shadow-md shadow-foreground/5 z-29 flex flex-col overflow-hidden transition-all duration-200 ${
             isSidebarExpanded ? 'opacity-0.0 pointer-events-none' : ''
