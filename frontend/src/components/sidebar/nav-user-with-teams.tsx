@@ -493,43 +493,21 @@ export function NavUserWithTeams({
                   Manage Subscription
                 </DropdownMenuItem>
 
-                {/* Help Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <DropdownMenuItem className="rounded-full cursor-pointer">
-                      <HelpCircle className="h-4 w-4 mr-2" />
-                      Help
-                      <ChevronsUpDown className="ml-auto h-4 w-4" />
-                    </DropdownMenuItem>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent 
-                    className="w-56 bg-background rounded-2xl p-2" 
-                    side="top" 
-                    align="start"
-                    sideOffset={8}
-                  >
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                      <Link href="/feedback">
-                        <MessageSquare className="h-4 w-4 mr-2" />
-                        Feedback
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                      <Link href="/terms-of-use">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Terms of Use
-                        <ExternalLink className="ml-auto h-3 w-3" />
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
-                      <Link href="/privacy-policy">
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        Privacy Policy
-                        <ExternalLink className="ml-auto h-3 w-3" />
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Help - Direct link to feedback */}
+                <DropdownMenuItem asChild className="rounded-full cursor-pointer">
+                  <Link href="/feedback">
+                    <HelpCircle className="h-4 w-4 mr-2" />
+                    Help
+                  </Link>
+                </DropdownMenuItem>
+
+                {/* About us */}
+                <DropdownMenuItem asChild className="rounded-full cursor-pointer">
+                  <Link href="/about">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    About us
+                  </Link>
+                </DropdownMenuItem>
 
 
                 {!flagLoading && customAgentsEnabled && (

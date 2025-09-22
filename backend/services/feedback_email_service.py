@@ -180,7 +180,7 @@ class FeedbackEmailService:
                 }}
                 .header {{
                     background-color: #007bff;
-                    color: white;
+                    color: black;
                     padding: 20px;
                     border-radius: 8px 8px 0 0;
                     margin: -20px -20px 20px -20px;
@@ -246,7 +246,7 @@ class FeedbackEmailService:
             <div class="email-wrapper">
                 <div class="email-container">
                     <div class="header">
-                        <h1>🚨 New Feedback Ticket</h1>
+                        <h1>New Feedback Ticket</h1>
                     </div>
                     
                     <div class="content">

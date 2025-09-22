@@ -268,7 +268,7 @@ export default function OnboardingPage() {
         return (
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Card - Privacy Policy */}
-            <Card className="flex-1   bg-black rounded-2xl shadow-md hover:shadow-lg transition-all duration-300">
+            <Card className="flex-1 bg-card rounded-2xl shadow-md hover:shadow-lg transition-all duration-300">
               <CardHeader className="pb-6 p-8">
                 <div className="flex items-center space-x-4">
                     <div className="relative">
@@ -276,62 +276,62 @@ export default function OnboardingPage() {
                         id="privacy"
                         checked={data.privacyAccepted}
                         onCheckedChange={(checked) => updateData({ privacyAccepted: !!checked })}
-                        className="w-5 h-5 border-gray-600 data-[state=checked]:bg-helium-green data-[state=checked]:border-helium-green"
+                        className="w-5 h-5 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       />
                     </div>
-                  <CardTitle className="text-xl font-semibold text-white tracking-wide">
+                  <CardTitle className="text-xl font-semibold text-foreground tracking-wide">
                     I accept the Privacy Policy
                     </CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="max-h-96 overflow-y-auto px-8 pb-8">
-                <div className="space-y-6 text-gray-300 text-sm md:text-base leading-relaxed">
+                <div className="space-y-6 text-muted-foreground text-sm md:text-base leading-relaxed">
                   <p>
                       This Privacy Policy describes how Helium ("we", "our", or "us") collects, uses, and shares your information when you use our platform.
                   </p>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Information We Collect</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Information We Collect</h3>
                     <p>
                       We collect information you provide directly to us, such as when you create an account, use our services, or contact us for support.
                     </p>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">How We Use Your Information</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">How We Use Your Information</h3>
                     <p>
                         We use the information we collect to provide, maintain, and improve our services, communicate with you, and ensure security.
                       </p>
                     </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Information Sharing</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Information Sharing</h3>
                     <p>
                         We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except as described in this policy.
                       </p>
                     </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Data Security</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Data Security</h3>
                     <p>
                         We implement appropriate security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction.
                       </p>
                     </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Your Rights</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Your Rights</h3>
                     <p>
                         You have the right to access, correct, or delete your personal information. Contact us to exercise these rights.
                       </p>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Contact</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Contact</h3>
                     <p>
                       For privacy-related questions, contact us at: {" "}
                       <a
                         href="mailto:privacy@neuralarc.ai"
-                        className="text-[#74EEF4] hover:underline font-medium"
+                        className="text-primary hover:underline font-medium"
                       >
                         privacy@neuralarc.ai
                       </a>
                     </p>
                   </div>
-                  <p className="text-xs text-gray-400 pt-6 border-t border-gray-700">
+                  <p className="text-xs text-muted-foreground pt-6 border-t border-border">
                     Last updated: May, 2025
                   </p>
                 </div>
@@ -339,7 +339,7 @@ export default function OnboardingPage() {
             </Card>
 
             {/* Right Card - Terms of Use */}
-            <Card className="flex-1   bg-black rounded-2xl shadow-md hover:shadow-lg transition-all duration-300">
+            <Card className="flex-1 bg-card rounded-2xl shadow-md hover:shadow-lg transition-all duration-300">
               <CardHeader className="pb-6 p-8">
                 <div className="flex items-center space-x-4">
                     <div className="relative">
@@ -347,68 +347,68 @@ export default function OnboardingPage() {
                         id="terms"
                         checked={data.termsAccepted}
                         onCheckedChange={(checked) => updateData({ termsAccepted: !!checked })}
-                        className="w-5 h-5 border-gray-600 data-[state=checked]:bg-helium-green data-[state=checked]:border-helium-green"
+                        className="w-5 h-5 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       />
                     </div>
-                  <CardTitle className="text-xl font-semibold text-white tracking-wide">
+                  <CardTitle className="text-xl font-semibold text-foreground tracking-wide">
                     I accept the Terms of Service
                     </CardTitle>
                 </div>
               </CardHeader>
               <CardContent className="max-h-96 overflow-y-auto px-8 pb-8">
-                <div className="space-y-6 text-gray-300 text-sm md:text-base leading-relaxed">
+                <div className="space-y-6 text-muted-foreground text-sm md:text-base leading-relaxed">
                   <p>
                       Welcome to Helium. By accessing or using https://he2.ai (the "Platform"), you agree to be bound by these Terms of Use. If you do not agree, please do not use the Platform.
                     </p>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Use of Platform</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Use of Platform</h3>
                     <p>
                         The Platform is provided for informational and experimental purposes only. You agree to use it in compliance with all applicable laws and regulations.
                       </p>
                     </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">User Content</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">User Content</h3>
                     <p>
                         You are responsible for any content you input or generate using the Platform. Do not submit unlawful, harmful, or infringing content.
                       </p>
                     </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Intellectual Property</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Intellectual Property</h3>
                     <p>
                         All content, trademarks, and intellectual property on the Platform are owned by Helium and its licensors. You may not copy, reproduce, or distribute any part of the Platform without permission.
                       </p>
                     </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Disclaimer of Warranties</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Disclaimer of Warranties</h3>
                     <p>
                         The Platform is provided "as is" without warranties of any kind. We do not guarantee the accuracy, completeness, or reliability of any content or output.
                       </p>
                     </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Limitation of Liability</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Limitation of Liability</h3>
                     <p>
                         We are not liable for any damages arising from your use of the Platform, including direct, indirect, incidental, or consequential damages.
                       </p>
                     </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Changes to Terms</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Changes to Terms</h3>
                     <p>
                         We may update these Terms of Use at any time. Continued use of the Platform constitutes acceptance of the revised terms.
                       </p>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Contact</h3>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">Contact</h3>
                     <p>
                       For questions, contact us at: {" "}
                       <a
                         href="mailto:support@neuralarc.ai"
-                        className="text-[#74EEF4] hover:underline font-medium"
+                        className="text-primary hover:underline font-medium"
                       >
                         support@neuralarc.ai
                       </a>
                     </p>
                   </div>
-                  <p className="text-xs text-gray-400 pt-6 border-t border-gray-700">
+                  <p className="text-xs text-muted-foreground pt-6 border-t border-border">
                     Last updated: May, 2025
                   </p>
                 </div>
@@ -420,7 +420,7 @@ export default function OnboardingPage() {
       case 1:
         return (
           <div className="text-center max-w-2xl mx-auto">
-            <h2 className="text-3xl font-semibold text-white mb-12 tracking-wide">
+            <h2 className="text-3xl font-semibold text-foreground mb-12 tracking-wide">
                 What should Helium call you?
               </h2>
             <div className="flex justify-center">
@@ -429,7 +429,7 @@ export default function OnboardingPage() {
                 placeholder="Enter your name"
                 value={data.displayName}
                 onChange={(e) => updateData({ displayName: e.target.value })}
-                className="text-xl h-16 w-full max-w-md bg-black  text-white placeholder-black  rounded-2xl px-6"
+                className="text-xl h-16 w-full max-w-md bg-background text-foreground placeholder-muted-foreground rounded-2xl px-6"
               />
             </div>
           </div>
@@ -438,7 +438,7 @@ export default function OnboardingPage() {
       case 2:
         return (
           <div className="text-center ">
-            <h2 className="text-3xl font-semibold text-white mb-12 tracking-wide">
+            <h2 className="text-3xl font-semibold text-foreground mb-12 tracking-wide">
                 Where do you fit in?
               </h2>
             <div className="flex flex-wrap justify-center gap-3 max-w-5xl mx-auto">
@@ -450,34 +450,34 @@ export default function OnboardingPage() {
                     role.id === 'other' && data.role === 'other' 
                       ? "" 
                       : cn(
-                          "hover:shadow-lg rounded-full px-4 py-2 bg-black hover:bg-black/80",
-                          data.role === role.id ? " text-white shadow-lg" : "text-white"
+                          "hover:shadow-lg rounded-full px-4 py-2 bg-card hover:bg-card/80",
+                          data.role === role.id ? "text-foreground shadow-lg" : "text-foreground"
                         )
                   )}
                   onClick={() => updateData({ role: role.id })}
                 >
                   {role.id === 'other' && data.role === 'other' ? (
                     <div className="flex flex-col items-center justify-center p-4">
-                      <Label htmlFor="otherRole" className="text-sm font-medium text-center mb-3 text-white">
-                  Please specify your role <span className="text-red-400">*</span>
+                      <Label htmlFor="otherRole" className="text-sm font-medium text-center mb-3 text-foreground">
+                  Please specify your role <span className="text-destructive">*</span>
                         </Label>
                         <Input
                           id="otherRole"
                           placeholder="Enter your role or job title"
                           value={data.otherRole}
                           onChange={(e) => updateData({ otherRole: e.target.value })}
-                        className="text-base h-12 w-full bg-gray-800/60 border-gray-600 text-white placeholder-gray-400 focus:border-[#74EEF4] focus:ring-[#74EEF4] rounded-xl"
+                        className="text-base h-12 w-full bg-background border-border text-foreground placeholder-muted-foreground focus:border-primary focus:ring-primary rounded-xl"
                           onClick={(e) => e.stopPropagation()}
                         />
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 px-4 py-2">
-                      <div className="text-gray-400">
+                      <div className="text-muted-foreground">
                         {role.icon}
                       </div>
                       <span className="text-sm font-medium text-center">{role.name}</span>
                       {data.role === role.id && (
-                        <CheckCircle2 className="h-4 w-4 text-helium-green flex-shrink-0" />
+                        <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
                       )}
                     </div>
                   )}
@@ -490,7 +490,7 @@ export default function OnboardingPage() {
       case 3:
         return (
           <div className="text-center">
-            <h2 className="text-3xl font-semibold text-white mb-12 tracking-wide">
+            <h2 className="text-3xl font-semibold text-foreground mb-12 tracking-wide">
                 How did you find us?
               </h2>
             <div className="flex flex-wrap justify-center gap-3 max-w-5xl mx-auto">
@@ -502,34 +502,34 @@ export default function OnboardingPage() {
                     source.id === 'other' && data.referralSource === 'other' 
                       ? "" 
                       : cn(
-                          "hover:shadow-lg rounded-full px-4 py-2 bg-black hover:bg-black/80",
-                          data.referralSource === source.id ? "text-white shadow-lg" : "text-white"
+                          "hover:shadow-lg rounded-full px-4 py-2 bg-card hover:bg-card/80",
+                          data.referralSource === source.id ? "text-foreground shadow-lg" : "text-foreground"
                         )
                   )}
                   onClick={() => updateData({ referralSource: source.id })}
                 >
                   {source.id === 'other' && data.referralSource === 'other' ? (
                     <div className="flex flex-col items-center justify-center p-4">
-                      <Label htmlFor="otherReferral" className="text-sm font-medium text-center mb-3 text-white">
-                        Please specify <span className="text-red-400">*</span>
+                      <Label htmlFor="otherReferral" className="text-sm font-medium text-center mb-3 text-foreground">
+                        Please specify <span className="text-destructive">*</span>
                         </Label>
                         <Input
                           id="otherReferral"
                           placeholder="Enter how you found us"
                           value={data.otherReferral || ''}
                           onChange={(e) => updateData({ otherReferral: e.target.value })}
-                        className="text-base h-12 w-full bg-gray-800/60 border-gray-600 text-white placeholder-gray-400 focus:border-[#74EEF4] focus:ring-[#74EEF4] rounded-xl"
+                        className="text-base h-12 w-full bg-background border-border text-foreground placeholder-muted-foreground focus:border-primary focus:ring-primary rounded-xl"
                           onClick={(e) => e.stopPropagation()}
                         />
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 px-4 py-2">
-                      <div className="text-gray-400">
+                      <div className="text-muted-foreground">
                         {source.icon}
                       </div>
                       <span className="text-sm font-medium text-center">{source.name}</span>
                       {data.referralSource === source.id && (
-                        <CheckCircle2 className="h-4 w-4 text-helium-green flex-shrink-0" />
+                        <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
                       )}
                     </div>
                   )}
@@ -610,16 +610,16 @@ export default function OnboardingPage() {
                   <div className={cn(
                     "px-6 py-3 rounded-full text-base font-medium transition-all duration-300 hover:scale-105",
                     currentStep === index 
-                      ? "bg-white text-black shadow-lg scale-110 font-semibold" 
+                      ? "bg-primary text-primary-foreground shadow-lg scale-110 font-semibold" 
                       : currentStep > index
-                      ? "bg-gray-300 text-black shadow-md"
-                      : "bg-black text-gray-300 hover:bg-black/80"
+                      ? "bg-muted text-muted-foreground shadow-md"
+                      : "bg-card text-muted-foreground hover:bg-card/80"
                   )}>
                     {step.name}
                   </div>
                 </div>
                 {index < steps.length - 1 && (
-                  <div className="w-12 h-px bg-gray-700" />
+                  <div className="w-12 h-px bg-border" />
                 )}
               </React.Fragment>
             ))}
@@ -636,7 +636,7 @@ export default function OnboardingPage() {
               variant="outline"
               onClick={handleBack}
               disabled={currentStep === 0 || isSubmitting}
-              className="flex items-center justify-center px-6 py-3 text-sm rounded-full border-gray-700 text-white hover:bg-gray-800 hover:border-gray-600 transition-all duration-300 hover:translate-y-[-2px] disabled:opacity-50 disabled:hover:translate-y-0"
+              className="flex items-center justify-center px-6 py-3 text-sm rounded-full transition-all duration-300 hover:translate-y-[-2px] disabled:opacity-50 disabled:hover:translate-y-0"
             >
               <ChevronLeft className="h-4 w-4 mr-2" />
               Back
@@ -647,7 +647,7 @@ export default function OnboardingPage() {
                 <Button
                   onClick={handleNext}
                   disabled={!canProceed() || isSubmitting}
-                  className="flex items-center gap-2 px-8 py-3 text-sm rounded-full font-medium bg-white text-black hover:translate-y-[-2px] transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 shadow-lg hover:shadow-xl"
+                  className="flex items-center gap-2 px-8 py-3 text-sm rounded-full font-medium hover:translate-y-[-2px] transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 shadow-lg hover:shadow-xl"
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />
@@ -656,7 +656,7 @@ export default function OnboardingPage() {
                 <Button
                   onClick={handleComplete}
                   disabled={!canProceed() || isSubmitting}
-                  className="flex items-center gap-2 px-8 py-3 text-sm rounded-full font-medium bg-white text-black hover:translate-y-[-2px] transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 shadow-lg hover:shadow-xl"
+                  className="flex items-center gap-2 px-8 py-3 text-sm rounded-full font-medium hover:translate-y-[-2px] transition-all duration-300 disabled:opacity-50 disabled:hover:translate-y-0 shadow-lg hover:shadow-xl"
                 >
                   {isSubmitting ? (
                     <>
