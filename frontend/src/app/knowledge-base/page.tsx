@@ -151,7 +151,7 @@ export default function KnowledgeBasePage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   
-
+  
   // Modal states
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -171,7 +171,7 @@ export default function KnowledgeBasePage() {
   const [editIsActive, setEditIsActive] = useState<boolean>(true);
 
   
-
+  
   // File handling
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -185,7 +185,7 @@ export default function KnowledgeBasePage() {
   const [uploadingFile, setUploadingFile] = useState(false);
 
   
-
+  
   // Edit file handling
 
   const [editSelectedImage, setEditSelectedImage] = useState<File | null>(null);
@@ -227,7 +227,7 @@ export default function KnowledgeBasePage() {
   } | null>(null);
 
   
-
+  
   // View states
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -237,7 +237,7 @@ export default function KnowledgeBasePage() {
   const [showViewFile, setShowViewFile] = useState<boolean>(false);
 
   
-
+  
   // Folder states
 
   const [folders, setFolders] = useState<{ folder_id: string; name: string }[]>([]);
@@ -373,7 +373,7 @@ export default function KnowledgeBasePage() {
       const fileNameLower = (entry.file_name || entry.file_url || '').toLowerCase();
 
       
-
+      
       if (fileMime.includes('pdf') || fileNameLower.endsWith('.pdf')) {
 
         return <FileText className="h-5 w-5 text-red-500" />;
@@ -481,7 +481,7 @@ export default function KnowledgeBasePage() {
       let comparison = 0;
 
       
-
+      
       switch (sortBy) {
 
         case 'name':
@@ -515,7 +515,7 @@ export default function KnowledgeBasePage() {
       }
 
       
-
+      
       return sortOrder === 'asc' ? comparison : -comparison;
 
     });
@@ -661,7 +661,7 @@ export default function KnowledgeBasePage() {
       }
 
       
-
+      
       const token = session?.access_token;
 
 
@@ -835,7 +835,7 @@ export default function KnowledgeBasePage() {
     if (!title.trim() || (!content.trim() && !selectedImage && !selectedFile)) return;
 
     
-
+    
     // Calculate current storage usage
 
     const currentStorage = calculateTotalStorage(entries);
@@ -843,7 +843,7 @@ export default function KnowledgeBasePage() {
     const newEntrySize = calculateNewEntrySize();
 
     
-
+    
     if (currentStorage + newEntrySize > MAX_STORAGE_BYTES) {
 
       const currentMB = (currentStorage / (1024 * 1024)).toFixed(1);
@@ -859,7 +859,7 @@ export default function KnowledgeBasePage() {
     }
 
     
-
+    
     try {
 
       const token = session?.access_token;
@@ -943,7 +943,7 @@ export default function KnowledgeBasePage() {
       });
 
       
-
+      
       if (res.ok) {
 
         resetAddForm();
@@ -1153,7 +1153,7 @@ export default function KnowledgeBasePage() {
     setEditSelectedFolderId((entry.folder_id ?? 'unfiled') as string);
 
     
-
+    
     // Initialize file upload states based on existing entry data
 
     if (entry.file_url) {
@@ -1439,7 +1439,7 @@ export default function KnowledgeBasePage() {
       });
 
       
-
+      
       if (!res.ok) {
 
         const data = await res.json().catch(() => ({}));
@@ -1491,13 +1491,13 @@ export default function KnowledgeBasePage() {
       }
 
       
-
+      
       const token = session.access_token;
 
       const apiUrl = `${API_BASE}/dagad/folders`;
 
       
-
+      
       const res = await fetch(apiUrl, {
 
         headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
@@ -1507,7 +1507,7 @@ export default function KnowledgeBasePage() {
       });
 
       
-
+      
       if (!res.ok) {
 
         const errorText = await res.text();
@@ -1521,7 +1521,7 @@ export default function KnowledgeBasePage() {
       }
 
       
-
+      
       const data = await res.json();
 
       const folders = (data.folders || []).map((f: any) => ({ folder_id: f.folder_id, name: f.name }));
@@ -1622,7 +1622,7 @@ export default function KnowledgeBasePage() {
 
             <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
 
-              <i className="ri-brain-line text-xl text-primary"></i>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-primary"><path d="M4.50772 2.87597C4.57028 2.37554 4.99568 2 5.5 2H18.5C19.0043 2 19.4297 2.37554 19.4923 2.87597L20.9923 14.876C20.9974 14.9171 21 14.9585 21 15V21C21 21.5523 20.5523 22 20 22H4C3.44772 22 3 21.5523 3 21V15C3 14.9585 3.00258 14.9171 3.00772 14.876L4.50772 2.87597ZM6.38278 4L5.13278 14H18.8672L17.6172 4H6.38278ZM19 16H5V20H19V16ZM15 17H17V19H15V17ZM13 17H11V19H13V17Z"></path></svg>
 
             </div>
 
@@ -1669,7 +1669,7 @@ export default function KnowledgeBasePage() {
           </button>
 
           
-
+          
           <button
 
             onClick={() => setSidebarSection('folders')}
@@ -2338,7 +2338,7 @@ export default function KnowledgeBasePage() {
 
                     <div className="p-8 rounded-3xl bg-muted/30 border border-border/30 mb-6">
 
-                      <i className="ri-brain-line text-6xl text-muted-foreground"></i>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-16 w-16 text-muted-foreground"><path d="M4.50772 2.87597C4.57028 2.37554 4.99568 2 5.5 2H18.5C19.0043 2 19.4297 2.37554 19.4923 2.87597L20.9923 14.876C20.9974 14.9171 21 14.9585 21 15V21C21 21.5523 20.5523 22 20 22H4C3.44772 22 3 21.5523 3 21V15C3 14.9585 3.00258 14.9171 3.00772 14.876L4.50772 2.87597ZM6.38278 4L5.13278 14H18.8672L17.6172 4H6.38278ZM19 16H5V20H19V16ZM15 17H17V19H15V17ZM13 17H11V19H13V17Z"></path></svg>
 
                     </div>
 
@@ -2717,7 +2717,7 @@ export default function KnowledgeBasePage() {
                             </div>
 
                             
-
+                            
                             {/* Table Body */}
 
                             <div className="divide-y divide-border/30">
@@ -2761,7 +2761,7 @@ export default function KnowledgeBasePage() {
                                   </div>
 
                                   
-
+                                  
                                   {/* Content */}
 
                                   <div className="flex items-center text-sm text-muted-foreground min-w-0">
@@ -2781,7 +2781,7 @@ export default function KnowledgeBasePage() {
                                   </div>
 
                                   
-
+                                  
                                   {/* Created at */}
 
                                   <div className="flex items-center text-sm text-muted-foreground">
@@ -2791,7 +2791,7 @@ export default function KnowledgeBasePage() {
                                   </div>
 
                                   
-
+                                  
                                   {/* Status */}
 
                                   <div className="flex items-center">
@@ -2815,7 +2815,7 @@ export default function KnowledgeBasePage() {
                                   </div>
 
                                   
-
+                                  
                                   {/* Actions */}
 
                                   <div className="flex items-center gap-1">
@@ -3913,7 +3913,7 @@ export default function KnowledgeBasePage() {
                                   </div>
 
                                   
-
+                                  
                                   {/* Content */}
 
                                   <div className="flex items-center text-sm text-muted-foreground min-w-0">
@@ -3933,7 +3933,7 @@ export default function KnowledgeBasePage() {
                                   </div>
 
                                   
-
+                                  
                                   {/* View */}
 
                                   <div className="flex items-center">
@@ -3967,7 +3967,7 @@ export default function KnowledgeBasePage() {
                                   </div>
 
                                   
-
+                                  
                                   {/* Created at */}
 
                                   <div className="flex items-center text-sm text-muted-foreground">
@@ -3977,7 +3977,7 @@ export default function KnowledgeBasePage() {
                                   </div>
 
                                   
-
+                                  
                                   {/* Status */}
 
                                   <div className="flex items-center">
@@ -3999,7 +3999,7 @@ export default function KnowledgeBasePage() {
                                   </div>
 
                                   
-
+                                  
                                   {/* Actions */}
 
                                   <div className="flex items-center gap-1">
@@ -5105,7 +5105,7 @@ export default function KnowledgeBasePage() {
               </div>
 
               
-
+              
               <div className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-lg border border-border/30">
 
                 <span className="text-sm font-medium text-foreground/80">Active</span>
@@ -5121,7 +5121,7 @@ export default function KnowledgeBasePage() {
               </div>
 
               
-
+              
               <div className="flex justify-end gap-3 pt-2">
 
                 <Button 
