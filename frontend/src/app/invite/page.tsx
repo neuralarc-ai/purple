@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +27,7 @@ interface InviteData {
 
 export default function InvitePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { theme } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,6 +53,25 @@ export default function InvitePage() {
     email: '',
     companyName: '',
   });
+
+  // Handle Azure OAuth success
+  useEffect(() => {
+    const azureSuccess = searchParams?.get('azure_success');
+    const email = searchParams?.get('email');
+
+    if (azureSuccess === 'true' && email) {
+      console.log('🔄 Handling Azure OAuth success on invite page for:', email);
+      
+      // Show success message
+      toast.success(`Welcome! Azure OAuth completed for ${email}`);
+      
+      // Clean up URL parameters
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('azure_success');
+      newUrl.searchParams.delete('email');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const checkAuth = async () => {

@@ -112,6 +112,25 @@ export function DashboardContent() {
     return inviteCodeUsage;
   }, [inviteCodeUsage, inviteCodeLoading]);
 
+  // Handle Azure OAuth success
+  useEffect(() => {
+    const azureSuccess = searchParams?.get('azure_success');
+    const email = searchParams?.get('email');
+
+    if (azureSuccess === 'true' && email) {
+      console.log('🔄 Handling Azure OAuth success for:', email);
+      
+      // Show success message
+      toast.success(`Welcome! Azure OAuth completed for ${email}`);
+      
+      // Clean up URL parameters
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('azure_success');
+      newUrl.searchParams.delete('email');
+      window.history.replaceState({}, '', newUrl.toString());
+    }
+  }, [searchParams]);
+
   // Handle prompt from URL
   useEffect(() => {
     const promptParam = searchParams?.get('prompt');
