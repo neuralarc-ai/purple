@@ -1072,32 +1072,32 @@ export default function KnowledgeBasePage() {
                                 onKeyDown={(e) => e.key === 'Enter' && createFolder()}
                                 className="h-9"
                               />
-                              <Button 
+                                <Button 
                                 size="sm"
                                 onClick={async () => { await createFolder(); setShowAddFolderForm(false); }}
-                                disabled={!newFolderName.trim() || creatingFolder}
-                              >
-                                {creatingFolder ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                  disabled={!newFolderName.trim() || creatingFolder}
+                                >
+                                  {creatingFolder ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
                                     Creating
-                                  </>
-                                ) : (
-                                  <>
-                                    <Plus className="h-4 w-4 mr-2" />
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Plus className="h-4 w-4 mr-2" />
                                     Create
-                                  </>
-                                )}
-                              </Button>
-                              <Button 
+                                    </>
+                                  )}
+                                </Button>
+                                  <Button 
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => { setShowAddFolderForm(false); setNewFolderName(''); }}
-                              >
-                                Cancel
-                              </Button>
+                                  >
+                                    Cancel
+                                  </Button>
                             </div>
-                          )}
+                                )}
                         </div>
 
                         {/* Quick Actions */}
