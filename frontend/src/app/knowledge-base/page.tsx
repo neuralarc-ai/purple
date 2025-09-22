@@ -1325,10 +1325,9 @@ export default function KnowledgeBasePage() {
                         ) : (
                           <div className="bg-background border border-border/30 rounded-lg overflow-hidden">
                             {/* Table Header */}
-                            <div className="grid grid-cols-6 gap-4 px-4 py-3 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground">
+                            <div className="grid grid-cols-5 gap-4 px-4 py-3 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground">
                               <div>Name</div>
                               <div>Content</div>
-                              <div>View</div>
                               <div>Created at</div>
                               <div>Status</div>
                               <div>Actions</div>
@@ -1339,7 +1338,11 @@ export default function KnowledgeBasePage() {
                               {getFilteredAndSortedEntries().map((entry) => (
                                 <div
                                   key={entry.entry_id}
-                                  className="grid grid-cols-6 gap-4 px-4 py-3 hover:bg-muted/20 transition-colors"
+                                  className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-muted/20 transition-colors cursor-pointer"
+                                  onClick={() => {
+                                    setSelectedEntry(entry);
+                                    setShowRightSidebar(true);
+                                  }}
                                 >
                                   {/* Name */}
                                   <div className="flex items-center gap-2 min-w-0">
@@ -1362,23 +1365,6 @@ export default function KnowledgeBasePage() {
                                     </span>
                                   </div>
                                   
-                                  {/* View */}
-                                  <div className="flex items-center">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-8 w-8 p-0 hover:bg-muted/50"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        console.log('View button clicked for entry:', entry.title);
-                                        setSelectedEntry(entry);
-                                        setShowRightSidebar(true);
-                                      }}
-                                    >
-                                      <Eye className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                  
                                   {/* Created at */}
                                   <div className="flex items-center text-sm text-muted-foreground">
                                     {new Date(entry.created_at).toLocaleDateString()}
@@ -1392,6 +1378,7 @@ export default function KnowledgeBasePage() {
                                         toggleActive(entry, checked);
                                       }}
                                       className="h-4 w-7"
+                                      onClick={(e) => e.stopPropagation()}
                                     />
                                   </div>
                                   
@@ -1404,7 +1391,7 @@ export default function KnowledgeBasePage() {
                                         "h-8 w-8 p-0",
                                         isStarred(entry.entry_id) ? "text-yellow-500 hover:text-yellow-600" : "hover:text-yellow-500"
                                       )}
-                                      onClick={() => toggleStarred(entry.entry_id)}
+                                      onClick={(e) => { e.stopPropagation(); toggleStarred(entry.entry_id); }}
                                     >
                                       <Star className={cn("h-4 w-4", isStarred(entry.entry_id) ? "fill-current" : "")} />
                                     </Button>
@@ -1412,7 +1399,7 @@ export default function KnowledgeBasePage() {
                                       variant="ghost"
                                       size="sm"
                                       className="h-8 w-8 p-0"
-                                      onClick={() => openEdit(entry)}
+                                      onClick={(e) => { e.stopPropagation(); openEdit(entry); }}
                                     >
                                       <Pencil className="h-4 w-4" />
                                     </Button>
@@ -1420,7 +1407,7 @@ export default function KnowledgeBasePage() {
                                       variant="ghost"
                                       size="sm"
                                       className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                                      onClick={() => setConfirmEntry(entry)}
+                                      onClick={(e) => { e.stopPropagation(); setConfirmEntry(entry); }}
                                     >
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -1745,10 +1732,9 @@ export default function KnowledgeBasePage() {
                             </div>
                           ) : (
                             <div className="bg-background border border-border/30 rounded-lg overflow-hidden">
-                              <div className="grid grid-cols-6 gap-4 px-4 py-3 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground">
+                              <div className="grid grid-cols-5 gap-4 px-4 py-3 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground">
                                 <div>Name</div>
                                 <div>Content</div>
-                                <div>View</div>
                                 <div>Created at</div>
                                 <div>Status</div>
                                 <div>Actions</div>
@@ -1759,7 +1745,11 @@ export default function KnowledgeBasePage() {
                                   .map((entry) => (
                                     <div
                                       key={entry.entry_id}
-                                      className="grid grid-cols-6 gap-4 px-4 py-3 hover:bg-muted/20 transition-colors"
+                                      className="grid grid-cols-5 gap-4 px-4 py-3 hover:bg-muted/20 transition-colors cursor-pointer"
+                                      onClick={() => {
+                                        setSelectedEntry(entry);
+                                        setShowRightSidebar(true);
+                                      }}
                                     >
                                       {/* Name */}
                                       <div className="flex items-center gap-2 min-w-0">
@@ -1777,21 +1767,6 @@ export default function KnowledgeBasePage() {
                                           {entry.content || entry.title}
                                         </span>
                                       </div>
-                                      {/* View */}
-                                      <div className="flex items-center">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-8 w-8 p-0 hover:bg-muted/50"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedEntry(entry);
-                                            setShowRightSidebar(true);
-                                          }}
-                                        >
-                                          <Eye className="h-4 w-4" />
-                                        </Button>
-                                      </div>
                                       {/* Created at */}
                                       <div className="flex items-center text-sm text-muted-foreground">
                                         {new Date(entry.created_at).toLocaleDateString()}
@@ -1802,6 +1777,7 @@ export default function KnowledgeBasePage() {
                                           checked={entry.is_active}
                                           onCheckedChange={(checked) => toggleActive(entry, checked)}
                                           className="h-4 w-7"
+                                          onClick={(e) => e.stopPropagation()}
                                         />
                                       </div>
                                       {/* Actions */}
@@ -1813,18 +1789,18 @@ export default function KnowledgeBasePage() {
                                             "h-8 w-8 p-0",
                                             isStarred(entry.entry_id) ? "text-yellow-500 hover:text-yellow-600" : "hover:text-yellow-500"
                                           )}
-                                          onClick={() => toggleStarred(entry.entry_id)}
+                                          onClick={(e) => { e.stopPropagation(); toggleStarred(entry.entry_id); }}
                                         >
                                           <Star className={cn("h-4 w-4", isStarred(entry.entry_id) ? "fill-current" : "")} />
                                         </Button>
-                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(entry)}>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => { e.stopPropagation(); openEdit(entry); }}>
                                           <Pencil className="h-4 w-4" />
                                         </Button>
                                         <Button
                                           variant="ghost"
                                           size="sm"
                                           className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                                          onClick={() => setConfirmEntry(entry)}
+                                          onClick={(e) => { e.stopPropagation(); setConfirmEntry(entry); }}
                                         >
                                           <Trash2 className="h-4 w-4" />
                                         </Button>
@@ -1844,112 +1820,195 @@ export default function KnowledgeBasePage() {
                         <h3 className="text-sm font-medium text-muted-foreground mb-4">
                           {sidebarSection === 'recent' ? 'Recent Files' : 'Starred Files'}
                         </h3>
-                      <div className="bg-background border border-border/30 rounded-lg overflow-hidden">
-                        {/* Table Header */}
-                        <div className="grid grid-cols-6 gap-4 px-4 py-3 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground">
-                          <div>Name</div>
-                          <div>Content</div>
-                          <div>View</div>
-                          <div>Created at</div>
-                          <div>Status</div>
-                          <div>Actions</div>
-                        </div>
-                        
-                        {/* Table Body */}
-                        <div className="divide-y divide-border/30">
-                          {getFilteredAndSortedEntries().map((entry) => (
-                            <div
-                              key={entry.entry_id}
-                              className="grid grid-cols-6 gap-4 px-4 py-3 hover:bg-muted/20 transition-colors"
-                            >
-                              {/* Name */}
-                              <div className="flex items-center gap-2 min-w-0">
-                                <div className="p-1 rounded bg-muted/50 border border-border/30">
-                                  {getFileTypeIcon(entry)}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="font-medium text-foreground truncate">{entry.title}</div>
-                                  <div className="text-xs text-muted-foreground">{entry.category}</div>
-                                </div>
+                        {viewMode === 'grid' ? (
+                      <div className={cn(
+                        "grid gap-2",
+                            "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                      )}>
+                        {getFilteredAndSortedEntries().map((entry) => (
+                          <div
+                            key={entry.entry_id}
+                            className={cn(
+                              "group relative p-4 rounded-lg border border-border/30 hover:border-border/60 transition-all cursor-pointer",
+                                  "text-center"
+                            )}
+                            onClick={() => {
+                              setSelectedEntry(entry);
+                              setShowRightSidebar(true);
+                            }}
+                          >
+                                <div className="flex items-center gap-3 flex-col">
+                              <div className="p-2 rounded-lg bg-muted/50 border border-border/30">
+                                {getFileTypeIcon(entry)}
                               </div>
-                              
-                              {/* Content */}
-                              <div className="flex items-center text-sm text-muted-foreground min-w-0">
-                                <span
-                                  className="truncate block max-w-[420px]"
-                                  title={entry.content || entry.title}
-                                >
-                                  {entry.content || entry.title}
-                                </span>
-                              </div>
-                              
-                              {/* View */}
-                              <div className="flex items-center">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 hover:bg-muted/50"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    console.log('View button clicked for entry:', entry.title);
-                                    setSelectedEntry(entry);
-                                    setShowRightSidebar(true);
-                                  }}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </div>
-                              
-                              {/* Created at */}
-                              <div className="flex items-center text-sm text-muted-foreground">
-                                {new Date(entry.created_at).toLocaleDateString()}
-                              </div>
-                              
-                              {/* Status */}
-                              <div className="flex items-center">
-                                <Switch
-                                  checked={entry.is_active}
-                                  onCheckedChange={(checked) => {
-                                    toggleActive(entry, checked);
-                                  }}
-                                  className="h-4 w-7"
-                                />
-                              </div>
-                              
-                              {/* Actions */}
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className={cn(
-                                    "h-8 w-8 p-0",
-                                    isStarred(entry.entry_id) ? "text-yellow-500 hover:text-yellow-600" : "hover:text-yellow-500"
-                                  )}
-                                  onClick={() => toggleStarred(entry.entry_id)}
-                                >
-                                  <Star className={cn("h-4 w-4", isStarred(entry.entry_id) ? "fill-current" : "")} />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0"
-                                  onClick={() => openEdit(entry)}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                                  onClick={() => setConfirmEntry(entry)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-foreground truncate">{entry.title}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                      {entry.category}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(entry.created_at).toLocaleDateString()}
+                                </p>
                               </div>
                             </div>
-                          ))}
-                        </div>
+                            {/* Action buttons */}
+                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                  "h-8 w-8 p-0",
+                                  isStarred(entry.entry_id) ? "text-yellow-500 hover:text-yellow-600" : "hover:text-yellow-500"
+                                )}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleStarred(entry.entry_id);
+                                }}
+                              >
+                                <Star className={cn("h-4 w-4", isStarred(entry.entry_id) ? "fill-current" : "")} />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEdit(entry);
+                                }}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmEntry(entry);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                                </div>
+                                {/* Status */}
+                                <div className="absolute bottom-2 left-2">
+                                  <Switch
+                                    checked={entry.is_active}
+                                    onCheckedChange={(checked) => toggleActive(entry, checked)}
+                                    className="h-4 w-7"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="bg-background border border-border/30 rounded-lg overflow-hidden">
+                            {/* Table Header */}
+                            <div className="grid grid-cols-6 gap-4 px-4 py-3 bg-muted/30 border-b border-border/30 text-sm font-medium text-muted-foreground">
+                              <div>Name</div>
+                              <div>Content</div>
+                              <div>View</div>
+                              <div>Created at</div>
+                              <div>Status</div>
+                              <div>Actions</div>
+                            </div>
+
+                            {/* Table Body */}
+                            <div className="divide-y divide-border/30">
+                              {getFilteredAndSortedEntries().map((entry) => (
+                                <div
+                                  key={entry.entry_id}
+                                  className="grid grid-cols-6 gap-4 px-4 py-3 hover:bg-muted/20 transition-colors"
+                                >
+                                  {/* Name */}
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className="p-1 rounded bg-muted/50 border border-border/30">
+                                      {getFileTypeIcon(entry)}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-medium text-foreground truncate">{entry.title}</div>
+                                      <div className="text-xs text-muted-foreground">{entry.category}</div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Content */}
+                                  <div className="flex items-center text-sm text-muted-foreground min-w-0">
+                                    <span
+                                      className="truncate block max-w-[420px]"
+                                      title={entry.content || entry.title}
+                                    >
+                                      {entry.content || entry.title}
+                                    </span>
+                                  </div>
+                                  
+                                  {/* View */}
+                                  <div className="flex items-center">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 hover:bg-muted/50"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        console.log('View button clicked for entry:', entry.title);
+                                        setSelectedEntry(entry);
+                                        setShowRightSidebar(true);
+                                      }}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                  
+                                  {/* Created at */}
+                                  <div className="flex items-center text-sm text-muted-foreground">
+                                    {new Date(entry.created_at).toLocaleDateString()}
+                                  </div>
+                                  
+                                  {/* Status */}
+                                  <div className="flex items-center">
+                                    <Switch
+                                      checked={entry.is_active}
+                                      onCheckedChange={(checked) => {
+                                        toggleActive(entry, checked);
+                                      }}
+                                      className="h-4 w-7"
+                                    />
+                                  </div>
+                                  
+                                  {/* Actions */}
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className={cn(
+                                        "h-8 w-8 p-0",
+                                        isStarred(entry.entry_id) ? "text-yellow-500 hover:text-yellow-600" : "hover:text-yellow-500"
+                                      )}
+                                      onClick={() => toggleStarred(entry.entry_id)}
+                                    >
+                                      <Star className={cn("h-4 w-4", isStarred(entry.entry_id) ? "fill-current" : "")} />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0"
+                                      onClick={() => openEdit(entry)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                      onClick={() => setConfirmEntry(entry)}
+                                    >
+                                      <Trash2 className={"h-4 w-4"} />
+                                    </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
+                          </div>
+                        )}
                     </div>
                     )}
                   </>
