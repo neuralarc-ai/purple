@@ -1197,14 +1197,169 @@ export default function KnowledgeBasePage() {
                       </div>
                     )}
 
+                    {/* Storage Management Section */}
+                    {sidebarSection === 'storage' && (
+                      <div className="space-y-6">
+                        {/* Storage Overview */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-lg font-semibold text-foreground">Storage Management</h3>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span>{entries.length} entries</span>
+                              <span>•</span>
+                              <span>{formatFileSize(calculateTotalStorage(entries))} used</span>
+                            </div>
+                          </div>
+
+                          {/* Storage Usage Card */}
+                          <div className="p-6 rounded-xl border border-border/30 bg-gradient-to-br from-muted/20 via-muted/10 to-transparent">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 rounded-lg bg-primary/10 border border-primary/20">
+                                    <HardDrive className="h-5 w-5 text-primary" />
+                                  </div>
+                                  <div>
+                                    <h4 className="font-semibold text-foreground">Storage Usage</h4>
+                                    <p className="text-sm text-muted-foreground">Current storage consumption</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="text-2xl font-bold text-foreground">
+                                    {(calculateTotalStorage(entries) / (1024 * 1024)).toFixed(1)} MB
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    of {MAX_STORAGE_MB} MB
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Progress Bar */}
+                              <div className="space-y-2">
+                                <div className="w-full bg-muted/50 rounded-full h-3">
+                                  <div 
+                                    className={cn(
+                                      "h-3 rounded-full transition-all duration-500",
+                                      calculateTotalStorage(entries) / MAX_STORAGE_BYTES > 0.9 
+                                        ? "bg-destructive" 
+                                        : calculateTotalStorage(entries) / MAX_STORAGE_BYTES > 0.7
+                                        ? "bg-yellow-500"
+                                        : "bg-primary"
+                                    )}
+                                    style={{ 
+                                      width: `${Math.min((calculateTotalStorage(entries) / MAX_STORAGE_BYTES) * 100, 100)}%` 
+                                    }}
+                                  />
+                                </div>
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                  <span>{Math.round((calculateTotalStorage(entries) / MAX_STORAGE_BYTES) * 100)}% used</span>
+                                  <span>{MAX_STORAGE_MB - Number((calculateTotalStorage(entries) / (1024 * 1024)).toFixed(1))} MB remaining</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Storage Breakdown */}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="p-4 rounded-lg border border-border/30 bg-muted/10">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                  <FileText className="h-4 w-4 text-blue-500" />
+                                </div>
+                                <span className="text-sm font-medium text-foreground">Text Content</span>
+                              </div>
+                              <div className="text-lg font-semibold text-foreground">
+                                {formatFileSize(entries.reduce((total, entry) => {
+                                  let size = 0;
+                                  if (entry.content) size += new Blob([entry.content]).size;
+                                  if (entry.title) size += new Blob([entry.title]).size;
+                                  return total + size;
+                                }, 0))}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {entries.filter(e => e.content || e.title).length} entries
+                              </div>
+                            </div>
+
+                            <div className="p-4 rounded-lg border border-border/30 bg-muted/10">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="p-1.5 rounded-lg bg-green-500/10 border border-green-500/20">
+                                  <ImageIcon className="h-4 w-4 text-green-500" />
+                                </div>
+                                <span className="text-sm font-medium text-foreground">Images</span>
+                              </div>
+                              <div className="text-lg font-semibold text-foreground">
+                                {formatFileSize(entries.filter(e => e.image_url).length * 50000)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {entries.filter(e => e.image_url).length} images
+                              </div>
+                            </div>
+
+                            <div className="p-4 rounded-lg border border-border/30 bg-muted/10">
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className="p-1.5 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                                  <File className="h-4 w-4 text-orange-500" />
+                                </div>
+                                <span className="text-sm font-medium text-foreground">Files</span>
+                              </div>
+                              <div className="text-lg font-semibold text-foreground">
+                                {formatFileSize(entries.reduce((total, entry) => total + (entry.file_size || 0), 0))}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {entries.filter(e => e.file_url).length} files
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Largest Files */}
+                        <div className="space-y-4">
+                          <h4 className="text-lg font-semibold text-foreground">Largest Files</h4>
+                          <div className="space-y-2">
+                            {entries
+                              .map(entry => ({ ...entry, calculatedSize: calculateEntrySize(entry) }))
+                              .sort((a, b) => b.calculatedSize - a.calculatedSize)
+                              .slice(0, 10)
+                              .map((entry) => (
+                                <div
+                                  key={entry.entry_id}
+                                  className="flex items-center gap-3 p-3 rounded-lg border border-border/30 hover:border-border/60 transition-colors cursor-pointer"
+                                  onClick={() => {
+                                    setSelectedEntry(entry);
+                                    setShowRightSidebar(true);
+                                  }}
+                                >
+                                  <div className="p-2 rounded-lg bg-muted/50 border border-border/30">
+                                    {getFileTypeIcon(entry)}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h5 className="font-medium text-foreground truncate">{entry.title}</h5>
+                                    <p className="text-sm text-muted-foreground">{entry.category}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className="text-sm font-semibold text-foreground">
+                                      {formatFileSize(entry.calculatedSize)}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {new Date(entry.created_at).toLocaleDateString()}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Files */}
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium text-muted-foreground mb-4">
-                        {sidebarSection === 'home' ? 'All Files' : 
-                         sidebarSection === 'recent' ? 'Recent Files' :
-                         sidebarSection === 'starred' ? 'Starred Files' :
-                         sidebarSection === 'storage' ? 'All Files' : 'Files'}
-                      </h3>
+                    {sidebarSection !== 'storage' && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium text-muted-foreground mb-4">
+                          {sidebarSection === 'home' ? 'All Files' : 
+                           sidebarSection === 'recent' ? 'Recent Files' :
+                           sidebarSection === 'starred' ? 'Starred Files' : 'Files'}
+                        </h3>
                       <div className={cn(
                         "grid gap-2",
                         viewMode === 'grid' ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1"
@@ -1290,6 +1445,7 @@ export default function KnowledgeBasePage() {
                         ))}
                       </div>
                     </div>
+                    )}
                   </>
                 )}
               </div>
