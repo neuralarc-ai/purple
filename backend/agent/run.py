@@ -16,7 +16,6 @@ from agentpress.thread_manager import ThreadManager
 from agentpress.response_processor import ProcessorConfig
 from agent.tools.sb_shell_tool import SandboxShellTool
 from agent.tools.sb_files_tool import SandboxFilesTool
-from agent.tools.data_providers_tool import DataProvidersTool
 from agent.tools.expand_msg_tool import ExpandMessageTool
 from agent.prompt import get_system_prompt
 
@@ -26,8 +25,6 @@ from services.billing import check_billing_status
 from agent.tools.sb_vision_tool import SandboxVisionTool
 from agent.tools.sb_image_edit_tool import SandboxImageEditTool
 from agent.tools.sb_video_generation_tool import SandboxVideoGenerationTool
-from agent.tools.sb_presentation_outline_tool import SandboxPresentationOutlineTool
-from agent.tools.sb_presentation_tool import SandboxPresentationTool
 
 from services.langfuse import langfuse
 from langfuse.client import StatefulTraceClient
@@ -109,8 +106,6 @@ class ToolManager:
             ('sb_vision_tool', SandboxVisionTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
             ('sb_image_edit_tool', SandboxImageEditTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
             ('sb_video_generation_tool', SandboxVideoGenerationTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
-            ('sb_presentation_outline_tool', SandboxPresentationOutlineTool, {'project_id': self.project_id, 'thread_manager': self.thread_manager}),
-            ('sb_presentation_tool', SandboxPresentationTool, {'project_id': self.project_id, 'thread_manager': self.thread_manager}),
 
             ('sb_sheets_tool', SandboxSheetsTool, {'project_id': self.project_id, 'thread_manager': self.thread_manager}),
             ('sb_web_dev_tool', SandboxWebDevTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
@@ -123,10 +118,9 @@ class ToolManager:
                 logger.debug(f"Registered {tool_name}")
     
     def _register_utility_tools(self, disabled_tools: List[str]):
-        """Register utility and data provider tools."""
-        if config.RAPID_API_KEY and 'data_providers_tool' not in disabled_tools:
-            self.thread_manager.add_tool(DataProvidersTool)
-            logger.debug("Registered data_providers_tool")
+        """Register utility tools."""
+        # Data provider tools removed
+        pass
     
     def _register_agent_builder_tools(self, agent_id: str, disabled_tools: List[str]):
         """Register agent builder tools."""
@@ -611,8 +605,8 @@ class AgentRunner:
         # List of all available tools
         all_tools = [
             'sb_shell_tool', 'sb_files_tool', 'sb_deploy_tool', 'sb_expose_tool',
-            'web_search_tool', 'sb_vision_tool', 'sb_presentation_tool', 'sb_image_edit_tool',
-            'sb_sheets_tool', 'sb_web_dev_tool', 'data_providers_tool', 'browser_tool',
+            'web_search_tool', 'sb_vision_tool', 'sb_image_edit_tool',
+            'sb_sheets_tool', 'sb_web_dev_tool', 'browser_tool',
             'agent_config_tool', 'mcp_search_tool', 'credential_profile_tool', 
             'workflow_tool', 'trigger_tool'
         ]
@@ -622,9 +616,6 @@ class AgentRunner:
             if not is_tool_enabled(tool_name):
                 disabled_tools.append(tool_name)
         
-        # Special handling for presentation tools
-        if 'sb_presentation_tool' in disabled_tools:
-            disabled_tools.extend(['sb_presentation_outline_tool'])
         
         logger.debug(f"Disabled tools from config: {disabled_tools}")
         return disabled_tools

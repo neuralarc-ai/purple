@@ -615,7 +615,6 @@ class WorkflowExecutor:
             'sb_deploy_tool': ['deploy'],
             'sb_expose_tool': ['expose_port'],
             'web_search_tool': ['web_search'],
-            'data_providers_tool': ['get_data_provider_endpoints', 'execute_data_provider_call']
         }
         
         for tool_key, tool_names in tool_mapping.items():
