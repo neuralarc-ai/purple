@@ -25,6 +25,7 @@ from typing import Optional, Protocol
 class StorageProvider(Protocol):
     async def upload_bytes(self, path: str, data: bytes, content_type: Optional[str] = None) -> str: ...
     async def upload_base64_image(self, base64_data: str, path_prefix: str = "images/") -> str: ...
+    async def delete(self, path: str) -> None: ...
 
 
 def _unique_path(prefix: str, filename: str) -> str:
@@ -54,6 +55,11 @@ class SupabaseStorage:
         data = base64.b64decode(base64_data)
         path = _unique_path(path_prefix, "image.png")
         return await self.upload_bytes(path, data, "image/png")
+
+    async def delete(self, path: str) -> None:
+        client = await self._db.client
+        # Supabase storage remove expects a list of paths
+        await client.storage.from_(self.bucket).remove([path])
 
 
 class S3Storage:
@@ -97,6 +103,11 @@ class S3Storage:
         data = base64.b64decode(base64_data)
         path = _unique_path(path_prefix, "image.png")
         return await self.upload_bytes(path, data, "image/png")
+
+    async def delete(self, path: str) -> None:
+        def _del():
+            self.s3.delete_object(Bucket=self.bucket, Key=path)
+        await asyncio.to_thread(_del)
 
 
 def get_storage() -> StorageProvider:
