@@ -669,7 +669,6 @@ class AgentRunner:
             self.config.model_name, self.config.agent_config, 
             self.config.thread_id, 
             mcp_wrapper_instance, self.client, user_input,
-            self.config.mode  # Add mode parameter
         )
 
         iteration_count = 0

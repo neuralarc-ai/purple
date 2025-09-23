@@ -412,7 +412,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
         onSubmit(message, {
           agent_id: selectedAgentId,
           model_name: baseModelName,
-          mode: effectiveMode,  // Use the effective mode determined at submit time
           ...modeConfig,
         });
 
