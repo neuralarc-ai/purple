@@ -492,6 +492,8 @@ export interface ThreadContentProps {
   debugMode?: boolean; // Add debug mode parameter
   isPreviewMode?: boolean;
   agentName?: string;
+  showBanner?: boolean; // Add showBanner prop for credit exhaustion banner
+  fileViewerOpen?: boolean; // Add fileViewerOpen prop for file viewer modal state
   agentAvatar?: React.ReactNode;
   emptyStateComponent?: React.ReactNode; // Add custom empty state component prop
   threadMetadata?: any; // Add thread metadata prop
@@ -802,6 +804,8 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
   agentData,
   isSidePanelOpen = false,
   showToolPreview = false,
+  showBanner = false,
+  fileViewerOpen = false,
   onCreditExhaustionUpgrade,
   agentError,
   onAgentErrorContinue,
@@ -1472,7 +1476,13 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                   <div className={cn(
                                     "flex items-center justify-between mb-[2rem]",
                                     // Add extra margin bottom on mobile when floating tool preview is shown
-                                    showToolPreview && "md:mb-[2rem] mb-[3.5rem]"
+                                    showToolPreview && "md:mb-[2rem] mb-[3.5rem]",
+                                    // Add extra margin bottom when credit exhaustion banner is shown (only for last thread)
+                                    showBanner && groupIndex === finalGroupedMessages.length - 1 && "mb-[4.5rem]",
+                                    // Add extra margin when both tool preview and banner are shown
+                                    showToolPreview && showBanner && groupIndex === finalGroupedMessages.length - 1 && "md:mb-[7rem] mb-[7.5rem] max-[440px]:mb-[10rem]",
+                                    // Add extra margin when both file viewer and banner are shown
+                                    fileViewerOpen && showBanner && groupIndex === finalGroupedMessages.length - 1 && "mb-[6.7rem]"
                                   )}>
                                     {/* Agent info on the left */}
                                     <div className="flex items-center">

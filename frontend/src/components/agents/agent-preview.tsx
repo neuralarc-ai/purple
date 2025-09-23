@@ -509,6 +509,7 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
                 <p className='w-[70%] text-sm text-muted-foreground/60'>Test your agent's configuration and chat back and forth to see how it performs with your current settings, tools, and knowledge base.</p>
               </div>
             }
+            showBanner={showBanner}
           />
           <div ref={messagesEndRef} />
         </div>
