@@ -522,8 +522,19 @@ async def get_usage_logs(client, user_id: str, page: int = 0, items_per_page: in
         
         has_more = end_idx < len(processed_logs)
         
-        logger.debug(f"Returning {len(paginated_logs)} logs, has_more: {has_more}")
-        return {"logs": paginated_logs, "has_more": has_more}
+        # Calculate total pages for frontend pagination
+        total_items = len(processed_logs)
+        total_pages = max(1, (total_items + items_per_page - 1) // items_per_page)  # Ceiling division
+        
+        logger.debug(f"Returning {len(paginated_logs)} logs, has_more: {has_more}, total_items: {total_items}, total_pages: {total_pages}")
+        return {
+            "logs": paginated_logs, 
+            "has_more": has_more,
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "current_page": page,
+            "items_per_page": items_per_page
+        }
         
     except Exception as e:
         logger.error(f"Error in get_usage_logs for user {user_id}: {str(e)}")

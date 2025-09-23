@@ -973,7 +973,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
                 </div>
                 
                 {/* Pagination */}
-                {(usageData && (usageData.logs?.length > 0 || usageData.has_more)) || usagePage > 0 ? (
+                {(usageData && usageData.has_more) || usagePage > 0 ? (
                   <div className="flex items-center justify-center gap-2 p-4 border-t border-border">
                     <Button
                       variant="ghost"
@@ -987,91 +987,76 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
                     </Button>
                     <div className="flex items-center gap-1">
                       {(() => {
-                        // Dynamic pagination based on current page and has_more status
-                        const currentPageNum = usagePage + 1;
-                        const hasMorePages = usageData?.has_more === true;
+                        const totalPages = usageData?.total_pages || 1;
+                        const currentPage = usagePage;
                         
-                        // Calculate visible page range
+                        // Smart pagination display
                         const getVisiblePages = () => {
-                          const pages: (number | string)[] = [];
-                          const maxVisiblePages = 7;
+                          const maxVisible = 5;
+                          const delta = 2;
                           
-                          // Always show the first page
-                          pages.push(1);
+                          if (totalPages <= maxVisible) {
+                            return Array.from({ length: totalPages }, (_, i) => i);
+                          }
                           
-                          if (currentPageNum === 1) {
-                            // On first page: show [1] [2] [3] ... if has_more
-                            if (hasMorePages) {
-                              pages.push(2);
-                              if (currentPageNum + 2 <= currentPageNum + 2) pages.push(3);
-                              if (hasMorePages) {
-                                pages.push('...');
-                              }
-                            }
-                          } else if (currentPageNum === 2) {
-                            // On second page: show [1] [2] [3] [4] ... if has_more
-                            pages.push(2);
-                            if (hasMorePages) {
-                              pages.push(3);
-                              if (hasMorePages) pages.push(4);
-                              if (hasMorePages) {
-                                pages.push('...');
-                              }
-                            }
-                          } else {
-                            // On page 3+: show [1] ... [current-1] [current] [current+1] ... if has_more
-                            if (currentPageNum > 3) {
-                              pages.push('...');
-                            }
-                            
-                            // Show current page and neighbors
-                            for (let i = Math.max(2, currentPageNum - 1); i <= currentPageNum + 1; i++) {
-                              if (i > 1) { // Don't duplicate page 1
-                                pages.push(i);
-                              }
-                            }
-                            
-                            if (hasMorePages) {
-                              pages.push('...');
+                          const range: (number | string)[] = [];
+                          
+                          // Always show first page
+                          range.push(0);
+                          
+                          // Add ellipsis if needed
+                          if (currentPage > delta + 1) {
+                            range.push('...');
+                          }
+                          
+                          // Add pages around current page
+                          const start = Math.max(1, currentPage - delta);
+                          const end = Math.min(totalPages - 2, currentPage + delta);
+                          
+                          for (let i = start; i <= end; i++) {
+                            if (i > 0 && i < totalPages - 1) {
+                              range.push(i);
                             }
                           }
                           
-                          // Remove duplicates while preserving order
-                          const uniquePages: (number | string)[] = [];
-                          for (const page of pages) {
-                            if (page === '...' || !uniquePages.includes(page)) {
-                              uniquePages.push(page);
-                            }
+                          // Add ellipsis if needed
+                          if (currentPage < totalPages - delta - 2) {
+                            range.push('...');
                           }
                           
-                          return uniquePages;
+                          // Always show last page if we have more than one page
+                          if (totalPages > 1) {
+                            range.push(totalPages - 1);
+                          }
+                          
+                          return range;
                         };
                         
-                        return getVisiblePages().map((page, index) => {
-                          if (page === '...') {
+                        const visiblePages = getVisiblePages();
+                        
+                        return visiblePages.map((pageIndex, index) => {
+                          if (pageIndex === '...') {
                             return (
-                              <span key={`ellipsis-${index}`} className="px-2 py-1 text-muted-foreground text-xs">
+                              <span key={index} className="text-muted-foreground px-2 py-1 text-xs">
                                 ...
                               </span>
                             );
                           }
                           
-                          const pageNum = page as number;
-                          const isCurrentPage = pageNum === currentPageNum;
-                          
+                          const pageNum = pageIndex as number;
                           return (
                             <Button
                               key={pageNum}
-                              variant={isCurrentPage ? "default" : "ghost"}
+                              variant={usagePage === pageNum ? "default" : "ghost"}
                               size="sm"
-                              onClick={() => setUsagePage(pageNum - 1)}
+                              onClick={() => setUsagePage(pageNum)}
                               className={`text-xs px-2 py-1 h-6 ${
-                                isCurrentPage 
+                                usagePage === pageNum 
                                   ? 'bg-primary text-primary-foreground' 
                                   : 'text-muted-foreground hover:text-foreground'
                               }`}
                             >
-                              {pageNum}
+                              {pageNum + 1}
                             </Button>
                           );
                         });
@@ -1080,7 +1065,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
                     <Button
                       variant="ghost"
                       size="sm"
-                      disabled={!usageData?.has_more}
+                      disabled={!usageData?.has_more || usagePage >= (usageData?.total_pages || 1) - 1}
                       onClick={() => setUsagePage(prev => prev + 1)}
                       className="text-foreground"
                     >

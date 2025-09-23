@@ -1918,6 +1918,10 @@ export interface UsageLogEntry {
 export interface UsageLogsResponse {
   logs: UsageLogEntry[];
   has_more: boolean;
+  total_items?: number;
+  total_pages?: number;
+  current_page?: number;
+  items_per_page?: number;
   message?: string;
   subscription_limit?: number;
   cumulative_cost?: number;
