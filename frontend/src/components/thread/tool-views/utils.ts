@@ -61,10 +61,6 @@ export function getToolTitle(toolName: string): string {
     'get-credential-profiles': 'Get Credential Profiles',
     'get-current-agent-config': 'Get Current Agent Config',
     'deploy': 'Deploy',
-    'create-presentation': 'Create Presentation',
-    'export-presentation': 'Export Presentation',
-    'create-presentation-outline': 'Create Presentation Outline',
-    'list-presentation-templates': 'List Presentation Templates',
     'upload-file': 'Upload File',
 
     'generic-tool': 'Tool',
@@ -1261,9 +1257,6 @@ export function getToolComponent(toolName: string): string {
       return 'WebScrapeToolView';
 
     // Data provider operations
-    case 'execute-data-provider-call':
-    case 'get-data-provider-endpoints':
-      return 'DataProviderToolView';
 
     // MCP operations
     case 'search-mcp-servers':
