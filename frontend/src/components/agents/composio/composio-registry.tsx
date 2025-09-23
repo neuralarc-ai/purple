@@ -31,10 +31,7 @@ import {
   Share2,
   Filter,
 } from 'lucide-react';
-import {
-  useComposioCategories,
-  useComposioToolkitsInfinite,
-} from '@/hooks/react-query/composio/use-composio';
+import { useComposioToolkitsInfinite } from '@/hooks/react-query/composio/use-composio';
 import { useComposioProfiles } from '@/hooks/react-query/composio/use-composio-profiles';
 import { useAgent, useUpdateAgent } from '@/hooks/react-query/agents/use-agents';
 import { ComposioConnector } from './composio-connector';
@@ -59,20 +56,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  all: <Folder className="h-4 w-4" />, // All Apps category
-  popular: <Flame className="h-4 w-4" />, // Popular category
-  productivity: <BarChart3 className="h-4 w-4" />,
-  crm: <Users className="h-4 w-4" />,
-  marketing: <Megaphone className="h-4 w-4" />,
-  analytics: <LineChart className="h-4 w-4" />,
-  communication: <MessageSquare className="h-4 w-4" />,
-  'social-media': <Share2 className="h-4 w-4" />,
-  'project-management': <ClipboardList className="h-4 w-4" />,
-  scheduling: <Calendar className="h-4 w-4" />,
-  'Design & creative tools': <Palette className="h-4 w-4" />,
-  default: <File className="h-4 w-4" />,
-};
+// Categories UI removed for drive-only experience
 
 const PAGE_SIZE = 12;
 
@@ -160,6 +144,23 @@ const isComingSoon = (toolkit: ComposioToolkit): boolean => {
   
   // If it's not in the active list, it's coming soon
   return !isActive;
+};
+
+// Drive-only filter: show only storage/drive-like apps in UI
+const isDriveToolkit = (toolkit: ComposioToolkit): boolean => {
+  const s = (toolkit.slug || '').toLowerCase();
+  const n = (toolkit.name || '').toLowerCase();
+  const kws = ['drive', 'storage', 'cloud', 'file', 'files', 'box', 'dropbox', 'sharepoint', 'onedrive', 'google drive', 'googledrive'];
+  if (kws.some(k => s.includes(k) || n.includes(k))) return true;
+  for (const t of toolkit.tags || []) {
+    const tl = String(t || '').toLowerCase();
+    if (kws.some(k => tl.includes(k))) return true;
+  }
+  for (const c of toolkit.categories || []) {
+    const cl = String(c || '').toLowerCase();
+    if (kws.some(k => cl.includes(k))) return true;
+  }
+  return false;
 };
 
 interface ConnectedApp {
@@ -557,8 +558,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
   onAgentChange,
 }) => {
   const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [isCategoryLoading, setIsCategoryLoading] = useState<boolean>(false);
+  // Categories removed for drive-only experience
   const [selectedApp, setSelectedApp] = useState<ComposioToolkit | null>(null);
   const [showConnector, setShowConnector] = useState(false);
   const [showConnectedApps, setShowConnectedApps] = useState(true);
@@ -575,7 +575,6 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
   );
   const queryClient = useQueryClient();
 
-  const { data: categoriesData, isLoading: isLoadingCategories } = useComposioCategories();
   const {
     data: toolkitsInfiniteData,
     isLoading,
@@ -583,7 +582,7 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
     hasNextPage,
     isFetchingNextPage,
     isError,
-  } = useComposioToolkitsInfinite(search, selectedCategory);
+  } = useComposioToolkitsInfinite(search, undefined);
   const { data: profiles, isLoading: isLoadingProfiles } = useComposioProfiles();
 
   const allToolkits = useMemo(() => {
@@ -606,15 +605,15 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
   // Reset pagination on search/category change
   useEffect(() => {
     setPage(1);
-  }, [search, selectedCategory]);
+  }, [search]);
 
-  // Force fetch more pages to get all toolkits including Zoho
+  // Force fetch more pages to get all toolkits
   useEffect(() => {
-    if (!search && !selectedCategory && hasNextPage && !isFetchingNextPage) {
+    if (!search && hasNextPage && !isFetchingNextPage) {
       console.log('Fetching next page to get all toolkits...');
       fetchNextPage();
     }
-  }, [search, selectedCategory, hasNextPage, isFetchingNextPage, fetchNextPage]);
+  }, [search, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const currentAgentId = selectedAgentId ?? internalSelectedAgentId;
   const { data: agent, isLoading: isLoadingAgent } = useAgent(currentAgentId || '');
@@ -644,15 +643,9 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
 
   const isLoadingConnectedApps = currentAgentId && (isLoadingAgent || isLoadingProfiles || isLoading);
 
-  // Debug: Log categories and toolkits data
+  // Debug: Log toolkits data
   useEffect(() => {
     console.group('Composio Registry Debug');
-
-    // Debug: Log the actual data structure
-    console.log('=== CATEGORIES DATA ===');
-    console.log('Categories (raw):', categoriesData);
-    console.log('Categories (parsed):', JSON.parse(JSON.stringify(categoriesData?.categories || [])));
-
     console.log('\n=== TOOLKITS DATA ===');
     if (allToolkits.length > 0) {
       // Show the first toolkit's full structure
@@ -671,79 +664,14 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
     }
 
     console.groupEnd();
-  }, [allToolkits, selectedCategory, categoriesData]);
+  }, [allToolkits]);
 
   // Filter toolkits by selected category and exclude connected apps
   const filteredToolkits = useMemo(() => {
-    let result = allToolkits;
-
-    // Debug: Log what we're working with
-    console.log('=== CATEGORY FILTERING DEBUG ===');
-    console.log('Selected category:', selectedCategory);
-    console.log('All toolkits count:', allToolkits.length);
-    console.log('All toolkit names:', allToolkits.map(t => t.name));
-    console.log('All toolkit slugs:', allToolkits.map(t => t.slug));
-
-    // First filter by category if selected
-    if (selectedCategory) {
-      console.log('=== FILTERING TOOLKITS BY CATEGORY ===');
-      console.log(`Selected category: ${selectedCategory}`);
-
-      result = allToolkits.filter(toolkit => {
-        if (!toolkit.categories) {
-          console.log(`- ${toolkit.name}: No categories`);
-          return false;
-        }
-
-        // Normalize categories to array
-        const categories = Array.isArray(toolkit.categories)
-          ? toolkit.categories
-          : [toolkit.categories];
-
-        // Check if any category matches
-        const hasMatch = categories.some(cat => {
-          if (!cat) return false;
-
-          // Extract category ID based on data structure
-          let categoryId: string | undefined;
-
-          if (typeof cat === 'string') {
-            categoryId = cat;
-          } else if (cat && typeof cat === 'object') {
-            // Try different possible property names
-            if ('id' in cat) categoryId = (cat as any).id;
-            else if ('name' in cat) categoryId = (cat as any).name;
-            else if ('slug' in cat) categoryId = (cat as any).slug;
-            else categoryId = String(cat);
-          } else {
-            categoryId = String(cat);
-          }
-
-          if (!categoryId) return false;
-
-          // Compare with selected category (case insensitive)
-          const matches = categoryId.toLowerCase() === selectedCategory.toLowerCase();
-
-          if (matches) {
-            console.log(`✓ ${toolkit.name}: Matched category "${categoryId}"`);
-          }
-
-          return matches;
-        });
-
-        if (!hasMatch) {
-          console.log(`✗ ${toolkit.name}: No matching categories in`, categories);
-        }
-
-        return hasMatch;
-      });
-
-      console.log(`Found ${result.length} matching toolkits after category filter`);
-    } else {
-      console.log('=== NO CATEGORY SELECTED (All Apps) ===');
-      console.log('Using all toolkits without category filtering');
-      console.log('Result count:', result.length);
-    }
+    // Start from drive-only selection
+    let result = allToolkits.filter(isDriveToolkit);
+    console.log('Using drive-only toolkits');
+    console.log('Result count:', result.length);
 
     // Then filter out connected apps if we have an agent selected
     if (currentAgentId && connectedApps.length > 0) {
@@ -807,14 +735,10 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
     });
 
     return result;
-  }, [allToolkits, selectedCategory, currentAgentId, connectedApps]);
+  }, [allToolkits, currentAgentId, connectedApps]);
 
   // Reset loading state when toolkits are loaded
-  useEffect(() => {
-    if (!isLoading) {
-      setIsCategoryLoading(false);
-    }
-  }, [isLoading]);
+  // No category loading state needed
 
   // pagination slice
   const startIdx = (page - 1) * PAGE_SIZE;
@@ -882,18 +806,10 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
     }
   };
 
-  // Reset category filter when component unmounts
-  useEffect(() => {
-    return () => {
-      setSelectedCategory('');
-    };
-  }, []);
+  // No category filter state
 
   // Handle category change
-  const handleCategoryChange = (categoryId: string) => {
-    setIsCategoryLoading(true);
-    setSelectedCategory(categoryId);
-  };
+  // Categories removed
 
   const handleCustomMCPSave = async (customConfig: any): Promise<void> => {
     if (!currentAgentId) throw new Error('Please select an agent first');
@@ -1014,99 +930,11 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
     }
   };
 
-  const categories = categoriesData?.categories || [];
+  // Categories removed
 
   return (
     <div className="h-full w-full overflow-hidden flex rounded-3xl border bg-background shadow-lg">
-      {/* Mobile Sidebar Overlay */}
-      {showSidebar && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/50 md:hidden"
-          onClick={() => setShowSidebar(false)}
-        />
-      )}
-
-      {/* Sidebar: Categories */}
-      <div className={cn(
-        "w-64 h-full overflow-hidden border-r transition-transform duration-300",
-        "md:translate-x-0 md:static md:z-auto md:bg-muted/20",
-        showSidebar ? "translate-x-0 fixed left-0 top-0 z-50 bg-background/95" : "-translate-x-full fixed left-0 top-0 z-50 bg-background/95"
-      )}>
-        <div className="h-full flex flex-col">
-          <div className="flex-shrink-0 p-4 border-b">
-            <h3 className="text-sm font-medium text-muted-foreground">Categories</h3>
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <ScrollArea className="h-full">
-              <div className="p-3 space-y-1">
-                <button
-                  onClick={() => {
-                    handleCategoryChange('');
-                    setShowSidebar(false);
-                  }}
-                  disabled={isLoading || isCategoryLoading}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-4 py-2.5 rounded-3xl text-sm transition-all text-left border',
-                    selectedCategory === ''
-                      ? 'bg-muted-foreground/10 text-foreground border-gray-300 hover:border-gray-400'
-                      : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground hover:border-gray-300',
-                    'border-transparent',
-                    (isLoading || isCategoryLoading) && 'opacity-50 cursor-not-allowed'
-                  )}
-                >
-                  {CATEGORY_ICONS.all}
-                  <span>All Apps</span>
-                  {(isLoading || isCategoryLoading) && selectedCategory === '' && (
-                    <Loader2 className="ml-auto h-3 w-3 animate-spin" />
-                  )}
-                </button>
-
-                {isLoadingCategories ? (
-                  <div className="space-y-2">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <div key={i} className="flex items-center gap-3 px-3 py-2">
-                        <Skeleton className="w-4 h-4 bg-muted rounded" />
-                        <Skeleton className="flex-1 h-4 bg-muted rounded" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  categoriesData?.categories?.map((category) => {
-                    const isSelected = selectedCategory === category.id;
-                    const isLoadingThisCategory = isSelected && (isLoading || isCategoryLoading);
-
-                    return (
-                      <button
-                        key={category.id}
-                        onClick={() => {
-                          handleCategoryChange(category.id);
-                          setShowSidebar(false);
-                        }}
-                        disabled={isLoading || isCategoryLoading}
-                        className={cn(
-                          'w-full flex items-center gap-3 px-4 py-2.5 rounded-3xl text-sm transition-all text-left border border-transparent',
-                          isSelected
-                            ? 'bg-muted-foreground/10 text-foreground border-gray-300 hover:border-gray-400'
-                            : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground hover:border-gray-300',
-                          (isLoading || isCategoryLoading) && 'opacity-50 cursor-not-allowed'
-                        )}
-                      >
-                        {CATEGORY_ICONS[category.id] || CATEGORY_ICONS.default}
-                        <span className="truncate">{category.name}</span>
-                        {isLoadingThisCategory && (
-                          <Loader2 className="ml-auto h-3 w-3 animate-spin" />
-                        )}
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-            </ScrollArea>
-          </div>
-        </div>
-      </div>
-
-      {/* Main */}
+      {/* Main only (categories removed) */}
       <div className="flex-1 h-full overflow-hidden">
         <div className="h-full flex flex-col">
           {/* Header */}
@@ -1131,16 +959,6 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
             {/* Search and Actions */}
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                {/* Mobile Filter Button */}
-                <Button
-                  variant="outline"
-                  onClick={() => setShowSidebar(true)}
-                  className="md:hidden flex items-center gap-2 h-10 border-1 border-border/40 hover:border-border/60 focus-visible:ring-transparent"
-                >
-                  <Filter className="h-4 w-4" />
-                  <span className="sr-only">Filter categories</span>
-                </Button>
-                
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -1163,35 +981,19 @@ export const ComposioRegistry: React.FC<ComposioRegistryProps> = ({
                 )}
               </div>
 
-              {(selectedCategory || search) && (
+              {search && (
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Filtered by:</span>
-                  {selectedCategory && (
-                    <Badge variant="outline" className="gap-1 bg-muted-foreground/20 text-muted-foreground border-0">
-                      {CATEGORY_ICONS[selectedCategory] || CATEGORY_ICONS.default}
-                      <span>{categories.find((c: any) => c.id === selectedCategory)?.name}</span>
-                      <button
-                        onClick={() => handleCategoryChange('')}
-                        className="ml-1 hover:bg-muted rounded-full p-0.5 border-1"
-                        disabled={isLoading || isCategoryLoading}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  )}
-                  {search && (
-                    <Badge variant="outline" className="gap-1 bg-muted-foreground/20 text-muted-foreground">
-                      <Search className="h-3 w-3" />
-                      <span>"{search}"</span>
-                      <button
-                        onClick={() => setSearch('')}
-                        className="ml-1 hover:bg-muted rounded-full p-0.5 border-1"
-                        disabled={isLoading}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  )}
+                  <Badge variant="outline" className="gap-1 bg-muted-foreground/20 text-muted-foreground">
+                    <Search className="h-3 w-3" />
+                    <span>"{search}"</span>
+                    <button
+                      onClick={() => setSearch('')}
+                      className="ml-1 hover:bg-muted rounded-full p-0.5 border-1"
+                      disabled={isLoading}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
                 </div>
               )}
             </div>

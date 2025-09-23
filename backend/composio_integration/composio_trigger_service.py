@@ -17,6 +17,13 @@ class ComposioTriggerService:
         self._apps_ttl = 60
         self._triggers_cache: Dict[str, Dict[str, Any]] = {}
         self._triggers_ttl = 60
+        # Allowed drive-like toolkits by keyword; derived dynamically below when needed
+        self._drive_keywords = {"drive", "storage", "cloud", "file", "files", "box", "dropbox", "sharepoint", "onedrive", "googledrive", "google drive"}
+
+    def _is_drive_slug(self, slug: str, name: Optional[str] = None) -> bool:
+        s = (slug or "").lower()
+        n = (name or "").lower()
+        return any(k in s for k in self._drive_keywords) or any(k in n for k in self._drive_keywords)
 
     async def list_apps_with_triggers(self) -> Dict[str, Any]:
         """Return toolkits that have at least one available trigger, with logo, slug, name."""
@@ -107,8 +114,9 @@ class ComposioTriggerService:
                 if t and t.logo:
                     toolkits_map[slug]["logo"] = t.logo
 
-        # Prepare final list
-        result_items = sorted(toolkits_map.values(), key=lambda x: x["slug"].lower())
+        # Filter to drive-like toolkits and prepare final list
+        result_items = [v for v in toolkits_map.values() if self._is_drive_slug(v.get("slug", ""), v.get("name"))]
+        result_items.sort(key=lambda x: x["slug"].lower())
 
         # Cache response
         response = {"success": True, "items": result_items, "total": len(result_items)}
@@ -198,6 +206,9 @@ class ComposioTriggerService:
             if not isinstance(x, dict):
                 continue
             if not match_toolkit(x):
+                continue
+            # Enforce drive-like list
+            if not self._is_drive_slug(toolkit_slug):
                 continue
             matched_count += 1
             result_items.append({
