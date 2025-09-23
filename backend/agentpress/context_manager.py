@@ -13,7 +13,7 @@ from services.supabase import DBConnection
 from utils.logger import logger
 from utils.constants import get_model_context_window
 
-DEFAULT_TOKEN_THRESHOLD = 190000
+DEFAULT_TOKEN_THRESHOLD = 120000
 
 class ContextManager:
     """Manages thread context including token counting and summarization."""

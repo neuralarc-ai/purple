@@ -986,26 +986,86 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
                       Previous
                     </Button>
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(4, Math.ceil((usageData?.logs?.length || 0) / USAGE_ITEMS_PER_PAGE) + 1) }, (_, i) => (
-                        <Button
-                          key={i}
-                          variant={usagePage === i ? "default" : "ghost"}
-                          size="sm"
-                          onClick={() => setUsagePage(i)}
-                          className={`text-xs px-2 py-1 h-6 ${
-                            usagePage === i 
-                              ? 'bg-primary text-primary-foreground' 
-                              : 'text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          {i + 1}
-                        </Button>
-                      ))}
+                      {(() => {
+                        const totalPages = usageData?.total_pages || 1;
+                        const currentPage = usagePage;
+                        
+                        // Smart pagination display
+                        const getVisiblePages = () => {
+                          const maxVisible = 5;
+                          const delta = 2;
+                          
+                          if (totalPages <= maxVisible) {
+                            return Array.from({ length: totalPages }, (_, i) => i);
+                          }
+                          
+                          const range: (number | string)[] = [];
+                          
+                          // Always show first page
+                          range.push(0);
+                          
+                          // Add ellipsis if needed
+                          if (currentPage > delta + 1) {
+                            range.push('...');
+                          }
+                          
+                          // Add pages around current page
+                          const start = Math.max(1, currentPage - delta);
+                          const end = Math.min(totalPages - 2, currentPage + delta);
+                          
+                          for (let i = start; i <= end; i++) {
+                            if (i > 0 && i < totalPages - 1) {
+                              range.push(i);
+                            }
+                          }
+                          
+                          // Add ellipsis if needed
+                          if (currentPage < totalPages - delta - 2) {
+                            range.push('...');
+                          }
+                          
+                          // Always show last page if we have more than one page
+                          if (totalPages > 1) {
+                            range.push(totalPages - 1);
+                          }
+                          
+                          return range;
+                        };
+                        
+                        const visiblePages = getVisiblePages();
+                        
+                        return visiblePages.map((pageIndex, index) => {
+                          if (pageIndex === '...') {
+                            return (
+                              <span key={index} className="text-muted-foreground px-2 py-1 text-xs">
+                                ...
+                              </span>
+                            );
+                          }
+                          
+                          const pageNum = pageIndex as number;
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={usagePage === pageNum ? "default" : "ghost"}
+                              size="sm"
+                              onClick={() => setUsagePage(pageNum)}
+                              className={`text-xs px-2 py-1 h-6 ${
+                                usagePage === pageNum 
+                                  ? 'bg-primary text-primary-foreground' 
+                                  : 'text-muted-foreground hover:text-foreground'
+                              }`}
+                            >
+                              {pageNum + 1}
+                            </Button>
+                          );
+                        });
+                      })()}
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      disabled={!usageData?.has_more}
+                      disabled={!usageData?.has_more || usagePage >= (usageData?.total_pages || 1) - 1}
                       onClick={() => setUsagePage(prev => prev + 1)}
                       className="text-foreground"
                     >
