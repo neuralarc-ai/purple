@@ -38,12 +38,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const getInitialSession = async () => {
       try {
+        console.log('🔄 AuthProvider: Getting initial session...');
         const {
           data: { session: currentSession },
         } = await supabase.auth.getSession();
+        console.log('🔄 AuthProvider: Initial session result:', {
+          hasSession: !!currentSession,
+          hasUser: !!currentSession?.user,
+          hasToken: !!currentSession?.access_token,
+          tokenLength: currentSession?.access_token?.length || 0
+        });
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
       } catch (error) {
+        console.error('❌ AuthProvider: Error getting initial session:', error);
       } finally {
         setIsLoading(false);
       }
@@ -53,15 +61,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
+        console.log('🔄 AuthProvider: Auth state change:', {
+          event,
+          hasSession: !!newSession,
+          hasUser: !!newSession?.user,
+          hasToken: !!newSession?.access_token,
+          tokenLength: newSession?.access_token?.length || 0
+        });
         setSession(newSession);
         setUser(newSession?.user ?? null);
 
         if (isLoadingRef.current) setIsLoading(false);
         switch (event) {
           case 'SIGNED_IN':
-                          if (newSession?.user) {
-                await checkAndInstallHeliumAgent(newSession.user.id, newSession.user.created_at);
-              }
+            if (newSession?.user) {
+              await checkAndInstallHeliumAgent(newSession.user.id, newSession.user.created_at);
+            }
             break;
           case 'SIGNED_OUT':
             break;
