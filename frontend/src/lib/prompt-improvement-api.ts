@@ -27,7 +27,7 @@ Examples:
 CRITICAL: Return ONLY the improved prompt. No quotes, no explanations, no additional text. Just the improved prompt.`;
 
 // Vertex AI Gemini 2.0 Flash model for prompt improvement
-const GEMINI_2_FLASH_MODEL = 'vertex_ai/gemini-2.0-flash';
+const GEMINI_2_FLASH_MODEL = 'vertex_ai/gemini-2.5-pro';
 
 /**
  * Gets the Gemini 2.0 Flash model for prompt improvement

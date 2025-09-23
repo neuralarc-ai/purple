@@ -1,7 +1,6 @@
 # Master model configuration - single source of truth
 MODELS = {        
-        
-    # Vertex AI Models
+    # Vertex AI Models - Default
     "vertex_ai/gemini-2.5-pro": {
         "aliases": ["gemini-2.5-pro-vertex"],
         "pricing": {
@@ -11,26 +10,8 @@ MODELS = {
         "context_window": 2_000_000,  # 2M tokens
         "tier_availability": ["free", "paid"]
     },
-    "vertex_ai/gemini-2.5-flash": {
-        "aliases": ["gemini-2.5-flash-vertex"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.15,
-            "output_cost_per_million_tokens": 0.60
-        },
-        "context_window": 2_000_000,  # 2M tokens
-        "tier_availability": ["free", "paid"]
-    },
-    "vertex_ai/gemini-2.0-flash": {
-        "aliases": ["gemini-2.0-flash-vertex"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.15,
-            "output_cost_per_million_tokens": 0.60
-        },
-        "context_window": 1_000_000,  # 1M tokens
-        "tier_availability": ["free", "paid"]
-    },
 
-    # Bedrock Models - Claude Sonnet Series
+    # Bedrock Models - Claude Sonnet 4 (for sandbox tools only)
     "bedrock/anthropic.claude-sonnet-4-20250514-v1:0": {
         "aliases": ["claude-sonnet-4-bedrock"],
         "pricing": {
@@ -38,75 +19,6 @@ MODELS = {
             "output_cost_per_million_tokens": 15.00
         },
         "context_window": 1_000_000,  # 1M tokens for Claude Sonnet 4
-        "tier_availability": ["paid"]
-    },
-    "bedrock/anthropic.claude-sonnet-4-20250514-v1:1": {
-        "aliases": ["claude-sonnet-4-bedrock-v1-1"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 1_000_000,
-        "tier_availability": ["paid"]
-    },
-    "bedrock/anthropic.claude-sonnet-4-20250514-v1:2": {
-        "aliases": ["claude-sonnet-4-bedrock-v1-2"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 1_000_000,
-        "tier_availability": ["paid"]
-    },
-    "bedrock/anthropic.claude-sonnet-4-20250514-v1:3": {
-        "aliases": ["claude-sonnet-4-bedrock-v1-3"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 1_000_000,
-        "tier_availability": ["paid"]
-    },
-    
-    # Bedrock Models - Claude 3.7 Sonnet Series
-    "bedrock/anthropic.claude-3-7-sonnet-20250219-v1:0": {
-        "aliases": ["claude-3-7-sonnet-bedrock"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 200_000,
-        "tier_availability": ["paid"]
-    },
-    
-    # Bedrock Models - Claude 3.5 Sonnet Series
-    "bedrock/anthropic.claude-3-5-sonnet-20241022-v1:0": {
-        "aliases": ["claude-3-5-sonnet-bedrock"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 200_000,
-        "tier_availability": ["paid"]
-    },
-    "bedrock/anthropic.claude-3-5-sonnet-20241022-v1:1": {
-        "aliases": ["claude-3-5-sonnet-bedrock-v1-1"],
-        "pricing": {
-            "input_cost_per_million_tokens": 3.00,
-            "output_cost_per_million_tokens": 15.00
-        },
-        "context_window": 200_000,
-        "tier_availability": ["paid"]
-    },
-
-    # Bedrock Models - Claude 3.5 Haiku Series
-    "bedrock/anthropic.claude-3-5-haiku-20241022-v1:0": {
-        "aliases": ["claude-3-5-haiku-bedrock"],
-        "pricing": {
-            "input_cost_per_million_tokens": 0.25,
-            "output_cost_per_million_tokens": 1.25
-        },
-        "context_window": 200_000,
         "tier_availability": ["free", "paid"]
     },
 }

@@ -58,7 +58,7 @@ async def run_agent_background(
     thread_id: str,
     instance_id: str,
     project_id: str,
-    model_name: str = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0",
+    model_name: str = "vertex_ai/gemini-2.5-pro",
     enable_thinking: Optional[bool] = False,
     reasoning_effort: Optional[str] = 'low',
     stream: bool = True,
@@ -129,7 +129,7 @@ async def run_agent_background(
 
     # Use default model if none specified
     if not model_name or model_name == "openai/gpt-5-mini":
-        effective_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
+        effective_model = "vertex_ai/gemini-2.5-pro"
         logger.debug(f"Using default model for background run: {effective_model}")
     logger.debug(f"🚀 Using model: {effective_model} (thinking: {enable_thinking}, reasoning_effort: {reasoning_effort})")
     if agent_config:

@@ -8,9 +8,9 @@ import { useAvailableModels } from '@/hooks/react-query/subscriptions/use-model'
 export const STORAGE_KEY_MODEL = 'suna-preferred-model-v10';
 export const STORAGE_KEY_CUSTOM_MODELS = 'customModels';
 export const DEFAULT_PREMIUM_MODEL_ID =
-  'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0';
+  'vertex_ai/gemini-2.5-pro';
 export const DEFAULT_FREE_MODEL_ID =
-  'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0';
+  'vertex_ai/gemini-2.5-pro';
 
 export type SubscriptionStatus = 'no_subscription' | 'active';
 
@@ -33,101 +33,32 @@ export interface CustomModel {
 
 // SINGLE SOURCE OF TRUTH for all model data - aligned with backend constants
 export const MODELS = {
-  // Premium tier models (require subscription) - Vertex AI and Bedrock only
+  // Available models - all users have access to all models
 
-  // Vertex AI Models
+  // Vertex AI Models - Default
   'vertex_ai/gemini-2.5-pro': {
-    tier: 'premium',
+    tier: 'free',
     priority: 100,
     recommended: true,
     lowQuality: false,
   },
-  'vertex_ai/gemini-2.5-flash': {
-    tier: 'premium',
-    priority: 99,
-    recommended: false,
-    lowQuality: false,
-  },
-  'vertex_ai/gemini-2.0-flash': {
-    tier: 'premium',
-    priority: 98,
-    recommended: false,
-    lowQuality: false,
-  },
 
-  // Bedrock Models - Claude Sonnet Series
+  // Bedrock Models - Claude Sonnet 4 (for sandbox tools)
   'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0': {
-    tier: 'premium',
-    priority: 91,
-    recommended: false,
-    lowQuality: false,
-  },
-  'bedrock/anthropic.claude-sonnet-4-20250514-v1:1': {
-    tier: 'premium',
-    priority: 90,
-    recommended: false,
-    lowQuality: false,
-  },
-  'bedrock/anthropic.claude-sonnet-4-20250514-v1:2': {
-    tier: 'premium',
-    priority: 89,
-    recommended: false,
-    lowQuality: false,
-  },
-  'bedrock/anthropic.claude-sonnet-4-20250514-v1:3': {
-    tier: 'premium',
-    priority: 88,
-    recommended: false,
-    lowQuality: false,
-  },
-
-  // Bedrock Models - Claude 3.7 Sonnet Series
-  'bedrock/anthropic.claude-3-7-sonnet-20250219-v1:0': {
-    tier: 'premium',
-    priority: 87,
-    recommended: false,
-    lowQuality: false,
-  },
-
-  // Bedrock Models - Claude 3.5 Sonnet Series
-  'bedrock/anthropic.claude-3-5-sonnet-20241022-v1:0': {
-    tier: 'premium',
-    priority: 86,
-    recommended: false,
-    lowQuality: false,
-  },
-  'bedrock/anthropic.claude-3-5-sonnet-20241022-v1:1': {
-    tier: 'premium',
-    priority: 85,
-    recommended: false,
-    lowQuality: false,
-  },
-
-  // Bedrock Models - Claude 3.5 Haiku Series
-  'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0': {
-    tier: 'premium',
-    priority: 84,
-    recommended: false,
-    lowQuality: false,
-  },
-
-  'bedrock/anthropic.claude-3-5-haiku-20241022-v1:0-free': {
     tier: 'free',
-    priority: 85,
+    priority: 91,
     recommended: false,
     lowQuality: false,
   },
 };
 
-// Helper to check if a user can access a model based on subscription status
+// Helper to check if a user can access a model - all models are now available to all users
 export const canAccessModel = (
   subscriptionStatus: SubscriptionStatus,
   requiresSubscription: boolean,
 ): boolean => {
-  if (isLocalMode()) {
-    return true;
-  }
-  return subscriptionStatus === 'active' || !requiresSubscription;
+  // All models are available to all users
+  return true;
 };
 
 // Helper to format a model name for display

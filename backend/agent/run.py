@@ -49,7 +49,7 @@ class AgentConfig:
     stream: bool
     native_max_auto_continues: int = 25
     max_iterations: int = 100
-    model_name: str = "openai/gpt-5-mini"
+    model_name: str = "vertex_ai/gemini-2.5-pro"
     enable_thinking: Optional[bool] = False
     reasoning_effort: Optional[str] = 'low'
     enable_context_manager: bool = True
@@ -855,7 +855,7 @@ async def run_agent(
     thread_manager: Optional[ThreadManager] = None,
     native_max_auto_continues: int = 25,
     max_iterations: int = 100,
-    model_name: str = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0",
+    model_name: str = "vertex_ai/gemini-2.5-pro",
     enable_thinking: Optional[bool] = False,
     reasoning_effort: Optional[str] = 'low',
     enable_context_manager: bool = True,
@@ -871,7 +871,7 @@ async def run_agent(
         logger.debug(f"Using model from agent config: {effective_model} (no user selection)")
     else:
         # Use default model
-        effective_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
+        effective_model = "vertex_ai/gemini-2.5-pro"
         logger.debug(f"Using default model: {effective_model}")
 
     config = AgentConfig(

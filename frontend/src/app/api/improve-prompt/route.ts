@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         prompt,
-        model: model || 'vertex_ai/gemini-2.0-flash',
+        model: model || 'vertex_ai/gemini-2.5-pro',
         system_message: systemMessage
       }),
     });

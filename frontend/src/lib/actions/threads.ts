@@ -23,7 +23,7 @@ export const generateThreadName = async (message: string): Promise<string> => {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'vertex_ai/gemini-2.0-flash',
+        model: 'vertex_ai/gemini-2.5-pro',
         messages: [
           {
             role: 'system',

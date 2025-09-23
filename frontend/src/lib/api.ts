@@ -733,7 +733,7 @@ export const startAgent = async (
     }
 
     const defaultOptions = {
-      model_name: 'claude-3-7-sonnet-latest',
+      model_name: 'vertex_ai/gemini-2.5-pro',
       enable_thinking: false,
       reasoning_effort: 'low',
       stream: true,

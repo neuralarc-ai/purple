@@ -16,7 +16,7 @@ from utils.config import config, EnvMode
 from services.supabase import DBConnection
 from utils.auth_utils import get_current_user_id_from_jwt
 from pydantic import BaseModel
-from utils.constants import MODEL_ACCESS_TIERS, MODEL_NAME_ALIASES, HARDCODED_MODEL_PRICES
+from utils.constants import MODEL_ACCESS_TIERS, MODEL_NAME_ALIASES, HARDCODED_MODEL_PRICES, MODELS
 from litellm.cost_calculator import cost_per_token
 import time
 
@@ -609,33 +609,13 @@ def calculate_token_cost(prompt_tokens: int, completion_tokens: int, model: str)
 
 async def get_allowed_models_for_user(client, user_id: str):
     """
-    Get the list of models allowed for a user based on their subscription tier.
+    Get the list of models allowed for a user - all models are now available to all users.
     
     Returns:
-        List of model names allowed for the user's subscription tier.
+        List of all available model names.
     """
-
-    result = await Cache.get(f"allowed_models_for_user:{user_id}")
-    if result:
-        return result
-
-    subscription = await get_user_subscription(user_id)
-    tier_name = 'free'
-    
-    if subscription:
-        price_id = None
-        if subscription.get('items') and subscription['items'].get('data') and len(subscription['items']['data']) > 0:
-            price_id = subscription['items']['data'][0]['price']['id']
-        else:
-            price_id = subscription.get('price_id', config.STRIPE_FREE_TIER_ID)
-        
-        # Get tier info for this price_id
-        tier_info = SUBSCRIPTION_TIERS.get(price_id)
-        if tier_info:
-            tier_name = tier_info['name']
-    
-    # Return allowed models for this tier
-    result = MODEL_ACCESS_TIERS.get(tier_name, MODEL_ACCESS_TIERS['free'])  # Default to free tier if unknown
+    # Return all available models for all users
+    result = list(MODELS.keys())
     await Cache.set(f"allowed_models_for_user:{user_id}", result, ttl=1 * 60)
     return result
 
