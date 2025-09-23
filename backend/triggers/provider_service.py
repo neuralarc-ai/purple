@@ -94,6 +94,8 @@ class ScheduleProvider(TriggerProvider):
                 "agent_prompt": trigger.config.get('agent_prompt'),
                 "workflow_id": trigger.config.get('workflow_id'),
                 "workflow_input": trigger.config.get('workflow_input', {}),
+                # If a specific thread is requested (app-based trigger), forward it
+                "thread_id": trigger.config.get('thread_id'),
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
             

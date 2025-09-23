@@ -35,6 +35,7 @@ import { ComposioUrlDetector } from './composio-url-detector';
 import { StreamingText } from './StreamingText';
 import { HIDE_STREAMING_XML_TAGS } from '@/components/thread/utils';
 import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
+import { AgentErrorBanner } from '@/components/thread/AgentErrorBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -505,6 +506,10 @@ export interface ThreadContentProps {
   showToolPreview?: boolean; // Add floating tool preview visibility prop
   // Credit exhaustion callback
   onCreditExhaustionUpgrade?: () => void;
+  // Agent error handling
+  agentError?: string | null;
+  onAgentErrorContinue?: () => void;
+  onAgentErrorDismiss?: () => void;
 }
 
 // Component for action buttons that appear on assistant messages
@@ -798,6 +803,9 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
   isSidePanelOpen = false,
   showToolPreview = false,
   onCreditExhaustionUpgrade,
+  agentError,
+  onAgentErrorContinue,
+  onAgentErrorDismiss,
 }) => {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const latestMessageRef = useRef<HTMLDivElement>(null);
@@ -1755,6 +1763,16 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                   </div>
                 )}
               
+              {/* Agent Error Banner */}
+              {agentError && (
+                <div className="px-4 py-3">
+                  <AgentErrorBanner
+                    error={agentError}
+                    onContinue={onAgentErrorContinue || (() => {})}
+                    onDismiss={onAgentErrorDismiss}
+                  />
+                </div>
+              )}
               
               <div className="!h-48" />
             </div>

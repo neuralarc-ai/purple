@@ -107,8 +107,8 @@ export function ExecuteDataProviderCallToolView({
   const IconComponent = providerConfig.icon;
 
   return (
-    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
-      <CardHeader className="h-9 bg-gradient-to-t from-zinc-50/80 to-zinc-200/70 dark:from-zinc-900/90 dark:to-zinc-800/90 text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
+    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-background dark:border-black">
+      <CardHeader className="h-9 bg-background text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
         <div className="flex flex-row items-center justify-between">
           <div className="flex items-center w-full justify-center gap-1">
             <Globe className="w-4 h-4 text-muted-foreground" />
@@ -209,7 +209,7 @@ export function ExecuteDataProviderCallToolView({
                   {Object.entries(payload).map(([key, value]) => (
                     <div
                       key={key}
-                      className="flex items-center justify-between p-3 bg-white dark:bg-zinc-900 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                      className="flex items-center justify-between p-3 bg-background rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-600"></div>
@@ -254,7 +254,7 @@ export function ExecuteDataProviderCallToolView({
           </div>
         )}
       </CardContent>
-      <div className="px-4 py-2 h-fit bg-white dark:bg-zinc-900 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
+      <div className="px-4 py-2 h-fit bg-sidebar backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
         <div className="h-full flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
           {!isStreaming && serviceName && (
             <Badge variant="outline" className="h-6 py-0.5 text-xs">

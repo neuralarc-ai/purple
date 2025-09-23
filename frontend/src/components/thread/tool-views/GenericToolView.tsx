@@ -20,6 +20,61 @@ import { LoadingState } from './shared/LoadingState';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+// Utility function to filter out API-related messages
+const shouldFilterApiMessage = (content: string): boolean => {
+  if (!content || typeof content !== 'string') return false;
+  
+  const lowerContent = content.toLowerCase();
+  const apiTerms = [
+    'using gemini api',
+    'using openai',
+    'using dall-e',
+    'using midjourney',
+    'using stable diffusion',
+    'generated using',
+    'via gemini',
+    'via openai',
+    '🔒 file',
+    '📁 storage:',
+    '🔗 secure access url:',
+    '⏰ url expires:',
+    '🔐 this file is stored',
+    'token=',
+    'supabase.co/storage',
+    'file-uploads/',
+    'uploaded securely',
+    'storage: file-uploads'
+  ];
+  
+  return apiTerms.some(term => lowerContent.includes(term));
+};
+
+// Utility function to clean and format API messages
+const cleanApiMessage = (content: string): string | null => {
+  if (!content || typeof content !== 'string') return content;
+  
+  // If it's an API message, try to extract useful information
+  if (shouldFilterApiMessage(content)) {
+    // Extract file names from upload messages
+    const fileMatch = content.match(/File '([^']+)'/);
+    if (fileMatch) {
+      return `File uploaded: ${fileMatch[1]}`;
+    }
+    
+    // Extract image generation messages
+    const imageMatch = content.match(/Image saved as:\s*([^\s.]+\.(png|jpg|jpeg|webp|gif))/i);
+    if (imageMatch) {
+      return `Image generated: ${imageMatch[1]}`;
+    }
+    
+    // For other API messages, return null to hide them
+    return null;
+  }
+  
+  return content;
+};
+
+
 // Utility function to detect if data is tabular
 const isTabularData = (data: any): boolean => {
   // Handle nested structures that might contain tabular data
@@ -387,10 +442,18 @@ export function GenericToolView({
         outputText = formatDataAsText(parsedOutput);
       }
       
+      // Clean API messages from output
+      const cleanedOutput = cleanApiMessage(outputText);
+      
+      // If cleaned output is null (filtered out), return null to hide the content
+      if (cleanedOutput === null) {
+        return null;
+      }
+      
       const result = {
         tool: toolResult.xmlTagName || toolResult.functionName,
         arguments: toolResult.arguments || {},
-        output: outputText,
+        output: cleanedOutput,
         rawOutput: parsedOutput, // Keep raw data for table rendering
         success: toolResult.isSuccess,
         summary: toolResult.summary || '',
@@ -656,13 +719,13 @@ export function GenericToolView({
           </div>
           <div className="space-y-4">
             {/* Show descriptive text */}
-            <div className="bg-muted/50 rounded-xl border p-4">
+            <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl border border-border/50 p-4 shadow-sm">
               <div className="text-base text-foreground whitespace-pre-wrap break-words">
                 {output}
               </div>
             </div>
             {/* Show table */}
-            <div className="bg-muted/50 rounded-xl border p-4">
+            <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl border border-border/50 p-4 shadow-sm">
               <TabularDataTable data={tabularData} />
             </div>
           </div>
@@ -702,13 +765,13 @@ export function GenericToolView({
           </div>
           <div className="space-y-4">
             {/* Show descriptive text */}
-            <div className="bg-muted/50 rounded-xl border p-4">
+            <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl border border-border/50 p-4 shadow-sm">
               <div className="text-base text-foreground whitespace-pre-wrap break-words">
                 {output}
               </div>
             </div>
             {/* Show table */}
-            <div className="bg-muted/50 rounded-xl border p-4">
+            <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl border border-border/50 p-4 shadow-sm">
               <TabularDataTable data={tabularDataFromOutput} />
             </div>
           </div>
@@ -723,7 +786,7 @@ export function GenericToolView({
           <FileText className="h-4 w-4 text-muted-foreground" />
           {title}
         </div>
-        <div className="bg-muted/50 rounded-xl border p-4">
+        <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl border border-border/50 p-4 shadow-sm">
           <div className="text-base text-foreground whitespace-pre-wrap break-words">
             {output}
           </div>
@@ -842,11 +905,10 @@ export function GenericToolView({
           <CheckCircle2 className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
           Summary
         </div>
-        <div className="bg-muted/50 rounded-xl border p-4">
-            <div className="text-base text-foreground whitespace-pre-wrap break-words">
-              {/* Ensure we never try to render objects directly */}
-              {renderValue(safeSummary)}
-            </div>
+        <div className="bg-gradient-to-br from-muted/30 to-muted/50 rounded-xl border border-border/50 p-4 shadow-sm">
+          <div className="text-base text-foreground whitespace-pre-wrap break-words">
+            {renderValue(safeSummary)}
+          </div>
         </div>
       </div>
     );
@@ -981,17 +1043,23 @@ export function GenericToolView({
   };
 
   return (
-    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
-      <CardHeader className="h-9 bg-gradient-to-t from-muted/80 to-muted/70 text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
+    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-background dark:border-black">
+      <CardHeader className="h-9 bg-background text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
         <div className="flex flex-row items-center justify-between">
           <div className="flex w-full justify-center items-center gap-1">
             <Wrench className="w-4 h-4 text-muted-foreground" />
             <div>
-              <CardTitle className="text-sm font-semibold text-muted-foreground">
+              <CardTitle className="text-sm font-semibold text-foreground">
                 {toolTitle}
               </CardTitle>
             </div>
           </div>
+          {!isSuccess && (
+            <Badge variant="destructive" className="h-6 py-1 px-2 shadow-sm">
+              <XCircle className="h-3 w-3 mr-1" />
+              Error
+            </Badge>
+          )}
         </div>
       </CardHeader>
 
@@ -1038,7 +1106,7 @@ export function GenericToolView({
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     Content
                   </div>
-                  <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                  <div className="">
                     <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
                       {/* Ensure we never try to render objects directly */}
                       {renderValue(formattedToolContent)}
@@ -1063,10 +1131,10 @@ export function GenericToolView({
         )}
       </CardContent>
 
-      <div className="px-4 py-2 h-fit bg-card backdrop-blur-sm border-t border-border flex justify-between items-center gap-4 rounded-b-lg">
+      <div className="px-4 py-2 h-fit bg-sidebar backdrop-blur-sm border-t border-border flex justify-between items-center gap-4 rounded-b-lg">
         <div className="h-full flex items-center gap-2 text-sm text-muted-foreground">
           {!isStreaming && (formattedAssistantContent || formattedToolContent) && (
-            <Badge variant="outline" className="h-6 py-0.5 bg-muted">
+            <Badge variant="outline" className="h-5 py-0.5 bg-muted">
               <Wrench className="h-3 w-3" />
               Tool
             </Badge>

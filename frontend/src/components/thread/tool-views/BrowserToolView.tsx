@@ -317,8 +317,8 @@ export function BrowserToolView({
   };
 
   return (
-    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
-      <CardHeader className="h-9 bg-gradient-to-t from-zinc-50/80 to-zinc-200/70 dark:from-zinc-900/90 dark:to-zinc-800/90 text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
+    <Card className="gap-0 flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-background">
+      <CardHeader className="h-9 bg-background text-center backdrop-blur-lg border-b p-2 px-4 space-y-2 rounded-t-lg">
         <div className="flex flex-row items-center justify-between">
           <div className="flex w-full justify-center items-center gap-1">
             <MonitorPlay className="w-4 h-4 text-muted-foreground" />
@@ -421,7 +421,7 @@ export function BrowserToolView({
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow-md transition-shadow"
+                      className="bg-background border-zinc-200 dark:border-zinc-700 shadow-sm hover:shadow-md transition-shadow"
                       asChild
                     >
                       <a href={url} target="_blank" rel="noopener noreferrer">

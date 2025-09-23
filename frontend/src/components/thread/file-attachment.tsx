@@ -891,7 +891,7 @@ export function ThreadFilesDisplay({
                                 showPreview={showPreviews}
                                 project={project}
                                 displayMode="grid"
-                                className="w-full h-fit bg-card border border-border rounded-lg"
+                                className="w-full h-fit bg-sidebar border border-border rounded-lg"
                                 customStyle={{ '--attachment-height': '120px' } as React.CSSProperties}
                             />
                         </div>

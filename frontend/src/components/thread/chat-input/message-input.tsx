@@ -57,6 +57,7 @@ interface MessageInputProps {
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
   onTranscription: (text: string) => void;
+  onStopListening?: () => void;
   placeholder: string;
   loading: boolean;
   disabled: boolean;
@@ -103,6 +104,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       onChange,
       onSubmit,
       onTranscription,
+      onStopListening,
       placeholder,
       loading,
       disabled,
@@ -353,7 +355,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       type="button"
                       size="icon"
                       variant="outline"
-                      className="w-8 h-8 flex-shrink-0 dark:border-muted-foreground/20 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
+                      className="w-8 h-8 p-0 flex-shrink-0 border-muted-foreground/30 dark:border-muted-foreground/20 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
                       disabled={
                         !isLoggedIn ||
                         loading ||
@@ -362,7 +364,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       }
                       onClick={handleFileUpload}
                     >
-                      <AttachIcon className="h-4 w-4 text-muted-foreground" />
+                      <AttachIcon className="h-4 w-4 text-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -378,7 +380,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                         type="button"
                         size="icon"
                         variant="outline"
-                        className="w-8 h-8 flex-shrink-0 dark:border-muted-foreground/20 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
+                        className="w-8 h-8 flex-shrink-0 border-muted-foreground/30 dark:border-muted-foreground/20 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
                         disabled={
                           !isLoggedIn ||
                           loading ||
@@ -387,7 +389,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                         }
                         onClick={onOpenIntegrations}
                       >
-                        <ConnectAppsIcon className="h-4 w-4 text-muted-foreground" />
+                        <ConnectAppsIcon className="h-4 w-4 text-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -395,37 +397,6 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                     </TooltipContent>
                   </Tooltip>
                 )}
-
-                {/* Improve Prompt Button - Commented out */}
-                {/* <Button
-                  type="button"
-                  variant="ghost"                  
-                  onClick={handleImprovePrompt}
-                  className={cn(
-                    'h-8 w-8 bg-transparent dark:border-muted-foreground/20 shadow-none group transition-all duration-200 text-sm relative overflow-hidden',
-                    'border border-muted-foreground/20 rounded-full bg-white dark:bg-sidebar hover:bg-background/50! ',
-                    'disabled:opacity-100',
-                    isImprovingPrompt && 'cursor-not-allowed border-none'
-                  )}
-                  disabled={
-                    !isLoggedIn ||
-                    loading ||
-                    (disabled && !isAgentRunning) ||
-                    !value.trim() ||
-                    isImprovingPrompt
-                  }
-                  title="Improve Prompt with AI"
-                >
-                  {isImprovingPrompt && (
-                    <BorderBeam 
-                      duration={2}
-                      borderWidth={1.5}
-                      size={40}
-                      className="from-helium-blue via-helium-green to-helium-yellow"
-                    />
-                  )}
-                  <Wand2 className="h-4! w-4! text-muted-foreground" strokeWidth={1.5} />
-                </Button> */}
 
                 <input
                   type="file"
@@ -444,19 +415,6 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             )}
           </div>
 
-          {/* {subscriptionStatus === 'no_subscription' && !isLocalMode() &&
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <p role='button' className='text-sm text-amber-500 hidden sm:block cursor-pointer' onClick={() => setBillingModalOpen(true)}>Upgrade for more usage</p>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>The free tier is severely limited by the amount of usage. Upgrade to experience the full power of Helium.</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          } */}
-
           <div className="flex items-center gap-2">
             {renderDropdown()}
             <BillingModal
@@ -470,6 +428,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
             {isLoggedIn && (
               <VoiceRecorder
                 onTranscription={onTranscription}
+                onStopListening={onStopListening}
                 disabled={loading || (disabled && !isAgentRunning)}
               />
             )}
@@ -528,7 +487,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       : 'text-white'
                   }
                 >
-                  <ArrowUp className="h-5 w-5 text" />
+                  <ArrowUp className="h-5! w-5! text-white" />
                 </div>
               )}
             </Button>

@@ -19,6 +19,8 @@ interface UseThreadDataReturn {
   setAgentStatus: React.Dispatch<React.SetStateAction<AgentStatus>>;
   isLoading: boolean;
   error: string | null;
+  agentError: string | null;
+  setAgentError: React.Dispatch<React.SetStateAction<string | null>>;
   initialLoadCompleted: boolean;
   threadQuery: ReturnType<typeof useThreadQuery>;
   messagesQuery: ReturnType<typeof useMessagesQuery>;
@@ -36,12 +38,18 @@ export function useThreadData(threadId: string, projectId: string, onCreditError
   const [agentStatus, setAgentStatus] = useState<AgentStatus>('idle');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [agentError, setAgentError] = useState<string | null>(null);
   
   const initialLoadCompleted = useRef<boolean>(false);
   const messagesLoadedRef = useRef(false);
   const agentRunsCheckedRef = useRef(false);
   const hasInitiallyScrolled = useRef<boolean>(false);
-  
+  const messagesRef = useRef(messages);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   const threadQuery = useThreadQuery(threadId, { onError: onCreditError });
   const messagesQuery = useMessagesQuery(threadId, { onError: onCreditError });
@@ -105,7 +113,7 @@ export function useThreadData(threadId: string, projectId: string, onCreditError
           const serverIds = new Set(
             unifiedMessages.map((m) => m.message_id).filter(Boolean) as string[],
           );
-          const localExtras = (messages || []).filter(
+          const localExtras = (messagesRef.current || []).filter(
             (m) =>
               !m.message_id ||
               (typeof m.message_id === 'string' && m.message_id.startsWith('temp-')) ||
@@ -194,60 +202,54 @@ export function useThreadData(threadId: string, projectId: string, onCreditError
     threadQuery.error,
     projectQuery.data,
     messagesQuery.data,
-    agentRunsQuery.data
+    agentRunsQuery.data,
+    onCreditError
   ]);
 
   // Force message reload when thread changes or new data arrives
   useEffect(() => {
-    if (messagesQuery.data && messagesQuery.status === 'success' && !isLoading) {
+    if (messagesQuery.data && messagesQuery.status === 'success' && !isLoading && !messagesLoadedRef.current) {
       // (debug logs removed)
       
-      // Always reload messages when thread data changes or we have more raw messages than processed
-      const shouldReload = messages.length === 0 || messagesQuery.data.length > messages.length + 50; // Allow for status messages
-      
-      if (shouldReload) {
-        // (debug logs removed)
-        
-        const unifiedMessages = (messagesQuery.data || [])
-          .filter((msg) => msg.type !== 'status')
-          .map((msg: ApiMessageType) => ({
-            message_id: msg.message_id || null,
-            thread_id: msg.thread_id || threadId,
-            type: (msg.type || 'system') as UnifiedMessage['type'],
-            is_llm_message: Boolean(msg.is_llm_message),
-            content: msg.content || '',
-            metadata: msg.metadata || '{}',
-            created_at: msg.created_at || new Date().toISOString(),
-            updated_at: msg.updated_at || new Date().toISOString(),
-            agent_id: (msg as any).agent_id,
-            agents: (msg as any).agents,
-          }));
+      const unifiedMessages = (messagesQuery.data || [])
+        .filter((msg) => msg.type !== 'status')
+        .map((msg: ApiMessageType) => ({
+          message_id: msg.message_id || null,
+          thread_id: msg.thread_id || threadId,
+          type: (msg.type || 'system') as UnifiedMessage['type'],
+          is_llm_message: Boolean(msg.is_llm_message),
+          content: msg.content || '',
+          metadata: msg.metadata || '{}',
+          created_at: msg.created_at || new Date().toISOString(),
+          updated_at: msg.updated_at || new Date().toISOString(),
+          agent_id: (msg as any).agent_id,
+          agents: (msg as any).agents,
+        }));
 
-        // Merge strategy: preserve any local (optimistic/streamed) messages not in server yet
-        setMessages((prev) => {
-          const serverIds = new Set(
-            unifiedMessages.map((m) => m.message_id).filter(Boolean) as string[],
-          );
-          const localExtras = (prev || []).filter(
-            (m) =>
-              !m.message_id ||
-              (typeof m.message_id === 'string' && m.message_id.startsWith('temp-')) ||
-              !serverIds.has(m.message_id as string),
-          );
-          const merged = [...unifiedMessages, ...localExtras].sort((a, b) => {
-            const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-            const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-            return aTime - bTime;
-          });
-          
-          // Messages set only from server merge; no cross-thread cache
-          return merged;
+      // Merge strategy: preserve any local (optimistic/streamed) messages not in server yet
+      setMessages((prev) => {
+        const serverIds = new Set(
+          unifiedMessages.map((m) => m.message_id).filter(Boolean) as string[],
+        );
+        const localExtras = (prev || []).filter(
+          (m) =>
+            !m.message_id ||
+            (typeof m.message_id === 'string' && m.message_id.startsWith('temp-')) ||
+            !serverIds.has(m.message_id as string),
+        );
+        const merged = [...unifiedMessages, ...localExtras].sort((a, b) => {
+          const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return aTime - bTime;
         });
-      } else {
-        // (debug logs removed)
-      }
+        
+        // Messages set only from server merge; no cross-thread cache
+        return merged;
+      });
+      
+      messagesLoadedRef.current = true;
     }
-  }, [messagesQuery.data, messagesQuery.status, isLoading, messages.length, threadId]);
+  }, [messagesQuery.data, messagesQuery.status, isLoading, threadId]);
 
   return {
     messages,
@@ -261,6 +263,8 @@ export function useThreadData(threadId: string, projectId: string, onCreditError
     setAgentStatus,
     isLoading,
     error,
+    agentError,
+    setAgentError,
     initialLoadCompleted: initialLoadCompleted.current,
     threadQuery,
     messagesQuery,

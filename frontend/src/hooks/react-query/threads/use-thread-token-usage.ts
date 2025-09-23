@@ -4,21 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { billingApi, ThreadTokenUsage } from '@/lib/api-enhanced';
 
 export function useThreadTokenUsage(threadId: string, agentStatus?: 'idle' | 'running' | 'connecting' | 'paused' | 'error') {
-  const staleTime = agentStatus === 'running' ? 5 * 1000 : 10 * 1000;
-  const refetchInterval = agentStatus === 'running' ? 10 * 1000 : 30 * 1000;
-  
-  console.log(`[useThreadTokenUsage] Hook config for thread ${threadId}:`, {
-    agentStatus,
-    staleTime: `${staleTime / 1000}s`,
-    refetchInterval: `${refetchInterval / 1000}s`
-  });
+  const staleTime = agentStatus === 'running' ? 10 * 1000 : 30 * 1000;
+  const refetchInterval = agentStatus === 'running' ? 15 * 1000 : 60 * 1000;
 
   return useQuery({
     queryKey: ['thread-token-usage', threadId],
     queryFn: async (): Promise<ThreadTokenUsage | null> => {
       if (!threadId) return null;
-      
-      console.log(`[useThreadTokenUsage] Fetching thread token usage for: ${threadId}`);
       
       try {
         // Use the working usage logs method directly
@@ -59,7 +51,6 @@ export function useThreadTokenUsage(threadId: string, agentStatus?: 'idle' | 'ru
           models,
         };
         
-        console.log(`[useThreadTokenUsage] Thread token usage result for ${threadId}:`, result);
         return result;
         
       } catch (error) {

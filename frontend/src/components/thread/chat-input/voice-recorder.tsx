@@ -40,11 +40,13 @@ const StopIcon = ({ className }: { className?: string }) => (
 
 interface VoiceRecorderProps {
     onTranscription: (text: string) => void;
+    onStopListening?: () => void;
     disabled?: boolean;
 }
 
 export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     onTranscription,
+    onStopListening,
     disabled = false,
 }) => {
     const { theme } = useTheme();
@@ -188,6 +190,9 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         // Reset transcript for next use
         resetTranscript();
         lastTranscriptRef.current = '';
+        
+        // Notify parent component that listening has stopped
+        onStopListening?.();
     };
 
     const handleClick = () => {
@@ -221,7 +226,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
                         variant="outline"
                         onClick={handleClick}
                         disabled={disabled}
-                        className={`h-8 w-8 shadow-none object-contain p-0 bg-transparent border dark:border-muted-foreground/20 rounded-full flex items-center justify-center transition-all duration-300 ease-in-out ${getButtonClass()}`}
+                        className={`h-8 w-8 shadow-none object-contain p-0 bg-transparent border border-muted-foreground/30 rounded-full flex items-center justify-center transition-all duration-300 ease-in-out ${getButtonClass()}`}
                     >
                         {getIcon()}
                     </Button>

@@ -32,7 +32,7 @@ const StylePreview: React.FC<{ style: StyleInfo; styleName: string }> = ({ style
                 style.background === '#064E3B';
 
   return (
-    <div className="group rounded-lg cursor-pointer transition-all duration-200 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-lg hover:scale-[1.01]">
+    <div className="group rounded-lg cursor-pointer transition-all duration-200 bg-background border border-zinc-200 dark:border-zinc-800 shadow-sm hover:shadow-lg hover:scale-[1.01]">
       {/* Style Preview */}
       <div className="relative h-48 rounded-t-lg overflow-hidden">
         <div 

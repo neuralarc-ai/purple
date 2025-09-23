@@ -5,9 +5,14 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
-  Command,  
+  Command,
   AudioWaveform,
   ChevronsUpDown,
+  HelpCircle,
+  ExternalLink,
+  MessageSquare,
+  FileText,
+  BookOpen,
 } from 'lucide-react';
 import { useAccounts } from '@/hooks/use-accounts';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
@@ -23,6 +28,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
   SidebarMenu,
@@ -84,9 +92,9 @@ const DynamicIcon = ({
 
 // Custom Settings Icon component
 const SettingsIcon = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     fill="currentColor"
     className={className}
   >
@@ -96,9 +104,9 @@ const SettingsIcon = ({ className }: { className?: string }) => (
 
 // Custom Subscription Icon component
 const SubscriptionIcon = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
     fill="currentColor"
     className={className}
   >
@@ -119,24 +127,24 @@ export function NavUserWithTeams({
   const { isMobile } = useSidebar();
   const { data: accounts } = useAccounts();
   const { profile, preferredName, isLoading: profileLoading, isAuthError } = useUserProfileWithFallback();
-  
+
   // Debug: Log profile data to see what's being fetched
   React.useEffect(() => {
     console.log('NavUserWithTeams - Profile data:', profile);
     console.log('NavUserWithTeams - Profile avatar_url:', profile?.avatar_url);
   }, [profile]);
-  
+
   const [showNewTeamDialog, setShowNewTeamDialog] = React.useState(false);
   const [showBillingModal, setShowBillingModal] = React.useState(false);
   const [showSettingsModal, setShowSettingsModal] = React.useState(false);
-  
+
   const [editLoading, setEditLoading] = React.useState(false);
   const [tokenUsage, setTokenUsage] = React.useState(0);
   const [totalTokens, setTotalTokens] = React.useState(500);
   const { theme, setTheme } = useTheme();
   const { enabled: customAgentsEnabled, loading: flagLoading } =
     useFeatureFlag('custom_agents');
-  
+
   // Get real-time subscription data for credit usage
   const { data: subscriptionData, refetch: refetchSubscription } = useSubscriptionData();
   const { user: authUser } = useAuth();
@@ -239,11 +247,11 @@ export function NavUserWithTeams({
     try {
       // Replace this with your real API call
       const response = await fetch('/api/token-usage');
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       console.log('Token usage API response:', data);
       setTokenUsage(data.used_tokens);
@@ -328,7 +336,7 @@ export function NavUserWithTeams({
                   </div>
                 </div>
               </DropdownMenuLabel>
-              
+
               {/* Credit Usage Section */}
               {/* <div className="px-1.5 py-2">
                 <div className="flex items-center justify-between mb-2">
@@ -377,8 +385,8 @@ export function NavUserWithTeams({
                   />
                 </div>
               </div> */}
-              
-              
+
+
 
               {/* Teams Section */}
               {/* {personalAccount && (
@@ -469,21 +477,61 @@ export function NavUserWithTeams({
               <DropdownMenuSeparator />
 
               {/* User Settings Section */}
-              <DropdownMenuGroup>                
-                <DropdownMenuItem 
+              <DropdownMenuGroup>
+                <DropdownMenuItem
                   className="rounded-full cursor-pointer"
                   onClick={() => setShowSettingsModal(true)}
                 >
                   <SettingsIcon className="h-4 w-4 mr-2" />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="rounded-full cursor-pointer"
                   onClick={() => setShowBillingModal(true)}
                 >
                   <SubscriptionIcon className="h-4 w-4 mr-2" />
                   Manage Subscription
                 </DropdownMenuItem>
+
+                {/* Help Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <DropdownMenuItem className="rounded-full cursor-pointer">
+                      <HelpCircle className="h-4 w-4 mr-2" />
+                      Help
+                      <ChevronsUpDown className="ml-auto h-4 w-4" />
+                    </DropdownMenuItem>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    className="w-56 bg-background rounded-2xl p-2" 
+                    side="top" 
+                    align="start"
+                    sideOffset={8}
+                  >
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/feedback">
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Feedback
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/terms-of-use">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Terms of Use
+                        <ExternalLink className="ml-auto h-3 w-3" />
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="rounded-lg cursor-pointer">
+                      <Link href="/privacy-policy">
+                        <BookOpen className="h-4 w-4 mr-2" />
+                        Privacy Policy
+                        <ExternalLink className="ml-auto h-3 w-3" />
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+
                 {!flagLoading && customAgentsEnabled && (
                   <DropdownMenuItem asChild className="rounded-full cursor-pointer">
                     {/* <Link href="/settings/credentials">
@@ -529,15 +577,15 @@ export function NavUserWithTeams({
       </Dialog>
 
       {/* Billing Modal */}
-      <BillingModal 
-        open={showBillingModal} 
+      <BillingModal
+        open={showBillingModal}
         onOpenChange={setShowBillingModal}
         returnUrl={typeof window !== 'undefined' ? window.location.href : '/'}
       />
 
       {/* Settings Modal */}
-      <SettingsModal 
-        open={showSettingsModal} 
+      <SettingsModal
+        open={showSettingsModal}
         onOpenChange={setShowSettingsModal}
       />
     </>

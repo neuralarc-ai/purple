@@ -338,13 +338,11 @@ async def calculate_monthly_usage(client, user_id: str) -> float:
 async def get_usage_logs(client, user_id: str, page: int = 0, items_per_page: int = 1000) -> Dict:
     """Get detailed usage logs for a user with pagination, grouped by thread using usage_logs."""
     now = datetime.now(timezone.utc)
-    start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    # First, get all usage logs for the month to properly aggregate by thread
+    # First, get all usage logs to properly aggregate by thread
     all_res = await client.table('usage_logs') \
         .select('thread_id, total_prompt_tokens, total_completion_tokens, total_tokens, estimated_cost, created_at') \
         .eq('user_id', user_id) \
-        .gte('created_at', start_of_month.isoformat()) \
         .order('created_at', desc=True) \
         .execute()
 
@@ -857,6 +855,7 @@ async def handle_usage_with_credits(
 @router.post("/create-checkout-session")
 async def create_checkout_session(
     request: CreateCheckoutSessionRequest,
+    http_request: Request,
     current_user_id: str = Depends(get_current_user_id_from_jwt)
 ):
     """Create a Stripe Checkout session or modify an existing subscription."""
@@ -865,10 +864,23 @@ async def create_checkout_session(
         db = DBConnection()
         client = await db.client
         
-        # Get user email from auth.users
-        user_result = await client.auth.admin.get_user_by_id(current_user_id)
-        if not user_result: raise HTTPException(status_code=404, detail="User not found")
-        email = user_result.user.email
+        # Get user email from JWT token instead of using admin functions
+        email = None
+        try:
+            import jwt
+            auth_header = http_request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+                payload = jwt.decode(token, options={"verify_signature": False})
+                email = payload.get('email')
+        except Exception as e:
+            logger.error(f"Could not extract email from JWT for user {current_user_id}: {e}")
+        
+        if not email:
+            logger.error(f"No email found in JWT token for user {current_user_id}")
+            raise HTTPException(status_code=400, detail="Unable to retrieve user email from token")
+        
+        logger.info(f"Retrieved email {email} from JWT for user {current_user_id}")
         
         # Get or create Stripe customer
         customer_id = await get_stripe_customer_id(client, current_user_id)
@@ -1177,6 +1189,7 @@ async def create_checkout_session(
 @router.post("/create-trial-checkout")
 async def create_trial_checkout(
     request: CreateTrialCheckoutRequest,
+    http_request: Request,
     current_user_id: str = Depends(get_current_user_id_from_jwt)
 ):
     """Create a Stripe Checkout session for the 1-week trial plan."""
@@ -1193,11 +1206,28 @@ async def create_trial_checkout(
         db = DBConnection()
         client = await db.client
         
-        # Get user email from auth.users
-        user_result = await client.auth.admin.get_user_by_id(current_user_id)
-        if not user_result: 
-            raise HTTPException(status_code=404, detail="User not found")
-        email = user_result.user.email
+        # Get user email from JWT token instead of using admin functions
+        email = None
+        try:
+            import jwt
+            auth_header = http_request.headers.get('Authorization')
+            logger.info(f"Authorization header: {auth_header[:50] + '...' if auth_header and len(auth_header) > 50 else auth_header}")
+            
+            if auth_header and auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+                payload = jwt.decode(token, options={"verify_signature": False})
+                email = payload.get('email')
+                logger.info(f"JWT payload email: {email}, user_id: {current_user_id}")
+            else:
+                logger.error(f"No valid Authorization header found")
+        except Exception as e:
+            logger.error(f"Could not extract email from JWT for user {current_user_id}: {e}")
+        
+        if not email:
+            logger.error(f"No email found in JWT token for user {current_user_id}")
+            raise HTTPException(status_code=400, detail="Unable to retrieve user email from token")
+        
+        logger.info(f"Retrieved email {email} from JWT for user {current_user_id}")
         
         # Get or create Stripe customer
         customer_id = await get_stripe_customer_id(client, current_user_id)
@@ -2130,6 +2160,7 @@ async def reactivate_subscription(
 @router.post("/purchase-credits")
 async def purchase_credits(
     request: PurchaseCreditsRequest,
+    http_request: Request,
     current_user_id: str = Depends(get_current_user_id_from_jwt)
 ):
     """
@@ -2148,11 +2179,23 @@ async def purchase_credits(
         db = DBConnection()
         client = await db.client
         
-        # Get user email
-        user_result = await client.auth.admin.get_user_by_id(current_user_id)
-        if not user_result:
-            raise HTTPException(status_code=404, detail="User not found")
-        email = user_result.user.email
+        # Get user email from JWT token instead of using admin functions
+        email = None
+        try:
+            import jwt
+            auth_header = http_request.headers.get('Authorization')
+            if auth_header and auth_header.startswith('Bearer '):
+                token = auth_header.split(' ')[1]
+                payload = jwt.decode(token, options={"verify_signature": False})
+                email = payload.get('email')
+        except Exception as e:
+            logger.error(f"Could not extract email from JWT for user {current_user_id}: {e}")
+        
+        if not email:
+            logger.error(f"No email found in JWT token for user {current_user_id}")
+            raise HTTPException(status_code=400, detail="Unable to retrieve user email from token")
+        
+        logger.info(f"Retrieved email {email} from JWT for user {current_user_id}")
         
         # Get or create Stripe customer
         customer_id = await get_stripe_customer_id(client, current_user_id)

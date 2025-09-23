@@ -280,7 +280,7 @@ export function FileOperationToolView({
   return (
     <Card className="flex border shadow-none p-0 rounded-lg flex-col h-full overflow-hidden bg-card">
       <Tabs defaultValue={showPreview ? 'preview' : 'code'} className="w-full h-full">
-        <CardHeader className="h-9 flex flex-row items-center justify-between bg-gradient-to-t from-zinc-50/80 to-zinc-200/70 dark:from-zinc-900/90 dark:to-zinc-800/90 text-center backdrop-blur-lg border-b p-2 px-4 rounded-t-lg">
+        <CardHeader className="h-9 flex flex-row items-center justify-between bg-background text-center backdrop-blur-lg border-b p-2 px-4 rounded-t-lg">
           <div className="flex w-full justify-center items-center gap-1 mt-4">
             <Icon className="h-4 w-4 text-muted-foreground" />
             <CardTitle className="text-sm font-semibold text-muted-foreground">
@@ -402,7 +402,7 @@ export function FileOperationToolView({
           </TabsContent>
         </CardContent>
 
-        <div className="px-4 py-2 h-fit bg-gradient-to-r from-zinc-50/90 to-zinc-100/90 dark:from-zinc-900/90 dark:to-zinc-800/90 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
+        <div className="px-4 py-2 h-fit bg-sidebar backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800 flex justify-between items-center gap-4 rounded-b-lg">
           <div className="h-full flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
             <Badge variant="outline" className="py-0.5 h-6">
               <FileIcon className="h-3 w-3" />

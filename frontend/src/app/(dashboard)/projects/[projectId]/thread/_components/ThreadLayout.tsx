@@ -141,7 +141,7 @@ export function ThreadLayout({
     startWidth.current = panelWidth || 400;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
-  }, [isLeftSidebarExpanded, panelWidth]);
+  }, [panelWidth]);
 
   // Add/remove event listeners for resizing
   React.useEffect(() => {

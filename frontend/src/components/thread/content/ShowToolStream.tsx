@@ -120,16 +120,18 @@ export const ShowToolStream: React.FC<ShowToolStreamProps> = ({
         {shouldShowContent ? (
           // Expanded view with content - show after 1500ms for file operations
           <div
-            className={`border border-neutral-200 dark:border-neutral-700/50 rounded-2xl overflow-hidden transition-all duration-500 ease-in-out ${
+            className={`border border-black/15 dark:border-muted rounded-2xl overflow-hidden transition-all duration-500 ease-in-out ${
               shouldShowContent ? 'bg-zinc-100 dark:bg-neutral-900' : 'bg-muted'
             }`}
           >
             {/* Tool name header */}
             <button
-              onClick={() => onToolClick?.(messageId ?? null, toolName as string)}
+              onClick={() =>
+                onToolClick?.(messageId ?? null, toolName as string)
+              }
               className={`w-full flex items-center gap-1.5 py-1 px-2 text-xs text-muted-foreground hover:bg-muted/80 transition-all duration-500 ease-in-out cursor-pointer bg-muted`}
             >
-              <div className=" flex items-center justify-center p-1 rounded-sm">
+              <div className="flex items-center justify-center p-1 rounded-sm">
                 <CircleDashed className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 animate-spin animation-duration-2000" />
               </div>
               <span className="font-mono text-xs text-foreground">
@@ -183,17 +185,17 @@ export const ShowToolStream: React.FC<ShowToolStreamProps> = ({
           // Just tool button with shimmer (first 1500ms)
           <button
             onClick={() => onToolClick?.(messageId ?? null, toolName as string)}
-            className="animate-shimmer inline-flex items-center gap-1.5 py-1 px-1 pr-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+            className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50! hover:bg-muted dark:bg-sidebar-accent/60! dark:hover:bg-background/80 rounded-full! transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
           >
-            <div className="border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600">
-              <CircleDashed className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 animate-spin animation-duration-2000" />
+            <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600">
+              <CircleDashed className="h-3 w-3 text-muted-foreground flex-shrink-0 animate-spin animation-duration-2000" />
             </div>
-            <span className="font-mono text-xs text-foreground">
+            <span className="font-mono text-xs text-accent-foreground! font-medium!">
               {displayName}
             </span>
             {paramDisplay && (
               <span
-                className="ml-1 text-muted-foreground truncate max-w-[200px]"
+                className="ml-1 text-muted-foreground! truncate max-w-[200px]"
                 title={paramDisplay}
               >
                 {paramDisplay}
@@ -210,15 +212,17 @@ export const ShowToolStream: React.FC<ShowToolStreamProps> = ({
     <div className="my-1">
       <button
         onClick={() => onToolClick?.(messageId ?? null, toolName as string)}
-        className="animate-shimmer inline-flex items-center gap-1.5 py-1 px-1 pr-1.5 text-xs text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors cursor-pointer border border-neutral-200 dark:border-neutral-700/50"
+        className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50! hover:bg-muted dark:bg-sidebar-accent/60! dark:hover:bg-background/80 rounded-full! transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
       >
-        <div className="border-2 bg-gradient-to-br from-neutral-200 to-neutral-300 dark:from-neutral-700 dark:to-neutral-800 flex items-center justify-center p-0.5 rounded-sm border-neutral-400/20 dark:border-neutral-600">
-          <CircleDashed className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 animate-spin animation-duration-2000" />
+        <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600">
+          <CircleDashed className="h-3 w-3 text-muted-foreground flex-shrink-0 animate-spin animation-duration-2000" />
         </div>
-        <span className="font-mono text-xs text-foreground">{displayName}</span>
+        <span className="font-mono text-xs text-accent-foreground! font-medium!">
+          {displayName}
+        </span>
         {paramDisplay && (
           <span
-            className="ml-1 text-muted-foreground truncate max-w-[200px]"
+            className="ml-1 text-muted-foreground! truncate max-w-[200px]"
             title={paramDisplay}
           >
             {paramDisplay}
