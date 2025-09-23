@@ -337,113 +337,197 @@ async def calculate_monthly_usage(client, user_id: str) -> float:
 
 async def get_usage_logs(client, user_id: str, page: int = 0, items_per_page: int = 1000) -> Dict:
     """Get detailed usage logs for a user with pagination, grouped by thread using usage_logs."""
-    now = datetime.now(timezone.utc)
-
-    # First, get all usage logs to properly aggregate by thread
-    all_res = await client.table('usage_logs') \
-        .select('thread_id, total_prompt_tokens, total_completion_tokens, total_tokens, estimated_cost, created_at') \
-        .eq('user_id', user_id) \
-        .order('created_at', desc=True) \
-        .execute()
-
-    if not all_res.data:
-        return {"logs": [], "has_more": False}
-
-    # Get unique thread_ids from all usage data
-    thread_ids = [row.get('thread_id') for row in all_res.data if row.get('thread_id')]
-    
-    # Fetch thread and project information for existing threads
-    thread_info = {}
-    project_names = {}
-    
-    if thread_ids:
-        # Get thread information
-        threads_result = await client.table('threads') \
-            .select('thread_id, project_id, created_at') \
-            .in_('thread_id', thread_ids) \
-            .execute()
+    try:
+        logger.debug(f"Starting get_usage_logs for user {user_id}")
         
-        # Get project information
-        project_ids = [thread['project_id'] for thread in threads_result.data if thread.get('project_id')]
-        if project_ids:
-            projects_result = await client.table('projects') \
-                .select('project_id, name') \
-                .in_('project_id', project_ids) \
+        # Validate user_id format
+        if not user_id or not isinstance(user_id, str) or len(user_id) < 10:
+            logger.error(f"Invalid user_id format: {user_id}")
+            raise ValueError(f"Invalid user_id format: {user_id}")
+        
+        now = datetime.now(timezone.utc)
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # First, get all usage logs for the month to properly aggregate by thread
+        logger.debug(f"Querying usage_logs for user {user_id} from {start_of_month.isoformat()}")
+        try:
+            all_res = await client.table('usage_logs') \
+                .select('thread_id, total_prompt_tokens, total_completion_tokens, total_tokens, estimated_cost, created_at') \
+                .eq('user_id', user_id) \
+                .gte('created_at', start_of_month.isoformat()) \
+                .order('created_at', desc=True) \
                 .execute()
+        except Exception as query_error:
+            logger.error(f"Database query failed for user {user_id}: {str(query_error)}")
+            # Try a simpler query without ordering to see if that's the issue
+            try:
+                logger.debug(f"Attempting simpler query for user {user_id}")
+                all_res = await client.table('usage_logs') \
+                    .select('thread_id, total_prompt_tokens, total_completion_tokens, total_tokens, estimated_cost, created_at') \
+                    .eq('user_id', user_id) \
+                    .gte('created_at', start_of_month.isoformat()) \
+                    .limit(100) \
+                    .execute()
+                logger.debug(f"Simpler query succeeded, found {len(all_res.data) if all_res.data else 0} records")
+            except Exception as simple_error:
+                logger.error(f"Even simpler query failed for user {user_id}: {str(simple_error)}")
+                raise query_error
+
+        logger.debug(f"Usage logs query returned {len(all_res.data) if all_res.data else 0} records")
+
+        if not all_res.data:
+            logger.debug(f"No usage logs found for user {user_id}")
+            return {"logs": [], "has_more": False}
+
+        # Get unique thread_ids from all usage data
+        thread_ids = [row.get('thread_id') for row in all_res.data if row.get('thread_id')]
+        # Remove duplicates and None values
+        unique_thread_ids = list(set([tid for tid in thread_ids if tid is not None]))
+        logger.debug(f"Found {len(unique_thread_ids)} unique thread IDs")
+        
+        # Fetch thread and project information for existing threads
+        thread_info = {}
+        project_names = {}
+        
+        if unique_thread_ids:
+            logger.debug(f"Fetching thread information for {len(unique_thread_ids)} threads")
             
-            for project in projects_result.data:
-                project_names[project['project_id']] = project['name']
-        
-        # Build thread info mapping
-        for thread in threads_result.data:
-            thread_id = thread['thread_id']
-            project_id = thread.get('project_id')
-            project_name = project_names.get(project_id, 'Unknown Project')
-            thread_info[thread_id] = {
-                'project_id': project_id,
-                'project_name': project_name,
-                'created_at': thread['created_at']
-            }
+            # Process thread IDs in chunks to avoid query size limits
+            chunk_size = 100  # Supabase has query limits
+            all_threads = []
+            
+            for i in range(0, len(unique_thread_ids), chunk_size):
+                chunk = unique_thread_ids[i:i + chunk_size]
+                try:
+                    threads_result = await client.table('threads') \
+                        .select('thread_id, project_id, created_at') \
+                        .in_('thread_id', chunk) \
+                        .execute()
+                    
+                    if threads_result.data:
+                        all_threads.extend(threads_result.data)
+                        logger.debug(f"Chunk {i//chunk_size + 1}: Found {len(threads_result.data)} threads")
+                except Exception as chunk_error:
+                    logger.warning(f"Error fetching thread chunk {i//chunk_size + 1}: {str(chunk_error)}")
+                    # Continue with other chunks
+                    continue
+            
+            logger.debug(f"Total threads found: {len(all_threads)}")
+            
+            # Get project information
+            project_ids = [thread['project_id'] for thread in all_threads if thread.get('project_id')]
+            unique_project_ids = list(set([pid for pid in project_ids if pid is not None]))
+            
+            if unique_project_ids:
+                logger.debug(f"Fetching project information for {len(unique_project_ids)} projects")
+                
+                # Process project IDs in chunks as well
+                for i in range(0, len(unique_project_ids), chunk_size):
+                    chunk = unique_project_ids[i:i + chunk_size]
+                    try:
+                        projects_result = await client.table('projects') \
+                            .select('project_id, name') \
+                            .in_('project_id', chunk) \
+                            .execute()
+                        
+                        if projects_result.data:
+                            for project in projects_result.data:
+                                project_names[project['project_id']] = project['name']
+                            logger.debug(f"Project chunk {i//chunk_size + 1}: Found {len(projects_result.data)} projects")
+                    except Exception as chunk_error:
+                        logger.warning(f"Error fetching project chunk {i//chunk_size + 1}: {str(chunk_error)}")
+                        continue
+            
+            # Build thread info mapping
+            for thread in all_threads:
+                thread_id = thread['thread_id']
+                project_id = thread.get('project_id')
+                project_name = project_names.get(project_id, 'Unknown Project')
+                thread_info[thread_id] = {
+                    'project_id': project_id,
+                    'project_name': project_name,
+                    'created_at': thread['created_at']
+                }
 
-    # Aggregate by thread_id
-    by_thread: Dict[str, Dict] = {}
-    for row in all_res.data:
-        thread_id = row.get('thread_id') or 'unknown'
-        
-        # Determine thread name and status
-        if thread_id == 'unknown' or thread_id is None:
-            # NULL thread_id entries are from deleted threads (created before migration)
-            thread_name = 'Deleted Thread'
-        elif thread_id in thread_info:
-            # Use project name if available, otherwise show thread ID
-            project_name = thread_info[thread_id]['project_name']
-            if project_name and project_name != 'Unknown Project':
-                thread_name = f"{project_name} Thread"
-            else:
-                thread_name = f"Thread {thread_id[:8]}..."
-        else:
-            # Thread ID exists in usage_logs but not in threads table = deleted thread
-            thread_name = 'Deleted Thread'
-        
-        entry = by_thread.setdefault(thread_id, {
-            'thread_id': thread_id,
-            'project_id': thread_info.get(thread_id, {}).get('project_id') if thread_id in thread_info else None,
-            'project_name': thread_name,  # Use thread_name as project_name for display
-            'created_at': row.get('created_at'),
-            'total_cost_dollars': 0.0,  # Store dollars first, convert to credits later
-            'request_count': 0,
-            'total_prompt_tokens': 0,
-            'total_completion_tokens': 0,
-            'total_tokens': 0,
-        })
-        entry['request_count'] += 1
-        entry['total_prompt_tokens'] += int(row.get('total_prompt_tokens') or 0)
-        entry['total_completion_tokens'] += int(row.get('total_completion_tokens') or 0)
-        entry['total_tokens'] += int(row.get('total_tokens') or 0)
-        # Sum dollars first to match calculate_monthly_usage behavior
-        entry['total_cost_dollars'] += float(row.get('estimated_cost') or 0.0)
-        # Keep latest created_at
-        if row.get('created_at') and row.get('created_at') > entry['created_at']:
-            entry['created_at'] = row['created_at']
+        logger.debug(f"Starting aggregation for {len(all_res.data)} usage records")
+        # Aggregate by thread_id
+        by_thread: Dict[str, Dict] = {}
+        for row in all_res.data:
+            try:
+                thread_id = row.get('thread_id') or 'unknown'
+                
+                # Validate and clean data
+                prompt_tokens = int(row.get('total_prompt_tokens') or 0)
+                completion_tokens = int(row.get('total_completion_tokens') or 0)
+                total_tokens = int(row.get('total_tokens') or 0)
+                estimated_cost = float(row.get('estimated_cost') or 0.0)
+                created_at = row.get('created_at')
+                
+                # Determine thread name and status
+                if thread_id == 'unknown' or thread_id is None:
+                    # NULL thread_id entries are from deleted threads (created before migration)
+                    thread_name = 'Deleted Thread'
+                elif thread_id in thread_info:
+                    # Use project name if available, otherwise show thread ID
+                    project_name = thread_info[thread_id]['project_name']
+                    if project_name and project_name != 'Unknown Project':
+                        thread_name = f"{project_name} Thread"
+                    else:
+                        thread_name = f"Thread {thread_id[:8]}..."
+                else:
+                    # Thread ID exists in usage_logs but not in threads table = deleted thread
+                    thread_name = 'Deleted Thread'
+                
+                entry = by_thread.setdefault(thread_id, {
+                    'thread_id': thread_id,
+                    'project_id': thread_info.get(thread_id, {}).get('project_id') if thread_id in thread_info else None,
+                    'project_name': thread_name,  # Use thread_name as project_name for display
+                    'created_at': created_at,
+                    'total_cost_dollars': 0.0,  # Store dollars first, convert to credits later
+                    'request_count': 0,
+                    'total_prompt_tokens': 0,
+                    'total_completion_tokens': 0,
+                    'total_tokens': 0,
+                })
+                entry['request_count'] += 1
+                entry['total_prompt_tokens'] += prompt_tokens
+                entry['total_completion_tokens'] += completion_tokens
+                entry['total_tokens'] += total_tokens
+                # Sum dollars first to match calculate_monthly_usage behavior
+                entry['total_cost_dollars'] += estimated_cost
+                # Keep latest created_at
+                if created_at and created_at > entry['created_at']:
+                    entry['created_at'] = created_at
+                    
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Skipping malformed usage log entry for user {user_id}: {str(e)}, row: {row}")
+                continue
 
-    # Convert dollars to credits after aggregation to match calculate_monthly_usage behavior
-    for entry in by_thread.values():
-        entry['total_credits'] = round(entry['total_cost_dollars'] * 100)
-        # Remove the dollars field to keep the response format consistent
-        del entry['total_cost_dollars']
-    
-    # Sort all logs by created_at
-    processed_logs = list(by_thread.values())
-    processed_logs.sort(key=lambda x: x['created_at'] or '', reverse=True)
-    
-    # Apply pagination to the aggregated results
-    start_idx = page * items_per_page
-    end_idx = start_idx + items_per_page
-    paginated_logs = processed_logs[start_idx:end_idx]
-    
-    has_more = end_idx < len(processed_logs)
-    
-    return {"logs": paginated_logs, "has_more": has_more}
+        logger.debug(f"Aggregation complete, processing {len(by_thread)} threads")
+
+        # Convert dollars to credits after aggregation to match calculate_monthly_usage behavior
+        for entry in by_thread.values():
+            entry['total_credits'] = round(entry['total_cost_dollars'] * 100)
+            # Remove the dollars field to keep the response format consistent
+            del entry['total_cost_dollars']
+        
+        # Sort all logs by created_at
+        processed_logs = list(by_thread.values())
+        processed_logs.sort(key=lambda x: x['created_at'] or '', reverse=True)
+        
+        # Apply pagination to the aggregated results
+        start_idx = page * items_per_page
+        end_idx = start_idx + items_per_page
+        paginated_logs = processed_logs[start_idx:end_idx]
+        
+        has_more = end_idx < len(processed_logs)
+        
+        logger.debug(f"Returning {len(paginated_logs)} logs, has_more: {has_more}")
+        return {"logs": paginated_logs, "has_more": has_more}
+        
+    except Exception as e:
+        logger.error(f"Error in get_usage_logs for user {user_id}: {str(e)}")
+        raise
 
 
 def calculate_token_cost(prompt_tokens: int, completion_tokens: int, model: str) -> float:
@@ -478,7 +562,13 @@ def calculate_token_cost(prompt_tokens: int, completion_tokens: int, model: str)
                 if '/' in resolved_model and resolved_model != model:
                     models_to_try.append(resolved_model.split('/', 1)[1])
                     
-                
+                # Special handling for Google models accessed via OpenRouter
+                if model.startswith('openrouter/google/'):
+                    google_model_name = model.replace('openrouter/', '')
+                    models_to_try.append(google_model_name)
+                if resolved_model.startswith('openrouter/google/'):
+                    google_model_name = resolved_model.replace('openrouter/', '')
+                    models_to_try.append(google_model_name)
                 
                 # Try each model name variation until we find one that works
                 message_cost = None
@@ -855,7 +945,6 @@ async def handle_usage_with_credits(
 @router.post("/create-checkout-session")
 async def create_checkout_session(
     request: CreateCheckoutSessionRequest,
-    http_request: Request,
     current_user_id: str = Depends(get_current_user_id_from_jwt)
 ):
     """Create a Stripe Checkout session or modify an existing subscription."""
@@ -864,23 +953,10 @@ async def create_checkout_session(
         db = DBConnection()
         client = await db.client
         
-        # Get user email from JWT token instead of using admin functions
-        email = None
-        try:
-            import jwt
-            auth_header = http_request.headers.get('Authorization')
-            if auth_header and auth_header.startswith('Bearer '):
-                token = auth_header.split(' ')[1]
-                payload = jwt.decode(token, options={"verify_signature": False})
-                email = payload.get('email')
-        except Exception as e:
-            logger.error(f"Could not extract email from JWT for user {current_user_id}: {e}")
-        
-        if not email:
-            logger.error(f"No email found in JWT token for user {current_user_id}")
-            raise HTTPException(status_code=400, detail="Unable to retrieve user email from token")
-        
-        logger.info(f"Retrieved email {email} from JWT for user {current_user_id}")
+        # Get user email from auth.users
+        user_result = await client.auth.admin.get_user_by_id(current_user_id)
+        if not user_result: raise HTTPException(status_code=404, detail="User not found")
+        email = user_result.user.email
         
         # Get or create Stripe customer
         customer_id = await get_stripe_customer_id(client, current_user_id)
@@ -1189,7 +1265,6 @@ async def create_checkout_session(
 @router.post("/create-trial-checkout")
 async def create_trial_checkout(
     request: CreateTrialCheckoutRequest,
-    http_request: Request,
     current_user_id: str = Depends(get_current_user_id_from_jwt)
 ):
     """Create a Stripe Checkout session for the 1-week trial plan."""
@@ -1206,28 +1281,11 @@ async def create_trial_checkout(
         db = DBConnection()
         client = await db.client
         
-        # Get user email from JWT token instead of using admin functions
-        email = None
-        try:
-            import jwt
-            auth_header = http_request.headers.get('Authorization')
-            logger.info(f"Authorization header: {auth_header[:50] + '...' if auth_header and len(auth_header) > 50 else auth_header}")
-            
-            if auth_header and auth_header.startswith('Bearer '):
-                token = auth_header.split(' ')[1]
-                payload = jwt.decode(token, options={"verify_signature": False})
-                email = payload.get('email')
-                logger.info(f"JWT payload email: {email}, user_id: {current_user_id}")
-            else:
-                logger.error(f"No valid Authorization header found")
-        except Exception as e:
-            logger.error(f"Could not extract email from JWT for user {current_user_id}: {e}")
-        
-        if not email:
-            logger.error(f"No email found in JWT token for user {current_user_id}")
-            raise HTTPException(status_code=400, detail="Unable to retrieve user email from token")
-        
-        logger.info(f"Retrieved email {email} from JWT for user {current_user_id}")
+        # Get user email from auth.users
+        user_result = await client.auth.admin.get_user_by_id(current_user_id)
+        if not user_result: 
+            raise HTTPException(status_code=404, detail="User not found")
+        email = user_result.user.email
         
         # Get or create Stripe customer
         customer_id = await get_stripe_customer_id(client, current_user_id)
@@ -1766,7 +1824,7 @@ async def get_available_models(
             all_models.add(full_name)
             
             # Only include short names that don't match their full names for aliases
-            if short_name != full_name and not short_name.startswith("openai/") and not short_name.startswith("anthropic/") and not short_name.startswith("xai/"):
+            if short_name != full_name and not short_name.startswith("openai/") and not short_name.startswith("anthropic/") and not short_name.startswith("openrouter/") and not short_name.startswith("xai/"):
                 if full_name not in model_aliases:
                     model_aliases[full_name] = short_name
         
@@ -1889,6 +1947,8 @@ async def get_usage_logs_endpoint(
 ):
     """Get detailed usage logs for a user with pagination."""
     try:
+        logger.debug(f"Getting usage logs for user {current_user_id}, page {page}, items_per_page {items_per_page}")
+        
         # Get Supabase client
         db = DBConnection()
         client = await db.client
@@ -1908,15 +1968,41 @@ async def get_usage_logs_endpoint(
         if items_per_page < 1 or items_per_page > 1000:
             raise HTTPException(status_code=400, detail="Items per page must be between 1 and 1000")
         
-        # Get usage logs
-        result = await get_usage_logs(client, current_user_id, page, items_per_page)
-        
-        return result
+        # Get usage logs with better error handling
+        try:
+            result = await get_usage_logs(client, current_user_id, page, items_per_page)
+            logger.debug(f"Successfully retrieved usage logs for user {current_user_id}")
+            return result
+        except Exception as usage_error:
+            logger.error(f"Error in get_usage_logs for user {current_user_id}: {str(usage_error)}")
+            # Try to get basic usage data without aggregation to see if it's a data issue
+            try:
+                logger.debug(f"Attempting to get basic usage logs for user {current_user_id}")
+                now = datetime.now(timezone.utc)
+                start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+                basic_res = await client.table('usage_logs') \
+                    .select('id, thread_id, total_prompt_tokens, total_completion_tokens, total_tokens, estimated_cost, created_at') \
+                    .eq('user_id', current_user_id) \
+                    .gte('created_at', start_of_month.isoformat()) \
+                    .order('created_at', desc=True) \
+                    .limit(10) \
+                    .execute()
+                
+                logger.debug(f"Basic query successful, found {len(basic_res.data)} records")
+                return {
+                    "logs": [], 
+                    "has_more": False,
+                    "message": f"Usage logs temporarily unavailable. Found {len(basic_res.data)} records but aggregation failed."
+                }
+            except Exception as basic_error:
+                logger.error(f"Basic usage logs query also failed for user {current_user_id}: {str(basic_error)}")
+                raise usage_error
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error getting usage logs: {str(e)}")
+        logger.error(f"Error getting usage logs for user {current_user_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting usage logs: {str(e)}")
 
 @router.get("/subscription-commitment/{subscription_id}")
@@ -2160,7 +2246,6 @@ async def reactivate_subscription(
 @router.post("/purchase-credits")
 async def purchase_credits(
     request: PurchaseCreditsRequest,
-    http_request: Request,
     current_user_id: str = Depends(get_current_user_id_from_jwt)
 ):
     """
@@ -2179,23 +2264,11 @@ async def purchase_credits(
         db = DBConnection()
         client = await db.client
         
-        # Get user email from JWT token instead of using admin functions
-        email = None
-        try:
-            import jwt
-            auth_header = http_request.headers.get('Authorization')
-            if auth_header and auth_header.startswith('Bearer '):
-                token = auth_header.split(' ')[1]
-                payload = jwt.decode(token, options={"verify_signature": False})
-                email = payload.get('email')
-        except Exception as e:
-            logger.error(f"Could not extract email from JWT for user {current_user_id}: {e}")
-        
-        if not email:
-            logger.error(f"No email found in JWT token for user {current_user_id}")
-            raise HTTPException(status_code=400, detail="Unable to retrieve user email from token")
-        
-        logger.info(f"Retrieved email {email} from JWT for user {current_user_id}")
+        # Get user email
+        user_result = await client.auth.admin.get_user_by_id(current_user_id)
+        if not user_result:
+            raise HTTPException(status_code=404, detail="User not found")
+        email = user_result.user.email
         
         # Get or create Stripe customer
         customer_id = await get_stripe_customer_id(client, current_user_id)
