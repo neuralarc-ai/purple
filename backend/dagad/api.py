@@ -8,6 +8,7 @@ from services.supabase import DBConnection
 from utils.logger import logger
 from flags.flags import is_enabled
 from dagad.storage_provider import get_storage
+from urllib.parse import urlparse, unquote
 import os
 
 
@@ -486,6 +487,70 @@ async def delete_dagad_entry(
 
     try:
         client = await db.client
+        # Fetch the entry first to determine attached asset URLs
+        existing = await client.table('user_dagad_entries').select('file_url,image_url').eq('entry_id', entry_id).eq('user_id', user_id).execute()
+        if not existing.data:
+            raise HTTPException(status_code=404, detail="DAGAD entry not found")
+        row = existing.data[0] if existing.data else None
+
+        # Best-effort storage cleanup
+        storage = get_storage()
+
+        async def try_delete_by_url(url: Optional[str]) -> None:
+            if not url:
+                return
+            try:
+                # We prefer deleting by known path when available in response payloads
+                # but 'user_dagad_entries' currently stores only URLs. Infer path.
+                provider = (os.getenv("STORAGE_PROVIDER") or "supabase").lower()
+                path: Optional[str] = None
+                if provider in ("s3", "r2"):
+                    bucket = os.getenv("S3_BUCKET", "dagad-assets")
+                    public_base = os.getenv("S3_PUBLIC_BASE_URL")
+                    endpoint = os.getenv("S3_ENDPOINT_URL")
+                    # Attempt several URL shapes
+                    if public_base and url.startswith(public_base.rstrip('/') + '/'):
+                        path = url[len(public_base.rstrip('/') + '/') :]
+                    elif endpoint and url.startswith(endpoint.rstrip('/') + f"/{bucket}/"):
+                        path = url[len(endpoint.rstrip('/') + f"/{bucket}/") :]
+                    else:
+                        # Try robust parse for standard virtual-hosted-style URL
+                        parsed = urlparse(url)
+                        host_prefix = f"{bucket}.s3"
+                        if parsed.netloc.startswith(host_prefix):
+                            path = parsed.path.lstrip('/')
+                        else:
+                            # As a fallback, try splitting on amazonaws.com
+                            parts = url.split('.amazonaws.com/', 1)
+                            if len(parts) == 2:
+                                path = parts[1]
+                else:
+                    # Supabase public URL form contains /object/public/<bucket>/<path>
+                    bucket = os.getenv("SUPABASE_BUCKET", "dagad-images")
+                    marker = f"/object/public/{bucket}/"
+                    if marker in url:
+                        path = url.split(marker, 1)[1]
+                # Provider-agnostic fallback: detect our known prefixes inside the URL
+                if not path:
+                    for known_prefix in ("files/", "images/"):
+                        idx = url.find(known_prefix)
+                        if idx != -1:
+                            path = url[idx:]
+                            break
+                if path:
+                    decoded_path = unquote(path)
+                    logger.info(f"Deleting storage object provider={provider} bucket-path={decoded_path}")
+                    await storage.delete(decoded_path)
+                else:
+                    logger.warning(f"Could not infer storage path from URL: {url}")
+            except Exception as _e:
+                # Log but don't block deletion of DB row
+                logger.warning(f"Best-effort delete failed for URL {url}: {_e}")
+
+        await try_delete_by_url(row.get('file_url') if row else None)
+        await try_delete_by_url(row.get('image_url') if row else None)
+
+        # Now delete the DB row
         result = await client.table('user_dagad_entries').delete().eq('entry_id', entry_id).eq('user_id', user_id).execute()
         if not result.data:
             raise HTTPException(status_code=404, detail="DAGAD entry not found")
