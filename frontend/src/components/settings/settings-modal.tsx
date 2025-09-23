@@ -973,7 +973,7 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
                 </div>
                 
                 {/* Pagination */}
-                {(usageData && usageData.has_more) || usagePage > 0 ? (
+                {(usageData && (usageData.logs?.length > 0 || usageData.has_more)) || usagePage > 0 ? (
                   <div className="flex items-center justify-center gap-2 p-4 border-t border-border">
                     <Button
                       variant="ghost"
@@ -986,21 +986,96 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
                       Previous
                     </Button>
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(4, Math.ceil((usageData?.logs?.length || 0) / USAGE_ITEMS_PER_PAGE) + 1) }, (_, i) => (
-                        <Button
-                          key={i}
-                          variant={usagePage === i ? "default" : "ghost"}
-                          size="sm"
-                          onClick={() => setUsagePage(i)}
-                          className={`text-xs px-2 py-1 h-6 ${
-                            usagePage === i 
-                              ? 'bg-primary text-primary-foreground' 
-                              : 'text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          {i + 1}
-                        </Button>
-                      ))}
+                      {(() => {
+                        // Dynamic pagination based on current page and has_more status
+                        const currentPageNum = usagePage + 1;
+                        const hasMorePages = usageData?.has_more === true;
+                        
+                        // Calculate visible page range
+                        const getVisiblePages = () => {
+                          const pages: (number | string)[] = [];
+                          const maxVisiblePages = 7;
+                          
+                          // Always show the first page
+                          pages.push(1);
+                          
+                          if (currentPageNum === 1) {
+                            // On first page: show [1] [2] [3] ... if has_more
+                            if (hasMorePages) {
+                              pages.push(2);
+                              if (currentPageNum + 2 <= currentPageNum + 2) pages.push(3);
+                              if (hasMorePages) {
+                                pages.push('...');
+                              }
+                            }
+                          } else if (currentPageNum === 2) {
+                            // On second page: show [1] [2] [3] [4] ... if has_more
+                            pages.push(2);
+                            if (hasMorePages) {
+                              pages.push(3);
+                              if (hasMorePages) pages.push(4);
+                              if (hasMorePages) {
+                                pages.push('...');
+                              }
+                            }
+                          } else {
+                            // On page 3+: show [1] ... [current-1] [current] [current+1] ... if has_more
+                            if (currentPageNum > 3) {
+                              pages.push('...');
+                            }
+                            
+                            // Show current page and neighbors
+                            for (let i = Math.max(2, currentPageNum - 1); i <= currentPageNum + 1; i++) {
+                              if (i > 1) { // Don't duplicate page 1
+                                pages.push(i);
+                              }
+                            }
+                            
+                            if (hasMorePages) {
+                              pages.push('...');
+                            }
+                          }
+                          
+                          // Remove duplicates while preserving order
+                          const uniquePages: (number | string)[] = [];
+                          for (const page of pages) {
+                            if (page === '...' || !uniquePages.includes(page)) {
+                              uniquePages.push(page);
+                            }
+                          }
+                          
+                          return uniquePages;
+                        };
+                        
+                        return getVisiblePages().map((page, index) => {
+                          if (page === '...') {
+                            return (
+                              <span key={`ellipsis-${index}`} className="px-2 py-1 text-muted-foreground text-xs">
+                                ...
+                              </span>
+                            );
+                          }
+                          
+                          const pageNum = page as number;
+                          const isCurrentPage = pageNum === currentPageNum;
+                          
+                          return (
+                            <Button
+                              key={pageNum}
+                              variant={isCurrentPage ? "default" : "ghost"}
+                              size="sm"
+                              onClick={() => setUsagePage(pageNum - 1)}
+                              className={`text-xs px-2 py-1 h-6 ${
+                                isCurrentPage 
+                                  ? 'bg-primary text-primary-foreground' 
+                                  : 'text-muted-foreground hover:text-foreground'
+                              }`}
+                            >
+                              {pageNum}
+                            </Button>
+                          );
+                        });
+                      })()}
                     </div>
                     <Button
                       variant="ghost"
