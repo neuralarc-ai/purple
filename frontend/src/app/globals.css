@@ -896,12 +896,68 @@
   margin: 0.75em 0;
   border-radius: 0.375rem;
   border: 1px solid var(--border);
+  max-width: 100%;
+  width: 100%;
+  /* Ensure proper scrolling behavior on all devices */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  /* Force container to be scrollable */
+  contain: layout;
 }
 
 .table-wrapper table {
   margin: 0;
-  min-width: 100%;
   width: max-content; /* Allow table to be wider than container */
+  min-width: 100%;
+  /* Ensure table cells don't wrap text - always use horizontal scroll */
+  white-space: nowrap;
+}
+
+/* Table cells - always use nowrap for consistent horizontal scrolling */
+.table-wrapper th,
+.table-wrapper td {
+  white-space: nowrap !important; /* Always keep text on one line */
+  padding: 0.75rem 1rem; /* Default padding */
+}
+
+/* Enhanced table responsiveness */
+@media (max-width: 1024px) {
+  .table-wrapper {
+    font-size: 0.875rem; /* Smaller text on smaller screens */
+  }
+  
+  .table-wrapper th,
+  .table-wrapper td {
+    padding: 0.5rem 0.75rem; /* Reduce padding on smaller screens */
+  }
+}
+
+@media (max-width: 768px) {
+  .table-wrapper {
+    font-size: 0.8rem; /* Even smaller text on mobile */
+  }
+  
+  .table-wrapper th,
+  .table-wrapper td {
+    padding: 0.375rem 0.5rem; /* Further reduce padding on mobile */
+  }
+}
+
+/* Ensure tables don't cause horizontal scroll in main container */
+.thread-content-container .table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Special handling when side panels are open */
+.side-panel-overflow-handler .table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.side-panel-overflow-handler .table-wrapper table {
+  width: max-content;
+  min-width: 100%;
 }
 
 /* Long content handling */
@@ -953,6 +1009,64 @@
   max-width: 100%;
 }
 
+/* Ensure main content container never overflows horizontally */
+.thread-content-container {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Specific handling for chat markdown content */
+.prose.chat-markdown {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+
+.prose.chat-markdown * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Enhanced table handling in chat markdown */
+.prose.chat-markdown .table-wrapper {
+  max-width: 100%;
+  width: 100%;
+  overflow-x: auto;
+  margin: 0.75em 0;
+  /* Ensure consistent scrolling behavior */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.prose.chat-markdown table {
+  width: max-content; /* Allow table to be wider than container */
+  min-width: 100%;
+  table-layout: auto;
+}
+
+/* Ensure all chat markdown table cells use nowrap */
+.prose.chat-markdown th,
+.prose.chat-markdown td {
+  white-space: nowrap !important; /* Always use horizontal scroll, never wrap */
+}
+
+/* Responsive table behavior - maintain nowrap but adjust sizing */
+@media (max-width: 1024px) {
+  .prose.chat-markdown th,
+  .prose.chat-markdown td {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .prose.chat-markdown th,
+  .prose.chat-markdown td {
+    padding: 0.375rem 0.5rem; /* Smaller padding on mobile */
+    font-size: 0.8rem; /* Smaller text on mobile */
+  }
+}
+
 /* Handle long text in tool call side panel */
 .tool-call-content {
   word-break: break-word;
@@ -966,12 +1080,20 @@
   max-width: 100%;
 }
 
+/* Prevent horizontal overflow on all screen sizes */
+html, body {
+  overflow-x: hidden;
+}
+
+/* Ensure all elements can shrink to prevent overflow */
+* {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 @media (max-width: 452px) {
   html, body {
     overflow-x: clip;
-  }
-  * {
-    min-width: 0; /* prevent child from forcing overflow */
   }
 
   /* Chat input container styles */

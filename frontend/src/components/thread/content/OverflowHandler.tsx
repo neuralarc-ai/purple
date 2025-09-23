@@ -12,8 +12,17 @@ function hasProblematicContent(content: string): boolean {
   const urlRegex = /https?:\/\/[^\s]{50,}/;
   if (urlRegex.test(content)) return true;
   
-  // Check for tables
-  if (content.includes('|') && content.split('\n').some(line => line.includes('|'))) return true;
+  // Check for tables (markdown tables with | separators)
+  const lines = content.split('\n');
+  const tableLines = lines.filter(line => line.includes('|') && line.trim().length > 0);
+  if (tableLines.length >= 2) {
+    // Check if it looks like a proper table (has header separator)
+    const hasHeaderSeparator = tableLines.some(line => /^\s*\|?[\s\-\|:]+\|?\s*$/.test(line));
+    if (hasHeaderSeparator) return true;
+    
+    // Or if multiple consecutive lines have pipes (likely a table)
+    if (tableLines.length >= 3) return true;
+  }
   
   // Check for code blocks
   if (content.includes('```') || content.includes('<pre>')) return true;
@@ -21,6 +30,10 @@ function hasProblematicContent(content: string): boolean {
   // Check for very long words (more than 50 characters)
   const longWordRegex = /\S{50,}/;
   if (longWordRegex.test(content)) return true;
+  
+  // Check for wide content that might overflow
+  const wideContentRegex = /\S{100,}/;
+  if (wideContentRegex.test(content)) return true;
   
   return false;
 }

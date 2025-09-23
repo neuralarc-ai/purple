@@ -156,7 +156,7 @@ const CUSTOM_COMPONENTS = {
   },
   table: function Table({ children, ...props }: any) {
     return (
-      <div className="table-wrapper overflow-x-auto my-3 border border-slate-300 dark:border-zinc-700 rounded-md">
+      <div className="table-wrapper overflow-x-auto my-3 border border-slate-300 dark:border-zinc-700 rounded-md max-w-full">
         <table className="w-full border-collapse text-sm min-w-0" {...props}>
           {children}
         </table>
@@ -225,6 +225,7 @@ function MarkdownComponent({
       className={cn(
         'prose-code:before:hidden prose-code:after:hidden',
         enableOverflowHandling && 'thread-content-container',
+        'min-w-0 max-w-full', // Ensure container can shrink and doesn't overflow
         className,
       )}
     >
