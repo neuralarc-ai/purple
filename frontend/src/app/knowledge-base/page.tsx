@@ -1412,7 +1412,7 @@ export default function KnowledgeBasePage() {
 
 
 
-  const useTemplate = (templateName: string) => {
+  const applyTemplate = (templateName: string) => {
 
     setNewFolderName(templateName);
 
@@ -2272,7 +2272,7 @@ export default function KnowledgeBasePage() {
 
                                   className="p-3 rounded-lg bg-muted/20 border border-border/30 hover:bg-muted/30 transition-colors cursor-pointer"
 
-                                  onClick={() => useTemplate(template.name)}
+                                  onClick={() => applyTemplate(template.name)}
 
                                 >
 
