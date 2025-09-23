@@ -78,8 +78,27 @@ class ToolsListResponse(BaseModel):
 class ToolkitService:
     def __init__(self, api_key: Optional[str] = None):
         self.client = ComposioClient.get_client(api_key)
-        self._all_toolkits_cache_key = "all_toolkits"
-        self._categorized_cache_key = "categorized_toolkits"
+        # Use new cache keys to invalidate older, unfiltered caches
+        self._all_toolkits_cache_key = "all_toolkits:drive_only:v2"
+        self._categorized_cache_key = "categorized_toolkits:drive_only:v2"
+
+    def _is_drive_toolkit(self, slug: str, name: str, tags: List[str], categories: List[str]) -> bool:
+        s = (slug or "").lower()
+        n = (name or "").lower()
+        kw = {"drive", "storage", "cloud", "file", "files", "share", "box", "dropbox", "sharepoint", "onedrive", "google drive", "googledrive"}
+        # check slug/name keywords
+        if any(k in s for k in kw) or any(k in n for k in kw):
+            return True
+        # check tags and categories strings
+        for t in (tags or []):
+            tl = str(t).lower()
+            if any(k in tl for k in kw):
+                return True
+        for c in (categories or []):
+            cl = str(c).lower()
+            if any(k in cl for k in kw):
+                return True
+        return False
     
     async def _fetch_all_toolkits_from_api(self) -> List[ToolkitInfo]:
         """Fetch all toolkits from API and cache them"""
@@ -153,9 +172,14 @@ class ToolkitService:
                 if not description:
                     description = toolkit_data.get("description")
                 
+                slug = (toolkit_data.get("slug", "") or "").strip()
+                name = toolkit_data.get("name", "")
+                if not self._is_drive_toolkit(slug, name, tags, categories):
+                    continue
+
                 toolkit = ToolkitInfo(
-                    slug=toolkit_data.get("slug", ""),
-                    name=toolkit_data.get("name", ""),
+                    slug=slug,
+                    name=name,
                     description=description,
                     logo=logo_url,
                     tags=tags,
@@ -268,9 +292,14 @@ class ToolkitService:
                 if not description:
                     description = toolkit_data.get("description")
                 
+                slug = (toolkit_data.get("slug", "") or "").strip()
+                name = toolkit_data.get("name", "")
+                if not self._is_drive_toolkit(slug, name, tags, categories):
+                    continue
+
                 toolkit = ToolkitInfo(
-                    slug=toolkit_data.get("slug", ""),
-                    name=toolkit_data.get("name", ""),
+                    slug=slug,
+                    name=name,
                     description=description,
                     logo=logo_url,
                     tags=tags,

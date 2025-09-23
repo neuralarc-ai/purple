@@ -71,6 +71,13 @@ export const ProfileConnector: React.FC<ProfileConnectorProps> = ({
     isComposioStep && step.app_slug !== 'composio' ? step.app_slug : undefined,
     undefined
   );
+  // Restrict UI to drive-like apps only
+  const isDriveSlug = (slug?: string, name?: string) => {
+    const s = (slug || '').toLowerCase();
+    const n = (name || '').toLowerCase();
+    const kws = ['drive', 'storage', 'cloud', 'file', 'files', 'box', 'dropbox', 'sharepoint', 'onedrive', 'google drive', 'googledrive'];
+    return kws.some(k => s.includes(k) || n.includes(k));
+  };
   const configProperties = serverDetails?.connections?.[0]?.configSchema?.properties || {};
   const requiredFields = serverDetails?.connections?.[0]?.configSchema?.required || [];
   
@@ -85,7 +92,9 @@ export const ProfileConnector: React.FC<ProfileConnectorProps> = ({
   }, [step.qualified_name]);
 
   const mockComposioApp = useMemo(() => {
-    const actualToolkit = composioToolkits?.toolkits?.find(t => t.slug === step.app_slug);
+    const actualToolkit = composioToolkits?.toolkits
+      ?.filter(t => isDriveSlug(t.slug, t.name))
+      .find(t => t.slug === step.app_slug);
     return actualToolkit || {
       slug: step.app_slug || step.qualified_name,
       name: step.service_name,
