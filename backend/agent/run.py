@@ -54,7 +54,6 @@ class AgentConfig:
     enable_context_manager: bool = True
     agent_config: Optional[dict] = None
     trace: Optional[StatefulTraceClient] = None
-    mode: Optional[str] = 'default'  # Add mode parameter
 
 
 class ToolManager:
@@ -250,12 +249,12 @@ class PromptManager:
                                   thread_id: str, 
                                   mcp_wrapper_instance: Optional[MCPToolWrapper],
                                   client=None, user_input: Optional[str] = None,
-                                  mode: str = 'agent') -> dict:
+) -> dict:
         
         # Continue with normal system prompt logic
-        default_system_content = get_system_prompt(mode)
-        logger.info(f"PROMPT DEBUG: Mode={mode}, Prompt length={len(default_system_content)}")
-        logger.debug(f"PromptManager: Mode={mode}, Default system content length={len(default_system_content)}")
+        default_system_content = get_system_prompt('agent')
+        logger.info(f"PROMPT DEBUG: Using agent mode, Prompt length={len(default_system_content)}")
+        logger.debug(f"PromptManager: Using agent mode, Default system content length={len(default_system_content)}")
         
         if "anthropic" not in model_name.lower():
             sample_response_path = os.path.join(os.path.dirname(__file__), 'sample_responses/1.txt')
@@ -270,20 +269,20 @@ class PromptManager:
             if agent_config.get('system_prompt') and 'builder' in agent_config.get('system_prompt', '').lower():
                 system_content = get_agent_builder_prompt()
                 logger.debug(f"PromptManager: Using agent builder prompt")
-            elif agent_config.get('system_prompt') and mode == 'agent':
-                # Only use agent's custom system prompt in agent mode
+            elif agent_config.get('system_prompt'):
+                # Use agent's custom system prompt
                 system_content = agent_config['system_prompt'].strip()
-                logger.debug(f"PromptManager: Using agent's custom system prompt (agent mode)")
+                logger.debug(f"PromptManager: Using agent's custom system prompt")
             else:
-                # Use mode-specific prompt (simple chat or agent mode)
+                # Use default system prompt
                 system_content = default_system_content
-                logger.debug(f"PromptManager: Using mode-specific prompt (mode={mode})")
+                logger.debug(f"PromptManager: Using default system prompt")
         else:
             system_content = default_system_content
-            logger.debug(f"PromptManager: No agent config, using mode-specific prompt (mode={mode})")
+            logger.debug(f"PromptManager: No agent config, using default system prompt")
         
-        # Add agent knowledge base context if available (agent mode only)
-        if mode == 'agent' and client and agent_config and agent_config.get('agent_id'):
+        # Add agent knowledge base context if available
+        if client and agent_config and agent_config.get('agent_id'):
             try:
                 logger.debug(f"Retrieving agent knowledge base context for agent {agent_config['agent_id']}")
                 
@@ -316,8 +315,8 @@ IMPORTANT: Always reference and utilize the knowledge base information above whe
                 logger.error(f"Error retrieving knowledge base context for agent {agent_config.get('agent_id', 'unknown')}: {e}")
                 # Continue without knowledge base context rather than failing
         
-        # Add smart user DAGAD context and user personalization if available (agent mode only)
-        if mode == 'agent' and client and thread_id:
+        # Add smart user DAGAD context and user personalization if available
+        if client and thread_id:
             try:
                 # --- Fetch recent thread context for DAGAD ---
                 account_id = await get_account_id_from_thread(client, thread_id)
@@ -504,7 +503,7 @@ class MessageManager:
         self.agent_config = agent_config
         self.enable_context_manager = enable_context_manager
     
-    async def build_temporary_message(self, mode: str = 'agent') -> Optional[dict]:
+    async def build_temporary_message(self) -> Optional[dict]:
         """Build temporary message based on configuration and context."""
         system_message = None
         
@@ -515,8 +514,8 @@ class MessageManager:
                 from agent.agent_builder_prompt import AGENT_BUILDER_SYSTEM_PROMPT
                 system_message = AGENT_BUILDER_SYSTEM_PROMPT
         
-        # Add agent config system prompt only in agent mode
-        if not system_message and self.agent_config and 'system_prompt' in self.agent_config and mode == 'agent':
+        # Add agent config system prompt
+        if not system_message and self.agent_config and 'system_prompt' in self.agent_config:
             system_prompt = self.agent_config['system_prompt']
             if system_prompt:
                 system_message = system_prompt
@@ -708,41 +707,40 @@ class AgentRunner:
                     continue_execution = False
                     break
 
-            temporary_message = await message_manager.build_temporary_message(self.config.mode)
+            temporary_message = await message_manager.build_temporary_message()
             max_tokens = self.get_max_tokens()
             
             generation = self.config.trace.generation(name="thread_manager.run_thread") if self.config.trace else None
             try:
-                # Configure strict no-tools behavior for simple chat (mode == 'default')
-                simple_chat_mode = (self.config.mode == 'default')
+                # Configure agent mode behavior
                 response = await self.thread_manager.run_thread(
                     thread_id=self.config.thread_id,
                     system_prompt=system_message,
-                    stream=(True if simple_chat_mode else self.config.stream),
+                    stream=self.config.stream,
                     llm_model=self.config.model_name,
                     llm_temperature=0,
                     llm_max_tokens=max_tokens,
-                    tool_choice=("none" if simple_chat_mode else "auto"),
-                    max_xml_tool_calls=(0 if simple_chat_mode else 1),
+                    tool_choice="auto",
+                    max_xml_tool_calls=1,
                     temporary_message=temporary_message,
                     processor_config=ProcessorConfig(
-                        xml_tool_calling=(False if simple_chat_mode else True),
+                        xml_tool_calling=True,
                         native_tool_calling=False,
-                        execute_tools=self.config.mode == 'agent',  # Only execute tools in agent mode
-                        execute_on_stream=not simple_chat_mode,
+                        execute_tools=True,  # Always execute tools in agent mode
+                        execute_on_stream=True,
                         tool_execution_strategy="parallel",
                         xml_adding_strategy="user_message"
                     ),
-                    native_max_auto_continues=(0 if simple_chat_mode else self.config.native_max_auto_continues),
-                    include_xml_examples=not simple_chat_mode,
-                    enable_thinking=(False if simple_chat_mode else self.config.enable_thinking),
+                    native_max_auto_continues=self.config.native_max_auto_continues,
+                    include_xml_examples=True,
+                    enable_thinking=self.config.enable_thinking,
                     reasoning_effort=self.config.reasoning_effort,
                     enable_context_manager=self.config.enable_context_manager,
                     generation=generation,
-                    simple_chat_mode=simple_chat_mode
+                    simple_chat_mode=False
                 )
-                logger.info(f"DEBUG: Mode={self.config.mode}, execute_tools={self.config.mode == 'agent'}")
-                logger.debug(f"AgentRunner: Mode={self.config.mode}, execute_tools={self.config.mode == 'agent'}")
+                logger.info(f"DEBUG: Using agent mode, execute_tools=True")
+                logger.debug(f"AgentRunner: Using agent mode, execute_tools=True")
 
                 if isinstance(response, dict) and "status" in response and response["status"] == "error":
                     yield response
@@ -860,27 +858,19 @@ async def run_agent(
     reasoning_effort: Optional[str] = 'low',
     enable_context_manager: bool = True,
     agent_config: Optional[dict] = None,    
-    trace: Optional[StatefulTraceClient] = None,
-    mode: Optional[str] = 'default'  # Add mode parameter
+    trace: Optional[StatefulTraceClient] = None
 ):
-    # Resolve effective model based on explicit selection or mode
+    # Resolve effective model based on explicit selection
     effective_model = model_name
-    if (mode or 'default') == 'default':
-        # In simple chat mode, always use Gemini Flash regardless of provided model
-        effective_model = "vertex_ai/gemini-2.5-flash"
-        logger.debug(f"Forcing model to Gemini Flash in default mode: {effective_model}")
-    elif model_name and model_name != "openai/gpt-5-mini":
+    if model_name and model_name != "openai/gpt-5-mini":
         logger.debug(f"Using user-selected model: {effective_model}")
     elif agent_config and agent_config.get('model') and model_name == "openai/gpt-5-mini":
         effective_model = agent_config['model']
         logger.debug(f"Using model from agent config: {effective_model} (no user selection)")
     else:
-        # Choose defaults based on mode
-        if (mode or 'default') == 'default':
-            effective_model = "vertex_ai/gemini-2.5-flash"
-        else:
-            effective_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
-        logger.debug(f"Using mode-based default model: {effective_model} (mode={mode})")
+        # Use default model
+        effective_model = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
+        logger.debug(f"Using default model: {effective_model}")
 
     config = AgentConfig(
         thread_id=thread_id,
@@ -894,7 +884,6 @@ async def run_agent(
         enable_context_manager=enable_context_manager,
         agent_config=agent_config,
         trace=trace,
-        mode=mode  # Add mode parameter
     )
     
     runner = AgentRunner(config)

@@ -21,7 +21,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ModeToggle } from './mode-toggle';
 import { isProductionMode } from '@/lib/config';
 
 // Custom Attach Icon component
@@ -87,8 +86,6 @@ interface MessageInputProps {
   enableAdvancedConfig?: boolean;
   hideAgentSelection?: boolean;
   isHeliumAgent?: boolean;
-  selectedMode: 'default' | 'agent';
-  onModeChange: (mode: 'default' | 'agent') => void;
   // New props for integrations
   onOpenIntegrations?: () => void;
   onOpenInstructions?: () => void;
@@ -135,8 +132,6 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       enableAdvancedConfig = false,
       hideAgentSelection = false,
       isHeliumAgent,
-      selectedMode,
-      onModeChange,
       onOpenIntegrations,
     },
     ref,
@@ -339,13 +334,6 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
 
         <div className="flex items-center justify-between mt-0 mb-1 px-2">
           <div className="flex items-center gap-2">
-            {/* Mode Toggle */}
-            <ModeToggle
-              selectedMode={selectedMode}
-              onModeChange={onModeChange}
-              disabled={loading || (disabled && !isAgentRunning)}
-            />
-            
             {!hideAttachments && (
               <>
                 {/* Attachment Button */}

@@ -1291,11 +1291,8 @@ When adding integrations to newly created agents:
 
 
 def get_system_prompt(mode: str = 'agent'):
-    """Get system prompt based on the mode."""
-    if mode == 'default':
-        return get_simple_chat_prompt()
-    else:
-        return SYSTEM_PROMPT
+    """Get system prompt - always returns agent mode prompt."""
+    return SYSTEM_PROMPT
 
 def get_simple_chat_prompt():
     """System prompt for simple chat mode - no tool execution."""

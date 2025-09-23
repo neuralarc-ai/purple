@@ -462,7 +462,6 @@ class AgentExecutor:
             enable_context_manager=True,
             agent_config=agent_config,
             request_id=structlog.contextvars.get_contextvars().get('request_id'),
-            mode='agent',
         )
         
         logger.debug(f"Started agent execution: {agent_run_id}")
@@ -742,7 +741,6 @@ class WorkflowExecutor:
             enable_context_manager=True,
             agent_config=agent_config,
             request_id=None,
-            mode='agent',
         )
         
         logger.debug(f"Started workflow agent execution: {agent_run_id}")

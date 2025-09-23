@@ -15,7 +15,6 @@ import { handleFiles } from './file-upload-handler';
 import { MessageInput } from './message-input';
 import { AttachmentGroup } from '../attachment-group';
 import { useModelSelection } from './_use-model-selection';
-import { useModeSelection, STORAGE_KEY_MODE } from './_use-mode-selection';
 import { useFileDelete } from '@/hooks/react-query/files';
 import { useQueryClient } from '@tanstack/react-query';
 import { ToolCallInput } from './floating-tool-preview';
@@ -44,7 +43,6 @@ export interface ChatInputProps {
       model_name?: string;
       enable_thinking?: boolean;
       agent_id?: string;
-      mode?: 'default' | 'agent';
       enable_context_manager?: boolean;
       reasoning_effort?: string;
     },
@@ -161,11 +159,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       refreshCustomModels,
     } = useModelSelection();
 
-    const {
-      selectedMode,
-      setSelectedMode: handleModeChange,
-      hasInitialized: modeInitialized,
-    } = useModeSelection();
 
     const { data: subscriptionData } = useSubscriptionData();
     const deleteFileMutation = useFileDelete();
@@ -407,16 +400,8 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
           thinkingEnabled = true;
         }
 
-        // Determine the most up-to-date mode at submit time to avoid race conditions
-        let effectiveMode = selectedMode;
-        if (typeof window !== 'undefined') {
-          const latest = localStorage.getItem(STORAGE_KEY_MODE);
-          if (latest === 'default' || latest === 'agent') {
-            effectiveMode = latest as typeof effectiveMode;
-          }
-        }
-
-        const modeConfig = getModeConfiguration(effectiveMode, thinkingEnabled);
+        // Use agent mode configuration by default
+        const modeConfig = getModeConfiguration('agent', thinkingEnabled);
 
         // Track analytics asynchronously to avoid blocking
         setTimeout(() => {
@@ -450,66 +435,25 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       }
     };
 
-    // Helper function to get mode-based configuration
+    // Helper function to get agent configuration
     const getModeConfiguration = (mode: string, thinkingEnabled: boolean) => {
-      switch(mode) {
-        case 'default':
-          return {
-            enable_context_manager: false,
-            reasoning_effort: 'minimal',
-            enable_thinking: false,
-            max_tokens: 100, // Reduced for faster response
-            temperature: 0.5, // Lower temperature for more focused responses
-            stream: true,
-            enable_tools: true,
-            enable_search: true,
-            response_timeout: 5000, // 5 seconds timeout for ultra-fast response
-            chunk_size: 25, // Ultra-small chunks for immediate streaming
-            buffer_size: 50, // Smaller buffer for instant display
-            // Additional ultra-fast optimizations
-            enable_parallel_processing: true,
-            skip_initial_validation: true,
-            use_fast_model: true,
-            cache_responses: true
-          };
-        case 'agent':
-          return {
-            enable_context_manager: true,
-            reasoning_effort: thinkingEnabled ? 'medium' : 'low', // Reduced reasoning effort
-            enable_thinking: thinkingEnabled,
-            max_tokens: 500, // Reduced for faster response
-            temperature: 0.3,
-            stream: true,
-            enable_tools: true,
-            enable_search: true,
-            response_timeout: 15000, // 15 seconds for faster complex tasks
-            chunk_size: 75, // Smaller chunks for faster streaming
-            buffer_size: 150, // Smaller buffer for faster display
-            // Additional optimizations
-            enable_parallel_processing: true,
-            skip_initial_validation: false,
-            use_fast_model: false,
-            cache_responses: true
-          };
-        default:
-          return {
-            enable_context_manager: false,
-            reasoning_effort: 'minimal',
-            enable_thinking: false,
-            max_tokens: 100,
-            temperature: 0.5,
-            stream: true,
-            enable_tools: true,
-            enable_search: true,
-            response_timeout: 5000,
-            chunk_size: 25,
-            buffer_size: 50,
-            enable_parallel_processing: true,
-            skip_initial_validation: true,
-            use_fast_model: true,
-            cache_responses: true
-          };
-      }
+      return {
+        enable_context_manager: true,
+        reasoning_effort: thinkingEnabled ? 'medium' : 'low',
+        enable_thinking: thinkingEnabled,
+        max_tokens: 500,
+        temperature: 0.3,
+        stream: true,
+        enable_tools: true,
+        enable_search: true,
+        response_timeout: 15000,
+        chunk_size: 75,
+        buffer_size: 150,
+        enable_parallel_processing: true,
+        skip_initial_validation: false,
+        use_fast_model: false,
+        cache_responses: true
+      };
     };
 
     const handleStopAgent = () => {
@@ -528,12 +472,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
       }
     };
 
-    // Auto-switch to agent mode when files are uploaded
-    useEffect(() => {
-      if (uploadedFiles.length > 0 && selectedMode !== 'agent') {
-        handleModeChange('agent');
-      }
-    }, [uploadedFiles.length, selectedMode, handleModeChange]);
 
     // Track the original text before voice input starts
     const originalTextRef = useRef<string>('');
@@ -731,8 +669,6 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
                   selectedAgentId={selectedAgentId}
                   onAgentSelect={onAgentSelect}
                   hideAgentSelection={hideAgentSelection}
-                  selectedMode={selectedMode}
-                  onModeChange={handleModeChange}
                   onOpenIntegrations={() => setRegistryDialogOpen(true)}
                   onOpenInstructions={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=instructions`)}
                   onOpenKnowledge={() => router.push(`/agents/config/${selectedAgentId}?tab=configuration&accordion=knowledge`)}

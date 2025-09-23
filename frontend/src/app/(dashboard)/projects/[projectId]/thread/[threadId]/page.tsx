@@ -56,7 +56,6 @@ import { useAuth } from '@/components/AuthProvider';
 import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
 import { BillingModal } from '@/components/billing/billing-modal';
 import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
-import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
 import { useCreateTrigger } from '@/hooks/react-query/triggers/use-agent-triggers';
 
 export default function ThreadPage({
@@ -74,8 +73,6 @@ export default function ThreadPage({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isSidebarOverlaying } = useContext(LayoutContext);
-  // Read current mode (simple chat 'default' vs 'agent')
-  const { selectedMode } = useModeSelection();
   
 
   // Enable real-time updates for usage data
@@ -762,16 +759,14 @@ export default function ThreadPage({
     if (initialLoadCompleted && !initialPanelOpenAttempted) {
       setInitialPanelOpenAttempted(true);
 
-      // Only auto-open in agent mode on desktop
-      if (!isMobile && selectedMode === 'agent') {
+      // Auto-open side panel on desktop when there are tool calls or messages
+      if (!isMobile) {
         if (toolCalls.length > 0) {
           setIsSidePanelOpen(true);
           setCurrentToolIndex(toolCalls.length - 1);
         } else if (messages.length > 0) {
           setIsSidePanelOpen(true);
         }
-      } else if (selectedMode === 'default') {
-        setIsSidePanelOpen(false);
       }
     }
   }, [
@@ -782,18 +777,8 @@ export default function ThreadPage({
     setIsSidePanelOpen,
     setCurrentToolIndex,
     isMobile,
-    selectedMode,
   ]);
 
-  // Keep side panel visibility in sync with mode switches
-  useEffect(() => {
-    if (!initialLoadCompleted) return;
-    if (selectedMode === 'agent') {
-      setIsSidePanelOpen(true);
-    } else {
-      setIsSidePanelOpen(false);
-    }
-  }, [selectedMode, initialLoadCompleted, setIsSidePanelOpen]);
 
   useEffect(() => {
     // Start streaming if user initiated a run (don't wait for initialLoadCompleted for first-time users)

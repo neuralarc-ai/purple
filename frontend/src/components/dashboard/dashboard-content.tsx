@@ -314,7 +314,6 @@ export function DashboardContent() {
       reasoning_effort?: string;
       stream?: boolean;
       enable_context_manager?: boolean;
-      mode?: 'default' | 'agent';
     },
   ) => {
     if (
@@ -349,21 +348,16 @@ export function DashboardContent() {
         formData.append('files', file, normalizedName);
       });
 
-      // Handle mode-based configuration asynchronously
-      if (options?.mode) {
-        const modeConfig = getModeConfiguration(options.mode, options.enable_thinking ?? false);
-        formData.append('mode', options.mode);
-        formData.append('enable_thinking', String(options.enable_thinking ?? false));
-        formData.append('reasoning_effort', modeConfig.reasoning_effort);
-        formData.append('enable_context_manager', String(modeConfig.enable_context_manager));
-      } else {
-        // Fallback to direct options
-        if (options?.model_name) formData.append('model_name', options.model_name);
-        formData.append('enable_thinking', String(options?.enable_thinking ?? false));
-        formData.append('reasoning_effort', options?.reasoning_effort ?? 'low');
-        formData.append('stream', String(options?.stream ?? true));
-        formData.append('enable_context_manager', String(options?.enable_context_manager ?? false));
-      }
+      // Use agent mode configuration
+      const modeConfig = getModeConfiguration('agent', options?.enable_thinking ?? false);
+      formData.append('mode', 'agent');
+      formData.append('enable_thinking', String(options?.enable_thinking ?? false));
+      formData.append('reasoning_effort', modeConfig.reasoning_effort);
+      formData.append('enable_context_manager', String(modeConfig.enable_context_manager));
+      
+      // Add other options
+      if (options?.model_name) formData.append('model_name', options.model_name);
+      formData.append('stream', String(options?.stream ?? true));
 
       // Submit the request
       const result = await initiateAgentMutation.mutateAsync({
@@ -404,66 +398,25 @@ export function DashboardContent() {
     }
   };
 
-  // Helper function to get mode-based configuration
+  // Helper function to get agent configuration
   const getModeConfiguration = (mode: string, thinkingEnabled: boolean) => {
-    switch(mode) {
-      case 'default':
-        return {
-          enable_context_manager: false,
-          reasoning_effort: 'low',
-          enable_thinking: false,
-          max_tokens: 100, // Reduced for faster response
-          temperature: 0.3, // Lower temperature for more focused responses
-          stream: true,
-          enable_tools: true,
-          enable_search: true,
-          response_timeout: 5000, // 5 seconds timeout for ultra-fast response
-          chunk_size: 25, // Ultra-small chunks for immediate streaming
-          buffer_size: 50, // Smaller buffer for instant display
-          // Additional ultra-fast optimizations
-          enable_parallel_processing: true,
-          skip_initial_validation: true,
-          use_fast_model: true,
-          cache_responses: true
-        };
-      case 'agent':
-        return {
-          enable_context_manager: true,
-          reasoning_effort: thinkingEnabled ? 'high' : 'medium', // Reduced reasoning effort
-          enable_thinking: thinkingEnabled,
-          max_tokens: 500, // Reduced for faster response
-          temperature: 0.3,
-          stream: true,
-          enable_tools: true,
-          enable_search: true,
-          response_timeout: 15000, // 15 seconds for faster complex tasks
-          chunk_size: 75, // Smaller chunks for faster streaming
-          buffer_size: 150, // Smaller buffer for faster display
-          // Additional optimizations
-          enable_parallel_processing: true,
-          skip_initial_validation: false,
-          use_fast_model: false,
-          cache_responses: true
-        };
-      default:
-        return {
-          enable_context_manager: false,
-          reasoning_effort: 'low',
-          enable_thinking: false,
-          max_tokens: 100,
-          temperature: 0.3,
-          stream: true,
-          enable_tools: true,
-          enable_search: true,
-          response_timeout: 5000,
-          chunk_size: 25,
-          buffer_size: 50,
-          enable_parallel_processing: true,
-          skip_initial_validation: true,
-          use_fast_model: true,
-          cache_responses: true
-        };
-    }
+    return {
+      enable_context_manager: true,
+      reasoning_effort: thinkingEnabled ? 'high' : 'medium',
+      enable_thinking: thinkingEnabled,
+      max_tokens: 500,
+      temperature: 0.3,
+      stream: true,
+      enable_tools: true,
+      enable_search: true,
+      response_timeout: 15000,
+      chunk_size: 75,
+      buffer_size: 150,
+      enable_parallel_processing: true,
+      skip_initial_validation: false,
+      use_fast_model: false,
+      cache_responses: true
+    };
   };
 
   useEffect(() => {
