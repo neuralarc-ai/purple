@@ -11,6 +11,7 @@ import { HtmlRenderer } from './html-renderer';
 import { constructHtmlPreviewUrl } from '@/lib/utils/url';
 import { CsvRenderer } from './csv-renderer';
 import { XlsxRenderer } from './xlsx-renderer';
+import { VideoRenderer } from './video-renderer';
 
 export type FileType =
   | 'markdown'
@@ -20,7 +21,8 @@ export type FileType =
   | 'text'
   | 'binary'
   | 'csv'
-  | 'xlsx';
+  | 'xlsx'
+  | 'video';
 
 interface FileRendererProps {
   content: string | null;
@@ -102,6 +104,7 @@ export function getFileTypeFromExtension(fileName: string): FileType {
   const csvExtensions = ['csv', 'tsv'];
   const xlsxExtensions = ['xlsx', 'xls'];
   const textExtensions = ['txt', 'log', 'env', 'ini'];
+  const videoExtensions = ['mp4', 'webm', 'mov', 'avi', 'mkv', 'flv', 'wmv'];
 
   if (markdownExtensions.includes(extension)) {
     return 'markdown';
@@ -115,6 +118,8 @@ export function getFileTypeFromExtension(fileName: string): FileType {
     return 'csv';
   } else if (xlsxExtensions.includes(extension)) {
     return 'xlsx';
+  } else if (videoExtensions.includes(extension)) {
+    return 'video';
   } else if (textExtensions.includes(extension)) {
     return 'text';
   } else {
@@ -207,6 +212,13 @@ export function FileRenderer({
         <ImageRenderer url={binaryUrl} />
       ) : fileType === 'pdf' && binaryUrl ? (
         <PdfRenderer url={binaryUrl} />
+      ) : fileType === 'video' && binaryUrl ? (
+        <VideoRenderer 
+          url={binaryUrl} 
+          fileName={fileName}
+          onDownload={onDownload}
+          isDownloading={isDownloading}
+        />
       ) : fileType === 'markdown' ? (
         <MarkdownRenderer content={content || ''} ref={markdownRef} />
       ) : fileType === 'csv' ? (
