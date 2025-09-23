@@ -19,6 +19,7 @@ HELIUM_CONFIG = {
         "web_search_tool": True,
         "sb_vision_tool": True,
         "sb_image_edit_tool": True,
+        "sb_video_generation_tool": True,
         "sb_presentation_outline_tool": False,
         "sb_presentation_tool": False,
         "sb_sheets_tool": True,
