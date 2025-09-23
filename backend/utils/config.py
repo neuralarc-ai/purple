@@ -179,6 +179,14 @@ class Configuration:
     XAI_API_KEY: Optional[str] = None
     MORPH_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
+    # Veo / Gemini Video generation defaults & feature flag
+    ENABLE_VEO_VIDEO_TOOL: bool = True
+    VEO_MODEL_DEFAULT: str = "veo-3.0-generate-001"
+    VEO_ASPECT_RATIO_DEFAULT: str = "16:9"  # "16:9" | "9:16"
+    VEO_RESOLUTION_DEFAULT: str = "720p"     # "720p" | "1080p" (1080p only valid with 16:9)
+    VEO_PERSON_GENERATION_DEFAULT: str = "allow_all"  # region restrictions may apply
+    VEO_POLL_SECONDS: int = 10
+    VEO_MAX_POLLS: int = 60  # ~10 minutes max
     
     # Google Vertex AI / Gemini via LiteLLM
     VERTEXAI_PROJECT: Optional[str] = None

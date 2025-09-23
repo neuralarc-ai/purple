@@ -13,6 +13,7 @@ import { WebScrapeToolView } from '../web-scrape-tool/WebScrapeToolView';
 import { WebSearchToolView } from '../web-search-tool/WebSearchToolView';
 import { SeeImageToolView } from '../see-image-tool/SeeImageToolView';
 import { ImageEditGenerateToolView } from '../image-edit-generate-tool/ImageEditGenerateToolView';
+import { VideoGenerationToolView } from '../video-generation-tool/VideoGenerationToolView';
 import { TerminateCommandToolView } from '../command-tool/TerminateCommandToolView';
 import { AskToolView } from '../ask-tool/AskToolView';
 import { CompleteToolView } from '../CompleteToolView';
@@ -80,6 +81,7 @@ const defaultRegistry: ToolViewRegistryType = {
 
   'see-image': SeeImageToolView,
   'image_edit_or_generate': ImageEditGenerateToolView,
+  'generate_video': VideoGenerationToolView,
 
   'ask': AskToolView,
   'complete': CompleteToolView,
