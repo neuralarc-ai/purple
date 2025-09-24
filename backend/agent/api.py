@@ -1412,11 +1412,45 @@ async def get_agents(
     tools: Optional[str] = Query(None, description="Comma-separated list of tools to filter by")
 ):
     """Get agents for the current user with pagination, search, sort, and filter support."""
+    
+    # When custom agents are disabled, return only the default Helium agent
     if not await is_enabled("custom_agents"):
-        raise HTTPException(
-            status_code=403, 
-            detail="Custom agents currently disabled. This feature is not available at the moment."
-        )
+        from agent.helium_config import HELIUM_CONFIG
+        default_agent = {
+            "agent_id": "helium-default",
+            "name": HELIUM_CONFIG["name"],
+            "description": HELIUM_CONFIG["description"],
+            "system_prompt": HELIUM_CONFIG["system_prompt"],
+            "configured_mcps": HELIUM_CONFIG["configured_mcps"],
+            "custom_mcps": HELIUM_CONFIG["custom_mcps"],
+            "agentpress_tools": HELIUM_CONFIG["agentpress_tools"],
+            "is_default": HELIUM_CONFIG["is_default"],
+            "avatar": HELIUM_CONFIG["avatar"],
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z",
+            "metadata": {
+                "is_helium_default": True,
+                "centrally_managed": True,
+                "management_version": "1.0.0",
+                "restrictions": {
+                    "system_prompt_editable": False,
+                    "tools_editable": False,
+                    "name_editable": False,
+                    "description_editable": False,
+                    "mcps_editable": False
+                }
+            }
+        }
+        
+        return {
+            "agents": [default_agent],
+            "pagination": {
+                "page": 1,
+                "limit": 1,
+                "total": 1,
+                "pages": 1
+            }
+        }
     logger.debug(f"Fetching agents for user: {user_id} with page={page}, limit={limit}, search='{search}', sort_by={sort_by}, sort_order={sort_order}")
     client = await db.client
     
@@ -1670,6 +1704,38 @@ async def get_agents(
 @router.get("/agents/{agent_id}", response_model=AgentResponse)
 async def get_agent(agent_id: str, user_id: str = Depends(get_current_user_id_from_jwt)):
     """Get a specific agent by ID with current version information. Only the owner can access non-public agents."""
+    
+    # Allow access to default Helium agent even when custom agents are disabled
+    if agent_id == 'helium-default':
+        # Return the default Helium agent configuration
+        from agent.helium_config import HELIUM_CONFIG
+        return {
+            "agent_id": "helium-default",
+            "name": HELIUM_CONFIG["name"],
+            "description": HELIUM_CONFIG["description"],
+            "system_prompt": HELIUM_CONFIG["system_prompt"],
+            "configured_mcps": HELIUM_CONFIG["configured_mcps"],
+            "custom_mcps": HELIUM_CONFIG["custom_mcps"],
+            "agentpress_tools": HELIUM_CONFIG["agentpress_tools"],
+            "is_default": HELIUM_CONFIG["is_default"],
+            "avatar": HELIUM_CONFIG["avatar"],
+            "created_at": "2024-01-01T00:00:00Z",
+            "updated_at": "2024-01-01T00:00:00Z",
+            "metadata": {
+                "is_helium_default": True,
+                "centrally_managed": True,
+                "management_version": "1.0.0",
+                "restrictions": {
+                    "system_prompt_editable": False,
+                    "tools_editable": False,
+                    "name_editable": False,
+                    "description_editable": False,
+                    "mcps_editable": False
+                }
+            }
+        }
+    
+    # For all other agents, check if custom agents are enabled
     if not await is_enabled("custom_agents"):
         raise HTTPException(
             status_code=403, 

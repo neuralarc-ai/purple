@@ -42,14 +42,6 @@ export const MODELS = {
     recommended: true,
     lowQuality: false,
   },
-
-  // Bedrock Models - Claude Sonnet 4 (for sandbox tools)
-  'bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0': {
-    tier: 'free',
-    priority: 91,
-    recommended: false,
-    lowQuality: false,
-  },
 };
 
 // Helper to check if a user can access a model - all models are now available to all users

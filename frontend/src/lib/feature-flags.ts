@@ -39,14 +39,27 @@ export class FeatureFlagManager {
       if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
         return cached.value;
       }
+      
+      // Check if API_URL is configured
+      if (!API_URL) {
+        console.warn(`Backend URL not configured, defaulting feature flag ${flagName} to false`);
+        return false;
+      }
+      
       const response = await fetch(`${API_URL}/feature-flags/${flagName}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
       });
+      
       if (!response.ok) {
         console.warn(`Failed to fetch feature flag ${flagName}: ${response.status}`);
+        // Cache the default value to avoid repeated failed requests
+        flagCache.set(flagName, {
+          value: false,
+          timestamp: Date.now(),
+        });
         return false;
       }
       
@@ -60,12 +73,23 @@ export class FeatureFlagManager {
       return data.enabled;
     } catch (error) {
       console.error(`Error checking feature flag ${flagName}:`, error);
+      // Cache the default value to avoid repeated failed requests
+      flagCache.set(flagName, {
+        value: false,
+        timestamp: Date.now(),
+      });
       return false;
     }
   }
   
   async getFlagDetails(flagName: string): Promise<FeatureFlag | null> {
     try {
+      // Check if API_URL is configured
+      if (!API_URL) {
+        console.warn(`Backend URL not configured, cannot fetch feature flag details for ${flagName}`);
+        return null;
+      }
+      
       const response = await fetch(`${API_URL}/feature-flags/${flagName}`, {
         method: 'GET',
         headers: {
