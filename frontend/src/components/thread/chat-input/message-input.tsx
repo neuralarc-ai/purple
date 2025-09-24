@@ -345,7 +345,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       type="button"
                       size="icon"
                       variant="outline"
-                      className="w-8 h-8 p-0 flex-shrink-0 border-muted-foreground/30 dark:border-muted-foreground/20 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
+                      className="w-8 h-8 p-0 border-none flex-shrink-0 shadow-none rounded-full transition-all duration-200 dark:bg-sidebar hover:bg-background/50!"
                       disabled={
                         !isLoggedIn ||
                         loading ||
@@ -354,7 +354,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       }
                       onClick={handleFileUpload}
                     >
-                      <AttachIcon className="h-4 w-4 text-foreground" />
+                      <AttachIcon className="h-4.5! w-4.5! text-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -370,7 +370,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                         type="button"
                         size="icon"
                         variant="outline"
-                        className="w-8 h-8 flex-shrink-0 border-muted-foreground/30 dark:border-muted-foreground/20 shadow-none rounded-full transition-all duration-200 bg-white dark:bg-sidebar hover:bg-background/50!"
+                        className="w-8 h-8 border-none flex-shrink-0 shadow-none rounded-full transition-all duration-200 dark:bg-sidebar hover:bg-background/50!"
                         disabled={
                           !isLoggedIn ||
                           loading ||
@@ -379,7 +379,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                         }
                         onClick={onOpenIntegrations}
                       >
-                        <ConnectAppsIcon className="h-4 w-4 text-foreground" />
+                        <ConnectAppsIcon className="h-4.5! w-4.5! text-foreground" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
