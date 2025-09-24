@@ -235,7 +235,7 @@ export const FloatingToolPreview: React.FC<FloatingToolPreviewProps> = ({
         >
           <motion.div
             layoutId={CONTENT_LAYOUT_ID}
-            className="bg-white dark:bg-sidebar border border-gray-200 dark:border-ring/50 rounded-xl shadow-[0px_12px_32px_0px_rgba(0,0,0,0.05)] p-3 w-full cursor-pointer group transition-colors"
+            className="bg-white border-black/15 dark:border-muted dark:bg-sidebar rounded-2xl relative overflow-hidden shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border p-3 w-full cursor-pointer group transition-colors"
             onClick={handleClick}
             style={{ opacity: isExpanding ? 0 : 1 }}
           >

@@ -169,13 +169,13 @@ export function DashboardContent() {
     const hour = new Date().getHours();
     
     if (hour >= 5 && hour < 12) {
-      return 'Morning';
+      return 'Good Morning';
     } else if (hour >= 12 && hour < 17) {
-      return 'Afternoon';
+      return 'Good Afternoon';
     } else if (hour >= 17 && hour < 21) {
-      return 'Evening';
+      return 'GoodEvening';
     } else {
-      return 'Evening'; // Night time (21-5)
+      return 'Good Evening'; // Night time (21-5)
     }
   }, []);
 
@@ -485,11 +485,11 @@ export function DashboardContent() {
             )}
             
             <div className="flex-1 flex items-center justify-center px-4 -translate-y-8 xl:-translate-y-16">
-              <div className="w-full max-w-[800px] flex flex-col items-start justify-center space-y-1">
-                <div className="flex flex-col items-start text-left w-full">
+              <div className="w-full max-w-[800px] flex flex-col items-center justify-center space-y-1">
+                <div className="flex flex-col items-center text-center w-full">
                   {/* Time-based greeting with user's name */}
                   {isNameLoaded ? (
-                    <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground libre-baskerville-bold mb-1">
+                    <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-semibold text-foreground mb-1">
                       {getTimeBasedGreeting()}, {cachedUserName}
                     </div>
                   ) : (
@@ -532,14 +532,7 @@ export function DashboardContent() {
               </div>
             </div>
           </div>
-        </div>
-        
-        {/* Disclaimer text at bottom */}
-        <div className="flex-shrink-0 px-4 py-2 text-center">
-          <p className="text-xs text-muted-foreground">
-            Helium can make mistakes. Check important info. See Cookie Preferences.
-          </p>
-        </div>
+        </div>        
         
         <BillingErrorAlert
           message={billingError?.message}

@@ -1443,7 +1443,7 @@ export function ToolCallSidePanel({
             }
           }}
           className={cn(
-            'fixed top-1 bottom-1 lg:bottom-6  md:top-3 right-2 m shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border border-black/10 dark:border-muted rounded-3xl flex flex-col z-60 md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
+            'fixed top-1 bottom-1 lg:bottom-3 md:top-3 right-2 m shadow-md shadow-foreground/5 dark:shadow-sidebar-accent/30 border border-black/10 dark:border-muted rounded-3xl flex flex-col z-60 md:z-30 transition-[width] duration-200 ease-in-out will-change-[width]',
             widthClass,
             'bg-background',
             isResizing && 'select-none',

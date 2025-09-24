@@ -85,16 +85,16 @@ class SandboxVideoGenerationTool(SandboxToolsBase):
         }
     )
     @usage_example("""
-        Text-to-video example:
+        Character-driven narrative example:
         <function_calls>
         <invoke name="generate_video">
-        <parameter name="prompt">A cinematic shot of a majestic lion in the savannah, with the sound of wind blowing through grass</parameter>
+        <parameter name="prompt">A medium shot frames an old sailor, his knitted blue sailor hat casting a shadow over his eyes, a thick grey beard obscuring his chin. He holds his pipe in one hand, gesturing with it towards the churning, grey sea beyond the ship's railing. "This ocean, it's a force, a wild, untamed might. And she commands your awe, with every breaking light." Wind howling through rigging, waves crashing against hull.</parameter>
         <parameter name="aspect_ratio">16:9</parameter>
         <parameter name="resolution">1080p</parameter>
         </invoke>
         </function_calls>
         
-        Image-to-video example:
+        World-building with atmosphere example:
         <function_calls>
         <invoke name="generate_video">
         <parameter name="prompt">The bunny runs away with the chocolate bar</parameter>
