@@ -56,6 +56,17 @@ export async function middleware(request: NextRequest) {
   // Check if user is accessing the root path (homepage)
   const isRootPath = request.nextUrl.pathname === '/'
   
+  // Handle root path redirects
+  if (isRootPath) {
+    if (user) {
+      // Authenticated user - redirect to dashboard
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    } else {
+      // Unauthenticated user - redirect to auth
+      return NextResponse.redirect(new URL('/auth', request.url))
+    }
+  }
+  
   // Redirect unauthenticated users from protected routes
   if (isProtectedRoute && !user) {
     const redirectUrl = new URL('/auth', request.url)
@@ -97,13 +108,13 @@ export async function middleware(request: NextRequest) {
         // No profile found - user needs invite code validation
         return NextResponse.redirect(new URL('/invite', request.url))
       } else if (profileData) {
-        // User has profile - redirect to home
-        return NextResponse.redirect(new URL('/', request.url))
+        // User has profile - redirect to dashboard
+        return NextResponse.redirect(new URL('/dashboard', request.url))
       }
     } catch (error) {
       console.error('Error checking user profile in middleware:', error)
-      // On error, redirect to home as fallback
-      return NextResponse.redirect(new URL('/', request.url))
+      // On error, redirect to dashboard as fallback
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }
 
@@ -118,8 +129,8 @@ export async function middleware(request: NextRequest) {
         .single()
 
       if (profileData && !profileError) {
-        // User has already completed onboarding - redirect to home
-        return NextResponse.redirect(new URL('/', request.url))
+        // User has already completed onboarding - redirect to dashboard
+        return NextResponse.redirect(new URL('/dashboard', request.url))
       }
     } catch (error) {
       console.error('Error checking user profile in middleware:', error)
@@ -143,8 +154,8 @@ export async function middleware(request: NextRequest) {
         .single()
 
       if (profileData && !profileError) {
-        // User has already completed onboarding - redirect to home
-        return NextResponse.redirect(new URL('/', request.url))
+        // User has already completed onboarding - redirect to dashboard
+        return NextResponse.redirect(new URL('/dashboard', request.url))
       }
     } catch (error) {
       console.error('Error checking user profile in middleware:', error)

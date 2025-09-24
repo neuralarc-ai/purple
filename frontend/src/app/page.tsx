@@ -1,26 +1,33 @@
 'use client';
 
-import HeroSection from '@/components/hero-section-1';
-import FeaturesSection from '@/components/features-7';
-import FeatureTable from '@/components/feature-table';
-import IntegrationsSection from '@/components/integrations-7';
-import CompareTable from '@/components/compare-table';
-import Footer from '@/components/footer';
-import { LanguageProvider } from '@/contexts/LanguageContext';
-import Comparison from '@/components/comparison';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
+import { Loader2 } from 'lucide-react';
 
 export default function HomePage() {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (user) {
+        // User is authenticated, redirect to dashboard
+        router.push('/dashboard');
+      } else {
+        // User is not authenticated, redirect to auth
+        router.push('/auth');
+      }
+    }
+  }, [user, isLoading, router]);
+
+  // Show loading spinner while checking auth state
   return (
-    <LanguageProvider>
-      <main className="min-h-screen bg-black">
-        <HeroSection />
-        <Comparison/>
-        <FeaturesSection />
-        <FeatureTable />
-        <IntegrationsSection />
-        <CompareTable />
-        <Footer />
-      </main>
-    </LanguageProvider>
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Redirecting...</p>
+      </div>
+    </div>
   );
 }

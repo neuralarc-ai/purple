@@ -52,7 +52,7 @@ import Image from 'next/image';
 
 import { toast } from 'sonner';
 
-import { useModeSelection } from '@/components/thread/chat-input/_use-mode-selection';
+import { useModelSelection } from '@/components/thread/chat-input/_use-model-selection';
 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -132,7 +132,7 @@ export default function KnowledgeBasePage() {
 
   const [entries, setEntries] = useState<Entry[]>([]);
 
-  const { selectedMode } = useModeSelection();
+  const { selectedModel } = useModelSelection();
 
   const { session, isLoading: authLoading } = useAuth();
 
