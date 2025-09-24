@@ -40,8 +40,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import { UseCases } from './use-cases';
-
 import { TokenUsage } from './token-usage';
 import { PromotionalBanner } from './promotional-banner';
 import { useInviteCodeUsage } from '@/hooks/use-invite-code-usage';
@@ -89,8 +87,6 @@ export function DashboardContent() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showPromotionalMessage, setShowPromotionalMessage] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [useCasesLoaded, setUseCasesLoaded] = useState(false);
-  const [useCasesLoading, setUseCasesLoading] = useState(true);
 
   // Check if user used an invite code with caching
   const { data: inviteCodeUsage, isLoading: inviteCodeLoading } = useInviteCodeUsage();
@@ -159,31 +155,31 @@ export function DashboardContent() {
 
   // List of alternative messages - moved outside component for constant caching
   const alternativeMessages = useMemo(() => [
-    "Make today the day you accelerate forward.",
-    "Great businesses are built on bold moves.",
-    "Transform decisions into measurable outcomes.",
-    "Lead with intelligence, not intuition alone.",
-    "Every login is a step closer to a smarter business.",
-    "Innovation begins the moment you take action."
+    // Removed alternative messages as requested
   ], []);
 
   // Function to get a random message from the list
   const getRandomMessage = useCallback(() => {
-    // Check if we have a session-cached alternative message
-    const sessionCachedMessage = sessionStorage.getItem('dashboard_random_message');
-    if (sessionCachedMessage) {
-      return sessionCachedMessage;
-    }
+    // Return empty string since we don't want alternative messages
+    return '';
+  }, []);
+
+  // Function to get time-based greeting
+  const getTimeBasedGreeting = useCallback(() => {
+    const hour = new Date().getHours();
     
-    // Select a random message and cache it in sessionStorage for the session
-    const randomIndex = Math.floor(Math.random() * alternativeMessages.length);
-    const selectedMessage = alternativeMessages[randomIndex];
-    sessionStorage.setItem('dashboard_random_message', selectedMessage);
-    return selectedMessage;
-  }, [alternativeMessages]);
+    if (hour >= 5 && hour < 12) {
+      return 'Morning';
+    } else if (hour >= 12 && hour < 17) {
+      return 'Afternoon';
+    } else if (hour >= 17 && hour < 21) {
+      return 'Evening';
+    } else {
+      return 'Evening'; // Night time (21-5)
+    }
+  }, []);
 
   const [currentWelcomeMessage, setCurrentWelcomeMessage] = useState('');
-  const [randomMessage, setRandomMessage] = useState('');
   const [isNameLoaded, setIsNameLoaded] = useState(false);
 
   // Get user's preferred name or fallback to account name with better caching
@@ -229,11 +225,6 @@ export function DashboardContent() {
     setCurrentWelcomeMessage(personalizedMessage);
   }, [welcomeMessage, cachedUserName]);
 
-  // Set random message once when component mounts
-  useEffect(() => {
-    setRandomMessage(getRandomMessage());
-  }, [getRandomMessage]);
-
   // Feature flag for custom agents section
   const { enabled: customAgentsEnabled } = useFeatureFlag('custom_agents');
 
@@ -271,12 +262,7 @@ export function DashboardContent() {
 
   const threadQuery = useThreadQuery(initiatedThreadId || '');
 
-  useEffect(() => {
-    // console.log('🚀 Dashboard effect:', { 
-    //   agentsLength: agents.length, 
-    //   selectedAgentId, 
-    //   agents: agents.map(a => ({ id: a.agent_id, name: a.name, isDefault: a.metadata?.is_helium_default })) 
-    // });
+  useEffect(() => {    
     
     if (agents.length > 0) {
       // console.log('📞 Calling initializeFromAgents');
@@ -361,8 +347,7 @@ export function DashboardContent() {
 
       // Submit the request
       const result = await initiateAgentMutation.mutateAsync({
-        formData,
-        mode: options?.mode
+        formData
       });
 
       if (result.thread_id) {
@@ -442,7 +427,6 @@ export function DashboardContent() {
   // Clean up session storage cache when component unmounts
   useEffect(() => {
     return () => {
-      sessionStorage.removeItem('dashboard_random_message');
       sessionStorage.removeItem('invite_code_usage');
       sessionStorage.removeItem('dashboard_agents');
     };
@@ -500,35 +484,21 @@ export function DashboardContent() {
               }} />
             )}
             
-            {/* {customAgentsEnabled && (
-              <div className="flex justify-center px-4 pt-4 md:pt-8">
-                <ReleaseBadge text="Custom Agents, Playbooks, and more!" link="/agents?tab=my-agents" />
-              </div>
-            )} */}
-            <div className="flex-1 flex items-center justify-center px-4 pt-8 mt-[8rem]">
-              <div className="w-full max-w-[800px] flex flex-col items-start justify-center space-y-1 md:space-y-2">
+            <div className="flex-1 flex items-center justify-center px-4 -translate-y-8 xl:-translate-y-16">
+              <div className="w-full max-w-[800px] flex flex-col items-start justify-center space-y-1">
                 <div className="flex flex-col items-start text-left w-full">
-                  {/* Hello, {user's name} */}
+                  {/* Time-based greeting with user's name */}
                   {isNameLoaded ? (
                     <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-foreground libre-baskerville-bold mb-1">
-                      Hello, {cachedUserName}
+                      {getTimeBasedGreeting()}, {cachedUserName}
                     </div>
                   ) : (
                     <Skeleton className="h-8 w-48 mb-1" />
                   )}
-                  
-                  {/* Random alternative message */}
-                  {isNameLoaded ? (
-                    <div className="tracking-normal text-2xl lg:text-3xl xl:text-3xl font-normal text-muted-foreground libre-baskerville-regular">
-                      {randomMessage}
-                    </div>
-                  ) : (
-                    <Skeleton className="h-8 w-96" />
-                  )}
                 </div>
                 <div className="w-full transition-all duration-700 ease-out">
                   
-                  <div className={`transition-all duration-700 ease-out ${useCasesLoaded ? 'translate-y-0' : 'translate-y-4'}`}>
+                  <div className="transition-all duration-700 ease-out">
                     {/* Credit Exhaustion Banner */}
                     {showBanner && (
                       <div className="mb-4">
@@ -558,50 +528,9 @@ export function DashboardContent() {
                       disabled={isExhausted}
                     />
                   </div>
-                  <div className={`${useCasesLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
-                    <UseCases 
-                      router={router}
-                      onUseCaseSelect={(prompt) => {
-                        setInputValue(prompt);
-                        // Focus the input and set cursor to the end
-                        setTimeout(() => {
-                          const textarea = document.querySelector('textarea');
-                          if (textarea) {
-                            textarea.focus();
-                            // Move cursor to the end of the text
-                            const length = prompt.length;
-                            textarea.setSelectionRange(length, length);
-                          }
-                        }, 0);
-                      }}
-                      onLoad={() => {
-                        setUseCasesLoaded(true);
-                        setUseCasesLoading(false);
-                      }}                  
-                    />
-                  </div>
-                  {!useCasesLoaded && (
-                    <div className="space-y-4 -translate-y-24">
-                      <Skeleton className="h-4 w-32" />
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {[...Array(6)].map((_, i) => (
-                          <Skeleton key={i} className="h-28 rounded-lg" />
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
-            {/* {enabledEnvironment && customAgentsEnabled && (
-              <div className="w-full px-4 pb-8">
-                <div className="max-w-7xl mx-auto">
-                  <CustomAgentsSection 
-                    onAgentSelect={setSelectedAgent}
-                  />
-                </div>
-              </div>
-            )} */}
           </div>
         </div>
         

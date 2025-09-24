@@ -157,8 +157,62 @@ export const getAgents = async (params: AgentsParams = {}): Promise<AgentsRespon
   try {
     const agentPlaygroundEnabled = await isFlagEnabled('custom_agents');
     if (!agentPlaygroundEnabled) {
-      throw new Error('Custom agents is not enabled');
+      // When custom agents are disabled, return a default Helium agent
+      // This allows file upload and other functionality to work
+      const defaultHeliumAgent: Agent = {
+        agent_id: 'helium-default',
+        name: 'Helium',
+        description: 'Meet Helium - the God mode agent that transforms how you work with AI. Powered by the brilliant Helio o1 model, Helium delivers human-like understanding with superhuman capabilities, making complex tasks feel effortless.',
+        system_prompt: 'You are Helium, an advanced AI assistant designed to help users with a wide range of tasks.',
+        configured_mcps: [],
+        custom_mcps: [],
+        agentpress_tools: {
+          sb_shell_tool: true,
+          sb_files_tool: true,
+          sb_deploy_tool: true,
+          sb_expose_tool: true,
+          web_search_tool: true,
+          sb_vision_tool: true,
+          sb_image_edit_tool: true,
+          sb_video_generation_tool: true,
+          sb_sheets_tool: true,
+          sb_web_dev_tool: false,
+          browser_tool: true,
+          agent_config_tool: true,
+          mcp_search_tool: true,
+          credential_profile_tool: true,
+          workflow_tool: true,
+          trigger_tool: true
+        },
+        is_default: true,
+        avatar: '⚡',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        metadata: {
+          is_helium_default: true,
+          centrally_managed: true,
+          management_version: '1.0.0',
+          restrictions: {
+            system_prompt_editable: false,
+            tools_editable: false,
+            name_editable: false,
+            description_editable: false,
+            mcps_editable: false
+          }
+        }
+      };
+
+      return {
+        agents: [defaultHeliumAgent],
+        pagination: {
+          page: 1,
+          limit: 1,
+          total: 1,
+          pages: 1
+        }
+      };
     }
+    
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
 
@@ -204,8 +258,54 @@ export const getAgent = async (agentId: string): Promise<Agent> => {
   try {
     const agentPlaygroundEnabled = await isFlagEnabled('custom_agents');
     if (!agentPlaygroundEnabled) {
-      throw new Error('Custom agents is not enabled');
+      // When custom agents are disabled, return the default Helium agent
+      // This allows file upload and other functionality to work
+      const defaultHeliumAgent: Agent = {
+        agent_id: 'helium-default',
+        name: 'Helium',
+        description: 'Meet Helium - the God mode agent that transforms how you work with AI. Powered by the brilliant Helio o1 model, Helium delivers human-like understanding with superhuman capabilities, making complex tasks feel effortless.',
+        system_prompt: 'You are Helium, an advanced AI assistant designed to help users with a wide range of tasks.',
+        configured_mcps: [],
+        custom_mcps: [],
+        agentpress_tools: {
+          sb_shell_tool: true,
+          sb_files_tool: true,
+          sb_deploy_tool: true,
+          sb_expose_tool: true,
+          web_search_tool: true,
+          sb_vision_tool: true,
+          sb_image_edit_tool: true,
+          sb_video_generation_tool: true,
+          sb_sheets_tool: true,
+          sb_web_dev_tool: false,
+          browser_tool: true,
+          agent_config_tool: true,
+          mcp_search_tool: true,
+          credential_profile_tool: true,
+          workflow_tool: true,
+          trigger_tool: true
+        },
+        is_default: true,
+        avatar: '⚡',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        metadata: {
+          is_helium_default: true,
+          centrally_managed: true,
+          management_version: '1.0.0',
+          restrictions: {
+            system_prompt_editable: false,
+            tools_editable: false,
+            name_editable: false,
+            description_editable: false,
+            mcps_editable: false
+          }
+        }
+      };
+
+      return defaultHeliumAgent;
     }
+    
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
 
@@ -350,8 +450,58 @@ export const getThreadAgent = async (threadId: string): Promise<ThreadAgentRespo
   try {
     const agentPlaygroundEnabled = await isFlagEnabled('custom_agents');
     if (!agentPlaygroundEnabled) {
-      throw new Error('Custom agents is not enabled');
+      // When custom agents are disabled, return the default Helium agent
+      // This allows file upload and other functionality to work
+      const defaultHeliumAgent: Agent = {
+        agent_id: 'helium-default',
+        name: 'Helium',
+        description: 'Meet Helium - the God mode agent that transforms how you work with AI. Powered by the brilliant Helio o1 model, Helium delivers human-like understanding with superhuman capabilities, making complex tasks feel effortless.',
+        system_prompt: 'You are Helium, an advanced AI assistant designed to help users with a wide range of tasks.',
+        configured_mcps: [],
+        custom_mcps: [],
+        agentpress_tools: {
+          sb_shell_tool: true,
+          sb_files_tool: true,
+          sb_deploy_tool: true,
+          sb_expose_tool: true,
+          web_search_tool: true,
+          sb_vision_tool: true,
+          sb_image_edit_tool: true,
+          sb_video_generation_tool: true,
+          sb_sheets_tool: true,
+          sb_web_dev_tool: false,
+          browser_tool: true,
+          agent_config_tool: true,
+          mcp_search_tool: true,
+          credential_profile_tool: true,
+          workflow_tool: true,
+          trigger_tool: true
+        },
+        is_default: true,
+        avatar: '⚡',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        metadata: {
+          is_helium_default: true,
+          centrally_managed: true,
+          management_version: '1.0.0',
+          restrictions: {
+            system_prompt_editable: false,
+            tools_editable: false,
+            name_editable: false,
+            description_editable: false,
+            mcps_editable: false
+          }
+        }
+      };
+
+      return {
+        agent: defaultHeliumAgent,
+        source: 'default',
+        message: 'Using default Helium agent (custom agents disabled)'
+      };
     }
+    
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
 

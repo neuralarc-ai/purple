@@ -86,6 +86,7 @@ interface MessageInputProps {
   enableAdvancedConfig?: boolean;
   hideAgentSelection?: boolean;
   isHeliumAgent?: boolean;
+  selectedMode?: string; // Add selectedMode prop
   // New props for integrations
   onOpenIntegrations?: () => void;
   onOpenInstructions?: () => void;
@@ -132,6 +133,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
       enableAdvancedConfig = false,
       hideAgentSelection = false,
       isHeliumAgent,
+      selectedMode = 'agent', // Default to agent mode
       onOpenIntegrations,
     },
     ref,
