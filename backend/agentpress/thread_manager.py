@@ -26,6 +26,7 @@ from langfuse.client import StatefulGenerationClient, StatefulTraceClient
 from services.langfuse import langfuse
 from litellm.utils import token_counter
 from services.billing import calculate_token_cost, handle_usage_with_credits
+from utils.constants import get_model_context_window
 import re
 from datetime import datetime, timezone, timedelta
 import aiofiles
@@ -218,6 +219,37 @@ class ThreadManager:
             logger.error(f"Failed to add message to thread {thread_id}: {str(e)}", exc_info=True)
             raise
 
+    def _emergency_compress_messages(self, messages: List[Dict[str, Any]], llm_model: str, max_tokens: int) -> List[Dict[str, Any]]:
+        """Emergency compression by removing older messages when normal compression fails."""
+        from litellm.utils import token_counter
+        
+        # Keep system message and last few messages
+        system_msg = messages[0] if messages and messages[0].get('role') == 'system' else None
+        remaining_messages = messages[1:] if system_msg else messages
+        
+        # Keep only the last 10 messages to ensure we have recent context
+        recent_messages = remaining_messages[-10:] if len(remaining_messages) > 10 else remaining_messages
+        
+        # Rebuild messages with system prompt
+        compressed_messages = [system_msg] if system_msg else []
+        compressed_messages.extend(recent_messages)
+        
+        # If still too large, keep only the last 5 messages
+        current_tokens = token_counter(model=llm_model, messages=compressed_messages)
+        if current_tokens > max_tokens and len(recent_messages) > 5:
+            logger.warning("Emergency compression: Reducing to last 5 messages")
+            compressed_messages = [system_msg] if system_msg else []
+            compressed_messages.extend(recent_messages[-5:])
+        
+        # If still too large, keep only the last 3 messages
+        current_tokens = token_counter(model=llm_model, messages=compressed_messages)
+        if current_tokens > max_tokens and len(recent_messages) > 3:
+            logger.warning("Emergency compression: Reducing to last 3 messages")
+            compressed_messages = [system_msg] if system_msg else []
+            compressed_messages.extend(recent_messages[-3:])
+        
+        return compressed_messages
+
     async def get_llm_messages(self, thread_id: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """Get messages for a thread.
 
@@ -237,8 +269,8 @@ class ThreadManager:
             # result = await client.rpc('get_llm_formatted_messages', {'p_thread_id': thread_id}).execute()
             
             if limit is not None and limit > 0:
-                # Fast path: only fetch latest N LLM messages
-                result = await client.table('messages').select('message_id, content').eq('thread_id', thread_id).eq('is_llm_message', True).order('created_at', desc=True).limit(limit).execute()
+                # Fast path: only fetch latest N LLM messages + image_context messages
+                result = await client.table('messages').select('message_id, content, type').eq('thread_id', thread_id).or_('is_llm_message.eq.true,type.eq.image_context').order('created_at', desc=True).limit(limit).execute()
                 result_data = list(reversed(result.data or []))
             else:
                 # Fetch messages in batches of 1000 to avoid overloading the database
@@ -247,7 +279,7 @@ class ThreadManager:
                 offset = 0
                 
                 while True:
-                    result = await client.table('messages').select('message_id, content').eq('thread_id', thread_id).eq('is_llm_message', True).order('created_at').range(offset, offset + batch_size - 1).execute()
+                    result = await client.table('messages').select('message_id, content, type').eq('thread_id', thread_id).or_('is_llm_message.eq.true,type.eq.image_context').order('created_at').range(offset, offset + batch_size - 1).execute()
                     
                     if not result.data or len(result.data) == 0:
                         break
@@ -270,17 +302,44 @@ class ThreadManager:
             # Return properly parsed JSON objects
             messages = []
             for item in result_data:
-                if isinstance(item['content'], str):
-                    try:
-                        parsed_item = json.loads(item['content'])
-                        parsed_item['message_id'] = item['message_id']
-                        messages.append(parsed_item)
-                    except json.JSONDecodeError:
-                        logger.error(f"Failed to parse message: {item['content']}")
-                else:
+                # Handle image_context messages specially
+                if item.get('type') == 'image_context':
+                    # Convert image_context to a user message with image content for LLM
                     content = item['content']
-                    content['message_id'] = item['message_id']
-                    messages.append(content)
+                    if isinstance(content, str):
+                        try:
+                            content = json.loads(content)
+                        except json.JSONDecodeError:
+                            logger.error(f"Failed to parse image_context message: {item['content']}")
+                            continue
+                    
+                    # Convert to OpenAI-compatible image message format
+                    image_message = {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{content.get('mime_type', 'image/jpeg')};base64,{content.get('base64', '')}"
+                                }
+                            }
+                        ],
+                        "message_id": item['message_id']
+                    }
+                    messages.append(image_message)
+                else:
+                    # Handle regular messages
+                    if isinstance(item['content'], str):
+                        try:
+                            parsed_item = json.loads(item['content'])
+                            parsed_item['message_id'] = item['message_id']
+                            messages.append(parsed_item)
+                        except json.JSONDecodeError:
+                            logger.error(f"Failed to parse message: {item['content']}")
+                    else:
+                        content = item['content']
+                        content['message_id'] = item['message_id']
+                        messages.append(content)
 
             return messages
 
@@ -442,12 +501,19 @@ When using the tools:
 
                 # 2. Check token count before proceeding (skip in simple chat)
                 token_count = 0
+                force_compression = False
                 if not simple_chat_mode:
                     try:
                         # Use the potentially modified working_system_prompt for token counting
                         token_count = token_counter(model=llm_model, messages=[working_system_prompt] + messages)
                         token_threshold = self.context_manager.token_threshold
                         logger.debug(f"Thread {thread_id} token count: {token_count}/{token_threshold} ({(token_count/token_threshold)*100:.1f}%)")
+
+                        # If token count exceeds threshold, warn and force compression
+                        if token_count > token_threshold:
+                            logger.warning(f"Token count {token_count} exceeds threshold {token_threshold}. Forcing aggressive compression.")
+                            # Force compression for this run
+                            force_compression = True
 
                     except Exception as e:
                         logger.error(f"Error counting tokens or summarizing: {str(e)}")
@@ -496,8 +562,26 @@ When using the tools:
                 # print(f"\n\n\n\n prepared_messages: {prepared_messages}\n\n\n\n")
 
                 # Compress messages unless in simple chat (favor latency)
-                if not simple_chat_mode and enable_context_manager:
+                if not simple_chat_mode and (enable_context_manager or force_compression):
                     prepared_messages = self.context_manager.compress_messages(prepared_messages, llm_model)
+                    
+                    # Final token count check after compression
+                    try:
+                        final_token_count = token_counter(model=llm_model, messages=prepared_messages)
+                        context_window = get_model_context_window(llm_model)
+                        max_safe_tokens = context_window - 32000  # Reserve space for response
+                        
+                        if final_token_count > max_safe_tokens:
+                            logger.error(f"Token count {final_token_count} still exceeds safe limit {max_safe_tokens} after compression. Context window: {context_window}")
+                            # Apply emergency compression by removing older messages
+                            prepared_messages = self._emergency_compress_messages(prepared_messages, llm_model, max_safe_tokens)
+                            final_token_count = token_counter(model=llm_model, messages=prepared_messages)
+                            logger.warning(f"Emergency compression applied. Final token count: {final_token_count}")
+                        
+                        logger.debug(f"Final token count after compression: {final_token_count}/{context_window}")
+                        
+                    except Exception as e:
+                        logger.error(f"Error in final token count check: {str(e)}")
 
                 # 5. Make LLM API call
                 logger.debug("Making LLM API call")
