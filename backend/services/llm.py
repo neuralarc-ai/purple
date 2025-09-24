@@ -19,12 +19,6 @@ from utils.logger import logger
 from utils.config import config
 from utils.constants import MODEL_NAME_ALIASES
 
-
-# litellm.set_verbose=True
-# Let LiteLLM auto-adjust params and drop unsupported ones (e.g., GPT-5 temperature!=1)
-# litellm.modify_params = True
-# litellm.drop_params = True
-
 # Constants
 MAX_RETRIES = 5
 class LLMError(Exception):

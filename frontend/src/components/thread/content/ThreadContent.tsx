@@ -251,10 +251,10 @@ export function renderMarkdownContent(
                 onClick={() => handleToolClick(messageId, toolName)}
                 className="inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
               >
-                <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600">
+                <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600 flex-shrink-0">
                   <IconComponent className="h-3 w-3 z-40 text text-muted-foreground flex-shrink-0" />
                 </div>
-                <span className="font-mono text-xs text-accent-foreground font-medium">
+                <span className="font-mono text-xs text-accent-foreground font-medium flex-shrink-0">
                   {getUserFriendlyToolName(toolName)}
                 </span>
                 {paramDisplay && (
@@ -1735,7 +1735,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                     <div className="space-y-2">
                       <div className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50 hover:bg-muted dark:bg-sidebar-accent/60 dark:hover:bg-background/80 rounded-full transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar">
                         <CircleDashed className="h-3 w-3 z-40 text text-muted-foreground flex-shrink-0" />
-                        <span className="font-mono text-xs text-accent-foreground font-medium">
+                        <span className="font-mono text-xs text-accent-foreground font-medium flex-shrink-0">
                           {currentToolCall.name || 'Using Tool'}
                         </span>
                       </div>

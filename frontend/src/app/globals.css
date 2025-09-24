@@ -295,7 +295,7 @@
   --helium-green: oklch(0.9024 0.2346 134.77);
   --helium-teal: oklch(0.7197 0.1217 174.92);
   --helium-orange: oklch(0.6514 0.193 30.11);
-  --helium-purple: oklch(0.65 0.28 300);
+  --helium-purple: oklch(0.5881 0.2118 306.32);
 }
 
 .dark {
@@ -336,7 +336,7 @@
   --helium-green: oklch(0.9024 0.2346 134.77);
   --helium-teal: oklch(0.7197 0.1217 174.92);
   --helium-orange: oklch(0.6514 0.193 30.11);
-  --helium-purple: oklch(0.65 0.28 300);
+  --helium-purple: oklch(0.5881 0.2118 306.32);
 }
 
 /* Custom scrollbar hiding utilities */

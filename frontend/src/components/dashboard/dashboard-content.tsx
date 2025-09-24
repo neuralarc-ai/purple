@@ -173,7 +173,7 @@ export function DashboardContent() {
     } else if (hour >= 12 && hour < 17) {
       return 'Good Afternoon';
     } else if (hour >= 17 && hour < 21) {
-      return 'GoodEvening';
+      return 'Good Evening';
     } else {
       return 'Good Evening'; // Night time (21-5)
     }
