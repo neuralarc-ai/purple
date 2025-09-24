@@ -7,7 +7,7 @@ MODELS = {
             "input_cost_per_million_tokens": 1.25,
             "output_cost_per_million_tokens": 10.00
         },
-        "context_window": 2_000_000,  # 2M tokens
+        "context_window": 1_000_000,  # 1M tokens
         "tier_availability": ["free", "paid"]
     },
 
@@ -18,7 +18,7 @@ MODELS = {
             "input_cost_per_million_tokens": 3.00,
             "output_cost_per_million_tokens": 15.00
         },
-        "context_window": 1_000_000,  # 1M tokens for Claude Sonnet 4
+        "context_window": 200_000,  # 200,000 tokens for Claude Sonnet 4
         "tier_availability": ["free", "paid"]
     },
 }
@@ -120,7 +120,7 @@ def get_model_context_window(model_name: str, default: int = 31_000) -> int:
     elif 'gpt-5' in model_name.lower():
         return 400_000  # GPT-5 models
     elif 'gemini' in model_name.lower():
-        return 2_000_000  # Gemini models
+        return 1_000_000  # Gemini models
     elif 'grok' in model_name.lower():
         return 128_000  # Grok models
     elif 'gpt' in model_name.lower():
