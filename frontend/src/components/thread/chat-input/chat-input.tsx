@@ -556,7 +556,7 @@ export const ChatInput = forwardRef<ChatInputHandles, ChatInputProps>(
     };
 
     return (
-      <div className={`mx-auto w-full max-w-5xl relative ${className || ''}`}>
+      <div className={`mx-auto w-full max-w-5xl relative mb-3 ${className || ''}`}>
         <div className="relative">
           <ChatSnack
             toolCalls={toolCalls}

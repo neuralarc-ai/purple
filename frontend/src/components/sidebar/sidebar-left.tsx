@@ -305,7 +305,7 @@ export function SidebarLeft({
               </span>
             </SidebarMenuButton>
           </Link>
-          <Link href="/knowledge-base">
+          {/* <Link href="/knowledge-base">
             <SidebarMenuButton
               className={cn('touch-manipulation transition-all duration-300 ease-in-out', {
                 'bg-accent px-4 text-accent-foreground font-medium':
@@ -340,10 +340,10 @@ export function SidebarLeft({
                 </span>
               </SidebarMenuButton>
             </Link>
-          )}
+          )} */}
 
           {/* Prompt Library */}
-          <SidebarMenu>
+          {/* <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
@@ -360,7 +360,7 @@ export function SidebarLeft({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          </SidebarMenu>
+          </SidebarMenu> */}
         </SidebarGroup>
         <NavAgents />
       </SidebarContent>

@@ -1196,13 +1196,7 @@ export default function ThreadPage({
                 // defaultShowSnackbar="tokens"
                 showScrollToBottomIndicator={showScrollToBottom}
                 onScrollToBottom={scrollToBottom}
-              />
-               <div className="text-center mt-1 pb-1">
-                <p className="text-xs text-muted-foreground">
-                  Helium can make mistakes. 
-                  Check important info. See Cookie Preferences.
-                </p>
-              </div>
+              />               
             </div>
           </div>
         </div>
