@@ -762,7 +762,7 @@
 
 .animate-shimmer {
   @apply relative overflow-hidden rounded-md;
-  @apply bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10;
+  @apply bg-gradient-to-r from-sidebar/10 via-sidebar/5 to-sidebar/10;
   background-size: 200% 200%;
   animation: var(--animate-gradient-shift);
 }
@@ -783,7 +783,7 @@
 
 .animate-shimmer-gray {
   @apply relative overflow-hidden rounded-md;
-  @apply bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200;
+  @apply bg-gradient-to-r from-sidebar/10 via-sidebar/5 to-sidebar/10;
   background-size: 200% 200%;
   animation: var(--animate-gradient-shift);
 }

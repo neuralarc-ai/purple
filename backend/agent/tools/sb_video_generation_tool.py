@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from agentpress.tool import ToolResult, openapi_schema, usage_example
 from sandbox.tool_base import SandboxToolsBase
 from agentpress.thread_manager import ThreadManager
@@ -13,6 +13,7 @@ import asyncio
 import base64
 import json
 from typing import Any, Dict
+import mimetypes
 try:
     from google.oauth2 import service_account
     from google.auth.transport.requests import Request as GoogleAuthRequest
@@ -47,9 +48,13 @@ class SandboxVideoGenerationTool(SandboxToolsBase):
                             "type": "string",
                             "description": "Text description for the video. Supports audio cues like dialogue, sound effects, and ambient noise.",
                         },
-                        "image_path": {
+                        "reference_image": {
                             "type": "string",
                             "description": "(Optional) Path to an image file to use as the starting frame for video generation. Can be: 1) Relative path to /workspace (e.g., 'generated_image_abc123.png'), or 2) Full URL (e.g., 'https://example.com/image.png').",
+                        },
+                        "style_image": {
+                            "type": "string",
+                            "description": "(Optional) Path to an image file to use as style reference for video generation. Can be: 1) Relative path to /workspace, or 2) Full URL. This will influence the visual style of the generated video.",
                         },
                         "negative_prompt": {
                             "type": "string",
@@ -65,7 +70,7 @@ class SandboxVideoGenerationTool(SandboxToolsBase):
                             "type": "string",
                             "enum": ["720p", "1080p"],
                             "description": "The video's resolution. '1080p' is only available for 16:9 aspect ratio. Default is '720p'.",
-                            "default": "720p",
+                            "default": "1080p",
                         },
                         "person_generation": {
                             "type": "string",
@@ -93,7 +98,17 @@ class SandboxVideoGenerationTool(SandboxToolsBase):
         <function_calls>
         <invoke name="generate_video">
         <parameter name="prompt">The bunny runs away with the chocolate bar</parameter>
-        <parameter name="image_path">bunny_image.png</parameter>
+        <parameter name="reference_image">bunny_image.png</parameter>
+        <parameter name="aspect_ratio">16:9</parameter>
+        </invoke>
+        </function_calls>
+        
+        Style transfer example:
+        <function_calls>
+        <invoke name="generate_video">
+        <parameter name="prompt">A cat playing in a garden</parameter>
+        <parameter name="reference_image">cat_photo.jpg</parameter>
+        <parameter name="style_image">van_gogh_style.png</parameter>
         <parameter name="aspect_ratio">16:9</parameter>
         </invoke>
         </function_calls>
@@ -109,7 +124,9 @@ class SandboxVideoGenerationTool(SandboxToolsBase):
     async def generate_video(
         self,
         prompt: str,
-        image_path: Optional[str] = None,
+        reference_image: Optional[str] = None,
+        style_image: Optional[str] = None,
+        image_path: Optional[str] = None,  # Backward compatibility
         negative_prompt: Optional[str] = None,
         aspect_ratio: str = "16:9",
         resolution: str = "720p",
@@ -155,14 +172,20 @@ class SandboxVideoGenerationTool(SandboxToolsBase):
 
                 # Build request body per Vertex Veo API
                 instances: Dict[str, Any] = {"prompt": prompt}
-                if image_path:
-                    image_bytes = await self._get_image_bytes(image_path)
-                    if isinstance(image_bytes, ToolResult):
-                        return image_bytes
-                    instances["image"] = {
-                        "bytesBase64Encoded": base64.b64encode(image_bytes).decode("utf-8"),
-                        "mimeType": "image/png",
-                    }
+                
+                # Process reference image if provided (support both new and old parameter names)
+                image_to_process = reference_image or image_path
+                if image_to_process:
+                    image_result = await self._process_image(image_to_process, "reference")
+                    if isinstance(image_result, ToolResult):
+                        return image_result
+                    instances["image"] = image_result
+                
+                # Process style image if provided (Note: Veo API may not support multiple images in one request)
+                # For now, we'll log a warning if both are provided
+                if style_image:
+                    logger.warning("Style image provided but Veo API may not support multiple images in single request")
+                    # TODO: Implement style image support when Veo API supports it
 
                 parameters: Dict[str, Any] = {
                     "aspectRatio": aspect_ratio,
@@ -247,6 +270,21 @@ class SandboxVideoGenerationTool(SandboxToolsBase):
                 f"An error occurred during video generation: {str(e)}"
             )
 
+    async def _process_image(self, image_path: str, image_type: str) -> Dict[str, str] | ToolResult:
+        """Process and validate an image for Veo API."""
+        try:
+            # Get image bytes
+            image_bytes = await self._get_image_bytes(image_path)
+            if isinstance(image_bytes, ToolResult):
+                return image_bytes
+            
+            # Validate and process the image
+            return await self._validate_and_encode_image(image_bytes, image_type)
+            
+        except Exception as e:
+            logger.error(f"Error processing {image_type} image: {e}", exc_info=True)
+            return self.fail_response(f"Failed to process {image_type} image: {str(e)}")
+
     async def _get_image_bytes(self, image_path: str) -> bytes | ToolResult:
         """Get image bytes from URL or local file path."""
         if image_path.startswith(("http://", "https://")):
@@ -257,12 +295,22 @@ class SandboxVideoGenerationTool(SandboxToolsBase):
     async def _download_image_from_url(self, url: str) -> bytes | ToolResult:
         """Download image from URL."""
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=30) as client:
                 response = await client.get(url)
                 response.raise_for_status()
+                
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                if not content_type.startswith('image/'):
+                    return self.fail_response(f"URL does not point to an image. Content type: {content_type}")
+                
                 return response.content
-        except Exception:
-            return self.fail_response(f"Could not download image from URL: {url}")
+        except httpx.TimeoutException:
+            return self.fail_response(f"Timeout downloading image from URL: {url}")
+        except httpx.HTTPStatusError as e:
+            return self.fail_response(f"HTTP error downloading image from URL: {url} - {e.response.status_code}")
+        except Exception as e:
+            return self.fail_response(f"Could not download image from URL: {url} - {str(e)}")
 
     async def _read_image_from_sandbox(self, image_path: str) -> bytes | ToolResult:
         """Read image from sandbox filesystem."""
@@ -283,3 +331,49 @@ class SandboxVideoGenerationTool(SandboxToolsBase):
             return self.fail_response(
                 f"Could not read image file from sandbox: {image_path} - {str(e)}"
             )
+
+    async def _validate_and_encode_image(self, image_bytes: bytes, image_type: str) -> Dict[str, str] | ToolResult:
+        """Validate image format and encode for Veo API."""
+        try:
+            # Open image with PIL to validate format
+            image = Image.open(BytesIO(image_bytes))
+            
+            # Check image format
+            if image.format not in ['JPEG', 'PNG', 'WEBP']:
+                return self.fail_response(
+                    f"Unsupported image format: {image.format}. Supported formats: JPEG, PNG, WEBP"
+                )
+            
+            # Check image dimensions
+            width, height = image.size
+            if width < 64 or height < 64:
+                return self.fail_response(
+                    f"Image too small: {width}x{height}. Minimum size: 64x64 pixels"
+                )
+            
+            if width > 4096 or height > 4096:
+                return self.fail_response(
+                    f"Image too large: {width}x{height}. Maximum size: 4096x4096 pixels"
+                )
+            
+            # Check file size (10MB limit)
+            if len(image_bytes) > 10 * 1024 * 1024:
+                return self.fail_response(
+                    f"Image too large: {len(image_bytes)} bytes. Maximum size: 10MB"
+                )
+            
+            # Determine MIME type
+            mime_type = f"image/{image.format.lower()}"
+            if image.format == 'JPEG':
+                mime_type = "image/jpeg"
+            
+            logger.info(f"Successfully validated {image_type} image: {width}x{height}, format: {image.format}, size: {len(image_bytes)} bytes")
+            
+            return {
+                "bytesBase64Encoded": base64.b64encode(image_bytes).decode("utf-8"),
+                "mimeType": mime_type,
+            }
+            
+        except Exception as e:
+            logger.error(f"Error validating {image_type} image: {e}", exc_info=True)
+            return self.fail_response(f"Invalid image format for {image_type} image: {str(e)}")

@@ -300,14 +300,14 @@ class SandboxFilesTool(SandboxToolsBase):
         except Exception as e:
             return self.fail_response(f"Error rewriting file: {str(e)}")
 
-    async def _call_claude_sonnet_api(self, file_content: str, code_edit: str, instructions: str, file_path: str) -> tuple[Optional[str], Optional[str]]:
+    async def _call_gemini_25_pro_api(self, file_content: str, code_edit: str, instructions: str, file_path: str) -> tuple[Optional[str], Optional[str]]:
         """
-        Call Claude Sonnet 4 from Bedrock via LiteLLM to apply edits to file content.
+        Call Vertex AI Gemini 2.5 Pro via LiteLLM to apply edits to file content.
         Returns a tuple (new_content, error_message).
         On success, error_message is None. On failure, new_content is None.
         """
         try:
-            model_name = "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0"
+            model_name = "vertex_ai/gemini-2.5-pro"
             prompt = (
                 f"<instruction>{instructions}</instruction>\n"
                 f"<file_content>{file_content}</file_content>\n"
@@ -331,7 +331,7 @@ class SandboxFilesTool(SandboxToolsBase):
             )
             messages = [{"role": "user", "content": prompt}]
 
-            logger.debug("Using Claude Sonnet 4 from Bedrock via LiteLLM for file editing.")
+            logger.debug("Using Vertex AI Gemini 2.5 Pro via LiteLLM for file editing.")
             response = await make_llm_api_call(
                 messages=messages,
                 model_name=model_name,
@@ -360,7 +360,7 @@ class SandboxFilesTool(SandboxToolsBase):
                 content = None
 
             if not content:
-                return None, f"Invalid response from Claude Sonnet 4 API: {response}"
+                return None, f"Invalid response from Vertex AI Gemini 2.5 Pro API: {response}"
 
             # Clean up the response content
             content_str = content.strip() if isinstance(content, str) else str(content).strip()
@@ -386,7 +386,7 @@ class SandboxFilesTool(SandboxToolsBase):
             return content_str, None
         except Exception as e:
             error_message = f"AI model call for file edit failed. Exception: {str(e)}"
-            logger.error(f"Error calling Claude Sonnet 4: {error_message}", exc_info=True)
+            logger.error(f"Error calling Vertex AI Gemini 2.5 Pro: {error_message}", exc_info=True)
             return None, error_message
 
     @openapi_schema({
@@ -503,7 +503,7 @@ npm run build
         </function_calls>
         ''')
     async def edit_file(self, target_file: str, instructions: str, code_edit: str) -> ToolResult:
-        """Edit a file using AI-powered intelligent editing with Claude Sonnet 4 from Bedrock"""
+        """Edit a file using AI-powered intelligent editing with Vertex AI Gemini 2.5 Pro"""
         try:
             # Ensure sandbox is initialized
             await self._ensure_sandbox()
@@ -516,13 +516,13 @@ npm run build
             # Read current content
             original_content = (await self.sandbox.fs.download_file(full_path)).decode()
             
-            # Try Claude Sonnet 4 editing
+            # Try Vertex AI Gemini 2.5 Pro editing
             logger.debug(f"Attempting AI-powered edit for file '{target_file}' with instructions: {instructions[:100]}...")
-            new_content, error_message = await self._call_claude_sonnet_api(original_content, code_edit, instructions, target_file)
+            new_content, error_message = await self._call_gemini_25_pro_api(original_content, code_edit, instructions, target_file)
 
             if error_message:
                 return ToolResult(success=False, output=json.dumps({
-                    "message": f"Claude Sonnet 4 editing failed: {error_message}",
+                    "message": f"Vertex AI Gemini 2.5 Pro editing failed: {error_message}",
                     "file_path": target_file,
                     "original_content": original_content,
                     "updated_content": None
@@ -572,105 +572,4 @@ npm run build
                 "original_content": original_content_on_error,
                 "updated_content": None
             }))
-
-    # @openapi_schema({
-    #     "type": "function",
-    #     "function": {
-    #         "name": "read_file",
-    #         "description": "Read and return the contents of a file. This tool is essential for verifying data, checking file contents, and analyzing information. Always use this tool to read file contents before processing or analyzing data. The file path must be relative to /workspace.",
-    #         "parameters": {
-    #             "type": "object",
-    #             "properties": {
-    #                 "file_path": {
-    #                     "type": "string",
-    #                     "description": "Path to the file to read, relative to /workspace (e.g., 'src/main.py' for /workspace/src/main.py). Must be a valid file path within the workspace."
-    #                 },
-    #                 "start_line": {
-    #                     "type": "integer",
-    #                     "description": "Optional starting line number (1-based). Use this to read specific sections of large files. If not specified, reads from the beginning of the file.",
-    #                     "default": 1
-    #                 },
-    #                 "end_line": {
-    #                     "type": "integer",
-    #                     "description": "Optional ending line number (inclusive). Use this to read specific sections of large files. If not specified, reads to the end of the file.",
-    #                     "default": None
-    #                 }
-    #             },
-    #             "required": ["file_path"]
-    #         }
-    #     }
-    # })
-    # @xml_schema(
-    #     tag_name="read-file",
-    #     mappings=[
-    #         {"param_name": "file_path", "node_type": "attribute", "path": "."},
-    #         {"param_name": "start_line", "node_type": "attribute", "path": ".", "required": False},
-    #         {"param_name": "end_line", "node_type": "attribute", "path": ".", "required": False}
-    #     ],
-    #     example='''
-    #     <!-- Example 1: Read entire file -->
-    #     <read-file file_path="src/main.py">
-    #     </read-file>
-
-    #     <!-- Example 2: Read specific lines (lines 10-20) -->
-    #     <read-file file_path="src/main.py" start_line="10" end_line="20">
-    #     </read-file>
-
-    #     <!-- Example 3: Read from line 5 to end -->
-    #     <read-file file_path="config.json" start_line="5">
-    #     </read-file>
-
-    #     <!-- Example 4: Read last 10 lines -->
-    #     <read-file file_path="logs/app.log" start_line="-10">
-    #     </read-file>
-    #     '''
-    # )
-    # async def read_file(self, file_path: str, start_line: int = 1, end_line: Optional[int] = None) -> ToolResult:
-    #     """Read file content with optional line range specification.
-        
-    #     Args:
-    #         file_path: Path to the file relative to /workspace
-    #         start_line: Starting line number (1-based), defaults to 1
-    #         end_line: Ending line number (inclusive), defaults to None (end of file)
-            
-    #     Returns:
-    #         ToolResult containing:
-    #         - Success: File content and metadata
-    #         - Failure: Error message if file doesn't exist or is binary
-    #     """
-    #     try:
-    #         file_path = self.clean_path(file_path)
-    #         full_path = f"{self.workspace_path}/{file_path}"
-            
-    #         if not await self._file_exists(full_path):
-    #             return self.fail_response(f"File '{file_path}' does not exist")
-            
-    #         # Download and decode file content
-    #         content = await self.sandbox.fs.download_file(full_path).decode()
-            
-    #         # Split content into lines
-    #         lines = content.split('\n')
-    #         total_lines = len(lines)
-            
-    #         # Handle line range if specified
-    #         if start_line > 1 or end_line is not None:
-    #             # Convert to 0-based indices
-    #             start_idx = max(0, start_line - 1)
-    #             end_idx = end_line if end_line is not None else total_lines
-    #             end_idx = min(end_idx, total_lines)  # Ensure we don't exceed file length
-                
-    #             # Extract the requested lines
-    #             content = '\n'.join(lines[start_idx:end_idx])
-            
-    #         return self.success_response({
-    #             "content": content,
-    #             "file_path": file_path,
-    #             "start_line": start_line,
-    #             "end_line": end_line if end_line is not None else total_lines,
-    #             "total_lines": total_lines
-    #         })
-            
-    #     except UnicodeDecodeError:
-    #         return self.fail_response(f"File '{file_path}' appears to be binary and cannot be read as text")
-    #     except Exception as e:
-    #         return self.fail_response(f"Error reading file: {str(e)}")
+    
