@@ -17,6 +17,7 @@ import {
   getUserFriendlyToolName,
   safeJsonParse,
 } from '@/components/thread/utils';
+import { HeliumLogo } from '@/components/sidebar/helium-logo';
 import { AnimatedLoader } from './AnimatedLoader';
 import { Button } from '@/components/ui/button';
 import {
@@ -86,6 +87,33 @@ export function renderAttachments(
 ) {
   // All attachments are now rendered as standalone, so this returns null
   return null;
+}
+
+// Helper function to extract all created files from the entire thread
+export function extractAllCreatedFiles(messages: UnifiedMessage[]): string[] {
+  const allFiles: string[] = [];
+  
+  messages.forEach((message) => {
+    if (message.type === 'user' || message.type === 'assistant') {
+      try {
+        const content = typeof message.content === 'string' ? message.content : '';
+        const attachmentsMatch = content.match(/\[Uploaded File: (.*?)\]/g);
+        if (attachmentsMatch) {
+          attachmentsMatch.forEach((match) => {
+            const pathMatch = match.match(/\[Uploaded File: (.*?)\]/);
+            if (pathMatch && pathMatch[1]) {
+              allFiles.push(pathMatch[1]);
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Error parsing message attachments:', e);
+      }
+    }
+  });
+  
+  // Remove duplicates and return unique files
+  return Array.from(new Set(allFiles));
 }
 
 // Render Markdown content while preserving XML tags that should be displayed as tool calls
@@ -791,6 +819,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
   project,
   debugMode = false,
   isPreviewMode = false,
+
   agentName = 'Adstitch',
   agentAvatar = (
     <span 
@@ -869,6 +898,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
 
   // Helper function to get agent info robustly
   const getAgentInfo = useCallback(() => {
+    
     // Return empty avatar since we'll show the gradient text in the name
     const avatar = null;
 
@@ -892,8 +922,25 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
         <span className="font-bold text-base text-foreground">
           Adstitch
         </span>
+
       </div>
     );
+
+    // Get agent name from various sources
+    let agentNameToUse = agentName || 'Helium';
+    
+    if (agentData?.name) {
+      agentNameToUse = agentData.name;
+    } else {
+      // Check recent messages for agent info
+      const recentAssistantWithAgent = [...displayMessages]
+        .reverse()
+        .find((msg) => msg.type === 'assistant' && msg.agents?.name);
+      
+      if (recentAssistantWithAgent?.agents?.name) {
+        agentNameToUse = recentAssistantWithAgent.agents.name;
+      }
+    }
 
     return {
       name: agentNameToUse,
@@ -958,6 +1005,23 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
           }
         } catch (e) {
           console.error('Error parsing message attachments:', e);
+        }
+      } else if (message.type === 'assistant') {
+        // Also extract attachments from assistant messages (for tool-created files)
+        try {
+          const content =
+            typeof message.content === 'string' ? message.content : '';
+          const attachmentsMatch = content.match(/\[Uploaded File: (.*?)\]/g);
+          if (attachmentsMatch) {
+            attachmentsMatch.forEach((match) => {
+              const pathMatch = match.match(/\[Uploaded File: (.*?)\]/);
+              if (pathMatch && pathMatch[1]) {
+                allAttachments.push(pathMatch[1]);
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Error parsing assistant message attachments:', e);
         }
       }
     });
@@ -1500,14 +1564,12 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                   )}>
                                     {/* Agent info on the left */}
                                     <div className="flex items-center">
-                                      {getAgentInfo().avatar && (
-                                        <div className="rounded-md flex items-center justify-center">
-                                          {getAgentInfo().avatar}
-                                        </div>
-                                      )}
-                                      <div className={getAgentInfo().avatar ? "ml-1.5" : ""}>
-                                        {getAgentInfo().name}
+                                      <div className="rounded-md flex items-center justify-center">
+                                        {getAgentInfo().avatar}
                                       </div>
+                                      <p className="ml-1.5 text-base font-semibold text-muted-foreground">
+                                        {getAgentInfo().name}
+                                      </p>
                                     </div>
                                     
                                     {/* Action buttons on the right */}
@@ -1739,14 +1801,12 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                   <div className="flex flex-col gap-2">
                     {/* Logo positioned above the tool call */}
                     <div className="flex justify-start">
-                      {getAgentInfo().avatar && (
-                        <div className="rounded-md flex items-center justify-center">
-                          {getAgentInfo().avatar}
-                        </div>
-                      )}
-                      <div className={getAgentInfo().avatar ? "ml-2" : ""}>
-                        {getAgentInfo().name}
+                      <div className="rounded-md flex items-center justify-center">
+                        {getAgentInfo().avatar}
                       </div>
+                      <p className="ml-2 text-base text-muted-foreground">
+                        {getAgentInfo().name}
+                      </p>
                     </div>
 
                     {/* Tool call content */}
@@ -1771,14 +1831,12 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                     <div className="flex flex-col gap-2">
                       {/* Logo positioned above the streaming indicator */}
                       <div className="flex justify-start">
-                        {getAgentInfo().avatar && (
-                          <div className="rounded-md flex items-center justify-center">
-                            {getAgentInfo().avatar}
-                          </div>
-                        )}
-                        <div className={getAgentInfo().avatar ? "ml-2" : ""}>
-                          {getAgentInfo().name}
+                        <div className="rounded-md flex items-center justify-center">
+                          {getAgentInfo().avatar}
                         </div>
+                        <p className="ml-2 text-base font-semibold text-muted-foreground">
+                          {getAgentInfo().name}
+                        </p>
                       </div>
 
                       {/* Streaming indicator content */}
@@ -1803,6 +1861,35 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                   />
                 </div>
               )}
+
+              {/* Render all created files at the end of the thread
+              {(() => {
+                const allCreatedFiles = extractAllCreatedFiles(displayMessages);
+                if (allCreatedFiles.length > 0) {
+                  return (
+                    <div className="mt-8 pt-6 border-t border-border/50">
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-foreground mb-2">
+                          Created Files
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Files created during this conversation
+                        </p>
+                      </div>
+                      <ThreadFilesDisplay
+                        attachments={allCreatedFiles}
+                        onFileClick={handleOpenFileViewer}
+                        showPreviews={true}
+                        sandboxId={sandboxId}
+                        project={project}
+                        rightAlignGrid={false}
+                        showViewAllButton={true}
+                      />
+                    </div>
+                  );
+                }
+                return null;
+              })()} */}
               
               <div className="!h-48" />
             </div>
