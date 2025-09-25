@@ -253,7 +253,7 @@
   animation: shimmer 2s infinite linear;
   background-clip: text;
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  -webkit-text-fill-color: var(--muted-foreground);
 }
 
 :root {
@@ -759,12 +759,12 @@
 }
 
 @theme {
-  --animate-shimmer: shimmer 1s infinite;
+  --animate-shimmer: shimmer 2.5s infinite;
   --animate-gradient-shift: gradient-shift 2s ease infinite;
 }
 
 .animate-shimmer {
-  @apply relative overflow-hidden rounded-md;
+  @apply relative overflow-hidden;
   @apply bg-gradient-to-r from-sidebar/10 via-sidebar/5 to-sidebar/10;
   background-size: 200% 200%;
   animation: var(--animate-gradient-shift);
@@ -773,10 +773,11 @@
 .animate-shimmer::before {
   content: '';
   @apply absolute top-0 left-0 w-full h-full;
+  z-index: 10;
   background: linear-gradient(
     140deg,
     rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.3) 50%,
+    var(--sidebar-accent) 50%,
     rgba(255, 255, 255, 0) 100%
   );
   animation: var(--animate-shimmer);

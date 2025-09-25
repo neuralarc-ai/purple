@@ -8,7 +8,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-import Image from 'next/image';
 
 // Custom Voice Icon component with smooth transitions
 const VoiceIcon = ({ className }: { className?: string }) => (
