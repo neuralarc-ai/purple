@@ -5,16 +5,9 @@ This module provides a unified interface for making API calls to different LLM p
 (OpenAI, Anthropic, Groq, xAI, etc.) using LiteLLM. It includes support for:
 - Streaming responses
 - Tool calls and function calling
-- Retry logic with exponential backoff (3 retries)
+- Retry logic with exponential backoff
 - Model-specific configurations
 - Comprehensive error handling and logging
-- Prompt caching for Gemini 2.5 Pro models (1-hour TTL)
-
-Prompt Caching:
-- Gemini 2.5 Pro models support context caching via cache_control parameter
-- System messages are automatically cached for 1 hour (3600s)
-- Reduces latency and improves performance for repeated prompts
-- Reference: https://docs.litellm.ai/docs/providers/vertex#context-caching
 """
 
 import os
@@ -27,8 +20,7 @@ from utils.config import config
 from utils.constants import MODEL_NAME_ALIASES
 
 # Constants
-MAX_RETRIES = 3
-GEMINI_CACHE_TTL = "3600s"  # 1 hour cache TTL for Gemini context caching
+MAX_RETRIES = 5
 class LLMError(Exception):
     """Base exception for LLM-related errors."""
     pass
@@ -125,55 +117,13 @@ def _apply_vertex_claude_caching(messages: List[Dict[str, Any]]) -> None:
     _apply_anthropic_caching(messages)
 
 def _apply_gemini_caching(params: Dict[str, Any]) -> None:
-    """Apply Gemini context caching using cache_control parameter.
-    
-    For Gemini 2.5 Pro models, we use Google's context caching feature by adding
-    cache_control parameter to message content. This enables prompt caching for
-    better performance and reduced latency.
-    
-    Reference: https://docs.litellm.ai/docs/providers/vertex#context-caching
-    """
-    model_name = params.get("model", "").lower()
-    if "gemini" not in model_name:
-        return
-    
-    messages = params.get("messages", [])
-    if not messages:
-        return
-    
-    cached_messages = 0
-    
-    # Apply cache_control to system messages (static content that can be cached)
-    for message in messages:
-        if message.get("role") == "system":
-            content = message.get("content")
-            if isinstance(content, str):
-                # Convert string content to structured format with cache_control
-                message["content"] = [
-                    {
-                        "type": "text",
-                        "text": content,
-                        "cache_control": {
-                            "type": "ephemeral",
-                            "ttl": GEMINI_CACHE_TTL
-                        }
-                    }
-                ]
-                cached_messages += 1
-            elif isinstance(content, list):
-                # If already structured, add cache_control to text blocks
-                for block in content:
-                    if block.get("type") == "text" and "cache_control" not in block:
-                        block["cache_control"] = {
-                            "type": "ephemeral",
-                            "ttl": GEMINI_CACHE_TTL
-                        }
-                        cached_messages += 1
-    
-    if cached_messages > 0:
-        logger.debug(f"Applied Gemini context caching to {cached_messages} message(s) with {GEMINI_CACHE_TTL} TTL")
-    else:
-        logger.debug("No system messages found for Gemini caching")
+    """Apply Gemini caching parameters."""
+    # Gemini 2.5+ supports implicit caching by default
+    # We can enable explicit caching for better control
+    if "gemini" in params.get("model", "").lower():
+        # Enable caching for Gemini models
+        params["cache"] = True
+        logger.debug("Enabled Gemini caching")
 
 def _apply_bedrock_caching(messages: List[Dict[str, Any]]) -> None:
     """Apply AWS Bedrock prompt caching to messages using official Anthropic format.
