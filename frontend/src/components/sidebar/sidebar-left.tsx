@@ -252,16 +252,16 @@ export function SidebarLeft({
           <div className={cn("flex h-[40px] items-center px-1.5 relative", {
             "pl-4": state !== 'collapsed'
           })}>
-            {/* AdStich Logo */}
+            {/* Adstitch Logo */}
             <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
                 viewBox="0 0 24 24" 
-                fill="url(#adstich-gradient)"
+                fill="url(#Adstitch-gradient)"
                 className="h-6 w-6"
               >
                 <defs>
-                  <linearGradient id="adstich-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id="Adstitch-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#800080" />
                     <stop offset="100%" stopColor="oklch(0.5881 0.2118 306.32)" />
                   </linearGradient>
@@ -270,7 +270,7 @@ export function SidebarLeft({
               </svg>
               {state !== 'collapsed' && (
                 <span className="font-semibold text-lg text-foreground transition-all duration-300 ease-in-out">
-                  AdStich
+                  Adstitch
                 </span>
               )}
             </Link>

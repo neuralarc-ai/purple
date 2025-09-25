@@ -18,7 +18,7 @@
 } */
 
 .auth-button {
-  background: linear-gradient(94.26deg, #61C95C 16.42%, #14679B 53.4%, #FAE74E 101.69%);
+  background: radial-gradient(circle, #000000 0%, var(--helium-purple) 100%);
 }
 
 /* Remove autofill focus background color */
