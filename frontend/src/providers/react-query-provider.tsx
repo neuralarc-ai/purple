@@ -40,7 +40,7 @@ export function ReactQueryProvider({
               if (error?.status >= 400 && error?.status < 500) return false;
               return failureCount < 1;
             },
-            onError: (error: any, variables: any, context: any) => {
+            onError: (error: any, variables: any, context: any, meta: any) => {
               // Don't globally handle errors that are expected to be handled by components
               if (error instanceof BillingError || error instanceof AgentRunLimitError) {
                 return; // Let components handle these specific errors
