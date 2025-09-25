@@ -363,7 +363,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                 </Tooltip>
 
                 {/* Integrations Button */}
-                {selectedAgentId && onOpenIntegrations && (
+                {/* {selectedAgentId && onOpenIntegrations && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -386,7 +386,7 @@ export const MessageInput = forwardRef<HTMLTextAreaElement, MessageInputProps>(
                       <p>Connect apps</p>
                     </TooltipContent>
                   </Tooltip>
-                )}
+                )} */}
 
                 <input
                   type="file"

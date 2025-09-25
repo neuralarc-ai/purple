@@ -71,13 +71,17 @@ export function createMutationHook<
     
     return useMutation<TData, TError, TVariables, TContext>({
       mutationFn,
-      onError: (error, variables, context, meta) => {
+
+      onError: (error, variables, context, mutation) => {
+
         const errorContext = customErrorContext || baseErrorContext;
         if (!customMutationOptions?.onError && !baseOptions?.onError) {
           handleApiError(error, errorContext);
         }
-        baseOptions?.onError?.(error, variables, context, meta);
-        customMutationOptions?.onError?.(error, variables, context, meta);
+
+        baseOptions?.onError?.(error, variables, context, mutation);
+        customMutationOptions?.onError?.(error, variables, context, mutation);
+
       },
       ...baseOptions,
       ...customMutationOptions,

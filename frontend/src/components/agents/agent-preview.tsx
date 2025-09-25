@@ -261,8 +261,8 @@ export const AgentPreview = ({ agent, agentMetadata }: AgentPreviewProps) => {
 
       // Submit the request
       const result = await initiateAgentMutation.mutateAsync({
-        formData,
-        mode: 'agent'
+
+        formData
       });
 
       if (result.thread_id) {

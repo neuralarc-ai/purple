@@ -149,19 +149,6 @@ export default function FeedbackPage() {
   return (
     <div className="min-h-screen bg-background  flex items-center justify-center p-4">
       <div className="w-full  max-w-xl">
-        {/* Back to App Link */}
-        <div className="mb-6">
-          <Link 
-            href="/dashboard" 
-            className="inline-flex items-center px-4 py-2 bg-white text-black rounded-full hover:bg-gray-100 transition-all duration-300 font-medium hover:-translate-y-1 hover:shadow-lg"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-              <path d="M6 8L2 12L6 16"/>
-              <path d="M2 12H22"/>
-            </svg>
-            Back to Dashboard
-          </Link>
-        </div>
 
         {/* Feedback Form Card */}
         <Card className=" border-0 bg-card justify-center ">

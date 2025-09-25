@@ -668,6 +668,15 @@ async def check_billing_status(client, user_id: str) -> Tuple[bool, str, Optiona
             "plan_name": "Local Development",
             "minutes_limit": "no limit"
         }
+    
+    # DISABLED FOR PRODUCTION: Always allow users to run agents
+    if config.ENV_MODE == EnvMode.PRODUCTION:
+        logger.debug("Running in production mode - billing checks are disabled")
+        return True, "Production mode - billing disabled", {
+            "price_id": "production_unlimited",
+            "plan_name": "Production Unlimited",
+            "minutes_limit": "unlimited"
+        }
 
     # Get current subscription
     subscription = await get_user_subscription(user_id)
@@ -873,6 +882,16 @@ async def handle_usage_with_credits(
     Returns:
         Tuple[bool, str]: (success, message)
     """
+    # DISABLED FOR PRODUCTION: Skip all credit usage tracking
+    if config.ENV_MODE == EnvMode.PRODUCTION:
+        logger.debug("Production mode - credit usage tracking disabled")
+        return True, "Production mode - credit tracking disabled"
+    
+    # DISABLED FOR LOCAL: Skip all credit usage tracking
+    if config.ENV_MODE == EnvMode.LOCAL:
+        logger.debug("Local mode - credit usage tracking disabled")
+        return True, "Local mode - credit tracking disabled"
+    
     try:
         # Get current subscription tier and limits
         subscription = await get_user_subscription(user_id)
