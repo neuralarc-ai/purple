@@ -302,3 +302,44 @@ Analysis Requirements:
 Tagline will be Mishraji says, “Daag to sabke lagte hain… par asli safai dikhayi deti hai Surf Excel ke saath.”
 
 Please create a comprehensive report with all storyboards, text/VO scripts, and recommendations.
+
+
+----
+
+
+Complete Video Advertising Analysis: https://drive.google.com/file/d/1psUOn9vHIxsQr8_0ef7E78PFUpKW5Rgv/view?usp=drive_link
+
+Brand Focus: Duracell Market: Indian Market 2025
+
+Analysis Requirements:
+
+Identify optimal ad placement timestamps Create detailed ad stories with demographic targeting Generate professional storyboards (6-8 frames each) Include complete text/VO scripts with authentic Indian dialogue Provide placement rationale and audience insights Tagline will be Mishraji says, “Ye case to lamba chalega… bilkul Duracell battery ki tarah.”
+
+Please create a comprehensive report with all storyboards, text/VO scripts, and recommendations.
+
+
+---- 
+
+
+
+
+Complete Video Advertising Analysis: https://drive.google.com/file/d/1psUOn9vHIxsQr8_0ef7E78PFUpKW5Rgv/view?usp=drive_link
+
+Brand Focus: Iodex Fast Relief, Surf Excel and Duracell
+Market: Indian Market 2025
+
+Analysis Requirements:
+1. Identify 3-5 optimal ad placement timestamps
+2. Create detailed ad stories with demographic targeting
+3. Generate professional storyboards (6-8 frames each)
+4. Include complete text/VO scripts with authentic Indian dialogue
+5. Provide placement rationale and audience insights
+ 
+IODEX - Mishraji says :Story ka twist maza deta hai, par muscle ka twist dard deta hai — isliye hai Iodex Fast Relief.
+
+Duracell - Mishraji says:
+“Ye case to lamba chalega… bilkul Duracell battery ki tarah.”
+
+Surf Excel - Mishraji Says: “Daag to sabke lagte hain… par asli safai dikhayi deti hai Surf Excel ke saath.”
+
+Please create a comprehensive report with all storyboards, text/VO scripts, and recommendations.
