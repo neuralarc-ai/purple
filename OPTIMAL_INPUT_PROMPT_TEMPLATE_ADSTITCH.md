@@ -261,3 +261,44 @@ Duracell in Criminal Justice: When new evidence changes the course of the case, 
 “Ye case to lamba chalega… bilkul Duracell battery ki tarah.”
 
 Please create a comprehensive report with all storyboards, text/VO scripts, and recommendations.
+
+
+----
+
+
+Complete Video Advertising Analysis: https://drive.google.com/file/d/1psUOn9vHIxsQr8_0ef7E78PFUpKW5Rgv/view?usp=drive_link
+
+Brand Focus: Iodex Fast Relief
+Market: Indian Market 2025 POC
+
+Analysis Requirements:
+1. Identify 3-5 optimal ad placement timestamps
+2. Determine which brand fits each timestamp
+3. Create detailed ad stories with demographic targeting
+4. Generate professional storyboards (6-8 frames each)
+5. Include complete text/VO scripts with authentic Indian dialogue
+6. Provide placement rationale and audience insights
+7. Include Iodex logo placement requirements
+ 
+Tagline: Story ka twist maza deta hai, par muscle ka twist dard deta hai — isliye hai Iodex Fast Relief.
+
+Create a comprehensive report with all storyboards, text/VO scripts, and recommendations.
+
+----
+
+
+Complete Video Advertising Analysis: https://drive.google.com/file/d/1psUOn9vHIxsQr8_0ef7E78PFUpKW5Rgv/view?usp=drive_link
+
+Brand Focus: Surf Excel
+Market: Indian Market 2025
+
+Analysis Requirements:
+1. Identify optimal ad placement timestamps
+2. Create detailed ad stories with demographic targeting
+4. Generate professional storyboards (6-8 frames each)
+5. Include complete text/VO scripts with authentic Indian dialogue
+6. Provide placement rationale and audience insights
+
+Tagline will be Mishraji says, “Daag to sabke lagte hain… par asli safai dikhayi deti hai Surf Excel ke saath.”
+
+Please create a comprehensive report with all storyboards, text/VO scripts, and recommendations.

@@ -89,6 +89,33 @@ export function renderAttachments(
   return null;
 }
 
+// Helper function to extract all created files from the entire thread
+export function extractAllCreatedFiles(messages: UnifiedMessage[]): string[] {
+  const allFiles: string[] = [];
+  
+  messages.forEach((message) => {
+    if (message.type === 'user' || message.type === 'assistant') {
+      try {
+        const content = typeof message.content === 'string' ? message.content : '';
+        const attachmentsMatch = content.match(/\[Uploaded File: (.*?)\]/g);
+        if (attachmentsMatch) {
+          attachmentsMatch.forEach((match) => {
+            const pathMatch = match.match(/\[Uploaded File: (.*?)\]/);
+            if (pathMatch && pathMatch[1]) {
+              allFiles.push(pathMatch[1]);
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Error parsing message attachments:', e);
+      }
+    }
+  });
+  
+  // Remove duplicates and return unique files
+  return Array.from(new Set(allFiles));
+}
+
 // Render Markdown content while preserving XML tags that should be displayed as tool calls
 export function renderMarkdownContent(
   content: string,
@@ -945,6 +972,23 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
         } catch (e) {
           console.error('Error parsing message attachments:', e);
         }
+      } else if (message.type === 'assistant') {
+        // Also extract attachments from assistant messages (for tool-created files)
+        try {
+          const content =
+            typeof message.content === 'string' ? message.content : '';
+          const attachmentsMatch = content.match(/\[Uploaded File: (.*?)\]/g);
+          if (attachmentsMatch) {
+            attachmentsMatch.forEach((match) => {
+              const pathMatch = match.match(/\[Uploaded File: (.*?)\]/);
+              if (pathMatch && pathMatch[1]) {
+                allAttachments.push(pathMatch[1]);
+              }
+            });
+          }
+        } catch (e) {
+          console.error('Error parsing assistant message attachments:', e);
+        }
       }
     });
 
@@ -1783,6 +1827,35 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                   />
                 </div>
               )}
+
+              {/* Render all created files at the end of the thread */}
+              {(() => {
+                const allCreatedFiles = extractAllCreatedFiles(displayMessages);
+                if (allCreatedFiles.length > 0) {
+                  return (
+                    <div className="mt-8 pt-6 border-t border-border/50">
+                      <div className="mb-4">
+                        <h3 className="text-lg font-semibold text-foreground mb-2">
+                          Created Files
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Files created during this conversation
+                        </p>
+                      </div>
+                      <ThreadFilesDisplay
+                        attachments={allCreatedFiles}
+                        onFileClick={handleOpenFileViewer}
+                        showPreviews={true}
+                        sandboxId={sandboxId}
+                        project={project}
+                        rightAlignGrid={false}
+                        showViewAllButton={true}
+                      />
+                    </div>
+                  );
+                }
+                return null;
+              })()}
               
               <div className="!h-48" />
             </div>
