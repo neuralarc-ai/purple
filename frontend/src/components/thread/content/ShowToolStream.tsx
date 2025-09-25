@@ -6,7 +6,6 @@ import {
   getUserFriendlyToolName,
   extractPrimaryParam,
 } from '@/components/thread/utils';
-import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
 
 // Only show streaming for file operation tools
 const FILE_OPERATION_TOOLS = new Set([
@@ -133,10 +132,9 @@ export const ShowToolStream: React.FC<ShowToolStreamProps> = ({
               className={`w-full flex items-center gap-1.5 py-1 px-2 text-xs text-muted-foreground hover:bg-muted/80 transition-all duration-500 ease-in-out cursor-pointer bg-muted`}
             >
               <div className="flex items-center justify-center p-1 rounded-sm">
-                <i className="ri-loader-3-line h-3 w-3 text-muted-foreground flex-shrink-0 animate-spin animation-duration-2000"></i>
-                {/* <CircleDashed className="h-3 w-3 text-muted-foreground flex-shrink-0 animate-spin animation-duration-2000" /> */}
+                <CircleDashed className="h-3 w-3 text-muted-foreground flex-shrink-0 animate-spin animation-duration-2000" />
               </div>
-              <span className="font-mono text-xs text-foreground">
+              <span className="text-xs text-foreground font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]">
                 {displayName}
               </span>
               {paramDisplay && (
@@ -184,20 +182,20 @@ export const ShowToolStream: React.FC<ShowToolStreamProps> = ({
             </div>
           </div>
         ) : (
-          // Just tool button with animated shiny text (first 1500ms)
+          // Just tool button with shimmer (first 1500ms)
           <button
             onClick={() => onToolClick?.(messageId ?? null, toolName as string)}
-            className="inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50! hover:bg-muted dark:bg-sidebar-accent/60! dark:hover:bg-background/80 rounded-full! transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
+            className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50! hover:bg-muted dark:bg-sidebar-accent/60! dark:hover:bg-background/80 rounded-full! transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
           >
             <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600">
               <CircleDashed className="h-3 w-3 text-muted-foreground flex-shrink-0 animate-spin animation-duration-2000" />
             </div>
-            <AnimatedShinyText className="text-xs text-accent-foreground! font-medium!" shimmerWidth={120}>
+            <span className="text-xs text-foreground! font-medium! font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]">
               {displayName}
-            </AnimatedShinyText>
+            </span>
             {paramDisplay && (
               <span
-                className="ml-1 text-muted-foreground! truncate max-w-[200px]"
+                className="ml-1 text-foreground! truncate max-w-[200px]"
                 title={paramDisplay}
               >
                 {paramDisplay}
@@ -214,17 +212,17 @@ export const ShowToolStream: React.FC<ShowToolStreamProps> = ({
     <div className="my-1">
       <button
         onClick={() => onToolClick?.(messageId ?? null, toolName as string)}
-        className="inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50! hover:bg-muted dark:bg-sidebar-accent/60! dark:hover:bg-background/80 rounded-full! transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
+        className="animate-shimmer inline-flex items-center gap-1.5 py-1.5 px-2.5 text-xs text-muted-foreground bg-muted/50! hover:bg-muted dark:bg-sidebar-accent/60! dark:hover:bg-background/80 rounded-full! transition-colors cursor-pointer border border-sidebar-accent dark:border-sidebar"
       >
         <div className="border bg-sidebar/50 dark:from-sidebar flex items-center justify-center p-0.5 rounded-[4px] border-foreground/30 dark:border-neutral-600">
           <CircleDashed className="h-3 w-3 text-muted-foreground flex-shrink-0 animate-spin animation-duration-2000" />
         </div>
-        <AnimatedShinyText className="text-xs text-accent-foreground! font-medium!" shimmerWidth={120}>
+        <span className="text-xs text-foreground! font-medium! font-[-apple-system,BlinkMacSystemFont,'Segoe_UI',Roboto,'Helvetica_Neue',Arial,sans-serif]">
           {displayName}
-        </AnimatedShinyText>
+        </span>
         {paramDisplay && (
           <span
-            className="ml-1 text-muted-foreground! truncate max-w-[200px]"
+            className="ml-1 text-foreground! truncate max-w-[200px]"
             title={paramDisplay}
           >
             {paramDisplay}
