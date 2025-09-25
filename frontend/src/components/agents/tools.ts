@@ -8,6 +8,7 @@ export const AGENTPRESS_TOOL_DEFINITIONS: Record<string, { enabled: boolean; des
     'sb_vision_tool': { enabled: true, description: 'Vision and image processing capabilities for visual content analysis', icon: '👁️', color: 'bg-pink-100 dark:bg-pink-800/50' },
     'sb_image_edit_tool': { enabled: true, description: 'Generate new images or edit existing images using OpenAI GPT Image 1', icon: '🎨', color: 'bg-purple-100 dark:bg-purple-800/50' },
     'sb_video_generation_tool': { enabled: true, description: 'Generate 8s videos with audio using Google Veo 3 via Gemini API (text-to-video, image-to-video)', icon: '🎬', color: 'bg-rose-100 dark:bg-rose-800/50' },
+    'sb_video_analysis_tool': { enabled: true, description: 'Advanced video analysis using Google Cloud Video Intelligence API for object detection, scene changes, speech transcription, and content analysis', icon: '🔍', color: 'bg-cyan-100 dark:bg-cyan-800/50' },
 
     'sb_sheets_tool': { enabled: true, description: 'Create, view, update, analyze, visualize, and format spreadsheets (XLSX/CSV) with Luckysheet viewer', icon: '📊', color: 'bg-purple-100 dark:bg-purple-800/50' },
     'sb_web_dev_tool': { enabled: false, description: 'Create Next.js projects with shadcn/ui pre-installed, manage dependencies, build and deploy modern web applications', icon: '⚛️', color: 'bg-cyan-100 dark:bg-cyan-800/50' },

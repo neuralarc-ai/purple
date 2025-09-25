@@ -25,6 +25,7 @@ from services.billing import check_billing_status
 from agent.tools.sb_vision_tool import SandboxVisionTool
 from agent.tools.sb_image_edit_tool import SandboxImageEditTool
 from agent.tools.sb_video_generation_tool import SandboxVideoGenerationTool
+from agent.tools.sb_video_analysis_tool import SandboxVideoAnalysisTool
 
 from services.langfuse import langfuse
 from langfuse.client import StatefulTraceClient
@@ -106,6 +107,7 @@ class ToolManager:
             ('sb_vision_tool', SandboxVisionTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
             ('sb_image_edit_tool', SandboxImageEditTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
             ('sb_video_generation_tool', SandboxVideoGenerationTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
+            ('sb_video_analysis_tool', SandboxVideoAnalysisTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
 
             ('sb_sheets_tool', SandboxSheetsTool, {'project_id': self.project_id, 'thread_manager': self.thread_manager}),
             ('sb_web_dev_tool', SandboxWebDevTool, {'project_id': self.project_id, 'thread_id': self.thread_id, 'thread_manager': self.thread_manager}),
