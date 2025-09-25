@@ -19,6 +19,7 @@ export const AnimatedLoader: React.FC<AnimatedLoaderProps> = ({ className = '' }
             width: 16px;
             height: 16px;
             margin-right: 8px;
+            margin-bottom: 2px;
           }
 
           .loader-small:before,
@@ -73,7 +74,7 @@ export const AnimatedLoader: React.FC<AnimatedLoaderProps> = ({ className = '' }
         className="text-base font-semibold text-white"
         shimmerWidth={100}
       >
-        <span>AdStich</span>
+        <span>Adstitch</span>
       </AnimatedShinyText>
     </div>
   );

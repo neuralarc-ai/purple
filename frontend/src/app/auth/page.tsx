@@ -57,14 +57,6 @@ function LoginContent() {
   const [mounted, setMounted] = useState(false);
   const isProduction = isProductionMode();
 
-  // Random auth image selection
-  const [randomAuthImage, setRandomAuthImage] = useState('/auth/auth-1.jpeg');
-
-  useEffect(() => {
-    // Generate random number between 1 and 4 (only 4 auth images available)
-    const randomNumber = Math.floor(Math.random() * 4) + 1;
-    setRandomAuthImage(`/auth/auth-${randomNumber}.jpeg`);
-  }, []);
 
   const { wasLastMethod: wasEmailLastMethod, markAsUsed: markEmailAsUsed } =
     useAuthMethodTracking('email');
@@ -291,41 +283,8 @@ function LoginContent() {
 
   return (
     <div className="min-h-screen bg-[#EDEDED] relative dark:bg-background ">
-      <div className="flex min-h-screen items-center justify-center gap-15 px-2 xs:px-4 sm:px-6 lg:px-0 max-[480px]:min-h-[85vh]">
-        {/* Left Section - Image (No card background) */}
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{
-            duration: 0.8,
-            ease: [0.4, 0, 0.2, 1],
-            delay: 0.4,
-          }}
-          className="hidden lg:block"
-          style={{
-            width: '500px',
-            height: '650px',
-          }}
-        >
-          <div className="relative w-full h-full rounded-[24px] overflow-hidden">
-            <Image
-              src={randomAuthImage}
-              alt="Preview"
-              layout="fill"
-              objectFit="cover"
-              className="rounded-[24px]"
-            />
-            <Image
-              src="/auth/logo.png"
-              alt="Logo"
-              width={40}
-              height={40}
-              className="absolute top-8 left-8"
-            />
-          </div>
-        </motion.div>
-
-        {/* Right Section Container */}
+      <div className="flex min-h-screen items-center justify-center px-2 xs:px-4 sm:px-6 lg:px-0 max-[480px]:min-h-[85vh]">
+        {/* Centered Form Container */}
         <div
           className={`flex flex-col items-center w-full max-w-[500px] ${isSignUp ? 'mb-0' : 'mb-0'}`}
         >
@@ -362,14 +321,14 @@ function LoginContent() {
               </div>
             </div>
           </Link>
-          {/* Right Section - Form (White card) */}
+          {/* Centered Form (White card) */}
           <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: 0.8,
               ease: [0.4, 0, 0.2, 1],
-              delay: 0.4,
+              delay: 0.2,
             }}
             className={`bg-white  px-4 py-8 h-full min-h-0 rounded-[24px] shadow-lg flex flex-col 
               justify-center w-full lg:w-[500px] ${isSignUp ? 'lg:h-full' : 'lg:h-full'}
@@ -378,7 +337,7 @@ function LoginContent() {
           >
             <div className="w-full px-2 sm:px-4 lg:px-4">
               <form
-                className={`${isSignUp ? 'space-y-3' : 'mb-[3rem] space-y-5'}`}
+                className={`${isSignUp ? 'space-y-3' : 'space-y-5'}`}
               >
                 <div className="space-y-3">
                   <label
@@ -475,7 +434,7 @@ function LoginContent() {
                 </div>
               </form>
               {/* Sign up/Sign in link - show in all environments */}
-              <div className="mt-4 text-center text-sm">
+              {/* <div className="mt-4 text-center text-sm">
                 <Link
                   href={
                     isSignUp
@@ -488,14 +447,14 @@ function LoginContent() {
                     'Already have an account? Sign in'
                   ) : (
                     <>
-                      Don’t have an account?{' '}
+                      Don't have an account?{' '}
                       <span className="text-black font-medium dark:max-[480px]:text-[#949494]">SignUp</span>
                     </>
                   )}
                 </Link>
-              </div>
+              </div> */}
               {/* Social login section */}
-              {
+              {/* {
                 <>
                   <div className="relative my-3">
                     <div className="relative flex justify-center text-sm">
@@ -506,7 +465,7 @@ function LoginContent() {
                   <div className="space-y-2.5">
                     <GoogleSignIn returnUrl={returnUrl || undefined} />
                     <AzureSignIn returnUrl={returnUrl || undefined} />
-                    {/* <button className="w-full h-10 xs:h-11 sm:h-12 border border-gray-200 bg-white text-black rounded-full flex items-center justify-center gap-2 text-xs xs:text-sm sm:text-base hover:bg-gray-50 transition-colors">
+                    <button className="w-full h-10 xs:h-11 sm:h-12 border border-gray-200 bg-white text-black rounded-full flex items-center justify-center gap-2 text-xs xs:text-sm sm:text-base hover:bg-gray-50 transition-colors">
                       <Image
                         src="/auth/apple-login.svg"
                         width="18"
@@ -527,10 +486,10 @@ function LoginContent() {
                       <span className="truncate">
                         Continue with Microsoft Account
                       </span>
-                    </button> */}
+                    </button>
                   </div>
                 </>
-              }
+              } */}
             </div>
           </motion.div>
         </div>
@@ -590,7 +549,7 @@ function LoginContent() {
           </form>
         </DialogContent>
       </Dialog>
-      <LoginFooter />
+      {/* <LoginFooter /> */}
     </div>
   );
 }
