@@ -922,25 +922,8 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
         <span className="font-bold text-base text-foreground">
           Adstitch
         </span>
-
       </div>
     );
-
-    // Get agent name from various sources
-    let agentNameToUse = agentName || 'Helium';
-    
-    if (agentData?.name) {
-      agentNameToUse = agentData.name;
-    } else {
-      // Check recent messages for agent info
-      const recentAssistantWithAgent = [...displayMessages]
-        .reverse()
-        .find((msg) => msg.type === 'assistant' && msg.agents?.name);
-      
-      if (recentAssistantWithAgent?.agents?.name) {
-        agentNameToUse = recentAssistantWithAgent.agents.name;
-      }
-    }
 
     return {
       name: agentNameToUse,
@@ -1567,9 +1550,9 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                                       <div className="rounded-md flex items-center justify-center">
                                         {getAgentInfo().avatar}
                                       </div>
-                                      <p className="ml-1.5 text-base font-semibold text-muted-foreground">
+                                      <div className="ml-1.5 text-base font-semibold text-muted-foreground">
                                         {getAgentInfo().name}
-                                      </p>
+                                      </div>
                                     </div>
                                     
                                     {/* Action buttons on the right */}
