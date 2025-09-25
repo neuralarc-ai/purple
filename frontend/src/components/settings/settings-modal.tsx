@@ -1284,8 +1284,8 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
         </DialogContent>
       </Dialog>
       
-      {/* Credit Purchase Modal */}
-      <CreditPurchaseModal
+      {/* DISABLED FOR PRODUCTION: Credit Purchase Modal */}
+      {/* <CreditPurchaseModal
         open={showCreditPurchaseModal}
         onOpenChange={setShowCreditPurchaseModal}
         currentBalance={subscriptionData?.credit_balance_credits || 0}
@@ -1294,14 +1294,14 @@ export function SettingsModal({ open, onOpenChange, defaultSection = 'profile' }
           refetchSubscription();
           setShowCreditPurchaseModal(false);
         }}
-      />
+      /> */}
       
-      {/* Billing Modal */}
-      <BillingModal 
+      {/* DISABLED FOR PRODUCTION: Billing Modal */}
+      {/* <BillingModal 
         open={showBillingModal} 
         onOpenChange={setShowBillingModal}
         returnUrl={typeof window !== 'undefined' ? window.location.href : '/'}
-      />
+      /> */}
     </Dialog>
   );
 }

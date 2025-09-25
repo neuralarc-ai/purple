@@ -124,7 +124,7 @@ export function NavUserWithTeams({
   };
 }) {
   const router = useRouter();
-  const { isMobile } = useSidebar();
+  const { isMobile, state } = useSidebar();
   const { data: accounts } = useAccounts();
   const { profile, preferredName, isLoading: profileLoading, isAuthError } = useUserProfileWithFallback();
 
@@ -315,10 +315,11 @@ export function NavUserWithTeams({
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-(--radix-dropdown-menu-trigger-width) min-w-56 bg-background rounded-3xl p-2"
-              side={isMobile ? 'bottom' : 'top'}
-              align="start"
-              sideOffset={4}
+              className={`${state === 'collapsed' ? 'min-w-56 w-56' : 'w-(--radix-dropdown-menu-trigger-width) min-w-56'} bg-background rounded-3xl p-2`}
+              side={isMobile ? 'bottom' : (state === 'collapsed' ? 'right' : 'top')}
+              align={state === 'collapsed' ? 'start' : 'start'}
+              sideOffset={state === 'collapsed' ? 8 : 4}
+              alignOffset={state === 'collapsed' ? 0 : 0}
             >
               <DropdownMenuLabel className="p-0 font-normal">
                 <div className="flex items-center gap-2 px-1.5 py-1.5 text-left text-sm">
@@ -477,8 +478,8 @@ export function NavUserWithTeams({
               <DropdownMenuSeparator />
 
               {/* User Settings Section */}
-              <DropdownMenuGroup>
-                <DropdownMenuItem
+              {/* <DropdownMenuGroup>
+              <DropdownMenuItem
                   className="rounded-full cursor-pointer"
                   onClick={() => setShowSettingsModal(true)}
                 >
@@ -493,16 +494,11 @@ export function NavUserWithTeams({
                   Manage Subscription
                 </DropdownMenuItem>
 
-                {/* Help - Direct link to feedback */}
-                <DropdownMenuItem asChild className="rounded-full cursor-pointer">
-                  <Link href="/feedback">
-                    <HelpCircle className="h-4 w-4 mr-2" />
-                    Help
-                  </Link>
-                </DropdownMenuItem>
+                Help - Direct link to feedback
+               
 
-                {/* About us */}
-                <DropdownMenuItem asChild className="rounded-full cursor-pointer">
+                About us
+               <DropdownMenuItem asChild className="rounded-full cursor-pointer">
                   <Link href="/about">
                     <BookOpen className="h-4 w-4 mr-2" />
                     About us
@@ -512,7 +508,7 @@ export function NavUserWithTeams({
 
                 {!flagLoading && customAgentsEnabled && (
                   <DropdownMenuItem asChild className="rounded-full cursor-pointer">
-                    {/* <Link href="/settings/credentials">
+                    <Link href="/settings/credentials">
                       <DynamicIcon
                         lightPath="/icons/integrations.svg"
                         darkPath="/icons/integration-dark.svg"
@@ -522,11 +518,17 @@ export function NavUserWithTeams({
                         className="mb-0"
                       />
                       Integrations
-                    </Link> */}
+                    </Link>
                   </DropdownMenuItem>
                 )}
 
-              </DropdownMenuGroup>
+              </DropdownMenuGroup> */}
+               <DropdownMenuItem asChild className="rounded-full cursor-pointer">
+                  <Link href="/feedback">
+                    <HelpCircle className="h-4 w-4 mr-2" />
+                    Help
+                  </Link>
+                </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-500 hover:text-red-400 focus:text-red-400 focus:bg-red-500/10 rounded-full cursor-pointer"

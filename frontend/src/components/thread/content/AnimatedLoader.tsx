@@ -7,66 +7,73 @@ interface AnimatedLoaderProps {
 
 export const AnimatedLoader: React.FC<AnimatedLoaderProps> = ({ className = '' }) => {
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
-      <div className="relative w-[12px] h-[12px] scale-75">
-        <div 
-          className="absolute bg-black dark:bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-[rotateClockwise_2.25s_infinite_cubic-bezier(0.4,0,0.2,1)]"
-          style={{
-            animationDelay: '0s',
-            top: '0%',
-            left: '0%',
-            width: '8px',
-            height: '8px'
-          }}
-        />
-        <div 
-          className="absolute bg-black dark:bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-[rotateClockwise_2.25s_infinite_cubic-bezier(0.4,0,0.2,1)]"
-          style={{
-            animationDelay: '-0.5625s',
-            top: '0%',
-            left: '100%',
-            width: '11px',
-            height: '11px'
-          }}
-        />
-        <div 
-          className="absolute bg-black dark:bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-[rotateClockwise_2.25s_infinite_cubic-bezier(0.4,0,0.2,1)]"
-          style={{
-            animationDelay: '-1.125s',
-            top: '100%',
-            left: '100%',
-            width: '8px',
-            height: '8px'
-          }}
-        />
-        <div 
-          className="absolute bg-black dark:bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2 animate-[rotateClockwise_2.25s_infinite_cubic-bezier(0.4,0,0.2,1)]"
-          style={{
-            animationDelay: '-1.6875s',
-            top: '100%',
-            left: '0%',
-            width: '11px',
-            height: '11px'
-          }}
-        />
-        
+    <div className={`flex items-center justify-start  ${className}`}>
+      {/* Pulsating loader icon */}
+      <div className="loader-small">
         <style jsx>{`
-          @keyframes rotateClockwise {
-            0%   { top: 0%; left: 0%; width: 8px; height: 8px; }
-            20%  { top: 0%; left: 100%; width: 11px; height: 11px; }
-            25%  { top: 0%; left: 100%; width: 11px; height: 11px; }
-            45%  { top: 100%; left: 100%; width: 8px; height: 8px; }
-            50%  { top: 100%; left: 100%; width: 8px; height: 8px; }
-            70%  { top: 100%; left: 0%; width: 11px; height: 11px; }
-            75%  { top: 100%; left: 0%; width: 11px; height: 11px; }
-            95%  { top: 0%; left: 0%; width: 8px; height: 8px; }
-            100% { top: 0%; left: 0%; width: 8px; height: 8px; }
+          .loader-small {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+          }
+
+          .loader-small:before,
+          .loader-small:after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            animation: pulsOut 1.8s ease-in-out infinite;
+            filter: drop-shadow(0 0 0.5rem oklch(0.5881 0.2118 306.32));
+          }
+
+          .loader-small:before {
+            width: 100%;
+            padding-bottom: 100%;
+            box-shadow: inset 0 0 0 2px oklch(0.5881 0.2118 306.32);
+            animation-name: pulsIn;
+          }
+
+          .loader-small:after {
+            width: calc(100% - 4px);
+            padding-bottom: calc(100% - 4px);
+            box-shadow: 0 0 0 0 oklch(0.5881 0.2118 306.32);
+          }
+
+          @keyframes pulsIn {
+            0% {
+              box-shadow: inset 0 0 0 2px oklch(0.5881 0.2118 306.32);
+              opacity: 1;
+            }
+
+            50%, 100% {
+              box-shadow: inset 0 0 0 0 oklch(0.5881 0.2118 306.32);
+              opacity: 0;
+            }
+          }
+
+          @keyframes pulsOut {
+            0%, 50% {
+              box-shadow: 0 0 0 0 oklch(0.5881 0.2118 306.32);
+              opacity: 0;
+            }
+
+            100% {
+              box-shadow: 0 0 0 2px oklch(0.5881 0.2118 306.32);
+              opacity: 1;
+            }
           }
         `}</style>
       </div>
       
-      <AnimatedShinyText className="text-base font-semibold -ml-1">
-        <span>Helium</span>
+      <AnimatedShinyText 
+        className="text-base font-semibold text-white"
+        shimmerWidth={100}
+      >
+        <span>AdStich</span>
       </AnimatedShinyText>
     </div>
   );

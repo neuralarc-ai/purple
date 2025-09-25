@@ -1165,7 +1165,7 @@ export function ToolCallSidePanel({
                     <div className="ml-2 flex items-center gap-2">
                       <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                         {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                        Helium Core
+                        Stitcher
                       </h2>
                       {agentStatus === 'running' && (
                         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium border bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 border-green-200 dark:border-green-800">
@@ -1210,7 +1210,7 @@ export function ToolCallSidePanel({
               <div className="ml-2 flex items-center gap-2">
                 <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                   {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                  Helium Core
+                  Stitcher
                 </h2>
 
               </div>
@@ -1226,23 +1226,12 @@ export function ToolCallSidePanel({
           </div>
           <div className="flex flex-col items-center justify-center flex-1 p-8">
             <div className="flex flex-col items-center justify-center w-full h-full">
-              <div className="relative w-[20%] h-[20%] flex items-center justify-center">
-                <Image
-                  src="/helium-brain.png"
-                  alt="Helium Core Initiating"
-                  width={240}
-                  height={240}
-                  className="w-full h-full object-contain dark:hidden"
-                  priority
-                />
-                <Image
-                  src="/helium-brain(dark).png"
-                  alt="Helium Core Initiating"
-                  width={240}
-                  height={240}
-                  className="w-full h-full object-contain hidden dark:block"
-                  priority
-                />
+              <div className="relative w-[40%] h-[40%] flex items-center justify-center">
+                <div className="text-center">
+                  <h3 className="text-lg font-medium text-zinc-400 dark:text-zinc-700 mb-2">
+                    Preparing  Analysis for Advertisement....
+                  </h3>
+                </div>
               </div>
             </div>
           </div>
@@ -1260,7 +1249,7 @@ export function ToolCallSidePanel({
                 <div className="ml-2 flex items-center gap-2">
                   <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                     {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                    Helium Core
+                    Stitcher
                   </h2>
 
                 </div>
@@ -1308,7 +1297,7 @@ export function ToolCallSidePanel({
               <div className="ml-2 flex items-center gap-2">
                 <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                   {/* {agentName ? `${agentName}'s Computer` : 'Suna\'s Computer'} */}
-                  Helium Core
+                  Stitcher
                 </h2>
 
               </div>
@@ -1361,7 +1350,7 @@ export function ToolCallSidePanel({
             <motion.div layoutId="tool-icon" className="ml-2 flex items-center gap-2">
               <h2 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-accent-foreground/80 prose prose-sm dark:prose-invert">
                 {/* {agentName ? `${agentName}'s Computer` : 'Helium\'s Brain'} */}
-                Helium Core
+                Stitcher
               </h2>
 
             </motion.div>

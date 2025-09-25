@@ -25,12 +25,16 @@ export function BillingProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
 
+    // DISABLED FOR PRODUCTION: Always allow users to run agents
+    // Skip all billing checks in production mode
+    return false; // Return false means "no billing error" = can run
+
     if (checkInProgressRef.current) {
       return !billingStatusQuery.data?.can_run;
     }
 
     const now = Date.now();
-    if (!force && lastCheckRef.current && now - lastCheckRef.current < 60000) {
+    if (!force && lastCheckRef.current && now - (lastCheckRef.current || 0) < 60000) {
       return !billingStatusQuery.data?.can_run;
     }
 

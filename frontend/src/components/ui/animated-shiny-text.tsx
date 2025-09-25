@@ -16,7 +16,7 @@ export const AnimatedShinyText: FC<AnimatedShinyTextProps> = ({
   return (
     <span
       className={cn(
-        "mx-auto max-w-md relative",
+        "relative",
         className,
       )}
       {...props}
@@ -31,15 +31,9 @@ export const AnimatedShinyText: FC<AnimatedShinyTextProps> = ({
         style={
           {
             "--shiny-width": `${shimmerWidth}px`,
-            backgroundImage: "linear-gradient(90deg, transparent calc(50% - 40px), var(--shimmer-color-1), var(--shimmer-color-2), var(--shimmer-color-3), transparent calc(50% + 40px))",
+            backgroundImage: "linear-gradient(90deg, transparent calc(50% - 40px), transparent, oklch(0.5881 0.2118 306.32), transparent calc(50% + 40px))",
             backgroundSize: "300% 100%",
             backgroundPosition: "-200% center",
-            "--shimmer-color-1": "var(--light-shimmer-1, var(--helium-blue))",
-            "--shimmer-color-2": "var(--light-shimmer-2, var(--helium-orange))", 
-            "--shimmer-color-3": "var(--light-shimmer-3, var(--helium-green))",
-            "--light-shimmer-1": "transparent",
-            "--light-shimmer-2": "white",
-            "--light-shimmer-3": "transparent",
           } as CSSProperties
         }
         className="absolute inset-0 bg-clip-text bg-no-repeat text-transparent animate-shiny-text"

@@ -13,14 +13,14 @@ import {
 } from '@/lib/api';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useBillingError } from '@/hooks/useBillingError';
-import { BillingErrorAlert } from '@/components/billing/usage-limit-alert';
+// import { BillingErrorAlert } from '@/components/billing/usage-limit-alert';
 import { useAccounts } from '@/hooks/use-accounts';
 import { useUserProfileWithFallback } from '@/hooks/use-user-profile';
 import { config, isLocalMode, isStagingMode } from '@/lib/config';
 import { useInitiateAgentWithInvalidation } from '@/hooks/react-query/dashboard/use-initiate-agent';
 
 import { useAgents } from '@/hooks/react-query/agents/use-agents';
-import { BillingModal } from '@/components/billing/billing-modal';
+// import { BillingModal } from '@/components/billing/billing-modal';
 import { useAgentSelection } from '@/lib/stores/agent-selection-store';
 import { useThreadQuery } from '@/hooks/react-query/threads/use-threads';
 import { normalizeFilenameToNFC } from '@/lib/utils/unicode';
@@ -40,13 +40,13 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import { TokenUsage } from './token-usage';
-import { PromotionalBanner } from './promotional-banner';
 import { useInviteCodeUsage } from '@/hooks/use-invite-code-usage';
 import { SettingsModal } from '@/components/settings/settings-modal';
-import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
+// import { CreditExhaustionBanner } from '@/components/billing/credit-exhaustion-banner';
 import { useCreditExhaustion } from '@/hooks/useCreditExhaustion';
 import { useSharedSubscription } from '@/contexts/SubscriptionContext';
+import { useTheme } from 'next-themes';
+import Image from 'next/image';
 
 const PENDING_PROMPT_KEY = 'pendingAgentPrompt';
 
@@ -62,6 +62,7 @@ export function DashboardContent() {
   const { data: accounts } = useAccounts();
   const { preferredName, isLoading: profileLoading } = useUserProfileWithFallback();
   const personalAccount = accounts?.find((account) => account.personal_account);
+  const { theme } = useTheme();
   const { 
     selectedAgentId, 
     setSelectedAgent, 
@@ -69,15 +70,15 @@ export function DashboardContent() {
     getCurrentAgent
   } = useAgentSelection();
   const [initiatedThreadId, setInitiatedThreadId] = useState<string | null>(null);
-  const { billingError, handleBillingError, clearBillingError } = useBillingError();
+  // const { billingError, handleBillingError, clearBillingError } = useBillingError();
   const { data: subscriptionData } = useSharedSubscription();
-  const {
-    isExhausted,
-    showBanner,
-    handleCreditError,
-    clearCreditExhaustion,
-    hideBanner,
-  } = useCreditExhaustion({ subscriptionData });
+  // const {
+  //   isExhausted,
+  //   showBanner,
+  //   handleCreditError,
+  //   clearCreditExhaustion,
+  //   hideBanner,
+  // } = useCreditExhaustion({ subscriptionData });
   const [showAgentLimitDialog, setShowAgentLimitDialog] = useState(false);
   const [agentLimitData, setAgentLimitData] = useState<{
     runningCount: number;
@@ -360,9 +361,9 @@ export function DashboardContent() {
       console.error('Error during submission process:', error);
       
       // Handle credit errors with the new banner
-      if (handleCreditError(error)) {
-        return;
-      }
+      // if (handleCreditError(error)) {
+      //   return;
+      // }
       
       if (error instanceof BillingError) {
         setShowPaymentModal(true);
@@ -434,7 +435,8 @@ export function DashboardContent() {
 
   return (
     <>
-      <BillingModal 
+      {/* DISABLED FOR PRODUCTION: Billing Modal */}
+      {/* <BillingModal 
         open={showPaymentModal} 
         onOpenChange={(open) => {
           setShowPaymentModal(open);
@@ -444,7 +446,7 @@ export function DashboardContent() {
         }}
         showUsageLimitAlert={true}
         showPromotionalMessage={showPromotionalMessage}
-      />
+      /> */}
       <SettingsModal 
         open={showSettingsModal} 
         onOpenChange={setShowSettingsModal}
@@ -453,11 +455,6 @@ export function DashboardContent() {
       <div className="flex flex-col h-screen w-full overflow-hidden">
         {/* Top Right Controls */}
         <div className="absolute py-4 right-3 z-10 flex items-center gap-3 md:right-11">
-          {/* Token Usage */}
-          <TokenUsage 
-            onUpgradeClick={() => setShowPaymentModal(true)} 
-            onViewUsageClick={() => setShowSettingsModal(true)}
-          />
           
           {/* Theme Toggle Button */}
           <TooltipProvider>
@@ -477,12 +474,12 @@ export function DashboardContent() {
         <div className="flex-1 overflow-y-auto"> 
           <div className="min-h-full flex flex-col">
             {/* Promotional Banner - Only show for users who used invite codes */}
-            {!inviteCodeLoading && cachedInviteCodeUsage?.has_used_invite_code && (
+            {/* {!inviteCodeLoading && cachedInviteCodeUsage?.has_used_invite_code && (
               <PromotionalBanner onUpgradeClick={() => {
                 setShowPromotionalMessage(true);
                 setShowPaymentModal(true);
               }} />
-            )}
+            )} */}
             
             <div className="flex-1 flex items-center justify-center px-4 -translate-y-8 xl:-translate-y-16">
               <div className="w-full max-w-[800px] flex flex-col items-center justify-center space-y-1">
@@ -499,8 +496,8 @@ export function DashboardContent() {
                 <div className="w-full transition-all duration-700 ease-out">
                   
                   <div className="transition-all duration-700 ease-out">
-                    {/* Credit Exhaustion Banner */}
-                    {showBanner && (
+                    {/* DISABLED FOR PRODUCTION: Credit Exhaustion Banner */}
+                    {/* {showBanner && (
                       <div className="mb-4">
                         <CreditExhaustionBanner 
                           onUpgrade={() => {
@@ -511,7 +508,7 @@ export function DashboardContent() {
                           }}
                         />
                       </div>
-                    )}
+                    )} */}
 
                     <ChatInput
                       ref={chatInputRef}
@@ -525,7 +522,7 @@ export function DashboardContent() {
                       onAgentSelect={setSelectedAgent}
                       enableAdvancedConfig={true}
                       onConfigureAgent={(agentId) => router.push(`/agents/config/${agentId}`)}
-                      disabled={isExhausted}
+                      disabled={false} // DISABLED FOR PRODUCTION: Always allow submission
                     />
                   </div>
                 </div>
@@ -534,14 +531,37 @@ export function DashboardContent() {
           </div>
         </div>        
         
-        <BillingErrorAlert
+        {/* Powered by Helium Footer */}
+        <div className="flex justify-center py-4 px-4">
+          <p className="text-base text-muted-foreground flex items-center gap-1">
+            Powered by{' '}
+            <a 
+              href="https://he2.ai/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:text-primary/80 transition-colors duration-200 font-medium flex items-center gap-1"
+            >
+              Helium
+              <Image
+                src={theme === 'dark' ? '/logo-dark.svg' : '/logo-light.svg'}
+                alt="Helium Logo"
+                width={12}
+                height={12}
+                className="inline-block"
+              />
+            </a>
+          </p>
+        </div>
+        
+        {/* DISABLED FOR PRODUCTION: Billing Error Alert */}
+        {/* <BillingErrorAlert
           message={billingError?.message}
           currentUsage={billingError?.currentUsage}
           limit={billingError?.limit}
           accountId={personalAccount?.account_id}
           onDismiss={clearBillingError}
           isOpen={!!billingError}
-        />
+        /> */}
       </div>
 
       {agentLimitData && (
