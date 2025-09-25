@@ -1828,7 +1828,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                 </div>
               )}
 
-              {/* Render all created files at the end of the thread */}
+              {/* Render all created files at the end of the thread
               {(() => {
                 const allCreatedFiles = extractAllCreatedFiles(displayMessages);
                 if (allCreatedFiles.length > 0) {
@@ -1855,7 +1855,7 @@ export const ThreadContent: React.FC<ThreadContentProps> = ({
                   );
                 }
                 return null;
-              })()}
+              })()} */}
               
               <div className="!h-48" />
             </div>
