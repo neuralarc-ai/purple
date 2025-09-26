@@ -118,12 +118,11 @@ def _apply_vertex_claude_caching(messages: List[Dict[str, Any]]) -> None:
 
 def _apply_gemini_caching(params: Dict[str, Any]) -> None:
     """Apply Gemini caching parameters."""
-    # Gemini 2.5+ supports implicit caching by default
-    # We can enable explicit caching for better control
+    # Disable caching for Gemini models to prevent random outputs
     if "gemini" in params.get("model", "").lower():
-        # Enable caching for Gemini models
-        params["cache"] = True
-        logger.debug("Enabled Gemini caching")
+        # Disable caching for Gemini models
+        params["cache"] = False
+        logger.debug("Disabled Gemini caching to prevent random outputs")
 
 def _apply_bedrock_caching(messages: List[Dict[str, Any]]) -> None:
     """Apply AWS Bedrock prompt caching to messages using official Anthropic format.

@@ -489,42 +489,6 @@ Remember: Every response should feel like it was crafted specifically for this i
         return {"role": "system", "content": system_content}
 
 
-class MessageManager:
-    def __init__(self, client, thread_id: str, model_name: str, trace: Optional[StatefulTraceClient], 
-                 agent_config: Optional[dict] = None, enable_context_manager: bool = False):
-        self.client = client
-        self.thread_id = thread_id
-        self.model_name = model_name
-        self.trace = trace
-        self.agent_config = agent_config
-        self.enable_context_manager = enable_context_manager
-    
-    async def build_temporary_message(self) -> Optional[dict]:
-        """Build temporary message based on configuration and context."""
-        system_message = None
-        
-        # Add agent builder system prompt if agent is explicitly configured as a builder
-        if self.agent_config:
-            # Only use agent builder prompt if explicitly set in system_prompt
-            if self.agent_config.get('system_prompt') and 'builder' in self.agent_config.get('system_prompt', '').lower():
-                from agent.agent_builder_prompt import AGENT_BUILDER_SYSTEM_PROMPT
-                system_message = AGENT_BUILDER_SYSTEM_PROMPT
-        
-        # Add agent config system prompt
-        if not system_message and self.agent_config and 'system_prompt' in self.agent_config:
-            system_prompt = self.agent_config['system_prompt']
-            if system_prompt:
-                system_message = system_prompt
-        
-        # Build and return the temporary message if we have content
-        if system_message:
-            return {
-                "temporary": True,
-                "role": "system",
-                "content": system_message
-            }
-        
-        return None
 
 
 class AgentRunner:
@@ -633,7 +597,7 @@ class AgentRunner:
         elif "gpt-4" in self.config.model_name.lower():
             return 4096
         elif "gemini-2.5-pro" in self.config.model_name.lower():
-            return 64000
+            return 32000
         # Vertex AI models removed
         elif "kimi-k2" in self.config.model_name.lower():
             return 8192
@@ -676,8 +640,6 @@ class AgentRunner:
                     if self.config.trace:
                         self.config.trace.update(input=data)
 
-        message_manager = MessageManager(self.client, self.config.thread_id, self.config.model_name, self.config.trace, 
-                                         agent_config=self.config.agent_config, enable_context_manager=self.config.enable_context_manager)
 
         while continue_execution and iteration_count < self.config.max_iterations:
             iteration_count += 1
@@ -699,7 +661,6 @@ class AgentRunner:
                     continue_execution = False
                     break
 
-            temporary_message = await message_manager.build_temporary_message()
             max_tokens = self.get_max_tokens()
             
             generation = self.config.trace.generation(name="thread_manager.run_thread") if self.config.trace else None
@@ -714,7 +675,6 @@ class AgentRunner:
                     llm_max_tokens=max_tokens,
                     tool_choice="auto",
                     max_xml_tool_calls=1,
-                    temporary_message=temporary_message,
                     processor_config=ProcessorConfig(
                         xml_tool_calling=True,
                         native_tool_calling=False,
