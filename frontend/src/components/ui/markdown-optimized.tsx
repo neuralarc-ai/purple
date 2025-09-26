@@ -14,8 +14,25 @@ export type MarkdownProps = {
 };
 
 function parseMarkdownIntoBlocks(markdown: string): string[] {
-  const tokens = marked.lexer(markdown);
+  // Sanitize markdown to remove or escape problematic XML tags
+  const sanitizedMarkdown = sanitizeMarkdown(markdown);
+  const tokens = marked.lexer(sanitizedMarkdown);
   return tokens.map((token: any) => token.raw);
+}
+
+function sanitizeMarkdown(markdown: string): string {
+  // Remove or escape problematic XML tags that could cause React errors
+  // This includes tags that look like React components but aren't properly formed
+  return markdown
+    // Remove standalone opening tags that could be mistaken for React components
+    .replace(/<([a-z][a-z0-9]*)(?![a-zA-Z0-9\s/>])/g, '&lt;$1')
+    // Remove standalone closing tags
+    .replace(/<\/([a-z][a-z0-9]*)>/g, '&lt;/$1&gt;')
+    // Remove self-closing tags that aren't valid HTML
+    .replace(/<([a-z][a-z0-9]*)\s*\/>/g, '&lt;$1/&gt;')
+    // Keep valid HTML tags and known XML tool tags
+    .replace(/&lt;(ask|complete|web-browser-takeover|function_calls|invoke|parameter)([^>]*)&gt;/g, '<$1$2>')
+    .replace(/&lt;\/(ask|complete|web-browser-takeover|function_calls|invoke|parameter)&gt;/g, '</$1>');
 }
 
 function extractLanguage(className?: string): string {
